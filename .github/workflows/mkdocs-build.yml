@@ -13,8 +13,10 @@ on:
       - 'overrides/**'
       - '.github/workflows/**'
       - 'mkdocs.yml'
-      - 'setup.py'
+      - 'pyproject.toml'
+      - 'cullinan/_version.py'
       - 'cullinan/__init__.py'
+      - 'cullinan/core/__init__.py'
   workflow_dispatch:
 
 concurrency:
@@ -61,22 +63,28 @@ jobs:
           import pathlib
           import re
 
-          setup_text = pathlib.Path("setup.py").read_text(encoding="utf-8")
+          pyproject_text = pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
+          version_text = pathlib.Path("cullinan/_version.py").read_text(encoding="utf-8")
           init_text = pathlib.Path("cullinan/__init__.py").read_text(encoding="utf-8")
+          core_text = pathlib.Path("cullinan/core/__init__.py").read_text(encoding="utf-8")
 
-          setup_match = re.search(r"version\s*=\s*['\"]([^'\"]+)['\"]", setup_text)
-          init_match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", init_text)
+          version_match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", version_text)
+          init_match = re.search(r"from cullinan\._version import __version__", init_text)
+          core_match = re.search(r"from cullinan\._version import __version__", core_text)
+          dynamic_match = re.search(r"(?m)^dynamic\s*=\s*\[\s*['\"]version['\"]\s*\]", pyproject_text)
+          attr_match = re.search(
+              r"(?ms)\[tool\.setuptools\.dynamic\].*?version\s*=\s*\{\s*attr\s*=\s*['\"]([^'\"]+)['\"]\s*\}",
+              pyproject_text,
+          )
 
-          if not setup_match or not init_match:
-            raise SystemExit("Unable to detect package version from setup.py or cullinan/__init__.py")
+          if not version_match or not init_match or not core_match or not dynamic_match or not attr_match:
+            raise SystemExit("Unable to detect package version from cullinan/_version.py or pyproject.toml")
 
-          setup_version = setup_match.group(1)
-          init_version = init_match.group(1)
+          version = version_match.group(1)
+          version_attr = attr_match.group(1)
 
-          if setup_version != init_version:
-            raise SystemExit(f"Version mismatch: setup.py={setup_version}, cullinan/__init__.py={init_version}")
-
-          version = setup_version
+          if version_attr != "cullinan._version.__version__":
+            raise SystemExit(f"Unexpected setuptools version attr: {version_attr}")
           branch = os.environ.get("GITHUB_REF_NAME", "")
           event_name = os.environ.get("GITHUB_EVENT_NAME", "")
           ref_type = os.environ.get("GITHUB_REF_TYPE", "")

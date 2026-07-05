@@ -52,7 +52,6 @@ from cullinan import (
     Router, Dispatcher,               # 网关层
     GatewayMiddleware, CORSMiddleware,# 中间件管线
     OpenAPIGenerator,                 # OpenAPI 规范
-    get_asgi_app,                     # ASGI 便捷函数
 )
 
 # 高级 transport 集成保持显式导入
@@ -109,16 +108,13 @@ class UserController:
 #### v0.9x：仅 Tornado
 
 ```python
-from cullinan import run
-run()  # 在端口 4080 启动 Tornado
+from cullinan.public_api import run
+run()  # 旧式直接启动入口
 ```
 
-#### v0.93：让 Cullinan 自动解析后端，或显式选择
+#### v0.94a1：优先使用入口方法；只有在需要时再显式调用运行时 helper
 
 ```python
-from cullinan import run
-
-# 推荐默认路径
 from cullinan import application, configure
 
 @configure(user_packages=["myapp"])

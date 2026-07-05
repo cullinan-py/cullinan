@@ -30,7 +30,7 @@ gateway router，与普通 controller、middleware 共存，**无需任何引擎
 都在应用边界上表达，由 runtime 完成装配。
 
 由此带来的好处是：同一份配置可在 Tornado 与 ASGI 之间切换、可与 Nuitka /
-PyInstaller 打包共存、可通过 `get_asgi_app()` 做集成测试，**无需重写处理器**。
+PyInstaller 打包共存、可通过 `main.get_asgi_app()` 做集成测试，**无需重写处理器**。
 
 ## 公共 API
 

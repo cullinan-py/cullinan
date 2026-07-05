@@ -18,7 +18,7 @@ Closes #
 
 - [ ] `ruff check .` passes
 - [ ] `python -m pytest tests -q` passes (no regression)
-- [ ] Version strings synced if bumped (`setup.py` / `cullinan/__init__.py` / `cullinan/core/__init__.py`)
+- [ ] Version strings synced if bumped (`cullinan/_version.py` / `pyproject.toml` dynamic version / `cullinan/__init__.py` / `cullinan/core/__init__.py`)
 
 ## Notes / 说明
 

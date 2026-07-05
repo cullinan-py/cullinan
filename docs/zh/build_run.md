@@ -56,6 +56,17 @@ python -m pip install -U pip
 pip install -e .
 ```
 
+Cullinan 现在以 `pyproject.toml` 作为 editable/build 元数据主入口；`setup.py`
+保留为兼容旧 setuptools 工作流的 shim。
+
+如果需要特定引擎 / 运行时 extras，请显式安装：
+
+```bash
+pip install -e .[tornado]
+pip install -e .[asgi]
+pip install -e .[full]
+```
+
 如果在 `setup.py` 或 `pyproject.toml` 中定义了开发额外依赖，可按需安装，例如：
 
 ```bash
@@ -115,4 +126,4 @@ python -m examples.parameter_handling
 python -m pytest examples/testing_flow/test_app.py -q
 ```
 
-这条路径会通过 `configure(...)` 和 `get_asgi_app()` 直接验证示例，而不需要真的启动外部服务进程。
+这条路径会通过装饰后的入口方法与 `main.get_asgi_app()` 直接验证示例，而不需要真的启动外部服务进程。

@@ -15,7 +15,7 @@ pr_links: []
 
 # Cullinan 文档
 
-> **当前版本：0.93a13**。最短公开启动路径是
+> **当前版本：0.94a1**。最短公开启动路径是
 > `@application` + `@configure(...)` + `main()` 注解式入口；语义学习路径先从顶层 `cullinan`
 > 以及业务向的 `cullinan.web` / `cullinan.core` 语汇开始：先理解业务装饰器与业务方法，
 > 只有在应用确实需要时，再进入高级 application/runtime 细节。

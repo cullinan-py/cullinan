@@ -327,6 +327,7 @@ def test_root_readme_keeps_default_path_on_top_level_api():
     assert "create_app()" not in readme
     assert "- `cullinan.application` - application definition, configuration, and startup" not in readme
     assert "top-level `cullinan` API" in readme
+    assert "**v0.94a1**" in readme
 
 
 def test_getting_started_stays_on_business_first_onboarding_path():
@@ -383,6 +384,8 @@ def test_tornado_decoupling_docs_keep_top_level_startup_and_backend_neutral_term
     assert "cullinan.application -> Application、configure/run/get_asgi_app、@module" not in zh_architecture
     assert "cullinan             -> @application, configure" in architecture
     assert "cullinan             -> @application、configure" in zh_architecture
+    assert "configure/run/get_asgi_app" not in architecture
+    assert "configure/run/get_asgi_app" not in zh_architecture
 
     assert "- `cullinan.application` for application configuration and startup" not in framework_semantics
     assert "- `cullinan.application` —— 应用配置与启动" not in zh_framework_semantics
@@ -396,5 +399,47 @@ def test_tornado_decoupling_docs_keep_top_level_startup_and_backend_neutral_term
 
     assert "from cullinan.application import run" not in migration_v2
     assert "from cullinan.application import run" not in zh_migration_v2
+    assert "from cullinan import run" not in migration_v2
+    assert "from cullinan import run" not in zh_migration_v2
     assert "@application" in migration_v2
     assert "@application" in zh_migration_v2
+
+
+def test_current_version_markers_follow_v094a1_release_line():
+    docs_home = _read_doc_file("README.md")
+    zh_docs_home = _read_zh_doc_file("README.md")
+    architecture = _read_doc_file("architecture.md")
+    zh_architecture = _read_zh_doc_file("architecture.md")
+    di_guide = _read_doc_file("dependency_injection_guide.md")
+    zh_di_guide = _read_zh_doc_file("dependency_injection_guide.md")
+    di_quick = _read_doc_file("quick_reference_di.md")
+    zh_di_quick = _read_zh_doc_file("quick_reference_di.md")
+    extension_guide = _read_doc_file("extension_development_guide.md")
+    zh_extension_guide = _read_zh_doc_file("extension_development_guide.md")
+
+    for content in (
+        docs_home,
+        zh_docs_home,
+        architecture,
+        zh_architecture,
+        di_guide,
+        zh_di_guide,
+        di_quick,
+        zh_di_quick,
+        extension_guide,
+        zh_extension_guide,
+    ):
+        assert "0.94a1" in content
+        assert "0.93a13" not in content
+
+
+def test_application_module_docs_prefer_entry_method_helpers_over_top_level_runtime_helpers():
+    application_module = _read_doc_file("modules", "application.md")
+    zh_application_module = _read_zh_doc_file("modules", "application.md")
+
+    assert "top-level `run()` / `get_asgi_app()` are the shortest public startup path" not in application_module
+    assert "顶层 `run()` / `get_asgi_app()` 才是最短公开启动路径" not in zh_application_module
+    assert "main.run()" in application_module
+    assert "main.get_asgi_app()" in application_module
+    assert "main.run()" in zh_application_module
+    assert "main.get_asgi_app()" in zh_application_module

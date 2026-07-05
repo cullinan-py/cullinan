@@ -52,7 +52,6 @@ from cullinan import (
     Router, Dispatcher,               # Gateway layer
     GatewayMiddleware, CORSMiddleware,# Middleware pipeline
     OpenAPIGenerator,                 # OpenAPI spec
-    get_asgi_app,                     # ASGI convenience
 )
 
 # Advanced transport integration stays explicit
@@ -109,16 +108,13 @@ class UserController:
 #### v0.9x: Tornado only
 
 ```python
-from cullinan import run
-run()  # starts Tornado on port 4080
+from cullinan.public_api import run
+run()  # legacy direct startup entrypoint
 ```
 
-#### v0.93: Let Cullinan resolve the backend, or choose explicitly
+#### v0.94a1: Prefer an entry method, then choose explicit runtime helpers only when needed
 
 ```python
-from cullinan import run
-
-# Recommended default path
 from cullinan import application, configure
 
 @configure(user_packages=["myapp"])

@@ -104,7 +104,7 @@ class ASGIAdapter(WebAdapter):
                 key="public-api:asgi-adapter-run",
                 rule_key="public-api-boundary",
                 problem="直接调用 ASGIAdapter.run() 会把运行时适配层当作默认启动入口。",
-                guidance="常规业务应用请优先使用 from cullinan import configure, run；如果你在做 ASGI 集成，请显式从 cullinan.transport.adapter 导入并只在集成层使用这条路径。",
+                guidance="常规业务应用请优先声明 @application 入口方法并配合 @configure(...)，然后直接调用入口方法；如果你在做 ASGI 集成，请显式从 cullinan.transport.adapter 导入并只在集成层使用这条路径。",
                 category=PublicAPISemanticWarning,
                 stacklevel=2,
             )

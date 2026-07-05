@@ -1,6 +1,6 @@
 # Cullinan 框架架构
 
-> **版本**：0.93a13
+> **版本**：0.94a1
 > **最后更新**：2026-06-01  
 > **状态**：已更新
 
@@ -25,8 +25,8 @@ Cullinan 是一个引擎中立的应用框架，当前运行时围绕三条已�
 └── 业务服务与中间件
 
 框架门面
-├── cullinan             -> @application、configure/run/get_asgi_app
-├── cullinan.application -> Application、@module
+├── cullinan             -> @application、configure、业务向装饰器
+├── cullinan.application -> Application、run/get_asgi_app、@module
 ├── cullinan.web         -> 控制器装饰器、WebRequest/WebResponse、参数系统、中间件
 ├── cullinan.core        -> ApplicationContext、作用域、生命周期、请求上下文
 ├── cullinan.testing     -> 测试辅助与验证入口
@@ -45,8 +45,8 @@ Cullinan 是一个引擎中立的应用框架，当前运行时围绕三条已�
 
 Cullinan 现在按更像正式 Web Framework 的语义层公开主结构：
 
-- `cullinan` —— 默认启动入口（`configure`、`run`、`get_asgi_app`）
-- `cullinan.application` —— 应用定义与运行时边界等高级语义
+- `cullinan` —— 默认启动入口（`@application`、`configure`，然后直接调用入口方法）
+- `cullinan.application` —— 应用定义、运行时边界与显式运行时 helper 等高级语义
 - `cullinan.web` —— 面向业务开发者的 Web 公开层
 - `cullinan.core` —— IoC/DI、生命周期、请求上下文、语义诊断
 - `cullinan.testing` —— 测试辅助

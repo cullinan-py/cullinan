@@ -1,6 +1,6 @@
 # Cullinan Framework Architecture
 
-> **Version**: 0.93a13
+> **Version**: 0.94a1
 > **Last Updated**: 2026-06-01  
 > **Status**: Updated
 
@@ -25,8 +25,8 @@ Application code
 └── Business services and middleware
 
 Framework facade
-├── cullinan             -> @application, configure/run/get_asgi_app
-├── cullinan.application -> Application, @module
+├── cullinan             -> @application, configure, business-facing decorators
+├── cullinan.application -> Application, run/get_asgi_app, @module
 ├── cullinan.web         -> controller decorators, WebRequest/WebResponse, params, middleware
 ├── cullinan.core        -> ApplicationContext, scopes, lifecycle, request context
 ├── cullinan.testing     -> testing helpers and verification entrypoints
@@ -45,8 +45,8 @@ Runtime execution
 
 Cullinan's recommended package surface now follows a clearer framework-semantic split:
 
-- `cullinan` — default startup surface (`configure`, `run`, `get_asgi_app`)
-- `cullinan.application` — advanced application semantics such as application definition and runtime boundary
+- `cullinan` — default startup surface (`@application`, `configure`, then call the entry method)
+- `cullinan.application` — advanced application semantics such as application definition, runtime boundary, and explicit runtime helpers
 - `cullinan.web` — business-facing Web development surface
 - `cullinan.core` — IoC/DI, lifecycle, request context, semantic diagnostics
 - `cullinan.testing` — test-facing support

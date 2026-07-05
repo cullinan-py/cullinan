@@ -28,7 +28,7 @@ This page provides an overview of the public API surface of Cullinan and clarifi
 ### Recommended default API
 
 - `cullinan` — top-level application API for regular business projects:
-  - startup: `@application`, `configure(...)`, `run(...)`, `get_asgi_app(...)`
+  - startup: `@application`, `configure(...)`, then call the entry method directly (for example `main()`)
   - declaration: `@service`, `@controller`, `@module` (advanced boundary), route decorators
   - injection / params: `Inject`, `InjectByName`, `Path`, `Query`, `Body`, ...
   - framework mental model: decorator-first business code, component discovery,
@@ -37,7 +37,7 @@ This page provides an overview of the public API surface of Cullinan and clarifi
 ### Advanced integration API
 
 - `cullinan.application` — advanced public application semantics for maintainers
-  and framework-aware integrations (`Application`, `Runtime`, `module`)
+  and framework-aware integrations (`Application`, `Runtime`, `module`, `run`, `get_asgi_app`)
 - `cullinan.transport.adapter` — server integration (`WebAdapter`, `TornadoAdapter`, `ASGIAdapter`)
 - `cullinan.web.gateway` — request / response / dispatcher contracts
 - `cullinan.core` — low-level container and lifecycle primitives
@@ -50,6 +50,17 @@ low-level runtime orchestration or a concrete server adapter.
 For regular applications, prefer the top-level `cullinan` API. Advanced modules
 should be imported explicitly so the boundary stays visible in code review, IDE
 completion, and onboarding docs.
+
+The v0.94 Phase A freeze uses package `__all__` lists as the reviewable export contract:
+
+- `cullinan.__all__` — regular application-facing startup, declaration, and request APIs
+- `cullinan.application.__all__` — advanced application/runtime helpers, including `run()` and `get_asgi_app()`
+- `cullinan.web.__all__` / `cullinan.core.__all__` — explicit business-web and container/lifecycle surfaces
+
+Symbols that are not present in the corresponding `__all__` list should be
+treated as private implementation details. Underscore-prefixed compatibility
+exports may still exist, but they are not part of the default business-facing
+stability promise.
 
 ## New in v0.90+: Parameter System
 

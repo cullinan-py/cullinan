@@ -302,7 +302,8 @@ def release_runtime_request_context(runtime: Optional[WebRuntime], binding: Opti
 class Application:
     """Advanced runtime facade for module discovery and runtime switching.
 
-    Regular business applications should prefer ``from cullinan import configure, run``.
+    Regular business applications should prefer ``@application`` +
+    ``@configure(...)`` and call the entry method directly.
     """
 
     _active_app: Optional["Application"] = None
@@ -360,7 +361,8 @@ class Application:
                 rule_key="public-api-boundary",
                 problem="Calling Application.run() directly uses an advanced runtime assembly entrypoint.",
                 guidance=(
-                    "Regular applications should prefer `from cullinan import configure, run`. "
+                    "Regular applications should prefer an `@application` entry method plus "
+                    "`@configure(...)`, then call that entry method directly. "
                     "Call Application.run() directly only when you need explicit runtime orchestration."
                 ),
                 category=PublicAPISemanticWarning,

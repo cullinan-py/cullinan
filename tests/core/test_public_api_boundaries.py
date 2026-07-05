@@ -7,11 +7,15 @@ import subprocess
 import sys
 import textwrap
 import warnings
+from importlib import resources
 from pathlib import Path
 
 import pytest
 
 import cullinan
+import cullinan._version as version_api
+import cullinan.core as core_api
+import cullinan.web as web_api
 from cullinan import application, configure, get_config
 from cullinan.application import Application
 from cullinan.application import public as public_api
@@ -20,6 +24,195 @@ from cullinan.web.params import FileInfo
 from cullinan.core import PendingRegistry, set_application_context
 from cullinan.core.semantic_rules import PublicAPISemanticWarning, reset_semantic_warnings
 from cullinan.web.gateway import WebRuntime, reset_gateway
+
+
+EXPECTED_TOP_LEVEL_EXPORTS = [
+    "Auto",
+    "AutoType",
+    "Body",
+    "BodyDecoderMiddleware",
+    "CullinanConfig",
+    "DynamicBody",
+    "File",
+    "Header",
+    "Inject",
+    "InjectByName",
+    "Lazy",
+    "Middleware",
+    "Param",
+    "ParamResolver",
+    "ParamValidator",
+    "Path",
+    "Provider",
+    "Query",
+    "ResolveError",
+    "StaticFiles",
+    "TypeConverter",
+    "UNSET",
+    "ValidationError",
+    "WebRequest",
+    "WebResponse",
+    "application",
+    "component",
+    "configure",
+    "controller",
+    "delete_api",
+    "get_api",
+    "get_config",
+    "get_decoded_body",
+    "get_missing_header_handler",
+    "middleware",
+    "module",
+    "patch_api",
+    "post_api",
+    "put_api",
+    "response",
+    "service",
+    "set_decoded_body",
+    "set_missing_header_handler",
+    "websocket_handler",
+]
+
+EXPECTED_PACKAGE_VERSION = "0.94a1"
+
+EXPECTED_APPLICATION_EXPORTS = [
+    "Application",
+    "ApplicationMetadata",
+    "Module",
+    "ModuleGraph",
+    "ModuleMetadata",
+    "ModuleReflectionResult",
+    "ModuleSpec",
+    "Runtime",
+    "CullinanConfig",
+    "_collect_module_specs",
+    "_resolve_component_owners",
+    "application",
+    "bind_runtime_request_context",
+    "configure",
+    "get_asgi_app",
+    "get_application_metadata",
+    "get_config",
+    "has_application_metadata",
+    "get_module_metadata",
+    "module",
+    "reflect_module",
+    "release_runtime_request_context",
+    "run",
+    "scan_controller",
+    "scan_service",
+    "_validate_component_scan_results",
+]
+
+EXPECTED_WEB_EXPORTS = [
+    "Auto",
+    "AutoType",
+    "Body",
+    "BodyDecoderMiddleware",
+    "DynamicBody",
+    "File",
+    "Handler",
+    "Header",
+    "Middleware",
+    "Param",
+    "ParamResolver",
+    "ParamValidator",
+    "Path",
+    "Query",
+    "ResolveError",
+    "StaticFiles",
+    "TypeConverter",
+    "UNSET",
+    "ValidationError",
+    "WebRequest",
+    "WebResponse",
+    "controller",
+    "delete_api",
+    "get_api",
+    "get_decoded_body",
+    "get_missing_header_handler",
+    "middleware",
+    "patch_api",
+    "post_api",
+    "put_api",
+    "response",
+    "set_decoded_body",
+    "set_missing_header_handler",
+    "websocket_handler",
+]
+
+EXPECTED_CORE_EXPORTS = [
+    "ApplicationContext",
+    "ContainerState",
+    "ContainerManager",
+    "get_container_manager",
+    "get_application_context",
+    "set_application_context",
+    "Definition",
+    "ScopeType",
+    "ScopeManager",
+    "Factory",
+    "render_resolution_path",
+    "render_injection_point",
+    "render_candidate_sources",
+    "format_circular_dependency_error",
+    "format_missing_dependency_error",
+    "CullinanCoreError",
+    "RegistryError",
+    "RegistryFrozenError",
+    "DependencyResolutionError",
+    "DependencyNotFoundError",
+    "DependencyTypeResolutionError",
+    "CircularDependencyError",
+    "ScopeNotActiveError",
+    "ConditionNotMetError",
+    "CreationError",
+    "LifecycleError",
+    "service",
+    "controller",
+    "component",
+    "provider_decorator",
+    "Provider",
+    "Inject",
+    "InjectByName",
+    "Lazy",
+    "get_injection_markers",
+    "CullinanSemanticWarning",
+    "ComponentDiscoveryWarning",
+    "CompatibilitySemanticWarning",
+    "InjectionSemanticWarning",
+    "PublicAPISemanticWarning",
+    "ConditionalOnProperty",
+    "ConditionalOnClass",
+    "ConditionalOnMissingBean",
+    "ConditionalOnBean",
+    "Conditional",
+    "PendingRegistry",
+    "PendingRegistration",
+    "ComponentType",
+    "Registry",
+    "SimpleRegistry",
+    "LifecycleManager",
+    "LifecycleState",
+    "LifecycleAware",
+    "SmartLifecycle",
+    "LifecyclePhase",
+    "get_lifecycle_manager",
+    "reset_lifecycle_manager",
+    "RequestContext",
+    "get_current_context",
+    "set_current_context",
+    "create_context",
+    "destroy_context",
+    "ContextManager",
+    "get_context_value",
+    "set_context_value",
+    "injectable",
+    "inject_constructor",
+    "InjectionRegistry",
+    "get_injection_registry",
+    "reset_injection_registry",
+]
 
 
 def _write_package(tmp_path: Path, package_name: str, files: dict[str, str]) -> str:
@@ -69,6 +262,37 @@ def test_top_level_public_api_hides_advanced_runtime_symbols():
     assert "ApplicationContext" not in public_exports
     assert "TornadoAdapter" not in public_exports
     assert "reset_controller_registry" not in public_exports
+
+
+def test_public_api_export_lists_are_frozen_for_v094_phase_a():
+    assert cullinan.__all__ == EXPECTED_TOP_LEVEL_EXPORTS
+    assert application.__all__ == EXPECTED_APPLICATION_EXPORTS
+    assert web_api.__all__ == EXPECTED_WEB_EXPORTS
+    assert core_api.__all__ == EXPECTED_CORE_EXPORTS
+
+
+def test_typed_marker_is_present_in_the_package_tree():
+    assert resources.files("cullinan").joinpath("py.typed").is_file()
+
+
+def test_version_single_source_is_shared_by_public_modules_and_pyproject():
+    pyproject_text = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert version_api.__version__ == EXPECTED_PACKAGE_VERSION
+    assert cullinan.__version__ == EXPECTED_PACKAGE_VERSION
+    assert core_api.__version__ == EXPECTED_PACKAGE_VERSION
+    assert 'dynamic = ["version"]' in pyproject_text
+    assert 'version = { attr = "cullinan._version.__version__" }' in pyproject_text
+    assert '"0.93.post1"' not in pyproject_text
+    assert '"0.93.post1"' not in Path("cullinan/__init__.py").read_text(encoding="utf-8")
+    assert '"0.93.post1"' not in Path("cullinan/core/__init__.py").read_text(encoding="utf-8")
+
+
+def test_package_discovery_excludes_generated_build_trees():
+    pyproject_text = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert '"build*"' in pyproject_text
+    assert '"dist*"' in pyproject_text
 
 
 def test_top_level_does_not_expose_advanced_runtime_symbols():

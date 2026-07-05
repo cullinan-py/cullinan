@@ -53,7 +53,7 @@ on top of legacy files.
 
 | Old path | New path |
 | --- | --- |
-| `cullinan.app` | top-level `cullinan` startup API (`configure`, `run`, `get_asgi_app`) |
+| `cullinan.app` | top-level `cullinan` entry-method API (`@application`, `configure`, then call `main()`) |
 | `cullinan.application_model` | `cullinan.application` |
 | `cullinan.public_api` | `cullinan.application.public` |
 | `cullinan.module_scanner` | `cullinan.runtime.module_scanner` |
@@ -79,7 +79,13 @@ on top of legacy files.
 from cullinan.public_api import run
 
 # After
-from cullinan import run
+from cullinan import application, configure
+
+@configure(user_packages=["myapp"])
+@application
+def main(): ...
+
+main()
 ```
 
 ### Runtime model helpers

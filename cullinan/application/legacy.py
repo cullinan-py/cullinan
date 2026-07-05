@@ -733,8 +733,9 @@ def run(handlers=None, engine=None):
         rule_key="compatibility-api",
         problem="cullinan.application.run() is a compatibility scanning entrypoint.",
         guidance=(
-            "Regular applications should prefer `from cullinan import configure, run`. "
-            "Use cullinan.application.run() only when maintaining older scan-based projects."
+            "Regular applications should declare an `@application` entry method, attach "
+            "`@configure(...)`, and call that entry method directly. Use "
+            "cullinan.application.run() only when maintaining older scan-based projects."
         ),
         category=CompatibilitySemanticWarning,
         stacklevel=2,
@@ -854,8 +855,9 @@ def get_asgi_app():
         rule_key="compatibility-api",
         problem="cullinan.application.get_asgi_app() is a compatibility scanning entrypoint.",
         guidance=(
-            "Regular applications should prefer `from cullinan import configure, get_asgi_app`. "
-            "Use cullinan.application.get_asgi_app() only when maintaining older scan-based deployments."
+            "Regular applications should declare an `@application` entry method and use "
+            "`entry.get_asgi_app()` when they need an ASGI callable. Use "
+            "cullinan.application.get_asgi_app() only when maintaining older scan-based deployments."
         ),
         category=CompatibilitySemanticWarning,
         stacklevel=2,

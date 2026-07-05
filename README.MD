@@ -218,7 +218,8 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
-**v0.93** makes the public application path more explicit around:
+**v0.94a1** is the Phase A convergence cut for the 1.0 roadmap. This release line
+locks down the public surface and packaging baseline around:
 
 - `@application` + `@configure(...)` + `main()` as the startup flow
 - decorator-first discovery through Python imports
@@ -228,6 +229,8 @@ Then move into the documentation knowledge base:
   advanced semantic namespaces under `cullinan.application`, `cullinan.web`,
   and `cullinan.core`
 - engine-neutral runtime selection over Tornado / ASGI backends
+- `pyproject.toml` + `setuptools.build_meta` packaging with `setup.py` kept as a compatibility shim
+- PEP 561 typed-package distribution via `cullinan/py.typed`
 
 Version-specific details and migration notes live in the documentation knowledge base rather
 than in the homepage narrative.

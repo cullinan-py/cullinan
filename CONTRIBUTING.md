@@ -69,9 +69,10 @@ backend-specific behavior that diverges between engines. 特性统一经 `Router
 ## Versioning / 版本号
 
 Follows PEP 440. `0.93aN` for feature iterations, `0.93aN.postM` for
-patch/defect fixes (no new public API). Version strings live in `setup.py`,
-`cullinan/__init__.py`, and `cullinan/core/__init__.py` — keep all three in
-sync. 遵循 PEP 440；补丁用 `.postM`；三处版本号必须一致。
+patch/defect fixes (no new public API). The canonical package version now lives
+in `cullinan/_version.py`; `pyproject.toml`, `cullinan/__init__.py`, and
+`cullinan/core/__init__.py` must stay aligned to that single source.
+遵循 PEP 440；补丁用 `.postM`；版本事实源在 `cullinan/_version.py`，其余位置必须与之对齐。
 
 ## Reporting issues / 反馈问题
 

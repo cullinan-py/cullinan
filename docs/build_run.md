@@ -56,6 +56,17 @@ python -m pip install -U pip
 pip install -e .
 ```
 
+Cullinan now declares editable/build metadata in `pyproject.toml`; `setup.py`
+remains a compatibility shim for legacy setuptools workflows.
+
+If you need an engine/runtime extra, install it explicitly:
+
+```bash
+pip install -e .[tornado]
+pip install -e .[asgi]
+pip install -e .[full]
+```
+
 If you have additional development extras configured in `setup.py` or `pyproject.toml`, you can install them as needed, for example:
 
 ```bash
@@ -116,5 +127,5 @@ Use it alongside the parameter guide to see `Path`, `Query`, and `Body` on contr
 python -m pytest examples/testing_flow/test_app.py -q
 ```
 
-This path exercises the example through `configure(...)` and `get_asgi_app()` without launching
+This path exercises the example through the decorated entry method and `main.get_asgi_app()` without launching
 an external server process.
