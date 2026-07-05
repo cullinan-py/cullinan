@@ -26,11 +26,12 @@ def _setuptools_major_minor(version: str) -> tuple[int, int]:
     return major, minor
 
 
+if _setuptools_major_minor(setuptools_version) < (61, 0):
+    raise RuntimeError(
+        "Cullinan's setup.py compatibility shim requires setuptools>=61. "
+        f"Detected setuptools=={setuptools_version}. "
+        "Please upgrade setuptools and retry."
+    )
+
 if __name__ == "__main__":
-    if _setuptools_major_minor(setuptools_version) < (61, 0):
-        raise RuntimeError(
-            "Cullinan's setup.py compatibility shim requires setuptools>=61. "
-            f"Detected setuptools=={setuptools_version}. "
-            "Please upgrade setuptools and retry."
-        )
     setup()
