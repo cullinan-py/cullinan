@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Cullinan — A pluggable IoC/DI web framework"
 readme = { file = "README.MD", content-type = "text/markdown" }
 requires-python = ">=3.9"
-license = "MIT"
+license = { file = "LICENSE" }
 authors = [
   { name = "cullinan-py", email = "cullinan@plumeink.com" },
 ]
