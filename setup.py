@@ -9,6 +9,8 @@ setuptools while v0.94 is mid-migration.
 from setuptools import __version__ as setuptools_version
 from setuptools import setup
 
+_MINIMUM_SETUPTOOLS = (61, 0)
+
 
 def _setuptools_major_minor(version: str) -> tuple[int, int]:
     parts = version.split(".")
@@ -26,7 +28,7 @@ def _setuptools_major_minor(version: str) -> tuple[int, int]:
     return major, minor
 
 
-if _setuptools_major_minor(setuptools_version) < (61, 0):
+if _setuptools_major_minor(setuptools_version) < _MINIMUM_SETUPTOOLS:
     raise RuntimeError(
         "Cullinan's setup.py compatibility shim requires setuptools>=61. "
         f"Detected setuptools=={setuptools_version}. "
