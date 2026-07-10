@@ -1,4 +1,4 @@
-"""回归测试：确认异步包装器不会误导协程检测逻辑。"""
+"""Regression test: confirm async wrappers do not mislead coroutine detection logic."""
 
 import inspect
 

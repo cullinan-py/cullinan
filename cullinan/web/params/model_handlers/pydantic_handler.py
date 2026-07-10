@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Cullinan Pydantic Model Handler
 
-可选的 Pydantic 模型处理器。
+Optional Pydantic model handler.
 
-Pydantic 是可选依赖，此模块仅在 Pydantic 可用时才能正常工作。
+Pydantic is an optional dependency; this module only works when Pydantic is available.
 
 Author: Cullinan
 """
@@ -14,7 +14,7 @@ from .base import ModelHandler, ModelHandlerError
 
 
 def _is_pydantic_available() -> bool:
-    """检查 Pydantic 是否可用"""
+    """Check if Pydantic is available"""
     try:
         import pydantic  # noqa: F401  (import is the availability probe)
         return True
@@ -23,7 +23,7 @@ def _is_pydantic_available() -> bool:
 
 
 def _get_pydantic_version() -> int:
-    """获取 Pydantic 主版本号"""
+    """Get Pydantic major version number"""
     try:
         import pydantic
         version_str = getattr(pydantic, 'VERSION', getattr(pydantic, '__version__', '1.0'))
@@ -33,21 +33,21 @@ def _get_pydantic_version() -> int:
 
 
 class PydanticHandler(ModelHandler):
-    """Pydantic 模型处理器
+    """Pydantic model handler
 
-    可选处理器，用于解析 Pydantic BaseModel。
+    Optional handler for parsing Pydantic BaseModel.
 
     Features:
-    - 支持 Pydantic v1 和 v2
-    - 完整的 Pydantic 校验
-    - 嵌套模型解析
-    - 自动类型转换
+    - Supports Pydantic v1 and v2
+    - Full Pydantic validation
+    - Nested model resolution
+    - Automatic type conversion
 
     Note:
-        此处理器仅在 Pydantic 已安装时可用。
+        This handler is only available when Pydantic is installed.
     """
 
-    priority = 50  # 高于 dataclass
+    priority = 50  # Higher than dataclass
     name = "pydantic"
 
     def __init__(self):
@@ -59,12 +59,12 @@ class PydanticHandler(ModelHandler):
         self._load_pydantic()
 
     def _load_pydantic(self):
-        """加载 Pydantic"""
+        """Load Pydantic"""
         from pydantic import BaseModel
         self._base_model = BaseModel
 
     def can_handle(self, type_: Type) -> bool:
-        """检查是否是 Pydantic BaseModel"""
+        """Check if it is a Pydantic BaseModel"""
         if type_ is None:
             return False
 
@@ -74,7 +74,7 @@ class PydanticHandler(ModelHandler):
             return False
 
     def resolve(self, model_class: Type, data: Dict[str, Any]) -> Any:
-        """解析数据为 Pydantic 模型实例"""
+        """Parse data into a Pydantic model instance"""
         if not self.can_handle(model_class):
             raise ModelHandlerError(
                 f"{model_class} is not a Pydantic BaseModel",
@@ -106,21 +106,21 @@ class PydanticHandler(ModelHandler):
             )
 
     def to_dict(self, instance: Any) -> Dict[str, Any]:
-        """将 Pydantic 模型实例转换为字典"""
+        """Convert Pydantic model instance to dict"""
         if self._version >= 2:
             return instance.model_dump()
         else:
             return instance.dict()
 
     def to_json(self, instance: Any) -> str:
-        """将 Pydantic 模型实例转换为 JSON 字符串"""
+        """Convert Pydantic model instance to JSON string"""
         if self._version >= 2:
             return instance.model_dump_json()
         else:
             return instance.json()
 
     def get_schema(self, model_class: Type) -> Dict[str, Any]:
-        """获取 Pydantic 模型的 JSON Schema"""
+        """Get the JSON Schema of a Pydantic model"""
         if not self.can_handle(model_class):
             raise ModelHandlerError(
                 f"{model_class} is not a Pydantic BaseModel",
@@ -134,7 +134,7 @@ class PydanticHandler(ModelHandler):
             return model_class.schema()
 
     def _extract_errors(self, error) -> list:
-        """从 Pydantic ValidationError 提取错误信息"""
+        """Extract error information from a Pydantic ValidationError"""
         errors = []
         try:
             for err in error.errors():

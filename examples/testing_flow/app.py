@@ -11,7 +11,7 @@ class QuoteService:
 
 @controller(url="/notes")
 class NotesController:
-    quote_service: QuoteService  # ← 构造注入
+    quote_service: QuoteService  # ← constructor injection
 
     @get_api(url="/sample")
     def sample(self):

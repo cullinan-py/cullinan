@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""验证旧构造器注入兼容 API 在 0.93 中的当前语义。"""
+"""Verify the current semantics of the legacy constructor injection compatibility API in 0.93."""
 
 import pytest
 

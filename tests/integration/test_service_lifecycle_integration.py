@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""测试 Service 生命周期集成到应用启动流程 (使用 ApplicationContext)"""
+"""Test Service lifecycle integration into application startup flow (using ApplicationContext)"""
 
 import asyncio
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Header 与 RawBody 历史语法兼容回归。"""
+"""Regression test for Header and RawBody historical syntax compatibility."""
 
 from cullinan.web.params import Header, ParamResolver, RawBody
 

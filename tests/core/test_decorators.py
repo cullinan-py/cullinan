@@ -294,7 +294,7 @@ class TestGetInjectionMarkers:
         assert len(markers) == 0
 
     def test_underscore_prefixed_markers_are_collected(self):
-        """验证：_ 前缀的 Inject 标记会被正确收集（Issue 5 修复）"""
+        """Verify: underscore-prefixed Inject markers are correctly collected (Issue 5 fix)"""
         class ServiceWithPrivateDI:
             _runtime = Inject()
             __cache = Lazy("CacheService")
@@ -303,18 +303,18 @@ class TestGetInjectionMarkers:
 
         markers = get_injection_markers(ServiceWithPrivateDI)
 
-        assert "_runtime" in markers, "_ 前缀的 Inject 应被收集"
+        assert "_runtime" in markers, "underscore-prefixed Inject should be collected"
         assert isinstance(markers["_runtime"], Inject)
 
         # Python name mangling: __cache → _ServiceWithPrivateDI__cache
         mangled_cache = "_ServiceWithPrivateDI__cache"
-        assert mangled_cache in markers, "__ 前缀的 Lazy 应被收集"
+        assert mangled_cache in markers, "double-underscore-prefixed Lazy should be collected"
         assert isinstance(markers[mangled_cache], Lazy)
 
         assert "public" in markers
         assert isinstance(markers["public"], InjectByName)
 
-        assert "__dunder__" not in markers, "dunder 属性不应被收集"
+        assert "__dunder__" not in markers, "dunder attributes should not be collected"
 
 
 class TestMultipleRegistrations:

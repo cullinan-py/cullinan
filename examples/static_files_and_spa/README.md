@@ -61,4 +61,4 @@ Then try:
 ## See also
 
 - `docs/static_files_guide.md` — full reference and recipes
-- `docs/zh/static_files_guide.md` — 中文文档
+- `docs/zh/static_files_guide.md` - Chinese documentation

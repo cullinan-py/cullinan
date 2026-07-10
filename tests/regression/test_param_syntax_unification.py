@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""参数语法统一化测试"""
+"""Parameter syntax unification tests"""
 
 import sys
 import os
@@ -7,8 +7,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def test_required_classmethod():
-    """测试 .as_required() 类方法"""
-    print("1. 测试 .as_required() 类方法...")
+    """Test .as_required() class method"""
+    print("1. Testing .as_required() class method...")
 
     from cullinan.web.params import Query, Body, Header, File, Path
 
@@ -33,22 +33,22 @@ def test_required_classmethod():
     assert f.required == True
     assert f.max_size == 5*1024*1024
 
-    # Path 默认就是 required，不需要 as_required()
+    # Path is required by default, no need for as_required()
     p = Path(int)
     assert p.required == True
 
-    print("   .as_required() 类方法测试通过")
+    print("   .as_required() class method test passed")
 
 
 def test_default_value_syntax():
-    """测试默认值语法 param: Type = ParamType(...)"""
-    print("2. 测试默认值语法...")
+    """Test default value syntax param: Type = ParamType(...)"""
+    print("2. Testing default value syntax...")
 
     from cullinan.web.params import Query, Body, Header, File, ParamResolver
 
     def handler(
         self,
-        # 新的统一语法
+        # New unified syntax
         page: int = Query(default=1),
         name: str = Body(required=True),
         auth: str = Header(alias="Authorization"),
@@ -70,21 +70,21 @@ def test_default_value_syntax():
 
     assert config['avatar']['source'] == 'file', f"avatar source: {config['avatar']['source']}"
 
-    print("   默认值语法测试通过")
+    print("   Default value syntax test passed")
 
 
 def test_pure_type_annotation_as_query():
-    """测试纯类型注解默认作为 Query"""
-    print("3. 测试纯类型注解默认作为 Query...")
+    """Test pure type annotation defaults to Query"""
+    print("3. Testing pure type annotation as Query...")
 
     from cullinan.web.params import ParamResolver
 
     def handler(
         self,
-        page: int,           # 应该作为 Query(int)
-        size: int = 10,      # 应该作为 Query(int, default=10)
-        name: str = "test",  # 应该作为 Query(str, default="test")
-        flag: bool = False,  # 应该作为 Query(bool, default=False)
+        page: int,           # Should be Query(int)
+        size: int = 10,      # Should be Query(int, default=10)
+        name: str = "test",  # Should be Query(str, default="test")
+        flag: bool = False,  # Should be Query(bool, default=False)
     ):
         pass
 
@@ -104,12 +104,12 @@ def test_pure_type_annotation_as_query():
     assert config['flag']['source'] == 'query', f"flag source: {config['flag']['source']}"
     assert config['flag']['default'] == False
 
-    print("   纯类型注解默认 Query 测试通过")
+    print("   Pure type annotation default Query test passed")
 
 
 def test_file_required_syntax():
-    """测试 File.as_required() 语法"""
-    print("4. 测试 File.as_required() 语法...")
+    """Test File.as_required() syntax"""
+    print("4. Testing File.as_required() syntax...")
 
     from cullinan.web.params import File, ParamResolver
 
@@ -126,16 +126,16 @@ def test_file_required_syntax():
     assert config['avatar']['param_spec'].max_size == 5*1024*1024
     assert config['avatar']['param_spec'].allowed_types == ['image/*']
 
-    print("   File.as_required() 语法测试通过")
+    print("   File.as_required() syntax test passed")
 
 
 def test_backward_compatibility():
-    """测试向后兼容性"""
-    print("5. 测试向后兼容性...")
+    """Test backward compatibility"""
+    print("5. Testing backward compatibility...")
 
     from cullinan.web.params import Path, Query, Body, Header, DynamicBody, RawBody, ParamResolver
 
-    # 旧语法仍然有效
+    # Old syntax still valid
     def old_style(
         self,
         id: Path(int),
@@ -156,23 +156,23 @@ def test_backward_compatibility():
     assert config['body']['source'] == 'body'
     assert config['raw']['source'] == 'raw_body'
 
-    print("   向后兼容性测试通过")
+    print("   Backward compatibility test passed")
 
 
 def test_mixed_syntax():
-    """测试混合语法"""
-    print("6. 测试混合语法...")
+    """Test mixed syntax"""
+    print("6. Testing mixed syntax...")
 
     from cullinan.web.params import Path, Query, Body, Header, File, DynamicBody, ParamResolver
 
     def handler(
         self,
-        # 旧语法
+        # Old syntax
         id: Path(int),
-        # 新语法（默认值方式）
+        # New syntax (default value style)
         page: int = Query(default=1),
         name: str = Body(required=True),
-        # 纯类型注解（作为 Query）
+        # Pure type annotation (as Query)
         limit: int = 100,
         # File.as_required()
         avatar: File = File.as_required(max_size=5*1024*1024),
@@ -192,4 +192,4 @@ def test_mixed_syntax():
     assert config['avatar']['required'] == True
     assert config['extra']['source'] == 'body'
 
-    print("   混合语法测试通过")
+    print("   Mixed syntax test passed")

@@ -15,236 +15,236 @@ last_updated: "2025-11-18T00:00:00Z"
 pr_links: []
 ---
 
-# Cullinan 文档编写计划书
+# Cullinan Documentation Plan
 
-> 说明：本计划基于 Cullinan 源码（仅以源码实现为准，忽略注释）进行设计，目标是为项目建立完整的中英双语文档体系（`docs/` 与 `docs/zh/` 1:1 对应）。
+> Note: This plan is designed based on the Cullinan source code (using source implementation as the sole reference, ignoring comments). The goal is to establish a complete bilingual documentation system for the project (`docs/` and `docs/zh/` in 1:1 correspondence).
 
-## 任务收敛与高层计划
+## Task Convergence and High-Level Plan
 
-本计划文档用于收纳多阶段任务规划，便于在仓库中保留规划内容，供团队审阅与分配。后续操作示例：
+This planning document is used to collect multi-phase task plans, making it convenient to retain planning content in the repository for team review and allocation. Example follow-up actions:
 
-- 创建并提交 Markdown 计划文件到 `docs/` 目录。
-- 运行静态检查以确保文件没有语法/格式错误（文档文件通常不会产生代码编译错误，但仍建议进行基本检查）。
+- Create and commit Markdown plan files to the `docs/` directory.
+- Run static checks to ensure files have no syntax/format errors (documentation files typically do not produce code compilation errors, but basic checks are still recommended).
 
-简要验收清单（在提交前）：
-- [x] 文件以 UTF-8 编码、Markdown 格式保存。
-- [x] 包含目标、范围、任务拆分、时间预估、质量门与示例命令说明。
-- [x] 明确要求 `docs/` 与 `docs/zh/` 必须 1:1 对应。
-
----
-
-TL;DR：为 Cullinan（基于 Tornado 的 IoC/DI 框架）编写中英双语文档（`docs/` 与 `docs/zh/` 1:1 对应），包括入门、示例、Wiki（架构/组件/生命周期/注入/中间件/扩展）、API 参考、迁移指南、贡献指南、测试与本地运行说明；采用源码驱动（忽略注释）研究策略，保持现有 IoC/DI 设计不变，提供分工、里程碑、质量门与 PowerShell 等环境下的运行/验证命令示例。
-
-## 1. 目标与受众
-
-- 目标：为 Cullinan 提供清晰、可执行、双语（英文/中文）文档套件，帮助新用户快速上手，帮助贡献者理解内部设计与注入机制，提供可运行的示例与测试验证步骤。
-- 受众：库使用者（应用开发者）、框架贡献者/维护者、代码审查者、自动化测试工程师。
-
-## 2. 范围与产物清单
-
-必须产出（每项均需在 `docs/` 与 `docs/zh/` 下 1:1 对应）：
-
-- `Getting Started`（快速入门） — `docs/getting_started.md` / `docs/zh/getting_started.md`
-- `Examples`（示例） — `docs/examples.md` / `docs/zh/examples.md`（并在仓库保留 `examples/` 可运行代码）
-- `Wiki`（架构/组件/生命周期/注入/中间件/扩展） — `docs/wiki/architecture.md`, `components.md`, `lifecycle.md`, `injection.md`, `middleware.md`, `extensions.md`（和 `docs/zh/wiki/*`）
-- `API Reference` — `docs/api_reference.md` / `docs/zh/api_reference.md`（可选择自动化生成）
-- `Migration Guide` — `docs/migration_guide.md` / `docs/zh/migration_guide.md`
-- `Contributing` — `docs/contributing.md` / `docs/zh/contributing.md`
-- `Testing & Verification` — `docs/testing.md` / `docs/zh/testing.md`
-- `Local Build & Run` — `docs/build_run.md` / `docs/zh/build_run.md`
-- 文档模板和样例页面（front-matter、示例代码片段规范、翻译准则）
-
-附加产物（建议）：
-
-- `examples/` 可运行示例集合（轻量 demo）
-- 简要 `README.md` 更新链接 `docs/` 页面
-- 文档 CI 脚本（可选）
-
-## 3. 研究方法与代码阅读策略（只读源码，忽略注释）
-
-研究目标：从源码推断设计与行为（不依赖注释），定位关键模块与依赖关系，提取外部 API、生命周期和注入行为。
-
-策略与步骤：
-
-1. 高层目录扫描：先确认顶层模块与入口点。优先阅读 `cullinan/__init__.py`、`app.py`、`application.py`、`config.py`。
-2. 核心子系统定位：定位 IoC/DI 实现位置（通常在 `cullinan/core`）。重点阅读 `core/__init__.py`、`core/provider.py`、`core/registry.py`、`core/scope.py` 等（实际文件名请根据 `cullinan/core` 目录文件列表调整）。
-3. 控制器/路由/中间件：查看 `controller/`、`handler/`、`middleware/` 文件，找到路由注册、处理流程与生命周期钩子。
-4. 模块扫描与自动注册：阅读 `module_scanner.py`、`websocket_registry.py` 等了解自动发现机制与注册时序。
-5. 配置与启动流程：追踪 `application.py` 与 `app.py` 中的 `main`、`start`、`initialize`、`run` 风格函数，形成启动序列图（顺序、依赖）。
-6. 注入点发现：在源码中搜索关键词（`inject`, `provide`, `provider`, `register`, `scope`, `singleton`, `transient`）以定位注入 API 与用法。
-7. 以测试为反证：审阅 `tests/` 下关键测试（如 `test_core_injection.py`、`test_controller_injection_fix.py`、`test_registry.py` 等）来理解期望行为与边界条件（测试是行为规范的最权威来源）。
-8. 依赖图构建：使用静态读取（或简单脚本）列出模块之间 import 关系，绘制简易模块依赖图（帮助撰写架构/组件说明）。
-9. 记录发现：以“事实陈述”记录每个模块的职责、输入输出、生命周期、错误模式。仅基于源码行为，不依赖注释解释。
-
-工具与方法：
-
-- 使用仓库搜索（通过 IDE 或 `rg`/`grep`）定位符号和字符串模式。
-- 阅读关键测试用例以补全理解。
-- 构建小的问答式笔记（模块 -> 责任 -> 与其他模块的交互）供文档写作使用。
-
-注意：不要在文档中改变或鼓励改变现有 IoC/DI 设计；文档只描述/说明、可提出“改进建议”但须作为附录或 issues。
-
-## 4. 任务拆分与里程碑（优先级 + 时间估算）
-
-总体预计时长：6 周（可按资源并行压缩）。时间单位为人天（工作日）。
-
-阶段 A — 发现与大纲（优先级：高，时长：4 人日）
-- A1. 源码快速扫描并生成模块映射（2 人日）
-- A2. 基于映射草拟文档总纲（1 人日）
-- A3. 确认输出格式（Markdown 结构、目录、翻译流程、是否用 Sphinx/ mkdocs 等）（1 人日）
-
-里程碑 A：提交 `docs/outline.md` 与 `docs/zh/outline.md`，包含文件清单与负责人。
-
-阶段 B — 入门与示例（优先级：高，时长：6 人日）
-- B1. 撰写 `Getting Started` 英中版本（2 人日）
-- B2. 设计并实现 2-3 个最小可运行示例到 `examples/`（3 人日）
-- B3. 将示例集成到文档并验证（1 人日）
-
-里程碑 B：`docs/getting_started.md` 与 `examples/` 可被本地用户运行。
-
-阶段 C — 核心 Wiki（架构/组件/生命周期/注入机制/中间件/扩展）（优先级：高，时长：10 人日）
-- C1. `architecture.md`（2 人日）
-- C2. `components.md`（2 人日）
-- C3. `lifecycle.md`（2 人日）
-- C4. `injection.md`（3 人日）
-- C5. `middleware.md` / `extensions.md`（1 人日）
-
-里程碑 C：深度理解并文档化核心设计，同行评审通过。
-
-阶段 D — API 参考与迁移指南（优先级：中，时长：8 人日）
-- D1. 决定 API 参考方式（自动 vs 手工）（0.5 天）
-- D2. 生成或手写所有公共模块的 API 摘要（5 人日）
-- D3. 撰写迁移指南（兼容性/破坏性变化说明）（2.5 人日）
-
-里程碑 D：API 参考完成并可索引；迁移指南覆盖主要变更点。
-
-阶段 E — 贡献/测试/运行说明与本地构建（优先级：中，时长：4 人日）
-- E1. `contributing.md`（1 人日）
-- E2. `testing.md`（1 人日） — 包括如何运行现有测试、如何编写测试、CI 要求
-- E3. `build_run.md`（2 人日） — 包含 Windows PowerShell 指令和虚拟环境步骤
-
-里程碑 E：贡献流程与测试准则就绪。
-
-阶段 F — 翻译、校验、质量门（优先级：高，时长：6 人日）
-- F1. 翻译校对（英->中）并确保 1:1 文件结构（3 人日）
-- F2. 文档内部审校（结构、事实、举例可运行）（2 人日）
-- F3. 最终质量门（运行测试、示例验证、提交 PR）（1 人日）
-
-里程碑 F：双语文档 1:1 对应通过 QA。
-
-总体里程碑时间表（并行可缩短）：
-- 周 1：阶段 A 完成
-- 周 2：阶段 B 开始并完成
-- 周 3-4：阶段 C 完成
-- 周 5：阶段 D 与 E 完成
-- 周 6：阶段 F 验收、发布
-
-## 5. 人员分工建议（示例）
-
-- 1 * 技术作者（主文档撰写） — 负责入门、Wiki 主体、示例文本
-- 1 * 开发工程师（代码研究与示例实现） — 负责源码映射、可运行示例、验证测试
-- 1 * 翻译/本地化（中文校对） — 负责 `docs/zh/` 对应翻译与语境校验
-- 1 * 评审/维护者（架构 & CI 审核） — 负责审稿、CI 合并、质量门签收
-
-## 6. 写作准则（必遵守）
-
-- 文件编码：UTF-8。
-- 目录结构：`docs/` 与 `docs/zh/` 必须 1:1 对应，文件名与相对路径一致。
-- 语言与风格：简洁、事实驱动（以源码行为为准），尽量提供示例和可复制步骤。
-- 禁止在日志或示例输出中使用 emoji（项目规定）。
-- Windows PowerShell 命令示例应符合 Windows PowerShell v5.1 语法；不要使用 `&&` 连接命令；若需要在一行执行多个命令，使用分号 `;`。
-- 文档中引用文件或符号时使用反引号包裹（例如 `cullinan/core`、`application.py`）。
-- 对于 API 参考，明确标注“公有 API”与“内部实现”，鼓励只在公有 API 上建立使用示例。
-- 翻译策略：先完成英文原稿并评审通过，再做中文翻译；始终保持 1:1 内容一致性。
-
-## 7. 校验 / 质量门（Quality Gates）
-
-每个阶段必须通过相应的质量门才能进入下一阶段：
-
-质量门示例：
-- 代码研究完成：提交 `docs/outline.md`，包含模块映射与关键函数列表；至少两位工程师审核同意（签名或 PR 评论）。
-- 示例可运行：`examples/` 中示例可在本地虚拟环境中成功运行（见验证命令）。
-- 单元/集成测试：运行仓库现有测试并确保无回归（见下方命令）。必须至少实现“当前主分支相同或更好”的通过率。
-- 文档审校：每篇文档至少 1 次技术审阅与 1 次语言校对（中文）。
-- 发布前：CI 通过、文档链接完整性检查、示例在 Windows PowerShell 测试通过。
-
-关键校验命令（PowerShell 表示法，单行示例使用 `;` 分隔）：
-- 创建虚拟环境并激活（可选）：请确保你有一个可用的 Python 环境（virtualenv/conda/system Python 等均可），无需在文档中硬性规定激活命令。
-- 安装开发依赖并安装本包（可选 extras）：`pip install -U pip; pip install -e .[dev]` 或 `pip install -e .`
-- 运行测试：`py -3 -m pytest -q`（或 `pytest -q`）
-- 运行单个示例（在 `examples/` 目录）：`py example_script.py` 或 `python -m examples.demo`（取决于示例实现）
-- 检查文档链接/拼写（若使用工具）：`pylint`/`flake8`（代码），`markdownlint`（文档）（按需安装）
-
-## 8. 需要创建的文件结构与模板示例
-
-建议在仓库中新增/填充以下文件（`docs/` 与 `docs/zh/` 必须镜像）：
-
-- `docs/README.md`（文档主页/导航）
-- `docs/getting_started.md`（快速开始 - 环境、安装、运行第一个应用）
-- `docs/examples.md`（示例索引与说明） + `examples/` 目录放示例代码
-- `docs/wiki/architecture.md`（架构总览）
-- `docs/wiki/components.md`（组件责任 & API 摘要）
-- `docs/wiki/lifecycle.md`（应用启动/关闭/生命周期钩子）
-- `docs/wiki/injection.md`（IoC/DI 机制详解）
-- `docs/wiki/middleware.md`（中间件链与扩展点）
-- `docs/api_reference.md`（按模块列出的公有 API）
-- `docs/migration_guide.md`（兼容性与迁移）
-- `docs/contributing.md`（贡献者指南、代码风格、PR 流程）
-- `docs/testing.md`（如何运行现有 tests、写测试、CI 要求）
-- `docs/build_run.md`（在 Windows/Unix 下的本地构建/运行说明）
-- `docs/templates/`（页面模板：标题、概述、示例结构、API 条目格式、翻译对照表）
-
-模板示例（描述而非代码块）：
-- 文档顶部应包含简短 “目的/范围/前提” 三段；随后“示例”部分按“示例说明 / 代码位置 / 运行步骤 / 期望结果”四段模板排列。
-- API 条目模板：模块路径 -> 简短描述 -> 公开类/函数列表（每项：签名、参数说明、返回值、异常 & 使用示例行号引用）。
-- 翻译模板：每个英文文件应带有一份对照清单列出“建议术语翻译”（例如 IoC -> 控制反转, DI -> 依赖注入）。
-
-## 9. 验收标准（验收检查表）
-
-每项文档在交付前必须满足以下条件：
-- 英文与中文文件 1:1 对应（路径与文件名一致，内容等效）。
-- Getting Started：新用户按步骤能在 30 分钟内运行示例并访问应用。
-- Examples：至少包含 2 个可运行示例（最小：Hello World HTTP，进阶：Controller + DI + Middleware 示例）。
-- Wiki：覆盖架构图、组件职责、注入生命周期与错误模型。
-- API 参考：覆盖所有公共模块并提供至少一个使用示例。
-- Migration Guide：列出所有破坏性变更与迁移步骤（若存在）。
-- Contributing：包含代码风格、PR 流程、测试准入门槛。
-- Testing：现有测试在干净环境下 `pytest` 运行通过（与主分支同等或更优）。
-- 文档审阅：至少 2 名技术评审与 1 名文本校对通过。
-- CI/发布：文档构建或静态检查（若使用 mkdocs/sphinx）通过。
-
-## 10. 风险与缓解措施
-
-风险 1：源码理解偏差（只读源码、不看注释可能丢失设计背景）
-- 缓解：用测试用例作为行为规范，必要时在审阅阶段向原作者确认设计意图并记录为“作者说明”附录（非修改源码）。
-
-风险 2：IoC/DI 设计复杂、难以直观表达
-- 缓解：用流程图、顺序图和示例代码演示注入时序；在 `docs/wiki/injection.md` 中增加“常见模式/反模式”。
-
-风险 3：中英翻译不一致或术语不统一
-- 缓解：维护“术语对照表”；先完成英文并审校，再由翻译者对照逐条翻译并复核。
-
-风险 4：示例在 Windows 环境不可运行
-- 缓解：在 Windows PowerShell v5.1 下测试所有示例并在 `build_run.md` 给出 PowerShell 专用命令（使用分号 `;`，避免 `&&`）。
-
-风险 5：自动生成 API 工具配置复杂
-- 缓解：如自动化成本过高，采用半自动化（脚本提取公有符号并生成模板）或手工补全关键模块。
-
-## 11. 必要的命令与工具（PowerShell v5.1 示例说明）
-
-- 建议开发环境工具：Python 3.9+（项目当前要求请核对 `setup.py`）、pytest、mkdocs/sphinx、markdownlint、typora/VSCode（用于校对）、可选：graphviz（画依赖图）。
-- 虚拟环境（示例说明）：如需在本地创建虚拟环境，请参考你的平台和偏好；文档示例统一使用 `pip` 命令假定已可用的 Python 环境。
-- 安装开发依赖：`pip install -U pip; pip install -e .[dev]`（或 `pip install -e .`）
-- 运行测试：`py -3 -m pytest -q`
-- 运行单个示例（示例位于 `examples/hello.py`）：`py examples\\hello.py`
-- 若使用 docs 工具（mkdocs）构建本地预览：`pip install mkdocs mkdocs-material; mkdocs serve`（请在 docs 根目录执行）
-
-## 12. 交付物提交 / 合并流程建议
-
-- 每个阶段完成后提交一个单独 PR（例如 `docs/getting-started`、`docs/wiki-injection` 等），PR 必须包含：变更说明、测试/示例验证步骤、审阅检查清单。
-- 合并前必须通过至少一名代码/架构审阅者与一名文档校对者。
-- 发布文档版本（tag）并在 `README.MD` 中更新到版本链接。
+Brief acceptance checklist (before submission):
+- [x] File saved in UTF-8 encoding, Markdown format.
+- [x] Includes objectives, scope, task breakdown, time estimates, quality gates, and example command descriptions.
+- [x] Explicitly requires `docs/` and `docs/zh/` to be in 1:1 correspondence.
 
 ---
 
-如需将本计划拆分为具体的 `docs/` 文件模板并为每个文件生成初始占位内容（英文 + 中文占位），可继续执行并创建这些文件。请告知是否需要自动创建这些模板文件以及对 API 文档的偏好（自动化工具 vs 手工维护）。
+TL;DR: Write bilingual (English/Chinese) documentation for Cullinan (a Tornado-based IoC/DI framework) with `docs/` and `docs/zh/` in 1:1 correspondence, including getting started, examples, wiki (architecture/components/lifecycle/injection/middleware/extensions), API reference, migration guide, contributing guide, testing and local build instructions. Uses a source-code-driven research strategy (ignoring comments), preserves the existing IoC/DI design, and provides role allocation, milestones, quality gates, and run/verification command examples for PowerShell and other environments.
+
+## 1. Objectives and Audience
+
+- Objective: Provide clear, actionable, bilingual (English/Chinese) documentation for Cullinan to help new users get started quickly, help contributors understand internal design and injection mechanisms, and provide runnable examples and test verification steps.
+- Audience: Library users (application developers), framework contributors/maintainers, code reviewers, automated test engineers.
+
+## 2. Scope and Deliverables
+
+Required deliverables (each must be in 1:1 correspondence under `docs/` and `docs/zh/`):
+
+- `Getting Started` - `docs/getting_started.md` / `docs/zh/getting_started.md`
+- `Examples` - `docs/examples.md` / `docs/zh/examples.md` (with runnable code kept in `examples/` in the repository)
+- `Wiki` (architecture/components/lifecycle/injection/middleware/extensions) - `docs/wiki/architecture.md`, `components.md`, `lifecycle.md`, `injection.md`, `middleware.md`, `extensions.md` (and `docs/zh/wiki/*`)
+- `API Reference` - `docs/api_reference.md` / `docs/zh/api_reference.md` (optionally auto-generated)
+- `Migration Guide` - `docs/migration_guide.md` / `docs/zh/migration_guide.md`
+- `Contributing` - `docs/contributing.md` / `docs/zh/contributing.md`
+- `Testing & Verification` - `docs/testing.md` / `docs/zh/testing.md`
+- `Local Build & Run` - `docs/build_run.md` / `docs/zh/build_run.md`
+- Documentation templates and sample pages (front-matter, code snippet conventions, translation guidelines)
+
+Additional deliverables (recommended):
+
+- `examples/` runnable example collection (lightweight demos)
+- Brief `README.md` update linking to `docs/` pages
+- Documentation CI scripts (optional)
+
+## 3. Research Method and Code Reading Strategy (source-code only, ignoring comments)
+
+Research objective: Infer design and behavior from source code (not relying on comments), locate key modules and dependencies, extract external API, lifecycle, and injection behavior.
+
+Strategy and steps:
+
+1. High-level directory scan: First confirm top-level modules and entry points. Prioritize reading `cullinan/__init__.py`, `app.py`, `application.py`, `config.py`.
+2. Core subsystem location: Locate the IoC/DI implementation (typically in `cullinan/core`). Focus on `core/__init__.py`, `core/provider.py`, `core/registry.py`, `core/scope.py`, etc. (adjust actual file names based on the `cullinan/core` directory listing).
+3. Controllers/routing/middleware: Review `controller/`, `handler/`, `middleware/` files to find route registration, processing flow, and lifecycle hooks.
+4. Module scanning and auto-registration: Read `module_scanner.py`, `websocket_registry.py`, etc. to understand the auto-discovery mechanism and registration timing.
+5. Configuration and startup flow: Trace `main`, `start`, `initialize`, `run` style functions in `application.py` and `app.py` to form a startup sequence diagram (order, dependencies).
+6. Injection point discovery: Search the source code for keywords (`inject`, `provide`, `provider`, `register`, `scope`, `singleton`, `transient`) to locate injection APIs and usage patterns.
+7. Test-based verification: Review key tests under `tests/` (e.g., `test_core_injection.py`, `test_controller_injection_fix.py`, `test_registry.py`) to understand expected behavior and boundary conditions (tests are the most authoritative source of behavior specifications).
+8. Dependency graph construction: Use static reading (or a simple script) to list import relationships between modules and draw a simple module dependency graph (to assist with architecture/component documentation).
+9. Record findings: Record each module's responsibilities, inputs/outputs, lifecycle, and error patterns as "statements of fact." Based solely on source code behavior, not relying on comment explanations.
+
+Tools and methods:
+
+- Use repository search (via IDE or `rg`/`grep`) to locate symbols and string patterns.
+- Read key test cases to supplement understanding.
+- Build small Q&A notes (module -> responsibility -> interaction with other modules) for documentation writing.
+
+Note: Do not change or encourage changing the existing IoC/DI design in the documentation; documentation should only describe/explain, and "improvement suggestions" may be provided as appendices or issues.
+
+## 4. Task Breakdown and Milestones (Priority + Time Estimates)
+
+Total estimated duration: 6 weeks (can be compressed with parallel resources). Time units are person-days (working days).
+
+Phase A - Discovery and Outline (Priority: High, Duration: 4 person-days)
+- A1. Quick source code scan and module map generation (2 person-days)
+- A2. Draft documentation outline based on the map (1 person-day)
+- A3. Confirm output format (Markdown structure, table of contents, translation process, whether to use Sphinx/mkdocs, etc.) (1 person-day)
+
+Milestone A: Submit `docs/outline.md` and `docs/zh/outline.md`, including file list and owners.
+
+Phase B - Getting Started and Examples (Priority: High, Duration: 6 person-days)
+- B1. Write `Getting Started` English and Chinese versions (2 person-days)
+- B2. Design and implement 2-3 minimal runnable examples in `examples/` (3 person-days)
+- B3. Integrate examples into documentation and verify (1 person-day)
+
+Milestone B: `docs/getting_started.md` and `examples/` are runnable by local users.
+
+Phase C - Core Wiki (architecture/components/lifecycle/injection/middleware/extensions) (Priority: High, Duration: 10 person-days)
+- C1. `architecture.md` (2 person-days)
+- C2. `components.md` (2 person-days)
+- C3. `lifecycle.md` (2 person-days)
+- C4. `injection.md` (3 person-days)
+- C5. `middleware.md` / `extensions.md` (1 person-day)
+
+Milestone C: Deep understanding and documentation of core design, peer review passed.
+
+Phase D - API Reference and Migration Guide (Priority: Medium, Duration: 8 person-days)
+- D1. Decide API reference approach (auto vs manual) (0.5 days)
+- D2. Generate or hand-write API summaries for all public modules (5 person-days)
+- D3. Write migration guide (compatibility/breaking change descriptions) (2.5 person-days)
+
+Milestone D: API reference complete and indexable; migration guide covers major change points.
+
+Phase E - Contributing/Testing/Run Instructions and Local Build (Priority: Medium, Duration: 4 person-days)
+- E1. `contributing.md` (1 person-day)
+- E2. `testing.md` (1 person-day) - including how to run existing tests, how to write tests, CI requirements
+- E3. `build_run.md` (2 person-days) - including Windows PowerShell instructions and virtual environment steps
+
+Milestone E: Contribution process and testing guidelines ready.
+
+Phase F - Translation, Verification, Quality Gates (Priority: High, Duration: 6 person-days)
+- F1. Translation proofreading (English -> Chinese) and ensuring 1:1 file structure (3 person-days)
+- F2. Documentation internal review (structure, facts, runnable examples) (2 person-days)
+- F3. Final quality gate (run tests, example verification, submit PR) (1 person-day)
+
+Milestone F: Bilingual documentation 1:1 correspondence passes QA.
+
+Overall milestone timeline (can be shortened with parallelism):
+- Week 1: Phase A complete
+- Week 2: Phase B starts and completes
+- Weeks 3-4: Phase C complete
+- Week 5: Phases D and E complete
+- Week 6: Phase F acceptance and release
+
+## 5. Suggested Role Allocation (Example)
+
+- 1 * Technical Writer (main documentation) - responsible for getting started, wiki body, example text
+- 1 * Development Engineer (code research and example implementation) - responsible for source code mapping, runnable examples, verification tests
+- 1 * Translator/Localization (Chinese proofreading) - responsible for `docs/zh/` translation and context verification
+- 1 * Reviewer/Maintainer (architecture & CI review) - responsible for reviewing, CI merging, quality gate sign-off
+
+## 6. Writing Guidelines (Must Follow)
+
+- File encoding: UTF-8.
+- Directory structure: `docs/` and `docs/zh/` must be in 1:1 correspondence, with identical filenames and relative paths.
+- Language and style: Concise, fact-driven (based on source code behavior), provide examples and copyable steps where possible.
+- No emoji in logs or example outputs (project convention).
+- Windows PowerShell command examples should conform to Windows PowerShell v5.1 syntax; do not use `&&` to chain commands; if you need to execute multiple commands on one line, use semicolons `;`.
+- When referencing files or symbols in documentation, use backticks (e.g., `cullinan/core`, `application.py`).
+- For API references, clearly label "public API" vs "internal implementation," and encourage building usage examples only on public APIs.
+- Translation strategy: Complete the English draft first and pass review, then do the Chinese translation; always maintain 1:1 content consistency.
+
+## 7. Verification / Quality Gates
+
+Each phase must pass the corresponding quality gate before proceeding to the next:
+
+Quality gate examples:
+- Code research complete: Submit `docs/outline.md` with module map and key function list; at least two engineers agree (signature or PR comment).
+- Examples runnable: Examples in `examples/` can run successfully in a local virtual environment (see verification commands).
+- Unit/integration tests: Run existing repository tests and ensure no regression (see commands below). Must achieve at least "same or better" pass rate as the current main branch.
+- Documentation review: Each document undergoes at least 1 technical review and 1 language proofreading (Chinese).
+- Pre-release: CI passes, documentation link integrity check, examples pass on Windows PowerShell.
+
+Key verification commands (PowerShell notation, single-line examples use `;` as separator):
+- Create and activate virtual environment (optional): Ensure you have a usable Python environment (virtualenv/conda/system Python, etc.). No need to hardcode activation commands in documentation.
+- Install development dependencies and install this package (optional extras): `pip install -U pip; pip install -e .[dev]` or `pip install -e .`
+- Run tests: `py -3 -m pytest -q` (or `pytest -q`)
+- Run a single example (in `examples/` directory): `py example_script.py` or `python -m examples.demo` (depending on example implementation)
+- Check documentation links/spelling (if using tools): `pylint`/`flake8` (code), `markdownlint` (documentation) (install as needed)
+
+## 8. File Structure and Template Examples to Create
+
+Recommended new/populated files in the repository (`docs/` and `docs/zh/` must mirror):
+
+- `docs/README.md` (documentation home/navigation)
+- `docs/getting_started.md` (quick start - environment, installation, running first application)
+- `docs/examples.md` (example index and descriptions) + `examples/` directory for example code
+- `docs/wiki/architecture.md` (architecture overview)
+- `docs/wiki/components.md` (component responsibilities & API summary)
+- `docs/wiki/lifecycle.md` (application startup/shutdown/lifecycle hooks)
+- `docs/wiki/injection.md` (IoC/DI mechanism detailed explanation)
+- `docs/wiki/middleware.md` (middleware chain and extension points)
+- `docs/api_reference.md` (public API listed by module)
+- `docs/migration_guide.md` (compatibility and migration)
+- `docs/contributing.md` (contributor guide, code style, PR process)
+- `docs/testing.md` (how to run existing tests, write tests, CI requirements)
+- `docs/build_run.md` (local build/run instructions on Windows/Unix)
+- `docs/templates/` (page templates: title, overview, example structure, API entry format, translation reference table)
+
+Template examples (descriptions, not code blocks):
+- Document top should include a brief "purpose/scope/prerequisites" three-section header; then the "examples" section follows a four-section template of "example description / code location / run steps / expected results."
+- API entry template: module path -> brief description -> public class/function list (each item: signature, parameter description, return value, exceptions & usage example line references).
+- Translation template: Each English file should have a reference checklist listing "suggested term translations" (e.g., IoC -> Inversion of Control, DI -> Dependency Injection).
+
+## 9. Acceptance Criteria (Acceptance Checklist)
+
+Each document must meet the following conditions before delivery:
+- English and Chinese files in 1:1 correspondence (identical paths and filenames, equivalent content).
+- Getting Started: New users can run examples and access the application within 30 minutes following the steps.
+- Examples: At least 2 runnable examples (minimal: Hello World HTTP, advanced: Controller + DI + Middleware example).
+- Wiki: Covers architecture diagram, component responsibilities, injection lifecycle and error model.
+- API Reference: Covers all public modules with at least one usage example.
+- Migration Guide: Lists all breaking changes and migration steps (if any).
+- Contributing: Includes code style, PR process, test admission thresholds.
+- Testing: Existing tests pass with `pytest` in a clean environment (same or better than main branch).
+- Documentation review: At least 2 technical reviews and 1 text proofreading passed.
+- CI/release: Documentation build or static check (if using mkdocs/sphinx) passes.
+
+## 10. Risks and Mitigation
+
+Risk 1: Source code understanding deviation (reading only source code, not comments, may lose design context)
+- Mitigation: Use test cases as behavior specifications; confirm design intent with original authors during review and record as "author notes" appendix (without modifying source code).
+
+Risk 2: IoC/DI design complexity makes it difficult to express intuitively
+- Mitigation: Use flowcharts, sequence diagrams, and example code to demonstrate injection timing; add "common patterns/anti-patterns" in `docs/wiki/injection.md`.
+
+Risk 3: Inconsistent English-Chinese translation or non-unified terminology
+- Mitigation: Maintain a "terminology reference table"; complete English first and review, then translate item by item and verify.
+
+Risk 4: Examples not runnable on Windows
+- Mitigation: Test all examples on Windows PowerShell v5.1 and provide PowerShell-specific commands in `build_run.md` (use semicolons `;`, avoid `&&`).
+
+Risk 5: Auto-generated API tool configuration complexity
+- Mitigation: If automation cost is too high, use semi-automation (script to extract public symbols and generate templates) or manually fill in key modules.
+
+## 11. Required Commands and Tools (PowerShell v5.1 Examples)
+
+- Recommended development environment tools: Python 3.9+ (check `setup.py` for current project requirements), pytest, mkdocs/sphinx, markdownlint, typora/VSCode (for proofreading), optional: graphviz (for dependency diagrams).
+- Virtual environment (example): If you need to create a local virtual environment, refer to your platform and preferences; documentation examples uniformly use `pip` commands assuming an available Python environment.
+- Install development dependencies: `pip install -U pip; pip install -e .[dev]` (or `pip install -e .`)
+- Run tests: `py -3 -m pytest -q`
+- Run a single example (located at `examples/hello.py`): `py examples\hello.py`
+- If using docs tools (mkdocs) to build local preview: `pip install mkdocs mkdocs-material; mkdocs serve` (run in docs root directory)
+
+## 12. Deliverable Submission / Merge Process
+
+- After each phase, submit a separate PR (e.g., `docs/getting-started`, `docs/wiki-injection`, etc.). The PR must include: change description, test/example verification steps, review checklist.
+- Before merging, at least one code/architecture reviewer and one documentation proofreader must approve.
+- Release a documentation version (tag) and update version links in `README.MD`.
+
+---
+
+If you need to break this plan into specific `docs/` file templates and generate initial placeholder content (English + Chinese placeholders) for each file, proceed to create these template files and specify your preference for API documentation (automation tool vs manual maintenance).

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""兼容转发到统一 ScopeManager。"""
+"""Compatibility forward to unified ScopeManager."""
 
 from ..scope_manager import RequestScope, ScopeManager, SingletonScope, PrototypeScope
 

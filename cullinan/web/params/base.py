@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Parameter Base Classes
 
-定义参数标记类的基础设施。
+Defines the infrastructure for parameter marker classes.
 
 Author: Cullinan
 """
@@ -10,10 +10,10 @@ from typing import Any, List, Optional, Type, Union
 
 
 class _UNSET:
-    """哨兵类，表示未设置的值
+    """Sentinel class representing an unset value
 
-    用于区分"未设置"和"设置为 None"的情况。
-    使用单例模式确保全局唯一。
+    Used to distinguish between "not set" and "set to None".
+    Uses singleton pattern to ensure global uniqueness.
     """
     _instance = None
 
@@ -35,40 +35,40 @@ class _UNSET:
         return self
 
 
-# 全局 UNSET 单例
+# Global UNSET singleton
 UNSET = _UNSET()
 
 
 class Param:
-    """参数标记基类
+    """Parameter marker base class
 
-    所有参数类型 (Path, Query, Body, Header, File) 的基类。
-    用于在函数签名中标记参数的来源和约束。
+    Base class for all parameter types (Path, Query, Body, Header, File).
+    Used to mark the source and constraints of parameters in function signatures.
 
     Attributes:
-        name: 参数名称 (默认使用函数参数名)
-        type_: 目标类型
-        required: 是否必填
-        default: 默认值
-        description: 参数描述
-        alias: 别名 (从请求中读取时使用的键名)
+        name: Parameter name (defaults to function parameter name)
+        type_: Target type
+        required: Whether required
+        default: Default value
+        description: Parameter description
+        alias: Alias (key name used when reading from request)
 
     Validator Attributes:
-        ge: 大于等于 (数值类型)
-        le: 小于等于 (数值类型)
-        gt: 大于 (数值类型)
-        lt: 小于 (数值类型)
-        min_length: 最小长度 (字符串/列表)
-        max_length: 最大长度 (字符串/列表)
-        regex: 正则表达式 (字符串)
+        ge: Greater than or equal (numeric types)
+        le: Less than or equal (numeric types)
+        gt: Greater than (numeric types)
+        lt: Less than (numeric types)
+        min_length: Minimum length (string/list)
+        max_length: Maximum length (string/list)
+        regex: Regular expression (string)
 
     Example:
-        # 作为类型注解使用
+        # Used as type annotation
         @get_api(url="/users/{id}")
         async def get_user(self, id: Path(int), verbose: Query(bool, default=False)):
             pass
 
-        # 直接实例化
+        # Direct instantiation
         param = Param(int, name='age', required=True, ge=0, le=150)
     """
 
@@ -78,7 +78,7 @@ class Param:
         '_validators'
     )
 
-    # 参数来源标识 (子类重写)
+    # Parameter source identifier (overridden by subclasses)
     _source: str = 'unknown'
 
     def __init__(
@@ -90,33 +90,33 @@ class Param:
         default: Any = UNSET,
         description: str = '',
         alias: str = None,
-        # 数值约束
+        # Numeric constraints
         ge: Union[int, float, None] = None,
         le: Union[int, float, None] = None,
         gt: Union[int, float, None] = None,
         lt: Union[int, float, None] = None,
-        # 长度约束
+        # Length constraints
         min_length: Optional[int] = None,
         max_length: Optional[int] = None,
-        # 正则约束
+        # Regex constraint
         regex: Optional[str] = None,
     ):
-        """初始化参数标记
+        """Initialize parameter marker
 
         Args:
-            type_: 目标类型 (默认 str)
-            name: 参数名称 (默认使用函数参数名)
-            required: 是否必填 (有默认值时自动为 False)
-            default: 默认值
-            description: 参数描述 (用于文档生成)
-            alias: 别名 (从请求中读取时使用的键名)
-            ge: 大于等于约束
-            le: 小于等于约束
-            gt: 大于约束
-            lt: 小于约束
-            min_length: 最小长度约束
-            max_length: 最大长度约束
-            regex: 正则表达式约束
+            type_: Target type (default str)
+            name: Parameter name (defaults to function parameter name)
+            required: Whether required (automatically False when default value is provided)
+            default: Default value
+            description: Parameter description (for documentation generation)
+            alias: Alias (key name used when reading from request)
+            ge: Greater-than-or-equal constraint
+            le: Less-than-or-equal constraint
+            gt: Greater-than constraint
+            lt: Less-than constraint
+            min_length: Minimum length constraint
+            max_length: Maximum length constraint
+            regex: Regular expression constraint
         """
         self.name = name
         self.type_ = type_
@@ -124,13 +124,13 @@ class Param:
         self.description = description
         self.alias = alias
 
-        # 如果有默认值，则不是必填
+        # If has default value, not required
         if default is not UNSET:
             self.required = False
         else:
             self.required = required
 
-        # 存储约束条件
+        # Store constraints
         self.ge = ge
         self.le = le
         self.gt = gt
@@ -139,26 +139,26 @@ class Param:
         self.max_length = max_length
         self.regex = regex
 
-        # 延迟构建验证器
+        # Lazy-build validators
         self._validators = None
 
     @property
     def source(self) -> str:
-        """返回参数来源标识"""
+        """Return parameter source identifier"""
         return self._source
 
     def get_validators(self) -> List[tuple]:
-        """获取验证器列表 (延迟构建)
+        """Get validator list (lazy-built)
 
         Returns:
-            验证器列表，每项为 (validator_name, value) 元组
+            List of validators, each as a (validator_name, value) tuple
         """
         if self._validators is None:
             self._validators = self._build_validators()
         return self._validators
 
     def _build_validators(self) -> List[tuple]:
-        """构建验证器列表"""
+        """Build validator list"""
         validators = []
 
         if self.ge is not None:
@@ -179,14 +179,14 @@ class Param:
         return validators
 
     def has_default(self) -> bool:
-        """检查是否有默认值"""
+        """Check if has a default value"""
         return self.default is not UNSET
 
     def get_default(self) -> Any:
-        """获取默认值
+        """Get default value
 
         Returns:
-            默认值，如果未设置则返回 None
+            Default value, or None if not set
         """
         if self.default is UNSET:
             return None
@@ -220,19 +220,19 @@ class Param:
 
     @classmethod
     def as_required(cls, type_: Type = str, **kwargs) -> 'Param':
-        """创建必填参数的快捷方法
+        """Shortcut method to create a required parameter
 
         Example:
-            # 以下两种写法等价
+            # The following two forms are equivalent
             avatar: File = File.as_required(max_size=5*1024*1024)
             avatar: File = File(required=True, max_size=5*1024*1024)
 
         Args:
-            type_: 目标类型 (默认 str)
-            **kwargs: 其他参数配置
+            type_: Target type (default str)
+            **kwargs: Other parameter configuration
 
         Returns:
-            设置了 required=True 的 Param 实例
+            Param instance with required=True
         """
         kwargs['required'] = True
         return cls(type_, **kwargs)

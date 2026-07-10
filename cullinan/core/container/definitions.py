@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""兼容转发到统一 Definition 模型。"""
+"""Compatibility forward to unified Definition model."""
 
 from ..definitions import ComponentDefinition, Definition, ScopeType
 

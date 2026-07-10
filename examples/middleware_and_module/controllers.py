@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 @controller(url="/inventory")
 class InventoryController:
-    inventory_service: InventoryService  # ← 构造注入
+    inventory_service: InventoryService  # ← constructor injection
 
     @get_api(url="/summary")
     def summary(self):

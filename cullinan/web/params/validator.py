@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Parameter Validator
 
-参数校验器，验证参数值是否满足约束条件。
+Parameter validator, validates whether parameter values satisfy constraints.
 
 Author: Cullinan
 """
@@ -11,13 +11,13 @@ from typing import Any, List, Tuple
 
 
 class ValidationError(Exception):
-    """参数校验错误
+    """Parameter validation error
 
     Attributes:
-        message: 错误消息
-        param_name: 参数名
-        value: 原始值
-        constraint: 约束条件
+        message: Error message
+        param_name: Parameter name
+        value: Original value
+        constraint: Constraint condition
     """
 
     def __init__(
@@ -37,7 +37,7 @@ class ValidationError(Exception):
         return f"ValidationError({self.message!r}, param={self.param_name!r})"
 
     def to_dict(self) -> dict:
-        """转换为字典格式"""
+        """Convert to dict format"""
         return {
             'message': self.message,
             'param': self.param_name,
@@ -47,28 +47,28 @@ class ValidationError(Exception):
 
 
 class ParamValidator:
-    """参数校验器
+    """Parameter validator
 
-    根据验证规则校验参数值。
+    Validates parameter values according to validation rules.
 
-    支持的校验规则:
-    - required: 必填
-    - ge: 大于等于
-    - le: 小于等于
-    - gt: 大于
-    - lt: 小于
-    - min_length: 最小长度
-    - max_length: 最大长度
-    - regex: 正则表达式
+    Supported validation rules:
+    - required: Required
+    - ge: Greater than or equal
+    - le: Less than or equal
+    - gt: Greater than
+    - lt: Less than
+    - min_length: Minimum length
+    - max_length: Maximum length
+    - regex: Regular expression
 
     Example:
         validator = ParamValidator()
 
-        # 单个校验
+        # Single validation
         validator.validate_ge(10, 5, 'age')  # OK
         validator.validate_ge(3, 5, 'age')   # raises ValidationError
 
-        # 批量校验
+        # Batch validation
         validators = [('ge', 0), ('le', 100)]
         validator.validate(50, validators, 'score')  # OK
     """
@@ -80,15 +80,15 @@ class ParamValidator:
         validators: List[Tuple[str, Any]],
         param_name: str = None
     ) -> None:
-        """批量校验参数值
+        """Batch validate parameter value
 
         Args:
-            value: 参数值
-            validators: 校验规则列表，每项为 (rule_name, rule_value)
-            param_name: 参数名 (用于错误消息)
+            value: Parameter value
+            validators: List of validation rules, each item is (rule_name, rule_value)
+            param_name: Parameter name (for error messages)
 
         Raises:
-            ValidationError: 校验失败
+            ValidationError: Validation failed
         """
         for rule_name, rule_value in validators:
             method = getattr(cls, f'validate_{rule_name}', None)
@@ -104,15 +104,15 @@ class ParamValidator:
         required: bool,
         param_name: str = None
     ) -> None:
-        """校验必填
+        """Validate required
 
         Args:
-            value: 参数值
-            required: 是否必填
-            param_name: 参数名
+            value: Parameter value
+            required: Whether required
+            param_name: Parameter name
 
         Raises:
-            ValidationError: 值为 None 但必填
+            ValidationError: Value is None but required
         """
         if required and value is None:
             raise ValidationError(
@@ -129,12 +129,12 @@ class ParamValidator:
         min_value: float,
         param_name: str = None
     ) -> None:
-        """校验大于等于
+        """Validate greater than or equal
 
         Args:
-            value: 参数值
-            min_value: 最小值
-            param_name: 参数名
+            value: Parameter value
+            min_value: Minimum value
+            param_name: Parameter name
         """
         if value is None:
             return
@@ -153,12 +153,12 @@ class ParamValidator:
         max_value: float,
         param_name: str = None
     ) -> None:
-        """校验小于等于
+        """Validate less than or equal
 
         Args:
-            value: 参数值
-            max_value: 最大值
-            param_name: 参数名
+            value: Parameter value
+            max_value: Maximum value
+            param_name: Parameter name
         """
         if value is None:
             return
@@ -177,12 +177,12 @@ class ParamValidator:
         min_value: float,
         param_name: str = None
     ) -> None:
-        """校验大于
+        """Validate greater than
 
         Args:
-            value: 参数值
-            min_value: 最小值 (不含)
-            param_name: 参数名
+            value: Parameter value
+            min_value: Minimum value (exclusive)
+            param_name: Parameter name
         """
         if value is None:
             return
@@ -201,12 +201,12 @@ class ParamValidator:
         max_value: float,
         param_name: str = None
     ) -> None:
-        """校验小于
+        """Validate less than
 
         Args:
-            value: 参数值
-            max_value: 最大值 (不含)
-            param_name: 参数名
+            value: Parameter value
+            max_value: Maximum value (exclusive)
+            param_name: Parameter name
         """
         if value is None:
             return
@@ -225,12 +225,12 @@ class ParamValidator:
         min_length: int,
         param_name: str = None
     ) -> None:
-        """校验最小长度
+        """Validate minimum length
 
         Args:
-            value: 参数值 (字符串或列表)
-            min_length: 最小长度
-            param_name: 参数名
+            value: Parameter value (string or list)
+            min_length: Minimum length
+            param_name: Parameter name
         """
         if value is None:
             return
@@ -249,12 +249,12 @@ class ParamValidator:
         max_length: int,
         param_name: str = None
     ) -> None:
-        """校验最大长度
+        """Validate maximum length
 
         Args:
-            value: 参数值 (字符串或列表)
-            max_length: 最大长度
-            param_name: 参数名
+            value: Parameter value (string or list)
+            max_length: Maximum length
+            param_name: Parameter name
         """
         if value is None:
             return
@@ -273,12 +273,12 @@ class ParamValidator:
         pattern: str,
         param_name: str = None
     ) -> None:
-        """校验正则表达式
+        """Validate regex
 
         Args:
-            value: 参数值
-            pattern: 正则表达式
-            param_name: 参数名
+            value: Parameter value
+            pattern: Regular expression
+            param_name: Parameter name
         """
         if value is None:
             return
@@ -294,19 +294,19 @@ class ParamValidator:
 
     @classmethod
     def validate_param(cls, param, value: Any, name: str = None) -> None:
-        """根据 Param 对象校验值
+        """Validate value based on a Param object
 
         Args:
-            param: Param 实例
-            value: 参数值
-            name: 参数名 (覆盖 param.name)
+            param: Param instance
+            value: Parameter value
+            name: Parameter name (overrides param.name)
 
         Raises:
-            ValidationError: 校验失败
+            ValidationError: Validation failed
         """
         param_name = name or param.name
 
-        # 必填校验
+        # Required validation
         if param.required and value is None:
             raise ValidationError(
                 f"Parameter '{param_name}' is required",
@@ -315,7 +315,7 @@ class ParamValidator:
                 constraint='required'
             )
 
-        # 获取并执行所有验证器
+        # Get and execute all validators
         validators = param.get_validators()
         if validators:
             cls.validate(value, validators, param_name)

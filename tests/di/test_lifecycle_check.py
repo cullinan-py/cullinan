@@ -1,4 +1,4 @@
-"""验证 Service 生命周期钩子会在容器生命周期内触发。"""
+"""Verify that Service lifecycle hooks are triggered during container lifecycle."""
 
 import pytest
 

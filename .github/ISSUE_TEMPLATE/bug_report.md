@@ -1,27 +1,27 @@
 ---
-name: Bug report / 缺陷反馈
-about: Report a defect in Cullinan / 报告 Cullinan 的缺陷
+name: Bug report
+about: Report a defect in Cullinan
 title: "[bug] "
 labels: bug
 ---
 
-## Description / 问题描述
+## Description
 
-<!-- What happened vs. what you expected. 实际 vs 预期。 -->
+<!-- What happened vs. what you expected. -->
 
-## Environment / 环境
+## Environment
 
-- Cullinan version / 版本:
-- Python version / Python 版本:
-- Engine / 引擎: <!-- Tornado | ASGI -->
-- OS / 操作系统:
+- Cullinan version:
+- Python version:
+- Engine: <!-- Tornado | ASGI -->
+- OS:
 
-## Minimal reproduction / 最小复现
+## Minimal reproduction
 
 ```python
 # smallest code that reproduces the issue
 ```
 
-## Logs / 日志
+## Logs
 
-<!-- Relevant traceback or log output. 相关堆栈或日志。 -->
+<!-- Relevant traceback or log output. -->

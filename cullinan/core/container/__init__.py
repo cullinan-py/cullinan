@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""兼容导入入口，统一转发到 cullinan.core。"""
+"""Compatibility import entry, forwards to unified cullinan.core."""
 
 from ..application_context import ApplicationContext, ContainerState
 from ..definitions import Definition, ScopeType

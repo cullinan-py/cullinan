@@ -210,11 +210,11 @@ def _get_cached_param_mapping(func: Callable) -> Tuple[list, bool, bool]:
 
 class ResponseProxy:
     """
-    contextvars `ContextVar` 代理，用作模块级的 response。
-    - push(resp) 绑定实例，返回 token（用于 reset）
-    - pop(token) 恢复上下文
-    - get() 获取当前实例（可能为 None）
-    - __getattr__ 委托到当前实例，便于原有代码直接调用 response.xxx
+    contextvars `ContextVar` proxy, used as the module-level response.
+    - push(resp) binds the instance, returns a token (used for reset)
+    - pop(token) restores the context
+    - get() gets the current instance (may be None)
+    - __getattr__ delegates to the current instance, so existing code can call response.xxx directly
     """
     def __init__(self):
         self._ctx = contextvars.ContextVar("cullinan_response", default=None)
@@ -243,12 +243,12 @@ class ResponseProxy:
 
 class LazyResponseMeta(type):
     """
-    元类：把模块名 `response` 当作惰性代理类对象。
-    - 不在导入时实例化真实代理
-    - 第一次读取或写入非私有成员时创建并缓存 ResponseProxy 实例
+    Metaclass: treats the module name `response` as a lazy proxy class object.
+    - Does not instantiate the real proxy at import time
+    - Creates and caches a ResponseProxy instance on first read or write of a non-private member
     """
     def __getattribute__(cls, name):
-        # 私有或元属性仍使用类自身
+        # Private or meta attributes still use the class itself
         if name.startswith('_'):
             return super().__getattribute__(name)
         inst = cls.__dict__.get('_instance', None)
@@ -273,9 +273,9 @@ class LazyResponseMeta(type):
         return repr(inst)
 
 
-# 模块级名为 `response` 的惰性代理类（*不是实例*，避免导入时的副作用）
+# Module-level lazy proxy class named `response` (*not an instance*, to avoid side effects at import time)
 class response(metaclass=LazyResponseMeta):
-    """惰性响应代理类（模块级名，行为等同于原先的 ResponseProxy 实例）"""
+    """Lazy response proxy class (module-level name, behaves identically to the original ResponseProxy instance)"""
 
     # Stubs to help static analysis / IDEs detect available methods (runtime is handled by metaclass).
     def push(self, resp):
@@ -296,20 +296,20 @@ class response(metaclass=LazyResponseMeta):
 class EncapsulationHandler(object):
     @classmethod
     def set_fragment_method(cls, cls_obj: Any, func: Callable[[object, tuple, dict], None]):
-        """将函数包装为异步方法并绑定到类上。
+        """Wraps a function as an async method and binds it to the class.
 
-        统一使用 async def wrapper，运行时检查结果是否需要 await。
-        这确保了无论原函数是同步还是异步，都能正确处理。
+        Uses a unified async def wrapper, checks at runtime whether the result needs to be awaited.
+        This ensures correct handling whether the original function is sync or async.
 
-        CRITICAL FIX: 使用统一的 async wrapper + inspect.isawaitable() 运行时检查
-        - 简化逻辑，避免分支判断
-        - 使用 isawaitable() 覆盖所有可等待对象类型
-        - Tornado 完全支持这种统一异步的方式
+        CRITICAL FIX: Uses a unified async wrapper + inspect.isawaitable() runtime check
+        - Simplifies logic, avoids branch conditions
+        - Uses isawaitable() to cover all awaitable object types
+        - Tornado fully supports this unified async approach
         """
         @functools.wraps(func)
         async def dummy(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
-            # 检查结果是否为可等待对象（coroutine, generator-based coroutine, custom awaitable, Future）
+            # Check if result is an awaitable (coroutine, generator-based coroutine, custom awaitable, Future)
             if inspect.isawaitable(result):
                 result = await result
             return result
@@ -641,8 +641,8 @@ async def request_handler(self, func: Callable, params: Tuple, headers: Optional
     global controller_self
     start_time = time.time()
 
-    # [HOT] 关键修复：从工厂获取 Controller 类并实例化
-    # 这样 @injectable 会自动注入依赖，InjectByName 描述符会正常工作
+    # [HOT] Critical fix: get Controller class from factory and instantiate
+    # This way @injectable auto-injects dependencies, and InjectByName descriptor works properly
     if type == 'get':
         controller_factory = getattr(self, 'get_controller_factory', None) or getattr(self, 'get_controller_self', None)
     elif type == 'post':
@@ -667,9 +667,9 @@ async def request_handler(self, func: Callable, params: Tuple, headers: Optional
             details={"type": type}
         )
 
-    # [SINGLETON] 从 ControllerRegistry 获取单例实例
-    # 而不是每次请求都创建新实例
-    # @injectable 会在首次创建时自动注入依赖
+    # [SINGLETON] Get singleton instance from ControllerRegistry
+    # Instead of creating a new instance per request
+    # @injectable auto-injects dependencies on first creation
     try:
         controller_registry = get_controller_registry()
         controller_name = controller_factory.__name__
@@ -691,7 +691,7 @@ async def request_handler(self, func: Callable, params: Tuple, headers: Optional
             details={"controller": controller_factory.__name__, "error": str(e)}
         )
 
-    # 注入 service 与 module-level proxy（controller 方法仍可通过 self.response 访问）
+    # Inject service and module-level proxy (controller methods can still access self.response)
     # Use new service registry - provide instance dict access for backward compatibility
     service_registry = get_service_registry()
     setattr(controller_self, 'service', service_registry.list_instances())
@@ -719,7 +719,7 @@ async def request_handler(self, func: Callable, params: Tuple, headers: Optional
     if resp_instance is None:
         resp_instance = _SimpleResponse()
 
-    # 绑定到 contextvars，返回 token
+    # Bind to contextvars, return token
     token = response.push(resp_instance)
 
     # Initialize resp_obj to avoid UnboundLocalError in exception handler
@@ -864,23 +864,23 @@ async def request_handler(self, func: Callable, params: Tuple, headers: Optional
                 else:
                     param_list.append(None)
 
-        # 调用目标函数
+        # Call the target function
         response_ret = func(controller_self, *param_list) if len(param_list) > 0 else func(controller_self)
 
-        # [FIX CRITICAL] 检测并 await 异步协程
-        # 如果 controller 方法是 async def，func() 返回 coroutine 对象
-        # 必须 await 才能真正执行异步代码
-        # 使用 inspect.isawaitable 来覆盖所有可等待对象（coroutine, generator-based coroutine, awaitable）
+        # [FIX CRITICAL] Detect and await async coroutines
+        # If controller method is async def, func() returns a coroutine object
+        # Must await to actually execute the async code
+        # Use inspect.isawaitable to cover all awaitable objects (coroutine, generator-based coroutine, awaitable)
         if inspect.isawaitable(response_ret):
             response_ret = await response_ret
 
-        # 返回值优先，否则使用 context 中绑定的实例
+        # Return value takes priority, otherwise use the instance bound in context
         if response_ret is not None and hasattr(response_ret, "get_headers") and hasattr(response_ret, "get_status") and hasattr(response_ret, "get_body"):
             resp_obj = response_ret
         else:
             resp_obj = response.get()
 
-        # 写出 headers/status/body（使用 header registry）
+        # Write out headers/status/body (using header registry)
         header_registry = get_header_registry()
         if header_registry.has_headers():
             for header in header_registry.get_headers():
@@ -928,7 +928,7 @@ async def request_handler(self, func: Callable, params: Tuple, headers: Optional
             return_pooled_response(resp_instance)
         except Exception:
             pass
-        # 一定要 pop，避免污染下一个请求/扫描
+        # Must pop to avoid polluting the next request/scan
         response.pop(token)
 
 

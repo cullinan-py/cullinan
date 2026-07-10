@@ -10,8 +10,8 @@ Author: Cullinan
 """
 
 # ============================================================================
-# BACKWARD_COMPAT: v0.8 - 以下代码用于向后兼容，计划在 v1.0 移除
-# 替代方案：使用 @middleware 装饰器代替手动注册
+# BACKWARD_COMPAT: v0.8 - The following code is for backward compatibility, planned for removal in v1.0
+# Alternative: Use the @middleware decorator instead of manual registration
 # ============================================================================
 
 import logging
@@ -29,14 +29,14 @@ logger = logging.getLogger(__name__)
 def register_middleware_manual(middleware_class: Type,
                               priority: int = 100,
                               name: Optional[str] = None):
-    """手动注册中间件（已废弃）.
+    """Manually register middleware (deprecated).
 
-    此函数已废弃，建议使用 @middleware 装饰器。
+    This function is deprecated. Use the @middleware decorator instead.
 
     Args:
-        middleware_class: 中间件类
-        priority: 优先级
-        name: 可选的名称
+        middleware_class: Middleware class
+        priority: Priority
+        name: Optional name
 
     Example (DEPRECATED):
         >>> register_middleware_manual(MyMiddleware, priority=50)
@@ -64,10 +64,10 @@ def register_middleware_manual(middleware_class: Type,
     removal_version="1.0"
 )
 def get_registered_middlewares():
-    """获取所有已注册的中间件（已废弃）.
+    """Get all registered middleware (deprecated).
 
     Returns:
-        所有已注册的中间件列表
+        List of all registered middleware
     """
     from cullinan.web.middleware.registry import get_middleware_registry
 

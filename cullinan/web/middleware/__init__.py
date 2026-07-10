@@ -22,8 +22,8 @@ from .body_decoder import (
 
 # ============================================================================
 # BACKWARD_COMPAT: v0.8 - Legacy middleware registration API
-# 替代方案：使用 @middleware 装饰器
-# 计划移除版本：v1.0
+# Alternative: use the @middleware decorator
+# Planned removal: v1.0
 # ============================================================================
 from .legacy import (
     register_middleware_manual,

@@ -40,7 +40,7 @@ def test_application_facade_exports_runtime_context_helpers():
 
 
 def test_warn_semantic_once_concurrent_dedup():
-    """测试：20 线程对同一 key 调用 warn_semantic_once 仅触发 1 次 warning（Issue 13 修复验证）"""
+    """Test: 20 threads calling warn_semantic_once with same key triggers only 1 warning (Issue 13 fix verification)"""
     import threading
     import warnings
     from cullinan.core.semantic_rules import warn_semantic_once, reset_semantic_warnings, CullinanSemanticWarning
@@ -49,7 +49,7 @@ def test_warn_semantic_once_concurrent_dedup():
     warning_count = [0]
     count_lock = threading.Lock()
 
-    # 捕获 warning 计数
+    # Capture warning count
     def warning_handler(message, category, filename, lineno, file=None, line=None):
         with count_lock:
             warning_count[0] += 1
@@ -81,7 +81,7 @@ def test_warn_semantic_once_concurrent_dedup():
         t.join()
 
     assert len(errors) == 0, f"Errors: {errors}"
-    # 所有线程中最多仅 1 个应实际触发 warning
+    # At most 1 thread across all threads should actually trigger warning
     assert warning_count[0] <= 1, (
         f"Expected at most 1 warning, got {warning_count[0]}"
     )

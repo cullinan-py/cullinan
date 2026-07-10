@@ -122,47 +122,47 @@ class TestModuleScannerIntegration(unittest.TestCase):
 
 
 class TestModuleCacheInvalidation(unittest.TestCase):
-    """测试模块扫描缓存失效 API（Issue 4 修复验证）"""
+    """Test module scanning cache invalidation API (Issue 4 fix verification)"""
 
     def test_invalidate_clears_cache(self):
-        """验证：invalidate_module_cache 清除缓存后，file_list_func 重新扫描"""
+        """Verify: invalidate_module_cache clears cache so file_list_func rescans"""
         import cullinan.runtime.module_scanner as ms
 
-        # 第一次调用，填充缓存
+        # First call, fills cache
         first_result = ms.file_list_func()
         self.assertIsNotNone(ms._module_list_cache)
         self.assertEqual(first_result, ms._module_list_cache)
 
-        # 失效缓存
+        # Invalidate cache
         ms.invalidate_module_cache()
         self.assertIsNone(ms._module_list_cache)
 
-        # 第二次调用，应重新扫描（结果与第一次相同或更新）
+        # Second call, should rescan (result same as or newer than first)
         second_result = ms.file_list_func()
         self.assertIsNotNone(ms._module_list_cache)
         self.assertEqual(second_result, ms._module_list_cache)
-        # 在稳定环境中，两次结果应一致
+        # In a stable environment, both results should be identical
         self.assertEqual(first_result, second_result)
 
     def test_invalidate_importable_from_runtime(self):
-        """验证：invalidate_module_cache 可从 cullinan.runtime 导入"""
+        """Verify: invalidate_module_cache is importable from cullinan.runtime"""
         from cullinan.runtime import invalidate_module_cache
         self.assertTrue(callable(invalidate_module_cache))
 
     def test_get_caller_package_with_fallback(self):
-        """验证：get_caller_package 支持 fallback_package 参数"""
+        """Verify: get_caller_package supports fallback_package parameter"""
         from cullinan.runtime.module_scanner import get_caller_package
 
         result = get_caller_package(fallback_package="test_fallback")
         self.assertIsInstance(result, str)
-        # 在测试环境中应返回实际 caller package 或 fallback
+        # In test environment, should return actual caller package or fallback
         self.assertTrue(len(result) > 0)
 
     def test_get_caller_package_uses_getframe(self):
-        """验证：get_caller_package 使用 sys._getframe() 优化路径"""
+        """Verify: get_caller_package uses sys._getframe() optimized path"""
         from cullinan.runtime.module_scanner import get_caller_package
 
-        # 基本调用不抛异常即验证 _getframe 路径可用
+        # Basic call not raising exception verifies _getframe path works
         result = get_caller_package(fallback_package="fallback_test")
         self.assertIsInstance(result, str)
 

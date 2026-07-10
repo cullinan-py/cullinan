@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Cullinan IoC/DI 2.0 - Request Scope 测试
+"""Cullinan IoC/DI 2.0 - Request Scope Tests
 
-作者：Cullinan
+Author: Cullinan
 
-测试 PR-R6 的最小验收集合：
-1. 无 RequestContext 解析 request scope：抛 ScopeNotActiveError
-2. 不同 RequestContext 下实例隔离
+Minimal acceptance test set for PR-R6:
+1. Resolving request scope without RequestContext: raises ScopeNotActiveError
+2. Instance isolation across different RequestContexts
 """
 
 import unittest
@@ -22,7 +22,7 @@ from cullinan.core.diagnostics import ScopeNotActiveError
 
 
 class RequestScopedService:
-    """用于测试的 request scope 服务"""
+    """Request scope service for testing"""
 
     instance_count = 0
 
@@ -32,13 +32,13 @@ class RequestScopedService:
 
 
 class TestRequestScopeBasics(unittest.TestCase):
-    """Request Scope 基础功能测试"""
+    """Request Scope basic functionality tests"""
 
     def setUp(self):
         RequestScopedService.instance_count = 0
 
     def test_request_scope_without_context_raises_error(self):
-        """无 RequestContext 解析 request scope 抛 ScopeNotActiveError"""
+        """Resolving request scope without RequestContext raises ScopeNotActiveError"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -50,7 +50,7 @@ class TestRequestScopeBasics(unittest.TestCase):
 
         ctx.refresh()
 
-        # 没有进入 request context 时应该抛出 ScopeNotActiveError
+        # Without entering request context, should raise ScopeNotActiveError
         with self.assertRaises(ScopeNotActiveError) as cm:
             ctx.get('RequestService')
 
@@ -59,7 +59,7 @@ class TestRequestScopeBasics(unittest.TestCase):
         self.assertEqual(exc.dependency_name, 'RequestService')
 
     def test_request_scope_with_context_succeeds(self):
-        """有 RequestContext 时 request scope 解析成功"""
+        """With RequestContext, request scope resolves successfully"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -71,7 +71,7 @@ class TestRequestScopeBasics(unittest.TestCase):
 
         ctx.refresh()
 
-        # 进入 request context
+        # Enter request context
         ctx.enter_request_context()
         try:
             instance = ctx.get('RequestService')
@@ -81,7 +81,7 @@ class TestRequestScopeBasics(unittest.TestCase):
             ctx.exit_request_context()
 
     def test_same_request_context_returns_same_instance(self):
-        """同一 request context 内返回同一实例"""
+        """Same request context returns the same instance"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -104,7 +104,7 @@ class TestRequestScopeBasics(unittest.TestCase):
             ctx.exit_request_context()
 
     def test_different_request_contexts_return_different_instances(self):
-        """不同 request context 返回不同实例"""
+        """Different request contexts return different instances"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -116,14 +116,14 @@ class TestRequestScopeBasics(unittest.TestCase):
 
         ctx.refresh()
 
-        # 第一个请求
+        # First request
         ctx.enter_request_context()
         try:
             instance1 = ctx.get('RequestService')
         finally:
             ctx.exit_request_context()
 
-        # 第二个请求
+        # Second request
         ctx.enter_request_context()
         try:
             instance2 = ctx.get('RequestService')
@@ -135,7 +135,7 @@ class TestRequestScopeBasics(unittest.TestCase):
         self.assertEqual(RequestScopedService.instance_count, 2)
 
     def test_is_request_active_returns_correct_value(self):
-        """is_request_active 正确反映状态"""
+        """is_request_active correctly reflects state"""
         ctx = ApplicationContext()
         ctx.refresh()
 
@@ -149,13 +149,13 @@ class TestRequestScopeBasics(unittest.TestCase):
 
 
 class TestRequestScopeConcurrency(unittest.TestCase):
-    """Request Scope 并发测试"""
+    """Request Scope concurrency tests"""
 
     def setUp(self):
         RequestScopedService.instance_count = 0
 
     def test_concurrent_requests_are_isolated(self):
-        """并发请求下 request scope 实例隔离"""
+        """Concurrent requests isolate request scope instances"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -177,21 +177,21 @@ class TestRequestScopeConcurrency(unittest.TestCase):
             finally:
                 ctx.exit_request_context()
 
-        # 使用线程池模拟并发请求
+        # Use thread pool to simulate concurrent requests
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(make_request, i) for i in range(5)]
             concurrent.futures.wait(futures)
 
-        # 应该有 5 个不同的实例
+        # Should have 5 different instances
         self.assertEqual(len(results), 5)
         self.assertEqual(len(set(results.values())), 5)
 
 
 class TestTryGetWithRequestScope(unittest.TestCase):
-    """try_get 与 request scope 的交互测试"""
+    """try_get interaction with request scope tests"""
 
     def test_try_get_request_scope_without_context_raises_error(self):
-        """try_get 在无 context 时对 request scope 仍应抛出 ScopeNotActiveError"""
+        """try_get for request scope without context should still raise ScopeNotActiveError"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -203,6 +203,6 @@ class TestTryGetWithRequestScope(unittest.TestCase):
 
         ctx.refresh()
 
-        # 按照 2.6.3 Contract，系统错误仍应抛出
+        # Per 2.6.3 Contract, system errors should still be raised
         with self.assertRaises(ScopeNotActiveError):
             ctx.try_get('RequestService')

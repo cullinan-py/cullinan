@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Cullinan IoC/DI 2.0 - Factory 集成测试
+"""Cullinan IoC/DI 2.0 - Factory Integration Tests
 
-作者：Cullinan
+Author: Cullinan
 
-测试 PR-R4 的最小验收集合：
-1. 基于现有注入能力进行真实注入
-2. 注入失败输出结构化诊断
+Minimal acceptance test set for PR-R4:
+1. Real injection based on existing injection capabilities
+2. Structured diagnostics on injection failure
 """
 
 import unittest
@@ -20,14 +20,14 @@ from cullinan.core.container import Factory
 
 
 class UserRepository:
-    """模拟 Repository"""
+    """Mock Repository"""
 
     def get_user(self, user_id: int) -> dict:
         return {'id': user_id, 'name': f'User{user_id}'}
 
 
 class UserService:
-    """模拟 Service，依赖 Repository"""
+    """Mock Service, depends on Repository"""
 
     def __init__(self, repo: UserRepository):
         self.repo = repo
@@ -37,10 +37,10 @@ class UserService:
 
 
 class TestFactoryBasics(unittest.TestCase):
-    """Factory 基础功能测试"""
+    """Factory basic functionality tests"""
 
     def test_factory_resolve_delegates_to_context(self):
-        """Factory.resolve 委托给 Context"""
+        """Factory.resolve delegates to Context"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -58,7 +58,7 @@ class TestFactoryBasics(unittest.TestCase):
         self.assertIsInstance(instance, UserRepository)
 
     def test_factory_create_raw_bypasses_cache(self):
-        """Factory.create_raw 绑过缓存每次创建新实例"""
+        """Factory.create_raw bypasses cache and creates new instance each time"""
         ctx = ApplicationContext()
 
         call_count = [0]
@@ -79,7 +79,7 @@ class TestFactoryBasics(unittest.TestCase):
 
         factory = Factory(ctx)
 
-        # create_raw 每次都调用 factory
+        # create_raw calls factory every time
         instance1 = factory.create_raw(definition)
         instance2 = factory.create_raw(definition)
 
@@ -88,10 +88,10 @@ class TestFactoryBasics(unittest.TestCase):
 
 
 class TestDependencyInjectionViaContext(unittest.TestCase):
-    """通过 Context 实现依赖注入测试"""
+    """Dependency injection via Context tests"""
 
     def test_manual_dependency_injection(self):
-        """手动依赖注入（factory 中调用 ctx.get）"""
+        """Manual dependency injection (calling ctx.get in factory)"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -115,12 +115,12 @@ class TestDependencyInjectionViaContext(unittest.TestCase):
         self.assertIsInstance(service, UserService)
         self.assertIsInstance(service.repo, UserRepository)
 
-        # 验证功能正常
+        # Verify functionality works
         user = service.find_user(1)
         self.assertEqual(user['id'], 1)
 
     def test_dependency_chain_resolution(self):
-        """依赖链解析"""
+        """Dependency chain resolution"""
         ctx = ApplicationContext()
 
         class Controller:
@@ -157,10 +157,10 @@ class TestDependencyInjectionViaContext(unittest.TestCase):
 
 
 class TestPostProcessors(unittest.TestCase):
-    """后处理器测试"""
+    """Post-processor tests"""
 
     def test_post_processor_is_called(self):
-        """后处理器被调用"""
+        """Post-processor is called"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(

@@ -176,7 +176,7 @@ class TestApplicationContextDecoratorIntegration:
         class DecoratedService:
             pass
 
-        # 手动注册一个 Definition
+        # Manually register a Definition
         ctx = ApplicationContext()
 
         def config_factory(ctx):

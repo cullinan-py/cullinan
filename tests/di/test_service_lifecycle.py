@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-测试 Service 生命周期方法 (使用 ApplicationContext)
+Test Service lifecycle methods (using ApplicationContext)
 
-验证：
-1. on_post_construct() 被调用
-2. on_startup() 被调用
-3. on_shutdown() 被调用
-4. on_pre_destroy() 被调用
+Verify:
+1. on_post_construct() is called
+2. on_startup() is called
+3. on_shutdown() is called
+4. on_pre_destroy() is called
 """
 
 import logging
@@ -28,30 +28,30 @@ def test_service_lifecycle():
     # Reset state
     PendingRegistry.reset()
 
-    # 记录调用的方法
+    # Record called methods
     lifecycle_calls = []
 
     @service
     class TestService(Service):
         def on_post_construct(self):
-            """构造后调用"""
+            """Called after construction"""
             lifecycle_calls.append('on_post_construct')
 
         def on_startup(self):
-            """启动时调用"""
+            """Called on startup"""
             lifecycle_calls.append('on_startup')
 
         def on_shutdown(self):
-            """关闭时调用"""
+            """Called on shutdown"""
             lifecycle_calls.append('on_shutdown')
 
         def on_pre_destroy(self):
-            """销毁前调用"""
+            """Called before destruction"""
             lifecycle_calls.append('on_pre_destroy')
 
     @service
     class DependentService(Service):
-        """依赖 TestService 的 Service"""
+        """Service depending on TestService"""
         test_service = InjectByName('TestService')
 
         def on_post_construct(self):
@@ -60,7 +60,7 @@ def test_service_lifecycle():
         def on_startup(self):
             lifecycle_calls.append('DependentService.on_startup')
 
-    # 创建 ApplicationContext
+    # Create ApplicationContext
     ctx = ApplicationContext()
     set_application_context(ctx)
     try:

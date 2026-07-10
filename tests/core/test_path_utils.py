@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""测试 path_utils 与控制器导出。"""
+"""Test path_utils and controller exports."""
 
 
 def test_path_utils():
-    """测试 path_utils 模块。"""
+    """Test the path_utils module."""
     from cullinan import Inject, controller, get_api, post_api
     from cullinan.core import Registry, injectable
     from cullinan.support import (
@@ -51,7 +51,7 @@ def test_path_utils():
 
 
 def test_controller_loading():
-    """测试从 controller package 导入主要 API。"""
+    """Test importing main APIs from controller package."""
     from cullinan.web.controller import Handler, controller, get_api, post_api, response
     from cullinan.web.handler.base import BaseHandler
 

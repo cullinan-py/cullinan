@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""测试传递 scope 约束校验（Issue 3 修复验证）
+"""Test transitive scope constraint validation (Issue 3 fix verification)
 
-验证 singleton/prototype → request-scoped 的传递依赖链在 refresh 时被拦截。
+Verifies that singleton/prototype -> request-scoped transitive dependency chains are caught during refresh.
 """
 
 import unittest
@@ -11,16 +11,16 @@ from cullinan.core.exceptions import LifecycleError
 from cullinan.core.decorators import Inject, InjectByName
 
 
-# ---- 测试组件 ----
+# ---- Test components ----
 
 class RequestScopedService:
-    """模拟 request-scoped 组件"""
+    """Mock request-scoped component"""
     def __init__(self):
         self.value = "request"
 
 
 class SingletonB:
-    """singleton B，通过 field injection 依赖 RequestScopedService"""
+    """singleton B, depends on RequestScopedService via field injection"""
     req = InjectByName("RequestScopedService")
 
     def __init__(self):
@@ -28,14 +28,14 @@ class SingletonB:
 
 
 class SingletonA:
-    """singleton A，显式依赖 SingletonB"""
+    """singleton A, explicitly depends on SingletonB"""
 
     def __init__(self):
         pass
 
 
 class PrototypeB:
-    """prototype B，通过 field injection 依赖 RequestScopedService"""
+    """prototype B, depends on RequestScopedService via field injection"""
     req = InjectByName("RequestScopedService")
 
     def __init__(self):
@@ -43,24 +43,24 @@ class PrototypeB:
 
 
 class PrototypeA:
-    """prototype A，显式依赖 PrototypeB"""
+    """prototype A, explicitly depends on PrototypeB"""
 
     def __init__(self):
         pass
 
 
 class SingletonWithPrivateDI:
-    """singleton，使用 _ 前缀的 Inject 依赖 request scoped（验证 Issue 5 联动）"""
+    """singleton, uses underscore-prefixed Inject to depend on request scoped (verifies Issue 5 linkage)"""
     _req = InjectByName("RequestScopedService")
 
     def __init__(self):
         pass
 
 
-# ---- 直接依赖测试（确保原有检查不退化） ----
+# ---- Direct dependency tests (ensure existing checks don't regress) ----
 
 class TestDirectScopeViolation(unittest.TestCase):
-    """测试：singleton 直接依赖 request scoped 仍被检测"""
+    """Test: singleton directly depending on request scoped is still detected"""
 
     def test_singleton_directly_depends_on_request(self):
         ctx = ApplicationContext()
@@ -84,13 +84,13 @@ class TestDirectScopeViolation(unittest.TestCase):
         self.assertIn("request-scoped", str(cm.exception))
 
 
-# ---- 传递依赖测试 ----
+# ---- Transitive dependency tests ----
 
 class TestTransitiveScopeViolation(unittest.TestCase):
-    """测试：singleton 传递依赖 request scoped 被检测"""
+    """Test: singleton transitive dependency on request scoped is detected"""
 
     def test_singleton_transitive_via_explicit_deps(self):
-        """SingletonA → SingletonB → RequestC (显式依赖链)"""
+        """SingletonA → SingletonB → RequestC (explicit dependency chain)"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -122,7 +122,7 @@ class TestTransitiveScopeViolation(unittest.TestCase):
         self.assertIn("SingletonB", str(cm.exception))
 
     def test_singleton_transitive_via_field_injection(self):
-        """SingletonA → SingletonB(Inject→RequestC) (隐式 field injection 链)"""
+        """SingletonA → SingletonB(Inject→RequestC) (implicit field injection chain)"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -152,7 +152,7 @@ class TestTransitiveScopeViolation(unittest.TestCase):
         self.assertIn("field", str(cm.exception).lower())
 
     def test_prototype_transitive_via_field_injection(self):
-        """PrototypeA → PrototypeB(Inject→RequestC) (prototype 传递依赖)"""
+        """PrototypeA → PrototypeB(Inject→RequestC) (prototype transitive dependency)"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -181,7 +181,7 @@ class TestTransitiveScopeViolation(unittest.TestCase):
         self.assertIn("RequestScopedService", str(cm.exception))
 
     def test_underscore_prefixed_injection_also_checked(self):
-        """_ 前缀 field injection 也受 scope 校验（Issue 5 联动）"""
+        """Underscore-prefixed field injection also subject to scope validation (Issue 5 linkage)"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -203,7 +203,7 @@ class TestTransitiveScopeViolation(unittest.TestCase):
         self.assertIn("RequestScopedService", str(cm.exception))
 
     def test_request_to_singleton_is_allowed(self):
-        """request → singleton 依赖是合法的（反向不报错）"""
+        """request -> singleton dependency is valid (reverse does not error)"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -220,8 +220,8 @@ class TestTransitiveScopeViolation(unittest.TestCase):
             source="test:RequestService",
         ))
 
-        # 不应抛出 LifecycleError
+        # Should not raise LifecycleError
         try:
             ctx.refresh()
         except LifecycleError:
-            self.fail("request → singleton 依赖不应触发 LifecycleError")
+            self.fail("request -> singleton dependency should not trigger LifecycleError")

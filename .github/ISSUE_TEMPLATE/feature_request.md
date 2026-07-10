@@ -1,18 +1,18 @@
 ---
-name: Feature request / 功能建议
-about: Suggest an idea for Cullinan / 提出新功能设想
+name: Feature request
+about: Suggest an idea for Cullinan
 title: "[feature] "
 labels: enhancement
 ---
 
-## Problem / 要解决的问题
+## Problem
 
-<!-- What pain point motivates this? 动机/痛点。 -->
+<!-- What pain point motivates this? -->
 
-## Proposed solution / 设想方案
+## Proposed solution
 
-<!-- API shape, behavior, engine-neutrality considerations. API 形态/行为/引擎中立考量。 -->
+<!-- API shape, behavior, engine-neutrality considerations. -->
 
-## Alternatives / 备选方案
+## Alternatives
 
-## Additional context / 补充信息
+## Additional context

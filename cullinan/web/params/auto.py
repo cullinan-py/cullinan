@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Auto Type Inference
 
-自动类型推断，根据值内容自动确定类型。
+Auto type inference, automatically determines type based on value content.
 
 Author: Cullinan
 """
@@ -12,17 +12,17 @@ from typing import Any, Type
 
 
 class Auto:
-    """自动类型推断
+    """Auto type inference
 
-    根据传入值的内容自动推断并转换为合适的类型。
+    Automatically infers and converts to the appropriate type based on the content of the input value.
 
-    类型推断优先级:
+    Type inference priority:
     1. None / null -> None
-    2. 布尔值字符串 -> bool
-    3. 整数字符串 -> int
-    4. 浮点数字符串 -> float
-    5. JSON 对象/数组 -> dict/list
-    6. 其他 -> 保持原类型 (通常是 str)
+    2. Boolean string -> bool
+    3. Integer string -> int
+    4. Float string -> float
+    5. JSON object/array -> dict/list
+    6. Other -> keep original type (usually str)
 
     Example:
         Auto.infer("123")      # -> 123 (int)
@@ -32,7 +32,7 @@ class Auto:
         Auto.infer("hello")    # -> "hello" (str)
     """
 
-    # 布尔值映射
+    # Boolean value mapping
     BOOL_MAP = {
         'true': True, 'True': True, 'TRUE': True,
         'false': False, 'False': False, 'FALSE': False,
@@ -42,83 +42,83 @@ class Auto:
         'off': False, 'Off': False, 'OFF': False,
     }
 
-    # 数字模式
+    # Numeric patterns
     INT_PATTERN = re.compile(r'^-?\d+$')
     FLOAT_PATTERN = re.compile(r'^-?\d+\.\d+$')
     SCIENTIFIC_PATTERN = re.compile(r'^-?\d+\.?\d*[eE][+-]?\d+$')
 
     @classmethod
     def infer(cls, value: Any) -> Any:
-        """根据值内容推断并转换类型
+        """Infer and convert type based on value content
 
         Args:
-            value: 原始值
+            value: Original value
 
         Returns:
-            转换后的值
+            Converted value
         """
         if value is None:
             return None
 
-        # 如果已经是非字符串类型，直接返回
+        # If already a non-string type, return directly
         if not isinstance(value, str):
             return value
 
-        # 空字符串
+        # Empty string
         if value == '':
             return ''
 
-        # 去除首尾空白后推断
+        # Infer after stripping leading/trailing whitespace
         stripped = value.strip()
 
         # null / None
         if stripped.lower() in ('null', 'none'):
             return None
 
-        # 布尔值
+        # Boolean value
         if stripped in cls.BOOL_MAP:
             return cls.BOOL_MAP[stripped]
 
-        # 整数
+        # Integer
         if cls.INT_PATTERN.match(stripped):
             try:
                 return int(stripped)
             except ValueError:
                 pass
 
-        # 浮点数
+        # Float
         if cls.FLOAT_PATTERN.match(stripped) or cls.SCIENTIFIC_PATTERN.match(stripped):
             try:
                 return float(stripped)
             except ValueError:
                 pass
 
-        # JSON 对象
+        # JSON object
         if stripped.startswith('{') and stripped.endswith('}'):
             try:
                 return json.loads(stripped)
             except json.JSONDecodeError:
                 pass
 
-        # JSON 数组
+        # JSON array
         if stripped.startswith('[') and stripped.endswith(']'):
             try:
                 return json.loads(stripped)
             except json.JSONDecodeError:
                 pass
 
-        # 保持原字符串
+        # Keep original string
         return value
 
     @classmethod
     def infer_type(cls, value: Any) -> Type:
-        """推断值的目标类型 (不进行转换)
+        """Infer the target type of a value (without conversion)
 
         Args:
-            value: 原始值
+            value: Original value
 
         Returns:
-            推断的类型
+            Inferred type
         """
         if value is None:
             return type(None)
@@ -132,19 +132,19 @@ class Auto:
         if stripped.lower() in ('null', 'none'):
             return type(None)
 
-        # 布尔值
+        # Boolean value
         if stripped in cls.BOOL_MAP:
             return bool
 
-        # 整数
+        # Integer
         if cls.INT_PATTERN.match(stripped):
             return int
 
-        # 浮点数
+        # Float
         if cls.FLOAT_PATTERN.match(stripped) or cls.SCIENTIFIC_PATTERN.match(stripped):
             return float
 
-        # JSON 对象
+        # JSON object
         if stripped.startswith('{') and stripped.endswith('}'):
             try:
                 result = json.loads(stripped)
@@ -153,7 +153,7 @@ class Auto:
             except json.JSONDecodeError:
                 pass
 
-        # JSON 数组
+        # JSON array
         if stripped.startswith('[') and stripped.endswith(']'):
             try:
                 result = json.loads(stripped)
@@ -166,14 +166,14 @@ class Auto:
 
 
 class AutoType:
-    """Auto 类型标记
+    """Auto type marker
 
-    用于参数声明时表示自动类型推断。
+    Used in parameter declarations to indicate automatic type inference.
 
     Example:
         @get_api(url="/search")
         async def search(self, limit: Query(AutoType, default=10)):
-            # limit 会自动推断类型
+            # limit will have its type automatically inferred
             pass
     """
     pass

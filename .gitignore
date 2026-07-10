@@ -26,6 +26,7 @@ docs_archive/reports
 .github/copilot-instructions.md
 # Virtual Environment
 .venv/
+.venv*/
 venv/
 ENV/
 env/
@@ -129,6 +130,7 @@ pdm.lock
 *-plan.md
 *-feedback.md
 RELEASE-*.md
+bugfix-report-*.md
 COMPLETION_STATUS.md
 GIT_COMMIT_MESSAGE.md
 IMPLEMENTATION_SUMMARY.md

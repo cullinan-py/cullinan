@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Body Decoder Middleware
 
-请求体解码中间件，在请求进入 Handler 之前自动解码请求体。
+Request body decoding middleware, automatically decodes the request body before it enters the Handler.
 
 Author: Cullinan
 """
@@ -15,25 +15,26 @@ logger = logging.getLogger(__name__)
 
 
 class BodyDecoderMiddleware(Middleware):
-    """请求体解码中间件
+    """Request body decoding middleware
 
-    在请求进入 Handler 之前，自动解码请求体并存储到 request 对象。
+    Automatically decodes the request body and stores it in the request object
+    before it enters the Handler.
 
-    特点:
-    - 一次解码，全局可用
-    - 支持多种 Content-Type (通过 CodecRegistry)
-    - 可配置是否启用
-    - 解码失败可配置处理策略
+    Features:
+    - Decode once, available globally
+    - Supports multiple Content-Types (via CodecRegistry)
+    - Configurable enable/disable
+    - Configurable error handling strategy on decode failure
 
     Example:
         from cullinan.web.middleware import get_middleware_registry
         from cullinan.web.middleware.body_decoder import BodyDecoderMiddleware
 
-        # 注册中间件
+        # Register middleware
         registry = get_middleware_registry()
         registry.register(BodyDecoderMiddleware())
 
-        # 在控制器中获取已解码的请求体
+        # Get decoded request body in controller
         decoded_body = get_decoded_body(self.request)
     """
 
@@ -43,12 +44,12 @@ class BodyDecoderMiddleware(Middleware):
         fail_silently: bool = True,
         max_body_size: int = 10 * 1024 * 1024,  # 10MB
     ):
-        """初始化中间件
+        """Initialize middleware
 
         Args:
-            enabled: 是否启用解码
-            fail_silently: 解码失败是否静默 (False 则返回 400 错误)
-            max_body_size: 最大请求体大小 (bytes)
+            enabled: Whether to enable decoding
+            fail_silently: Whether to silently handle decode failures (False returns 400 error)
+            max_body_size: Maximum request body size (bytes)
         """
         super().__init__()
         self.enabled = enabled
@@ -56,20 +57,20 @@ class BodyDecoderMiddleware(Middleware):
         self.max_body_size = max_body_size
 
     def process_request(self, handler: Any) -> Any:
-        """请求预处理: 解码请求体
+        """Request preprocessing: decode request body
 
         Args:
-            handler: 传输层 handler-like 对象
+            handler: Transport layer handler-like object
 
         Returns:
-            handler 或 None (短路请求处理)
+            handler or None (short-circuits request processing)
         """
         if not self.enabled:
             return handler
 
         request = handler.request
 
-        # 检查请求体大小
+        # Check request body size
         body = request.body
         if body and len(body) > self.max_body_size:
             logger.warning(
@@ -80,24 +81,24 @@ class BodyDecoderMiddleware(Middleware):
                 handler.write({"error": "Request body too large"})
                 handler.finish()
                 return None
-            # 静默模式：设置空字典
+            # Silent mode: set empty dict
             setattr(request, '_decoded_body', {})
             return handler
 
-        # 获取 Content-Type
+        # Get Content-Type
         content_type = request.headers.get('Content-Type', '')
 
-        # 检测字符编码
+        # Detect character encoding
         charset = self._detect_charset(content_type)
 
-        # 解码
+        # Decode
         try:
             from cullinan.codec import get_codec_registry
 
             registry = get_codec_registry()
             decoded = registry.decode_body(body or b'', content_type, charset)
 
-            # 存储到 request 对象
+            # Store in request object
             setattr(request, '_decoded_body', decoded)
 
             logger.debug(
@@ -117,13 +118,13 @@ class BodyDecoderMiddleware(Middleware):
         return handler
 
     def _detect_charset(self, content_type: str) -> str:
-        """从 Content-Type 检测字符编码
+        """Detect character encoding from Content-Type
 
         Args:
-            content_type: Content-Type 头
+            content_type: Content-Type header
 
         Returns:
-            字符编码 (默认 utf-8)
+            Character encoding (defaults to utf-8)
         """
         if 'charset=' in content_type:
             try:
@@ -136,7 +137,7 @@ class BodyDecoderMiddleware(Middleware):
         return 'utf-8'
 
     def on_startup(self):
-        """中间件启动初始化"""
+        """Middleware startup initialization"""
         logger.debug(
             f"BodyDecoderMiddleware initialized: enabled={self.enabled}, "
             f"fail_silently={self.fail_silently}, max_body_size={self.max_body_size}"
@@ -144,13 +145,13 @@ class BodyDecoderMiddleware(Middleware):
 
 
 def get_decoded_body(request: Any) -> dict:
-    """获取已解码的请求体
+    """Get the decoded request body
 
     Args:
-        request: Tornado request 对象 (或 handler.request)
+        request: Tornado request object (or handler.request)
 
     Returns:
-        解码后的字典 (如果未解码或解码失败，返回空字典)
+        Decoded dict (returns empty dict if not decoded or decode failed)
 
     Example:
         class MyController:
@@ -163,10 +164,10 @@ def get_decoded_body(request: Any) -> dict:
 
 
 def set_decoded_body(request: Any, data: dict) -> None:
-    """手动设置已解码的请求体 (测试用)
+    """Manually set the decoded request body (for testing)
 
     Args:
-        request: Tornado request 对象
-        data: 要设置的数据
+        request: Tornado request object
+        data: Data to set
     """
     setattr(request, '_decoded_body', data)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""同步与异步控制器方法混合时的公开分发表面回归。"""
+"""Regression for public dispatch surface when sync and async controller methods are mixed."""
 
 import asyncio
 import importlib

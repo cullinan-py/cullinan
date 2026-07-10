@@ -52,7 +52,7 @@ class GreetingService:
 
 @controller(url="/api")
 class GreetingController:
-    greeting_service: GreetingService  # ← 构造注入
+    greeting_service: GreetingService  # constructor injection
 
     @get_api(url="/whoami")
     def whoami(self):

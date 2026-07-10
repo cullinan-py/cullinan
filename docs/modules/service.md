@@ -38,7 +38,7 @@ from cullinan.core.services import Service, service
 
 @service
 class UserService(Service):
-    repo: UserRepository  # ← 构造注入
+    repo: UserRepository  # constructor injection
 
     def get_user(self, user_id: int):
         return self.repo.find_by_id(user_id)

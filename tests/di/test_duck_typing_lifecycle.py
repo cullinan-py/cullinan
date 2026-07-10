@@ -22,7 +22,7 @@ def test_service_without_inheritance():
 
     lifecycle_calls = []
 
-    # 定义一个没有继承任何基类的 service
+    # Define a service without inheriting any base class
     @service
     class PlainService:
         """A service that doesn't inherit from Service"""
@@ -42,26 +42,26 @@ def test_service_without_inheritance():
         def do_something(self):
             return "working"
 
-    # 创建 ApplicationContext
+    # Create ApplicationContext
     ctx = ApplicationContext()
     set_application_context(ctx)
     ctx.refresh()
 
-    # 验证启动生命周期被调用
+    # Verify startup lifecycle was called
     assert 'PlainService.on_post_construct' in lifecycle_calls, \
         f"on_post_construct not called. Calls: {lifecycle_calls}"
     assert 'PlainService.on_startup' in lifecycle_calls, \
         f"on_startup not called. Calls: {lifecycle_calls}"
 
-    # 验证服务可以正常使用
+    # Verify service works normally
     svc = ctx.get('PlainService')
     assert svc.do_something() == "working"
 
-    # 关闭
+    # Shutdown
     lifecycle_calls.clear()
     ctx.shutdown()
 
-    # 验证关闭生命周期被调用
+    # Verify shutdown lifecycle was called
     assert 'PlainService.on_shutdown' in lifecycle_calls, \
         f"on_shutdown not called. Calls: {lifecycle_calls}"
     assert 'PlainService.on_pre_destroy' in lifecycle_calls, \
@@ -97,11 +97,11 @@ def test_component_without_inheritance():
     set_application_context(ctx)
     ctx.refresh()
 
-    # 验证生命周期被调用
+    # Verify lifecycle was called
     assert 'CacheManager.on_post_construct' in lifecycle_calls
     assert 'CacheManager.on_startup' in lifecycle_calls
 
-    # 验证组件可以正常使用
+    # Verify component works normally
     cache = ctx.get('CacheManager')
     assert cache.get('initialized') == True
     cache.set('test', 'value')
@@ -174,7 +174,7 @@ def test_get_phase_without_inheritance():
     set_application_context(ctx)
     ctx.refresh()
 
-    # 验证启动顺序：EarlyService (-100) -> DefaultService (0) -> LateService (100)
+    # Verify startup order: EarlyService (-100) -> DefaultService (0) -> LateService (100)
     assert startup_order == ['EarlyService', 'DefaultService', 'LateService'], \
         f"Wrong order: {startup_order}"
 
@@ -234,7 +234,7 @@ def test_mixed_inheritance_and_plain():
     set_application_context(ctx)
     ctx.refresh()
 
-    # 两者都应该被调用
+    # Both should be called
     assert 'PlainService' in lifecycle_calls
     assert 'InheritedService' in lifecycle_calls
 
