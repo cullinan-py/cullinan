@@ -92,8 +92,8 @@
     <div
       class="md-version-switcher"
       data-current-channel="stable"
-      data-current-version="0.93.post1"
-      data-stable-version="0.93.post1"
+      data-current-version="0.94"
+      data-stable-version="0.94"
       data-stable-url="/cullinan/"
       data-pre-version="0.93a13.post1"
       data-pre-url="/cullinan/pre/"
@@ -2348,20 +2348,27 @@
 <h3 id="api_2">推荐默认 API<a class="headerlink" href="#api_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>cullinan</code> —— 常规业务项目应优先使用的顶层应用 API：</li>
-<li>启动入口：<code>@application</code>、<code>configure(...)</code>、<code>run(...)</code>、<code>get_asgi_app(...)</code></li>
+<li>启动入口：<code>@application</code>、<code>configure(...)</code>，然后直接调用入口方法（例如 <code>main()</code>）</li>
 <li>声明入口：<code>@service</code>、<code>@controller</code>、<code>@module</code>（高级边界）、路由装饰器</li>
 <li>注入 / 参数：<code>Inject</code>、<code>InjectByName</code>、<code>Path</code>、<code>Query</code>、<code>Body</code> 等</li>
 <li>框架心智：装饰器优先的业务代码、组件发现、IoC/DI 装配，以及带有热插拔语义的模块边界</li>
 </ul>
 <h3 id="api_3">高级集成 API<a class="headerlink" href="#api_3" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>cullinan.application</code> —— 面向维护者与框架感知型集成的高级公开应用语义（<code>Application</code>、<code>Runtime</code>、<code>module</code>）</li>
+<li><code>cullinan.application</code> —— 面向维护者与框架感知型集成的高级公开应用语义（<code>Application</code>、<code>Runtime</code>、<code>module</code>、<code>run</code>、<code>get_asgi_app</code>）</li>
 <li><code>cullinan.transport.adapter</code> —— 服务器集成（<code>WebAdapter</code>、<code>TornadoAdapter</code>、<code>ASGIAdapter</code>）</li>
 <li><code>cullinan.web.gateway</code> —— 请求 / 响应 / dispatcher 契约</li>
 <li><code>cullinan.core</code> —— 低层容器与生命周期原语</li>
 </ul>
 <p>这些高级模块都不是默认的应用开发心智模型。常规业务代码应停留在顶层 <code>cullinan</code> API，以及框架自身的装饰器 / DI / 模块边界语义上，而不是转向低层运行时编排或具体服务器适配器。</p>
 <p>对于常规应用，请优先使用顶层 <code>cullinan</code> API。高级模块应显式从对应子模块导入，这样在代码评审、IDE 补全和 onboarding 文档中都能更清楚地看到边界。</p>
+<p>v0.94 Phase A 的冻结口径使用各包的 <code>__all__</code> 作为可审阅导出契约：</p>
+<ul>
+<li><code>cullinan.__all__</code> —— 常规应用应使用的启动、声明与请求处理 API</li>
+<li><code>cullinan.application.__all__</code> —— 高级 application/runtime 辅助入口，包括 <code>run()</code> 与 <code>get_asgi_app()</code></li>
+<li><code>cullinan.web.__all__</code> / <code>cullinan.core.__all__</code> —— 显式业务 Web 面与容器/生命周期面</li>
+</ul>
+<p>未出现在对应 <code>__all__</code> 列表中的符号应视为私有实现细节。带 <code>_</code> 前缀的兼容性导出可以继续存在，但不属于默认业务公开稳定承诺。</p>
 <h2 id="v090">v0.90+ 新增：参数系统<a class="headerlink" href="#v090" title="Permanent link">&para;</a></h2>
 <p>参数系统提供类型安全的请求参数处理。详见 <a href="../parameter_system_guide/">参数系统指南</a>。</p>
 <h3 id="cullinanwebparams-v090a4">cullinan.web.params (v0.90a4+)<a class="headerlink" href="#cullinanwebparams-v090a4" title="Permanent link">&para;</a></h3>
@@ -2768,7 +2775,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "stable", "current": "0.93.post1", "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": "0.93.post1", "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "stable", "current": 0.94, "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

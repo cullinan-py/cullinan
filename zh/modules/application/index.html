@@ -92,8 +92,8 @@
     <div
       class="md-version-switcher"
       data-current-channel="stable"
-      data-current-version="0.93.post1"
-      data-stable-version="0.93.post1"
+      data-current-version="0.94"
+      data-stable-version="0.94"
       data-stable-url="/cullinan/"
       data-pre-version="0.93a13.post1"
       data-pre-url="/cullinan/pre/"
@@ -2214,7 +2214,7 @@
 <li><code>@configure(...)</code>：把启动配置附着到这个方法上</li>
 <li>直接调用入口方法：通过整理后的顶层 API 启动应用</li>
 <li><code>@module</code>：当你需要模块归属、reload 与热插拔运行时能力时，用来声明高级结构边界</li>
-<li>顶层 <code>run()</code> / <code>get_asgi_app()</code> 才是最短公开启动路径</li>
+<li>显式运行时 helper 位于 <code>cullinan.application</code> 与装饰后的入口方法上（如 <code>main.run()</code> / <code>main.get_asgi_app()</code>）</li>
 </ul>
 <p>这里的启动契约同时依赖<a href="../../framework_semantics/">框架语义规则</a>：组件发现基于导入执行、自动扫描只保证模块顶层装饰器组件、<code>refresh()</code> 之后结构性注册会被冻结。</p>
 <p>在实际开发里，开发者主要写的是业务装饰器、业务方法和入口方法。<code>@module</code>
@@ -2340,7 +2340,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "stable", "current": "0.93.post1", "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": "0.93.post1", "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "stable", "current": 0.94, "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../../assets/javascripts/bundle.e71a0d61.min.js"></script>

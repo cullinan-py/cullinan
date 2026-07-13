@@ -92,8 +92,8 @@
     <div
       class="md-version-switcher"
       data-current-channel="stable"
-      data-current-version="0.93.post1"
-      data-stable-version="0.93.post1"
+      data-current-version="0.94"
+      data-stable-version="0.94"
       data-stable-url="/cullinan/"
       data-pre-version="0.93a13.post1"
       data-pre-url="/cullinan/pre/"
@@ -2348,6 +2348,13 @@
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>pip
 pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </code></pre></div>
+<p>Cullinan now declares editable/build metadata in <code>pyproject.toml</code>; <code>setup.py</code>
+remains a compatibility shim for legacy setuptools workflows.</p>
+<p>If you need an engine/runtime extra, install it explicitly:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>tornado<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>asgi<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>full<span class="o">]</span>
+</code></pre></div>
 <p>If you have additional development extras configured in <code>setup.py</code> or <code>pyproject.toml</code>, you can install them as needed, for example:</p>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>dev<span class="o">]</span>
 </code></pre></div>
@@ -2379,7 +2386,7 @@ extension through <code>@middleware</code>.</p>
 <h3 id="example-level-testing-flow">Example-level testing flow<a class="headerlink" href="#example-level-testing-flow" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">python</span> <span class="n">-m</span> <span class="n">pytest</span> <span class="n">examples</span><span class="p">/</span><span class="n">testing_flow</span><span class="p">/</span><span class="n">test_app</span><span class="p">.</span><span class="n">py</span> <span class="n">-q</span>
 </code></pre></div>
-<p>This path exercises the example through <code>configure(...)</code> and <code>get_asgi_app()</code> without launching
+<p>This path exercises the example through the decorated entry method and <code>main.get_asgi_app()</code> without launching
 an external server process.</p>
 
 
@@ -2449,7 +2456,7 @@ an external server process.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "stable", "current": "0.93.post1", "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": "0.93.post1", "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "stable", "current": 0.94, "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

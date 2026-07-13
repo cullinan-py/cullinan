@@ -92,8 +92,8 @@
     <div
       class="md-version-switcher"
       data-current-channel="stable"
-      data-current-version="0.93.post1"
-      data-stable-version="0.93.post1"
+      data-current-version="0.94"
+      data-stable-version="0.94"
       data-stable-url="/cullinan/"
       data-pre-version="0.93a13.post1"
       data-pre-url="/cullinan/pre/"
@@ -2429,7 +2429,7 @@
 
 <h1 id="cullinan">Cullinan 框架架构<a class="headerlink" href="#cullinan" title="Permanent link">&para;</a></h1>
 <blockquote>
-<p><strong>版本</strong>：0.93a13
+<p><strong>版本</strong>：0.94a1
 <strong>最后更新</strong>：2026-06-01<br />
 <strong>状态</strong>：已更新</p>
 <p><strong>这页用于解释框架结构，不是默认启动教程。</strong><br />
@@ -2450,8 +2450,8 @@
 └── 业务服务与中间件
 
 框架门面
-├── cullinan             -&gt; @application、configure/run/get_asgi_app
-├── cullinan.application -&gt; Application、@module
+├── cullinan             -&gt; @application、configure、业务向装饰器
+├── cullinan.application -&gt; Application、run/get_asgi_app、@module
 ├── cullinan.web         -&gt; 控制器装饰器、WebRequest/WebResponse、参数系统、中间件
 ├── cullinan.core        -&gt; ApplicationContext、作用域、生命周期、请求上下文
 ├── cullinan.testing     -&gt; 测试辅助与验证入口
@@ -2468,8 +2468,8 @@
 <h2 id="_3">语义化包结构<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>Cullinan 现在按更像正式 Web Framework 的语义层公开主结构：</p>
 <ul>
-<li><code>cullinan</code> —— 默认启动入口（<code>configure</code>、<code>run</code>、<code>get_asgi_app</code>）</li>
-<li><code>cullinan.application</code> —— 应用定义与运行时边界等高级语义</li>
+<li><code>cullinan</code> —— 默认启动入口（<code>@application</code>、<code>configure</code>，然后直接调用入口方法）</li>
+<li><code>cullinan.application</code> —— 应用定义、运行时边界与显式运行时 helper 等高级语义</li>
 <li><code>cullinan.web</code> —— 面向业务开发者的 Web 公开层</li>
 <li><code>cullinan.core</code> —— IoC/DI、生命周期、请求上下文、语义诊断</li>
 <li><code>cullinan.testing</code> —— 测试辅助</li>
@@ -2629,7 +2629,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "stable", "current": "0.93.post1", "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": "0.93.post1", "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "stable", "current": 0.94, "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

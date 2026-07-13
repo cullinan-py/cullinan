@@ -92,8 +92,8 @@
     <div
       class="md-version-switcher"
       data-current-channel="stable"
-      data-current-version="0.93.post1"
-      data-stable-version="0.93.post1"
+      data-current-version="0.94"
+      data-stable-version="0.94"
       data-stable-url="/cullinan/"
       data-pre-version="0.93a13.post1"
       data-pre-url="/cullinan/pre/"
@@ -2435,7 +2435,7 @@ re-exporting the shortest public startup path from top-level <code>cullinan</cod
 <li><code>Application.current()</code> prefers the request-bound application snapshot while an older runtime drains</li>
 </ul>
 <h3 id="migration-implication">Migration implication<a class="headerlink" href="#migration-implication" title="Permanent link">&para;</a></h3>
-<p>New bootstrap code should prefer <code>from cullinan import configure, module, run</code>.
+<p>New bootstrap code should prefer <code>from cullinan import application, configure</code>, then call the decorated entry method directly.
 Keep using <code>ApplicationContext</code> for low-level container work, and use
 <code>cullinan.application</code> when you intentionally need explicit runtime orchestration
 rather than the default developer path.</p>
@@ -2547,7 +2547,7 @@ application-model and adapter coverage now lives in regular collected tests.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "stable", "current": "0.93.post1", "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": "0.93.post1", "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "stable", "current": 0.94, "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

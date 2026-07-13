@@ -92,8 +92,8 @@
     <div
       class="md-version-switcher"
       data-current-channel="stable"
-      data-current-version="0.93.post1"
-      data-stable-version="0.93.post1"
+      data-current-version="0.94"
+      data-stable-version="0.94"
       data-stable-url="/cullinan/"
       data-pre-version="0.93a13.post1"
       data-pre-url="/cullinan/pre/"
@@ -2348,7 +2348,7 @@ and <a href="../concepts/">Framework Semantics</a>.<br />
 <h3 id="recommended-default-api">Recommended default API<a class="headerlink" href="#recommended-default-api" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>cullinan</code> — top-level application API for regular business projects:</li>
-<li>startup: <code>@application</code>, <code>configure(...)</code>, <code>run(...)</code>, <code>get_asgi_app(...)</code></li>
+<li>startup: <code>@application</code>, <code>configure(...)</code>, then call the entry method directly (for example <code>main()</code>)</li>
 <li>declaration: <code>@service</code>, <code>@controller</code>, <code>@module</code> (advanced boundary), route decorators</li>
 <li>injection / params: <code>Inject</code>, <code>InjectByName</code>, <code>Path</code>, <code>Query</code>, <code>Body</code>, ...</li>
 <li>framework mental model: decorator-first business code, component discovery,
@@ -2357,7 +2357,7 @@ and <a href="../concepts/">Framework Semantics</a>.<br />
 <h3 id="advanced-integration-api">Advanced integration API<a class="headerlink" href="#advanced-integration-api" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>cullinan.application</code> — advanced public application semantics for maintainers
-  and framework-aware integrations (<code>Application</code>, <code>Runtime</code>, <code>module</code>)</li>
+  and framework-aware integrations (<code>Application</code>, <code>Runtime</code>, <code>module</code>, <code>run</code>, <code>get_asgi_app</code>)</li>
 <li><code>cullinan.transport.adapter</code> — server integration (<code>WebAdapter</code>, <code>TornadoAdapter</code>, <code>ASGIAdapter</code>)</li>
 <li><code>cullinan.web.gateway</code> — request / response / dispatcher contracts</li>
 <li><code>cullinan.core</code> — low-level container and lifecycle primitives</li>
@@ -2369,6 +2369,16 @@ low-level runtime orchestration or a concrete server adapter.</p>
 <p>For regular applications, prefer the top-level <code>cullinan</code> API. Advanced modules
 should be imported explicitly so the boundary stays visible in code review, IDE
 completion, and onboarding docs.</p>
+<p>The v0.94 Phase A freeze uses package <code>__all__</code> lists as the reviewable export contract:</p>
+<ul>
+<li><code>cullinan.__all__</code> — regular application-facing startup, declaration, and request APIs</li>
+<li><code>cullinan.application.__all__</code> — advanced application/runtime helpers, including <code>run()</code> and <code>get_asgi_app()</code></li>
+<li><code>cullinan.web.__all__</code> / <code>cullinan.core.__all__</code> — explicit business-web and container/lifecycle surfaces</li>
+</ul>
+<p>Symbols that are not present in the corresponding <code>__all__</code> list should be
+treated as private implementation details. Underscore-prefixed compatibility
+exports may still exist, but they are not part of the default business-facing
+stability promise.</p>
 <h2 id="new-in-v090-parameter-system">New in v0.90+: Parameter System<a class="headerlink" href="#new-in-v090-parameter-system" title="Permanent link">&para;</a></h2>
 <p>The parameter system provides type-safe request parameter handling. See <a href="../parameter_system_guide/">Parameter System Guide</a> for details.</p>
 <h3 id="cullinanwebparams-v090a4">cullinan.web.params (v0.90a4+)<a class="headerlink" href="#cullinanwebparams-v090a4" title="Permanent link">&para;</a></h3>
@@ -2775,7 +2785,7 @@ completion, and onboarding docs.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "stable", "current": "0.93.post1", "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": "0.93.post1", "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "stable", "current": 0.94, "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

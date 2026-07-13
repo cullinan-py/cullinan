@@ -92,8 +92,8 @@
     <div
       class="md-version-switcher"
       data-current-channel="stable"
-      data-current-version="0.93.post1"
-      data-stable-version="0.93.post1"
+      data-current-version="0.94"
+      data-stable-version="0.94"
       data-stable-url="/cullinan/"
       data-pre-version="0.93a13.post1"
       data-pre-url="/cullinan/pre/"
@@ -2429,7 +2429,7 @@
 
 <h1 id="cullinan-framework-architecture">Cullinan Framework Architecture<a class="headerlink" href="#cullinan-framework-architecture" title="Permanent link">&para;</a></h1>
 <blockquote>
-<p><strong>Version</strong>: 0.93a13
+<p><strong>Version</strong>: 0.94a1
 <strong>Last Updated</strong>: 2026-06-01<br />
 <strong>Status</strong>: Updated</p>
 <p><strong>This page explains framework structure, not the default startup tutorial.</strong><br />
@@ -2450,8 +2450,8 @@ and use <a href="../internals/">Internals &amp; Extensions</a> when you intentio
 └── Business services and middleware
 
 Framework facade
-├── cullinan             -&gt; @application, configure/run/get_asgi_app
-├── cullinan.application -&gt; Application, @module
+├── cullinan             -&gt; @application, configure, business-facing decorators
+├── cullinan.application -&gt; Application, run/get_asgi_app, @module
 ├── cullinan.web         -&gt; controller decorators, WebRequest/WebResponse, params, middleware
 ├── cullinan.core        -&gt; ApplicationContext, scopes, lifecycle, request context
 ├── cullinan.testing     -&gt; testing helpers and verification entrypoints
@@ -2468,8 +2468,8 @@ Runtime execution
 <h2 id="semantic-package-surface">Semantic package surface<a class="headerlink" href="#semantic-package-surface" title="Permanent link">&para;</a></h2>
 <p>Cullinan's recommended package surface now follows a clearer framework-semantic split:</p>
 <ul>
-<li><code>cullinan</code> — default startup surface (<code>configure</code>, <code>run</code>, <code>get_asgi_app</code>)</li>
-<li><code>cullinan.application</code> — advanced application semantics such as application definition and runtime boundary</li>
+<li><code>cullinan</code> — default startup surface (<code>@application</code>, <code>configure</code>, then call the entry method)</li>
+<li><code>cullinan.application</code> — advanced application semantics such as application definition, runtime boundary, and explicit runtime helpers</li>
 <li><code>cullinan.web</code> — business-facing Web development surface</li>
 <li><code>cullinan.core</code> — IoC/DI, lifecycle, request context, semantic diagnostics</li>
 <li><code>cullinan.testing</code> — test-facing support</li>
@@ -2629,7 +2629,7 @@ Runtime execution
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "stable", "current": "0.93.post1", "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": "0.93.post1", "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "stable", "current": 0.94, "pre_is_available": true, "pre_label": "0.93a13.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
