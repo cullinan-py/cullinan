@@ -44,7 +44,7 @@ from cullinan.web.params import Path
 
 @controller(url="/users")
 class UserController:
-    service: UserService  # ← 构造注入
+    service: UserService  # constructor injection
 
     @get_api(url="/{user_id}")
     async def get_user(self, user_id: int = Path()):

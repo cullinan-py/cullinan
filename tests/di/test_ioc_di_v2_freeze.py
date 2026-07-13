@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Cullinan IoC/DI 2.0 - 冻结机制测试
+"""Cullinan IoC/DI 2.0 - Freeze Mechanism Tests
 
-作者：Cullinan
+Author: Cullinan
 
-测试 PR-R2 的最小验收集合：
-1. refresh 前 register 成功
-2. refresh 后 register/clear 抛 RegistryFrozenError
+Minimal acceptance test set for PR-R2:
+1. register succeeds before refresh
+2. register/clear raises RegistryFrozenError after refresh
 """
 
 import unittest
@@ -20,13 +20,13 @@ from cullinan.core.diagnostics import RegistryFrozenError
 
 
 class TestFreezeAfterRefresh(unittest.TestCase):
-    """冻结机制测试"""
+    """Freeze mechanism tests"""
     
     def test_register_before_refresh_succeeds(self):
-        """refresh 前 register 成功"""
+        """register succeeds before refresh"""
         ctx = ApplicationContext()
-        
-        # 应该不抛异常
+
+        # Should not raise exception
         ctx.register(Definition(
             name='Service1',
             factory=lambda c: object(),
@@ -38,7 +38,7 @@ class TestFreezeAfterRefresh(unittest.TestCase):
         self.assertFalse(ctx.is_frozen)
     
     def test_register_after_refresh_raises_frozen_error(self):
-        """refresh 后 register 抛 RegistryFrozenError"""
+        """register raises RegistryFrozenError after refresh"""
         ctx = ApplicationContext()
         
         ctx.register(Definition(
@@ -50,7 +50,7 @@ class TestFreezeAfterRefresh(unittest.TestCase):
         
         ctx.refresh()
         
-        # refresh 后注册应该抛出 RegistryFrozenError
+        # After refresh, registration should raise RegistryFrozenError
         with self.assertRaises(RegistryFrozenError) as cm:
             ctx.register(Definition(
                 name='NewService',
@@ -63,7 +63,7 @@ class TestFreezeAfterRefresh(unittest.TestCase):
         self.assertIn('NewService', str(cm.exception))
     
     def test_duplicate_registration_raises_error(self):
-        """重复注册同名 Definition 抛出 ValueError"""
+        """Duplicate registration of same Definition name raises ValueError"""
         ctx = ApplicationContext()
         
         ctx.register(Definition(
@@ -84,7 +84,7 @@ class TestFreezeAfterRefresh(unittest.TestCase):
         self.assertIn('already registered', str(cm.exception))
     
     def test_is_frozen_property(self):
-        """is_frozen 属性正确反映状态"""
+        """is_frozen property correctly reflects state"""
         ctx = ApplicationContext()
         
         self.assertFalse(ctx.is_frozen)
@@ -94,7 +94,7 @@ class TestFreezeAfterRefresh(unittest.TestCase):
         self.assertTrue(ctx.is_frozen)
     
     def test_multiple_refresh_calls_are_idempotent(self):
-        """多次调用 refresh 是幂等的"""
+        """Multiple refresh calls are idempotent"""
         ctx = ApplicationContext()
         
         ctx.register(Definition(
@@ -105,18 +105,18 @@ class TestFreezeAfterRefresh(unittest.TestCase):
         ))
         
         ctx.refresh()
-        ctx.refresh()  # 第二次应该不会抛异常
-        ctx.refresh()  # 第三次也不会
+        ctx.refresh()  # Second call should not raise
+        ctx.refresh()  # Third call either
         
         self.assertTrue(ctx.is_frozen)
         self.assertTrue(ctx.is_refreshed)
 
 
 class TestRegistryFrozenErrorDetails(unittest.TestCase):
-    """RegistryFrozenError 异常详情测试"""
+    """RegistryFrozenError exception details tests"""
     
     def test_error_message_contains_definition_name(self):
-        """错误信息包含尝试注册的 Definition 名称"""
+        """Error message contains the Definition name that was attempted to register"""
         ctx = ApplicationContext()
         ctx.refresh()
         
@@ -127,12 +127,12 @@ class TestRegistryFrozenErrorDetails(unittest.TestCase):
                 scope=ScopeType.SINGLETON,
                 source='test:FailingService'
             ))
-            self.fail("应该抛出 RegistryFrozenError")
+            self.fail("Should have raised RegistryFrozenError")
         except RegistryFrozenError as e:
             self.assertIn('FailingService', str(e))
     
     def test_error_is_registry_error_subclass(self):
-        """RegistryFrozenError 是 RegistryError 的子类"""
+        """RegistryFrozenError is a subclass of RegistryError"""
         from cullinan.core.diagnostics import RegistryError
 
         self.assertTrue(issubclass(RegistryFrozenError, RegistryError))

@@ -53,7 +53,7 @@ Cullinan 不再保留以下历史根层 wrapper：
 
 | 旧路径 | 新路径 |
 | --- | --- |
-| `cullinan.app` | 顶层 `cullinan` 启动 API（`configure`、`run`、`get_asgi_app`） |
+| `cullinan.app` | 顶层 `cullinan` 入口方法 API（`@application`、`configure`，然后调用 `main()`） |
 | `cullinan.application_model` | `cullinan.application` |
 | `cullinan.public_api` | `cullinan.application.public` |
 | `cullinan.module_scanner` | `cullinan.runtime.module_scanner` |
@@ -79,7 +79,13 @@ Cullinan 不再保留以下历史根层 wrapper：
 from cullinan.public_api import run
 
 # After
-from cullinan import run
+from cullinan import application, configure
+
+@configure(user_packages=["myapp"])
+@application
+def main(): ...
+
+main()
 ```
 
 ### 运行时模型 helper

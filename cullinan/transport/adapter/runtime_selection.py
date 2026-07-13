@@ -35,22 +35,22 @@ def resolve_runtime_engine(engine: str | None, *, asgi_server: str = "uvicorn") 
         if available:
             return available[0]
         raise ImportError(
-            "未发现可用 Web 后端。请安装 cullinan[asgi] 或 cullinan[tornado]，"
-            "或显式配置可用的 server_engine。"
+            "No available web backend found. Install cullinan[asgi] or cullinan[tornado], "
+            "or explicitly configure an available server_engine."
         )
 
     if normalized == "asgi":
         if not is_runtime_engine_available("asgi", asgi_server=asgi_server):
             raise ImportError(
-                f"ASGI 后端不可用：未找到 {asgi_server}。"
-                "请安装 cullinan[asgi] 或切换到 server_engine='tornado'。"
+                f"ASGI backend unavailable: {asgi_server} not found. "
+                "Install cullinan[asgi] or switch to server_engine='tornado'."
             )
         return "asgi"
 
     if normalized == "tornado":
         if not is_runtime_engine_available("tornado", asgi_server=asgi_server):
             raise ImportError(
-                "Tornado 后端不可用。请安装 cullinan[tornado] 或切换到 server_engine='asgi'。"
+                "Tornado backend unavailable. Install cullinan[tornado] or switch to server_engine='asgi'."
             )
         return "tornado"
 

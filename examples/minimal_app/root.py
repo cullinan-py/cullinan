@@ -11,7 +11,7 @@ class GreetingService:
 
 @controller(url="/hello")
 class HelloController:
-    greeting_service: GreetingService  # ← 构造注入
+    greeting_service: GreetingService  # ← constructor injection
 
     @get_api(url="")
     def hello(self):

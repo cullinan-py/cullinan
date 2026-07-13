@@ -2,15 +2,16 @@
 """Core module for Cullinan framework.
 
 This module provides foundational components for the Cullinan framework:
-- ApplicationContext: Single entry point for IoC/DI (0.93)
+- ApplicationContext: Single entry point for IoC/DI (0.94a1)
 - Decorators: @service, @controller, @component
 - Dependency Injection: Inject, InjectByName, Lazy
 - Unified lifecycle management (all components share same lifecycle)
 - Core exceptions and types
 
-Version: 0.90
+Version: 0.94a1
 """
 
+from cullinan._version import __version__ as _package_version
 from .registry import Registry, SimpleRegistry
 from .container_manager import ContainerManager, get_container_manager
 # Import unified lifecycle from lifecycle_enhanced (the single source of truth)
@@ -108,9 +109,10 @@ from .pending import PendingRegistry, PendingRegistration, ComponentType
 
 # injectable is now a no-op, classes are automatically injectable
 def injectable(cls):
-    """Compatibility decorator - no longer needed in 0.93.
+    """Compatibility decorator - no longer needed in the v0.94 line.
 
-    In 0.93, all classes decorated with @service, @controller, or @component
+    In the current public model, all classes decorated with @service,
+    @controller, or @component
     are automatically injectable. This function is kept for backward compatibility.
     """
     warn_semantic_once(
@@ -124,7 +126,7 @@ def injectable(cls):
     return cls
 
 def inject_constructor(cls):
-    """Compatibility decorator - no longer needed in 0.93."""
+    """Compatibility decorator - no longer needed in the v0.94 line."""
     warn_semantic_once(
         key="compatibility:inject_constructor",
         rule_key="compatibility-api",
@@ -157,7 +159,7 @@ def set_application_context(ctx) -> None:
 _dummy_registry = None
 
 def get_injection_registry():
-    """Compatibility function - returns None in 0.93.
+    """Compatibility function - returns None in the v0.94 line.
 
     Use ApplicationContext instead.
     """
@@ -172,11 +174,11 @@ def get_injection_registry():
     return _dummy_registry
 
 def reset_injection_registry():
-    """Compatibility function - no-op in 0.93."""
+    """Compatibility function - no-op in the v0.94 line."""
     warn_semantic_once(
         key="compatibility:reset_injection_registry",
         rule_key="compatibility-api",
-        problem="reset_injection_registry() no longer resets a real container in 0.93.",
+        problem="reset_injection_registry() no longer resets a real container in the v0.94 line.",
         guidance="Create a new ApplicationContext explicitly when you need a fresh container.",
         category=CompatibilitySemanticWarning,
         stacklevel=2,
@@ -195,8 +197,7 @@ component = _component_decorator
 Inject = _Inject_marker
 InjectByName = _InjectByName_marker
 Lazy = _Lazy_marker
-
-__version__ = "0.93.post1"
+__version__ = _package_version
 
 __all__ = [
     # ========================================================================

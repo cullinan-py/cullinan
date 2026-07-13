@@ -76,7 +76,7 @@ class GreetingService:
 class HelloController:
     """Simple HTTP controller."""
 
-    greeting_service: GreetingService  # ← 构造注入 (constructor injection)
+    greeting_service: GreetingService  # constructor injection
 
     @get_api(url="")
     def hello(self):
@@ -135,22 +135,7 @@ class GreetingService:
 
 @controller(url="/hello")
 class HelloController:
-    greeting_service: GreetingService  # ← 构造注入 (constructor injection)
-
-    @get_api(url="")
-    def hello(self):
-        return {"message": self.greeting_service.greet()}
-
-
-@configure(user_packages=["my_cullinan_project"])
-@application
-def main(): ...
-
-if __name__ == "__main__":
-    main()
-```
-
-To run this example:
+    greeting_service: GreetingService  # constructor injection
 
 ```powershell
 # Save the above code as minimal_app.py
@@ -192,7 +177,7 @@ class UserService:
 
 @controller(url='/api/users')
 class UserController:
-    user_service: UserService  # ← 构造注入 (constructor injection)
+    user_service: UserService  # constructor injection
 
     @get_api(url='/{user_id}')
     async def get_user(self, user_id: int = Path()):
@@ -318,7 +303,7 @@ class DatabaseService:
 
 @service
 class UserRepository:
-    db: DatabaseService  # ← 构造注入 (constructor injection)
+    db: DatabaseService  # constructor injection
 
     def get_users(self):
         return self.db.query("SELECT * FROM users")

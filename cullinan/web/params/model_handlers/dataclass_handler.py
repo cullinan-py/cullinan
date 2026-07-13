@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Dataclass Model Handler
 
-内置的 dataclass 模型处理器。
+Built-in dataclass model handler.
 
 Author: Cullinan
 """
@@ -13,28 +13,28 @@ from .base import ModelHandler, ModelHandlerError
 
 
 class DataclassHandler(ModelHandler):
-    """Dataclass 模型处理器
+    """Dataclass model handler
 
-    内置处理器，用于解析 Python dataclass。
+    Built-in handler for parsing Python dataclasses.
 
     Features:
-    - 自动类型转换
-    - 支持嵌套 dataclass
-    - 支持默认值
-    - 支持 Optional 类型
+    - Automatic type conversion
+    - Supports nested dataclasses
+    - Supports default values
+    - Supports Optional types
     """
 
-    priority = 10  # 低于第三方库，作为兜底
+    priority = 10  # Lower than third-party libraries, serves as fallback
     name = "dataclass"
 
     def can_handle(self, type_: Type) -> bool:
-        """检查是否是 dataclass"""
+        """Check if it is a dataclass"""
         if type_ is None:
             return False
         return dataclasses.is_dataclass(type_) and isinstance(type_, type)
 
     def resolve(self, model_class: Type, data: Dict[str, Any]) -> Any:
-        """解析数据为 dataclass 实例"""
+        """Parse data into a dataclass instance"""
         if not self.can_handle(model_class):
             raise ModelHandlerError(
                 f"{model_class} is not a dataclass",
@@ -45,7 +45,7 @@ class DataclassHandler(ModelHandler):
         if data is None:
             data = {}
 
-        # 获取字段信息
+        # Get field information
         fields = dataclasses.fields(model_class)
         type_hints = {}
         try:
@@ -53,7 +53,7 @@ class DataclassHandler(ModelHandler):
         except Exception:
             pass
 
-        # 构建参数
+        # Build kwargs
         kwargs = {}
         field_errors = []
 
@@ -61,12 +61,12 @@ class DataclassHandler(ModelHandler):
             field_name = field.name
             field_type = type_hints.get(field_name, field.type)
 
-            # 检查是否有值
+            # Check if a value was provided
             if field_name in data:
                 raw_value = data[field_name]
 
                 try:
-                    # 解析嵌套 dataclass
+                    # Resolve nested dataclass
                     if self.can_handle(field_type):
                         if isinstance(raw_value, dict):
                             kwargs[field_name] = self.resolve(field_type, raw_value)
@@ -77,7 +77,7 @@ class DataclassHandler(ModelHandler):
                                 f"Cannot convert {type(raw_value).__name__} to {field_type.__name__}"
                             )
                     else:
-                        # 处理 Optional 类型
+                        # Handle Optional types
                         actual_type = self._unwrap_optional(field_type)
                         if raw_value is None:
                             kwargs[field_name] = None
@@ -99,7 +99,7 @@ class DataclassHandler(ModelHandler):
                         'value': raw_value
                     })
             else:
-                # 没有提供值
+                # No value provided
                 if field.default is not dataclasses.MISSING:
                     kwargs[field_name] = field.default
                 elif field.default_factory is not dataclasses.MISSING:
@@ -131,7 +131,7 @@ class DataclassHandler(ModelHandler):
             )
 
     def to_dict(self, instance: Any) -> Dict[str, Any]:
-        """将 dataclass 实例转换为字典"""
+        """Convert dataclass instance to dict"""
         if not dataclasses.is_dataclass(instance):
             raise ModelHandlerError(
                 f"{type(instance)} is not a dataclass instance",
@@ -148,7 +148,7 @@ class DataclassHandler(ModelHandler):
         return result
 
     def _is_optional(self, type_hint) -> bool:
-        """检查类型是否是 Optional"""
+        """Check if the type is Optional"""
         origin = getattr(type_hint, '__origin__', None)
         if origin is Union:
             args = getattr(type_hint, '__args__', ())
@@ -156,7 +156,7 @@ class DataclassHandler(ModelHandler):
         return False
 
     def _unwrap_optional(self, type_hint) -> Type:
-        """从 Optional[X] 中提取 X"""
+        """Extract X from Optional[X]"""
         origin = getattr(type_hint, '__origin__', None)
         if origin is Union:
             args = getattr(type_hint, '__args__', ())
@@ -168,7 +168,7 @@ class DataclassHandler(ModelHandler):
         return None
 
     def _convert_value(self, value: Any, target_type: Type) -> Any:
-        """基本类型转换"""
+        """Basic type conversion"""
         if value is None:
             return None
         if isinstance(value, target_type):

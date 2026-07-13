@@ -1,38 +1,38 @@
 # -*- coding: utf-8 -*-
 """Cullinan Params Module
 
-提供参数标记类和类型转换工具。
+Provides parameter marker classes and type conversion utilities.
 
-支持的参数类型:
-- Path: URL 路径参数
-- Query: 查询参数
-- Body: 请求体参数
-- Header: 请求头参数
-- File: 文件参数
-- RawBody: 原始二进制请求体
+Supported parameter types:
+- Path: URL path parameters
+- Query: Query parameters
+- Body: Request body parameters
+- Header: Request header parameters
+- File: File parameters
+- RawBody: Raw binary request body
 
-类型转换:
-- TypeConverter: 类型转换器
-- Auto: 自动类型推断
-- DynamicBody: 动态请求体
+Type conversion:
+- TypeConverter: Type converter
+- Auto: Auto type inference
+- DynamicBody: Dynamic request body
 
-校验:
-- ParamValidator: 参数校验器
-- field_validator: dataclass 字段校验器
+Validation:
+- ParamValidator: Parameter validator
+- field_validator: dataclass field validator
 
-模型:
-- ModelResolver: dataclass 模型解析
+Models:
+- ModelResolver: dataclass model resolver
 
-文件:
-- FileInfo: 文件信息容器
-- FileList: 多文件容器
+Files:
+- FileInfo: File info container
+- FileList: Multiple file container
 
-响应:
-- Response: 响应模型装饰器
-- ResponseSerializer: 响应序列化器
+Response:
+- Response: Response model decorator
+- ResponseSerializer: Response serializer
 
-编排:
-- ParamResolver: 参数解析编排器
+Orchestration:
+- ParamResolver: Parameter resolution orchestrator
 
 Author: Cullinan
 """
@@ -70,11 +70,11 @@ from .model_handlers import (
 )
 
 __all__ = [
-    # 基类
+    # Base classes
     'Param',
     'UNSET',
 
-    # 参数类型
+    # Parameter types
     'Path',
     'Query',
     'Body',
@@ -82,46 +82,46 @@ __all__ = [
     'File',
     'RawBody',
 
-    # 类型转换
+    # Type conversion
     'TypeConverter',
     'ConversionError',
 
-    # 自动类型
+    # Auto type
     'Auto',
     'AutoType',
 
-    # 动态请求体
+    # Dynamic request body
     'DynamicBody',
     'SafeAccessor',
     'EMPTY',
 
-    # 校验
+    # Validation
     'ParamValidator',
     'ValidationError',
 
-    # 模型
+    # Models
     'ModelResolver',
     'ModelError',
 
-    # 文件
+    # Files
     'FileInfo',
     'FileList',
 
-    # Dataclass 校验
+    # Dataclass validation
     'field_validator',
     'FieldValidationError',
     'validated_dataclass',
     'validate_field',
     'validate_dataclass',
 
-    # 响应
+    # Response
     'Response',
     'ResponseModel',
     'ResponseSerializer',
     'serialize_response',
     'get_response_models',
 
-    # 模型处理器（可插拔）
+    # Model handlers (pluggable)
     'ModelHandler',
     'ModelHandlerError',
     'ModelHandlerRegistry',
@@ -129,7 +129,7 @@ __all__ = [
     'get_model_handler_registry',
     'reset_model_handler_registry',
 
-    # 编排
+    # Orchestration
     'ParamResolver',
     'ResolveError',
 ]

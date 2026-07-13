@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Cullinan IoC/DI 2.0 - 生命周期测试
+"""Cullinan IoC/DI 2.0 - Lifecycle Tests
 
-作者：Cullinan
+Author: Cullinan
 
-测试 PR-R5 的最小验收集合：
-1. refresh/start 触发 eager 初始化
-2. shutdown 按顺序执行
+Minimal acceptance test set for PR-R5:
+1. refresh/start triggers eager initialization
+2. shutdown executes in order
 """
 
 import unittest
@@ -19,7 +19,7 @@ from cullinan.core.container import Definition, ScopeType
 
 
 class LifecycleTracker:
-    """用于跟踪生命周期事件的辅助类"""
+    """Helper class for tracking lifecycle events"""
     
     events = []
     
@@ -33,7 +33,7 @@ class LifecycleTracker:
 
 
 class ServiceWithLifecycle:
-    """带生命周期钩子的服务"""
+    """Service with lifecycle hooks"""
     
     def __init__(self, name: str):
         self.name = name
@@ -44,13 +44,13 @@ class ServiceWithLifecycle:
 
 
 class TestEagerInitialization(unittest.TestCase):
-    """Eager 初始化测试"""
+    """Eager initialization tests"""
     
     def setUp(self):
         LifecycleTracker.reset()
     
     def test_eager_definitions_initialized_on_refresh(self):
-        """eager=True 的 Definition 在 refresh 时初始化"""
+        """eager=True Definition is initialized on refresh"""
         ctx = ApplicationContext()
         
         ctx.register(Definition(
@@ -68,7 +68,7 @@ class TestEagerInitialization(unittest.TestCase):
         self.assertIn('EagerService:init', LifecycleTracker.events)
     
     def test_non_eager_definitions_not_initialized_on_refresh(self):
-        """eager=False 的 Definition 在 refresh 时不初始化"""
+        """eager=False Definition is not initialized on refresh"""
         ctx = ApplicationContext()
         
         ctx.register(Definition(
@@ -83,12 +83,12 @@ class TestEagerInitialization(unittest.TestCase):
         
         self.assertNotIn('LazyService:init', LifecycleTracker.events)
         
-        # 首次访问时才初始化
+        # Initialized only on first access
         ctx.get('LazyService')
         self.assertIn('LazyService:init', LifecycleTracker.events)
     
     def test_eager_initialization_respects_dependencies(self):
-        """eager 初始化时遵循依赖顺序"""
+        """Eager initialization respects dependency order"""
         ctx = ApplicationContext()
         
         ctx.register(Definition(
@@ -97,7 +97,7 @@ class TestEagerInitialization(unittest.TestCase):
             scope=ScopeType.SINGLETON,
             source='test:ServiceA',
             eager=True,
-            dependencies=['ServiceB']  # A 依赖 B
+            dependencies=['ServiceB']  # A depends on B
         ))
         
         ctx.register(Definition(
@@ -110,19 +110,19 @@ class TestEagerInitialization(unittest.TestCase):
         
         ctx.refresh()
         
-        # 两个都应该被初始化
+        # Both should be initialized
         self.assertIn('ServiceA:init', LifecycleTracker.events)
         self.assertIn('ServiceB:init', LifecycleTracker.events)
 
 
 class TestShutdown(unittest.TestCase):
-    """Shutdown 测试"""
+    """Shutdown tests"""
     
     def setUp(self):
         LifecycleTracker.reset()
     
     def test_shutdown_handlers_are_called(self):
-        """shutdown 时调用注册的 handler"""
+        """Registered handlers are called on shutdown"""
         ctx = ApplicationContext()
         ctx.refresh()
         
@@ -135,7 +135,7 @@ class TestShutdown(unittest.TestCase):
         self.assertIn('handler2', LifecycleTracker.events)
     
     def test_shutdown_handlers_called_in_order(self):
-        """shutdown handler 按注册顺序调用"""
+        """Shutdown handlers are called in registration order"""
         ctx = ApplicationContext()
         ctx.refresh()
         
@@ -153,7 +153,7 @@ class TestShutdown(unittest.TestCase):
         self.assertLess(second_idx, third_idx)
     
     def test_shutdown_handler_exception_does_not_stop_others(self):
-        """一个 handler 异常不阻止其他 handler 执行"""
+        """One handler exception does not prevent other handlers from executing"""
         ctx = ApplicationContext()
         ctx.refresh()
         
@@ -165,7 +165,7 @@ class TestShutdown(unittest.TestCase):
         ctx.add_shutdown_handler(failing_handler)
         ctx.add_shutdown_handler(lambda: LifecycleTracker.record('after'))
         
-        # shutdown 不应该因为一个 handler 失败而中断
+        # shutdown should not be interrupted by one handler failure
         ctx.shutdown()
         
         self.assertIn('before', LifecycleTracker.events)
@@ -174,13 +174,13 @@ class TestShutdown(unittest.TestCase):
 
 
 class TestContextLifecycle(unittest.TestCase):
-    """Context 完整生命周期测试"""
+    """Context full lifecycle tests"""
     
     def setUp(self):
         LifecycleTracker.reset()
     
     def test_full_lifecycle(self):
-        """完整生命周期：register -> refresh -> use -> shutdown"""
+        """Full lifecycle: register -> refresh -> use -> shutdown"""
         ctx = ApplicationContext()
         
         # 1. Register

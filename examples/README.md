@@ -28,6 +28,11 @@ The examples are intentionally engine-neutral at the application layer: business
 code targets Cullinan semantics first, while the framework decides whether to
 bridge into ASGI or Tornado at runtime.
 
+The maintained examples also stay inside the frozen public export boundary:
+top-level `cullinan` for regular application code, and entry-method-bound helpers
+such as `main.get_asgi_app()` when a test/demo needs runtime access without
+teaching `cullinan.run` as a top-level import.
+
 Historical compatibility demos live under `examples/legacy/` and are not part of
 the maintained default learning path. Only `decorator_demo_090.py` remains —
 other legacy demos were cleaned up when their referenced APIs (`cullinan.run`,

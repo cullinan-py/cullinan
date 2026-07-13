@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""DynamicBody 增强功能测试
+"""DynamicBody Enhanced Feature Tests
 
-测试新增的判空方法和安全访问功能。
+Tests newly added empty-check and safe-access methods.
 
 Author: Cullinan
 """
@@ -14,8 +14,8 @@ from cullinan.web.params import DynamicBody, SafeAccessor, EMPTY
 
 
 def test_basic_access():
-    """测试基本访问"""
-    print("1. 测试基本访问...")
+    """Test basic access"""
+    print("1. Testing basic access...")
     body = DynamicBody({'name': 'John', 'age': 25})
     
     assert body.name == 'John'
@@ -27,12 +27,12 @@ def test_basic_access():
 
 
 def test_has_method():
-    """测试 has 方法"""
-    print("2. 测试 has 方法...")
+    """Test has method"""
+    print("2. Testing has method...")
     body = DynamicBody({'name': 'John', 'email': None, 'empty_str': ''})
     
     assert body.has('name') == True
-    assert body.has('email') == True  # 存在但值为 None
+    assert body.has('email') == True  # exists but value is None
     assert body.has('missing') == False
     assert body.has('empty_str') == True
     
@@ -40,8 +40,8 @@ def test_has_method():
 
 
 def test_has_value_method():
-    """测试 has_value 方法"""
-    print("3. 测试 has_value 方法...")
+    """Test has_value method"""
+    print("3. Testing has_value method...")
     body = DynamicBody({
         'name': 'John',
         'email': None,
@@ -63,8 +63,8 @@ def test_has_value_method():
 
 
 def test_is_empty_methods():
-    """测试 is_empty 和 is_not_empty 方法"""
-    print("4. 测试 is_empty/is_not_empty 方法...")
+    """Test is_empty and is_not_empty methods"""
+    print("4. Testing is_empty/is_not_empty methods...")
     
     empty_body = DynamicBody({})
     assert empty_body.is_empty() == True
@@ -78,8 +78,8 @@ def test_is_empty_methods():
 
 
 def test_is_null_methods():
-    """测试 is_null 和 is_not_null 方法"""
-    print("5. 测试 is_null/is_not_null 方法...")
+    """Test is_null and is_not_null methods"""
+    print("5. Testing is_null/is_not_null methods...")
     body = DynamicBody({'name': 'John', 'email': None})
     
     assert body.is_null('name') == False
@@ -88,15 +88,15 @@ def test_is_null_methods():
     assert body.is_null('email') == True  # None
     assert body.is_not_null('email') == False
     
-    assert body.is_null('missing') == True  # 不存在
+    assert body.is_null('missing') == True  # does not exist
     assert body.is_not_null('missing') == False
     
     print("   PASSED")
 
 
 def test_get_nested():
-    """测试嵌套安全访问"""
-    print("6. 测试 get_nested 方法...")
+    """Test nested safe access"""
+    print("6. Testing get_nested method...")
     body = DynamicBody({
         'user': {
             'name': 'John',
@@ -107,16 +107,16 @@ def test_get_nested():
         }
     })
     
-    # 存在的嵌套路径
+    # Existing nested path
     assert body.get_nested('user.name') == 'John'
     assert body.get_nested('user.address.city') == 'New York'
     
-    # 不存在的嵌套路径
+    # Non-existent nested path
     assert body.get_nested('user.phone', 'N/A') == 'N/A'
     assert body.get_nested('user.address.country', 'USA') == 'USA'
     assert body.get_nested('missing.path.deep', 'default') == 'default'
     
-    # 嵌套返回 DynamicBody
+    # Nested returns DynamicBody
     address = body.get_nested('user.address')
     assert isinstance(address, DynamicBody)
     assert address.city == 'New York'
@@ -125,8 +125,8 @@ def test_get_nested():
 
 
 def test_typed_getters():
-    """测试类型化的 getter 方法"""
-    print("7. 测试类型化 getter 方法...")
+    """Test typed getter methods"""
+    print("7. Testing typed getter methods...")
     body = DynamicBody({
         'name': 'John',
         'age': 25,
@@ -139,7 +139,7 @@ def test_typed_getters():
     
     # get_str
     assert body.get_str('name') == 'John'
-    assert body.get_str('age') == '25'  # 转换为字符串
+    assert body.get_str('age') == '25'  # converted to string
     assert body.get_str('missing') == ''
     assert body.get_str('missing', 'default') == 'default'
     
@@ -147,7 +147,7 @@ def test_typed_getters():
     assert body.get_int('age') == 25
     assert body.get_int('missing') == 0
     assert body.get_int('missing', 100) == 100
-    assert body.get_int('invalid_int') == 0  # 转换失败返回默认值
+    assert body.get_int('invalid_int') == 0  # conversion failure returns default
     
     # get_float
     assert body.get_float('price') == 19.99
@@ -163,14 +163,14 @@ def test_typed_getters():
     assert body.get_list('tags') == ['a', 'b', 'c']
     assert body.get_list('missing') == []
     assert body.get_list('missing', ['default']) == ['default']
-    assert body.get_list('name') == []  # 非列表返回默认值
+    assert body.get_list('name') == []  # non-list returns default
     
     print("   PASSED")
 
 
 def test_safe_accessor_basic():
-    """测试 SafeAccessor 基本功能"""
-    print("8. 测试 SafeAccessor 基本功能...")
+    """Test SafeAccessor basic functionality"""
+    print("8. Testing SafeAccessor basic functionality...")
     body = DynamicBody({
         'user': {
             'name': 'John',
@@ -180,11 +180,11 @@ def test_safe_accessor_basic():
         }
     })
     
-    # 访问存在的属性
+    # Access existing attributes
     assert body.safe.user.name.value == 'John'
     assert body.safe.user.address.city.value == 'New York'
     
-    # 访问不存在的属性
+    # Access non-existent attributes
     assert body.safe.user.phone.value is None
     assert body.safe.user.phone.value_or('N/A') == 'N/A'
     assert body.safe.missing.deep.path.value_or('default') == 'default'
@@ -193,8 +193,8 @@ def test_safe_accessor_basic():
 
 
 def test_safe_accessor_exists():
-    """测试 SafeAccessor 存在性检查"""
-    print("9. 测试 SafeAccessor exists/is_null/is_not_null...")
+    """Test SafeAccessor existence check"""
+    print("9. Testing SafeAccessor exists/is_null/is_not_null...")
     body = DynamicBody({
         'user': {'name': 'John', 'email': None}
     })
@@ -209,14 +209,14 @@ def test_safe_accessor_exists():
     assert body.safe.user.name.is_null == False
     assert body.safe.user.name.is_not_null == True
     assert body.safe.user.email.is_null == True  # None
-    assert body.safe.user.phone.is_null == True  # 不存在
+    assert body.safe.user.phone.is_null == True  # does not exist
     
     print("   PASSED")
 
 
 def test_safe_accessor_bool():
-    """测试 SafeAccessor 布尔转换"""
-    print("10. 测试 SafeAccessor 布尔转换...")
+    """Test SafeAccessor boolean conversion"""
+    print("10. Testing SafeAccessor boolean conversion...")
     body = DynamicBody({
         'active': True,
         'inactive': False,
@@ -234,11 +234,11 @@ def test_safe_accessor_bool():
 
 
 def test_backward_compatibility():
-    """测试向后兼容性"""
-    print("11. 测试向后兼容性...")
+    """Test backward compatibility"""
+    print("11. Testing backward compatibility...")
     body = DynamicBody({'name': 'John', 'age': 25})
     
-    # 原有功能仍然正常
+    # Original functionality still works
     assert body.name == 'John'
     assert body['name'] == 'John'
     assert 'name' in body
@@ -247,7 +247,7 @@ def test_backward_compatibility():
     assert len(body) == 2
     assert bool(body) == True
     
-    # 迭代
+    # Iteration
     keys = list(body.keys())
     assert 'name' in keys
     assert 'age' in keys
@@ -256,21 +256,21 @@ def test_backward_compatibility():
 
 
 def test_empty_sentinel():
-    """测试 EMPTY 哨兵"""
-    print("12. 测试 EMPTY 哨兵...")
+    """Test EMPTY sentinel"""
+    print("12. Testing EMPTY sentinel...")
     
     assert bool(EMPTY) == False
-    assert EMPTY is EMPTY  # 单例
+    assert EMPTY is EMPTY  # singleton
     
-    # EMPTY 与 None 不同
+    # EMPTY is not None
     assert EMPTY is not None
     
     print("   PASSED")
 
 
 def test_complex_nested():
-    """测试复杂嵌套场景"""
-    print("13. 测试复杂嵌套场景...")
+    """Test complex nested scenarios"""
+    print("13. Testing complex nested scenarios...")
     body = DynamicBody({
         'users': [
             {'name': 'John', 'role': 'admin'},
@@ -285,12 +285,12 @@ def test_complex_nested():
         }
     })
     
-    # 通过 get_nested 访问
+    # Access via get_nested
     assert body.get_nested('config.debug') == True
     assert body.get_nested('config.database.host') == 'localhost'
     assert body.get_nested('config.database.port') == 5432
     
-    # 列表需要直接访问
+    # List needs direct access
     assert len(body.users) == 2
     
     # safe accessor

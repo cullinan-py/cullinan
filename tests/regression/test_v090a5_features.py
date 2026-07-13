@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""v0.90a5 新功能测试"""
+"""v0.90a5 new features tests"""
 
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def test_imports():
-    """测试所有新模块导入"""
-    print("1. 测试导入...")
+    """Test all new module imports"""
+    print("1. Testing imports...")
     
     from cullinan.web.params import (
         FileInfo, FileList,
@@ -15,16 +15,16 @@ def test_imports():
         Response, ResponseModel, ResponseSerializer, serialize_response,
     )
     
-    print("   所有模块导入成功")
+    print("   All modules imported successfully")
 
 
 def test_file_info():
-    """测试 FileInfo"""
-    print("2. 测试 FileInfo...")
+    """Test FileInfo"""
+    print("2. Testing FileInfo...")
     
     from cullinan.web.params import FileInfo, FileList
     
-    # 创建 FileInfo
+    # Create FileInfo
     file = FileInfo(
         filename='test.png',
         body=b'fake image data',
@@ -54,12 +54,12 @@ def test_file_info():
     images = files.filter_by_type('image/*')
     assert len(images) == 2
     
-    print("   FileInfo 测试通过")
+    print("   FileInfo test passed")
 
 
 def test_field_validator():
-    """测试 field_validator"""
-    print("3. 测试 field_validator...")
+    """Test field_validator"""
+    print("3. Testing field_validator...")
     
     from dataclasses import dataclass
     from cullinan.web.params import field_validator, validated_dataclass, FieldValidationError
@@ -84,24 +84,24 @@ def test_field_validator():
                 raise ValueError('Age must be positive')
             return v
     
-    # 正常情况
+    # Normal case
     user = User(name='John', email='john@example.com', age=25)
     assert user.name == 'John'
     assert user.email == 'john@example.com'
     
-    # 校验失败
+    # Validation failure
     try:
         user = User(name='John', email='invalid', age=25)
         assert False, "Should have raised error"
     except FieldValidationError as e:
         assert e.field == 'email'
     
-    print("   field_validator 测试通过")
+    print("   field_validator test passed")
 
 
 def test_response():
-    """测试 Response 装饰器"""
-    print("4. 测试 Response...")
+    """Test Response decorator"""
+    print("4. Testing Response...")
     
     from dataclasses import dataclass
     from cullinan.web.params import Response, get_response_models, ResponseSerializer
@@ -118,30 +118,30 @@ def test_response():
     
     models = get_response_models(get_user)
     assert len(models) == 2, f"Expected 2 models, got {len(models)}"
-    # 注意：装饰器堆叠顺序是从下往上，所以 404 先加入，200 后加入
+    # Note: decorator stacking order is bottom-up, so 404 is added first, 200 is added later
     status_codes = [m.status_code for m in models]
     assert 200 in status_codes, f"200 not in {status_codes}"
     assert 404 in status_codes, f"404 not in {status_codes}"
 
-    # 测试序列化
+    # Test serialization
     user = UserResponse(id=1, name='John')
     result = ResponseSerializer.serialize(user)
     assert result == {'id': 1, 'name': 'John'}, f"Got {result}"
 
-    # 测试 JSON
+    # Test JSON
     json_str = ResponseSerializer.to_json(user)
     assert '"id": 1' in json_str or '"id":1' in json_str, f"Got {json_str}"
 
-    print("   Response 测试通过")
+    print("   Response test passed")
 
 
 def test_file_param_enhanced():
-    """测试增强的 File 参数"""
-    print("5. 测试增强的 File 参数...")
+    """Test enhanced File parameters"""
+    print("5. Testing enhanced File parameters...")
     
     from cullinan.web.params import File, FileInfo
     
-    # 创建带校验的 File 参数
+    # Create a File parameter with validation
     file_param = File(
         max_size=1024,
         min_size=10,
@@ -153,11 +153,11 @@ def test_file_param_enhanced():
     assert file_param.min_size == 10
     assert file_param.multiple == False
     
-    # 校验通过
+    # Validation passes
     valid_file = FileInfo('test.png', b'x' * 100, 'image/png')
-    file_param.validate_file(valid_file)  # 不抛异常
+    file_param.validate_file(valid_file)  # No exception
     
-    # 文件太大
+    # File too large
     large_file = FileInfo('test.png', b'x' * 2000, 'image/png')
     try:
         file_param.validate_file(large_file)
@@ -165,7 +165,7 @@ def test_file_param_enhanced():
     except ValueError as e:
         assert 'exceeds maximum' in str(e)
     
-    # 类型不允许
+    # Type not allowed
     wrong_type = FileInfo('test.txt', b'x' * 100, 'text/plain')
     try:
         file_param.validate_file(wrong_type)
@@ -173,12 +173,12 @@ def test_file_param_enhanced():
     except ValueError as e:
         assert 'not allowed' in str(e)
     
-    print("   File 参数增强测试通过")
+    print("   File parameter enhancement test passed")
 
 
 def test_response_serializer():
-    """测试 ResponseSerializer"""
-    print("6. 测试 ResponseSerializer...")
+    """Test ResponseSerializer"""
+    print("6. Testing ResponseSerializer...")
     
     from dataclasses import dataclass
     from typing import List
@@ -210,29 +210,29 @@ def test_response_serializer():
     assert result['address']['city'] == 'NYC'
     assert result['tags'] == ['admin', 'active']
     
-    # 测试 DynamicBody
+    # Test DynamicBody
     body = DynamicBody({'name': 'Test', 'value': 123})
     result = ResponseSerializer.serialize(body)
     assert result == {'name': 'Test', 'value': 123}
     
-    print("   ResponseSerializer 测试通过")
+    print("   ResponseSerializer test passed")
 
 
 def test_file_resolver():
-    """测试文件参数解析器"""
-    print("7. 测试文件参数解析器...")
+    """Test file parameter resolver"""
+    print("7. Testing file parameter resolver...")
 
     from cullinan.web.params import File, FileInfo, FileList
     from cullinan.web.params.resolver import ParamResolver
 
-    # 模拟 Tornado 文件格式
+    # Simulate Tornado file format
     tornado_file = {
         'filename': 'test.png',
         'body': b'fake image content',
         'content_type': 'image/png',
     }
 
-    # 测试单文件解析
+    # Test single file resolution
     file_spec = File(max_size=1024 * 1024)
     result = ParamResolver._resolve_file_param([tornado_file], file_spec, 'avatar')
 
@@ -241,7 +241,7 @@ def test_file_resolver():
     assert result.size == 18
     assert result.content_type == 'image/png'
 
-    # 测试多文件解析
+    # Test multi-file resolution
     file_spec_multi = File(multiple=True, max_count=10)
     files_data = [
         {'filename': 'a.png', 'body': b'data1', 'content_type': 'image/png'},
@@ -255,4 +255,4 @@ def test_file_resolver():
     assert result[0].filename == 'a.png'
     assert result[1].filename == 'b.jpg'
 
-    print("   文件参数解析器测试通过")
+    print("   File parameter resolver test passed")

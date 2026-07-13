@@ -25,7 +25,7 @@ pr_links: []
 - `@configure(...)`：把启动配置附着到这个方法上
 - 直接调用入口方法：通过整理后的顶层 API 启动应用
 - `@module`：当你需要模块归属、reload 与热插拔运行时能力时，用来声明高级结构边界
-- 顶层 `run()` / `get_asgi_app()` 才是最短公开启动路径
+- 显式运行时 helper 位于 `cullinan.application` 与装饰后的入口方法上（如 `main.run()` / `main.get_asgi_app()`）
 
 这里的启动契约同时依赖[框架语义规则](../framework_semantics.md)：组件发现基于导入执行、自动扫描只保证模块顶层装饰器组件、`refresh()` 之后结构性注册会被冻结。
 

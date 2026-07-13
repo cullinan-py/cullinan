@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Type Converter
 
-类型转换器，将请求参数转换为目标类型。
+Type converter, converts request parameters to target types.
 
 Author: Cullinan
 """
@@ -11,12 +11,12 @@ from typing import Any, Type
 
 
 class ConversionError(Exception):
-    """类型转换错误
+    """Type conversion error
 
     Attributes:
-        message: 错误消息
-        value: 原始值
-        target_type: 目标类型
+        message: Error message
+        value: Original value
+        target_type: Target type
     """
 
     def __init__(
@@ -35,20 +35,20 @@ class ConversionError(Exception):
 
 
 class TypeConverter:
-    """类型转换器
+    """Type converter
 
-    将请求中的原始值转换为目标类型。
+    Converts raw values from requests to target types.
 
     Example:
         converter = TypeConverter()
 
-        # 基本转换
+        # Basic conversion
         result = converter.convert("123", int)  # -> 123
         result = converter.convert("true", bool)  # -> True
         result = converter.convert("1,2,3", list)  # -> ["1", "2", "3"]
     """
 
-    # 布尔值真值字符串
+    # Boolean truthy strings
     TRUE_VALUES = frozenset({
         'true', 'True', 'TRUE',
         '1',
@@ -65,22 +65,22 @@ class TypeConverter:
 
     @classmethod
     def convert(cls, value: Any, target_type: Type) -> Any:
-        """将值转换为目标类型
+        """Convert value to target type
 
         Args:
-            value: 原始值
-            target_type: 目标类型
+            value: Original value
+            target_type: Target type
 
         Returns:
-            转换后的值
+            Converted value
 
         Raises:
-            ConversionError: 转换失败
+            ConversionError: Conversion failed
         """
         if value is None:
             return None
 
-        # 如果已经是目标类型，直接返回
+        # If already the target type, return directly
         if isinstance(value, target_type):
             return value
 
@@ -100,7 +100,7 @@ class TypeConverter:
             elif target_type is bytes:
                 return cls._to_bytes(value)
             else:
-                # 尝试直接调用目标类型构造函数
+                # Try calling the target type constructor directly
                 return target_type(value)
         except ConversionError:
             raise
@@ -113,20 +113,20 @@ class TypeConverter:
 
     @classmethod
     def _to_str(cls, value: Any) -> str:
-        """转换为字符串"""
+        """Convert to string"""
         if isinstance(value, bytes):
             return value.decode('utf-8')
         return str(value)
 
     @classmethod
     def _to_int(cls, value: Any) -> int:
-        """转换为整数"""
+        """Convert to integer"""
         if isinstance(value, str):
             value = value.strip()
-            # 处理浮点数字符串
+            # Handle float string
             if '.' in value:
                 return int(float(value))
-            # 处理空字符串
+            # Handle empty string
             if not value:
                 raise ConversionError(
                     "Cannot convert empty string to int",
@@ -142,7 +142,7 @@ class TypeConverter:
 
     @classmethod
     def _to_float(cls, value: Any) -> float:
-        """转换为浮点数"""
+        """Convert to float"""
         if isinstance(value, str):
             value = value.strip()
             if not value:
@@ -155,7 +155,7 @@ class TypeConverter:
 
     @classmethod
     def _to_bool(cls, value: Any) -> bool:
-        """转换为布尔值"""
+        """Convert to boolean"""
         if isinstance(value, bool):
             return value
         if isinstance(value, str):
@@ -174,13 +174,13 @@ class TypeConverter:
 
     @classmethod
     def _to_list(cls, value: Any) -> list:
-        """转换为列表"""
+        """Convert to list"""
         if isinstance(value, list):
             return value
         if isinstance(value, (tuple, set, frozenset)):
             return list(value)
         if isinstance(value, str):
-            # 尝试解析 JSON 数组
+            # Try parsing as JSON array
             value = value.strip()
             if value.startswith('[') and value.endswith(']'):
                 try:
@@ -189,10 +189,10 @@ class TypeConverter:
                         return result
                 except json.JSONDecodeError:
                     pass
-            # 逗号分隔
+            # Comma-separated
             if ',' in value:
                 return [v.strip() for v in value.split(',')]
-            # 单值
+            # Single value
             if value:
                 return [value]
             return []
@@ -200,7 +200,7 @@ class TypeConverter:
 
     @classmethod
     def _to_dict(cls, value: Any) -> dict:
-        """转换为字典"""
+        """Convert to dict"""
         if isinstance(value, dict):
             return value
         if isinstance(value, str):
@@ -225,7 +225,7 @@ class TypeConverter:
 
     @classmethod
     def _to_bytes(cls, value: Any) -> bytes:
-        """转换为字节串"""
+        """Convert to bytes"""
         if isinstance(value, bytes):
             return value
         if isinstance(value, str):
@@ -240,14 +240,14 @@ class TypeConverter:
 
     @classmethod
     def can_convert(cls, value: Any, target_type: Type) -> bool:
-        """检查是否可以转换
+        """Check if conversion is possible
 
         Args:
-            value: 原始值
-            target_type: 目标类型
+            value: Original value
+            target_type: Target type
 
         Returns:
-            是否可以转换
+            Whether conversion is possible
         """
         try:
             cls.convert(value, target_type)

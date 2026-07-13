@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Parameter Types
 
-定义各种参数来源类型：Path, Query, Body, Header, File。
+Defines various parameter source types: Path, Query, Body, Header, File.
 
 Author: Cullinan
 """
@@ -12,15 +12,15 @@ from .base import Param, UNSET
 
 
 class Path(Param):
-    """URL 路径参数
+    """URL path parameter
 
-    从 URL 路径中提取的参数，如 /users/{id} 中的 id。
-    路径参数始终是必填的。
+    Parameter extracted from the URL path, such as id in /users/{id}.
+    Path parameters are always required.
 
     Example:
         @get_api(url="/users/{id}")
         async def get_user(self, id: int = Path()):
-            # id 已经转换为 int 类型
+            # id has already been converted to int type
             pass
 
         @get_api(url="/users/{id}/posts/{post_id}")
@@ -36,27 +36,27 @@ class Path(Param):
         name: str = None,
         description: str = '',
         alias: str = None,
-        # 数值约束
+        # Numeric constraints
         ge: Any = None,
         le: Any = None,
         gt: Any = None,
         lt: Any = None,
-        # 长度约束
+        # Length constraints
         min_length: int = None,
         max_length: int = None,
-        # 正则约束
+        # Regex constraints
         regex: str = None,
     ):
-        """初始化路径参数
+        """Initialize path parameter
 
         Note:
-            路径参数始终是必填的，不支持默认值。
+            Path parameters are always required and do not support default values.
         """
         super().__init__(
             type_=type_,
             name=name,
-            required=True,  # 路径参数始终必填
-            default=UNSET,  # 不支持默认值
+            required=True,  # Path parameters are always required
+            default=UNSET,  # Default values not supported
             description=description,
             alias=alias,
             ge=ge,
@@ -70,9 +70,9 @@ class Path(Param):
 
 
 class Query(Param):
-    """查询参数
+    """Query parameter
 
-    从 URL 查询字符串中提取的参数，如 ?page=1&size=10。
+    Parameter extracted from the URL query string, such as ?page=1&size=10.
 
     Example:
         @get_api(url="/users")
@@ -84,23 +84,22 @@ class Query(Param):
         ):
             pass
 
-        # 纯类型注解自动作为 Query（v0.90a5+）
+        # Plain type annotation is automatically treated as Query (v0.90a5+)
         @get_api(url="/items")
         async def list_items(self, page: int = 1, size: int = 10):
             pass
     """
     _source = 'query'
 
-    # 继承 Param 的 __init__，无需重写
-
+    # Inherits Param's __init__, no need to override
 
 class Body(Param):
-    """请求体参数
+    """Request body parameter
 
-    从请求体中提取的参数。传输格式 (JSON/Form) 由 Codec 层处理。
+    Parameter extracted from the request body. Transport format (JSON/Form) is handled by the Codec layer.
 
     Example:
-        # 单个字段（新的统一语法）
+        # Single field (new unified syntax)
         @post_api(url="/users")
         async def create_user(
             self,
@@ -109,7 +108,7 @@ class Body(Param):
         ):
             pass
 
-        # 使用 as_required() 快捷方法
+        # Use as_required() shortcut
         @post_api(url="/users")
         async def create_user(
             self,
@@ -117,23 +116,23 @@ class Body(Param):
         ):
             pass
 
-        # 配合 DynamicBody 使用整个请求体
+        # Use with DynamicBody for the entire request body
         @post_api(url="/users")
         async def create_user(self, body: DynamicBody):
             print(body.name, body.age)
     """
     _source = 'body'
 
-    # 继承 Param 的 __init__，无需重写
+    # Inherits Param's __init__, no need to override
 
 
 class RawBody(Param):
-    """原始请求体 (未解析的 bytes)
+    """Raw request body (unparsed bytes)
 
-    获取未解析的原始请求体 bytes，适用于：
-    - 签名验证（如 GitHub Webhook）
-    - 自定义解析格式
-    - 二进制数据处理
+    Gets the unparsed raw request body bytes, suitable for:
+    - Signature verification (e.g., GitHub Webhook)
+    - Custom parsing formats
+    - Binary data processing
 
     Example:
         @post_api(url="/webhook")
@@ -141,15 +140,15 @@ class RawBody(Param):
             self,
             sign: str = Header(alias="X-Hub-Signature-256"),
             event: str = Header(alias="X-GitHub-Event"),
-            raw_body: bytes = RawBody(),  # 推荐语法
+            raw_body: bytes = RawBody(),  # Recommended syntax
         ):
-            # raw_body 是 bytes 类型
+            # raw_body is of bytes type
             import hmac
             expected = hmac.new(secret, raw_body, 'sha256').hexdigest()
             if sign != f'sha256={expected}':
                 raise ValueError('Invalid signature')
 
-            # 手动解析
+            # Manual parsing
             import json
             data = json.loads(raw_body)
     """
@@ -162,12 +161,12 @@ class RawBody(Param):
         required: bool = False,
         description: str = '',
     ):
-        """初始化原始请求体参数
+        """Initialize raw request body parameter
 
         Args:
-            name: 参数名称
-            required: 是否必填（默认 False）
-            description: 参数描述
+            name: Parameter name
+            required: Whether required (default False)
+            description: Parameter description
         """
         super().__init__(
             type_=bytes,
@@ -179,11 +178,11 @@ class RawBody(Param):
 
 
 class Header(Param):
-    """请求头参数
+    """Request header parameter
 
-    从 HTTP 请求头中提取的参数。
-    通常使用 alias 指定实际的请求头名称。
-    HTTP 头匹配是大小写不敏感的（符合 RFC 7230）。
+    Parameter extracted from HTTP request headers.
+    Typically uses alias to specify the actual header name.
+    HTTP header matching is case-insensitive (per RFC 7230).
 
     Example:
         @get_api(url="/users")
@@ -194,7 +193,7 @@ class Header(Param):
         ):
             pass
 
-        # GitHub Webhook 签名验证
+        # GitHub Webhook signature verification
         @post_api(url="/webhook")
         async def handle_webhook(
             self,
@@ -215,17 +214,17 @@ class Header(Param):
         default: Any = UNSET,
         description: str = '',
         alias: str = None,
-        # 长度约束
+        # Length constraints
         min_length: int = None,
         max_length: int = None,
-        # 正则约束
+        # Regex constraints
         regex: str = None,
     ):
-        """初始化请求头参数
+        """Initialize request header parameter
 
         Note:
-            请求头参数通常使用 alias 指定实际的头名称，
-            如 Authorization, Content-Type, X-Request-ID 等。
+            Request header parameters typically use alias to specify the actual header name,
+            such as Authorization, Content-Type, X-Request-ID, etc.
         """
         super().__init__(
             type_=type_,
@@ -241,18 +240,18 @@ class Header(Param):
 
 
 class File(Param):
-    """文件参数
+    """File parameter
 
-    从 multipart/form-data 请求中提取的文件。
+    File extracted from a multipart/form-data request.
 
     Attributes:
-        max_size: 最大文件大小 (bytes)
-        allowed_types: 允许的 MIME 类型列表
-        multiple: 是否支持多文件上传
-        max_count: 多文件上传时的最大文件数量
+        max_size: Maximum file size (bytes)
+        allowed_types: List of allowed MIME types
+        multiple: Whether multiple file upload is supported
+        max_count: Maximum number of files when uploading multiple files
 
     Example:
-        # 单文件上传（新的统一语法）
+        # Single file upload (new unified syntax)
         @post_api(url="/upload")
         async def upload(
             self,
@@ -262,7 +261,7 @@ class File(Param):
             print(avatar.size)
             avatar.save('/uploads/')
 
-        # 使用 as_required() 快捷方法
+        # Use as_required() shortcut
         @post_api(url="/upload-required")
         async def upload_required(
             self,
@@ -270,7 +269,7 @@ class File(Param):
         ):
             pass
 
-        # 带类型校验
+        # With type validation
         @post_api(url="/upload-image")
         async def upload_image(
             self,
@@ -278,7 +277,7 @@ class File(Param):
         ):
             pass
 
-        # 多文件上传
+        # Multiple file upload
         @post_api(url="/upload-multiple")
         async def upload_multiple(
             self,
@@ -289,7 +288,7 @@ class File(Param):
     """
     _source = 'file'
 
-    # 扩展 __slots__
+    # Extend __slots__
     __slots__ = ('max_size', 'allowed_types', 'multiple', 'max_count', 'min_size')
 
     def __init__(
@@ -305,21 +304,21 @@ class File(Param):
         multiple: bool = False,
         max_count: Optional[int] = None,
     ):
-        """初始化文件参数
+        """Initialize file parameter
 
         Args:
-            name: 参数名称
-            required: 是否必填
-            description: 参数描述
-            alias: 别名 (表单字段名)
-            max_size: 最大文件大小 (bytes)
-            min_size: 最小文件大小 (bytes)
-            allowed_types: 允许的 MIME 类型列表，支持通配符如 'image/*'
-            multiple: 是否支持多文件上传
-            max_count: 多文件上传时的最大文件数量
+            name: Parameter name
+            required: Whether required
+            description: Parameter description
+            alias: Alias (form field name)
+            max_size: Maximum file size (bytes)
+            min_size: Minimum file size (bytes)
+            allowed_types: List of allowed MIME types, supports wildcards like 'image/*'
+            multiple: Whether multiple file upload is supported
+            max_count: Maximum number of files when uploading multiple files
         """
         super().__init__(
-            type_=bytes,  # 文件内容为 bytes
+            type_=bytes,  # File content is bytes
             name=name,
             required=required,
             default=UNSET,
@@ -333,15 +332,15 @@ class File(Param):
         self.max_count = max_count
 
     def validate_file(self, file_info) -> None:
-        """校验文件
+        """Validate file
 
         Args:
-            file_info: FileInfo 实例
+            file_info: FileInfo instance
 
         Raises:
-            ValueError: 校验失败
+            ValueError: Validation failed
         """
-        # 校验文件大小
+        # Validate file size
         if self.max_size is not None and file_info.size > self.max_size:
             raise ValueError(
                 f"File '{file_info.filename}' size ({file_info.size} bytes) "
@@ -354,7 +353,7 @@ class File(Param):
                 f"is below minimum required size ({self.min_size} bytes)"
             )
 
-        # 校验 MIME 类型
+        # Validate MIME type
         if self.allowed_types:
             if not self._match_content_type(file_info.content_type):
                 raise ValueError(
@@ -363,38 +362,38 @@ class File(Param):
                 )
 
     def validate_file_list(self, file_list) -> None:
-        """校验文件列表
+        """Validate file list
 
         Args:
-            file_list: FileList 实例
+            file_list: FileList instance
 
         Raises:
-            ValueError: 校验失败
+            ValueError: Validation failed
         """
-        # 校验文件数量
+        # Validate file count
         if self.max_count is not None and len(file_list) > self.max_count:
             raise ValueError(
                 f"Number of files ({len(file_list)}) exceeds maximum allowed ({self.max_count})"
             )
 
-        # 校验每个文件
+        # Validate each file
         for file_info in file_list:
             self.validate_file(file_info)
 
     def _match_content_type(self, content_type: str) -> bool:
-        """检查 MIME 类型是否匹配允许列表
+        """Check if MIME type matches allowed list
 
         Args:
-            content_type: 文件的 MIME 类型
+            content_type: File MIME type
 
         Returns:
-            是否匹配
+            Whether it matches
         """
         for pattern in self.allowed_types:
             if pattern == '*/*' or pattern == '*':
                 return True
             if pattern.endswith('/*'):
-                # 通配符匹配
+                # Wildcard match
                 prefix = pattern[:-1]  # 'image/'
                 if content_type.startswith(prefix):
                     return True
@@ -436,15 +435,15 @@ class File(Param):
         multiple: bool = False,
         max_count: Optional[int] = None,
     ) -> 'File':
-        """创建必填文件参数的快捷方法
+        """Shortcut method to create a required file parameter
 
         Example:
-            # 以下两种写法等价
+            # The following two forms are equivalent
             avatar: File = File.as_required(max_size=5*1024*1024)
             avatar: File = File(required=True, max_size=5*1024*1024)
 
         Returns:
-            设置了 required=True 的 File 实例
+            File instance with required=True
         """
         return cls(
             name=name,

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""全局根容器管理与高可用切换测试。"""
+"""Global root container management and high-availability failover tests."""
 
 from cullinan.core import (
     ApplicationContext,
@@ -127,7 +127,7 @@ class _expect_lifecycle_error:
 
     def __exit__(self, exc_type, exc, tb):
         if exc_type is None:
-            raise AssertionError("预期抛出 LifecycleError")
+            raise AssertionError("Expected LifecycleError to be raised")
         if not issubclass(exc_type, LifecycleError):
             return False
         return True

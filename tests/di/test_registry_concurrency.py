@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""测试 Registry 的并发安全性
+"""Test Registry concurrency safety
 
-验证多线程环境下的 register/unregister/clear/freeze 操作
+Verify register/unregister/clear/freeze operations in multi-threaded environment
 """
 
 import threading
@@ -11,7 +11,7 @@ from cullinan.core.registry import SimpleRegistry
 
 
 def test_concurrent_register():
-    """测试：并发注册不会导致数据丢失或异常"""
+    """Test: concurrent registration does not cause data loss or exceptions"""
 
     registry = SimpleRegistry()
     results = []
@@ -44,7 +44,7 @@ def test_concurrent_register():
 
 
 def test_concurrent_register_unregister():
-    """测试：并发注册和删除操作"""
+    """Test: concurrent register and unregister operations"""
 
     registry = SimpleRegistry()
     errors = []
@@ -81,7 +81,7 @@ def test_concurrent_register_unregister():
 
 
 def test_concurrent_freeze_operations():
-    """测试：freeze/unfreeze 的并发安全"""
+    """Test: freeze/unfreeze concurrency safety"""
 
     registry = SimpleRegistry()
     errors = []
@@ -117,7 +117,7 @@ def test_concurrent_freeze_operations():
 
 
 def test_concurrent_clear():
-    """测试：并发 clear 操作"""
+    """Test: concurrent clear operations"""
 
     registry = SimpleRegistry()
     errors = []
@@ -142,7 +142,7 @@ def test_concurrent_clear():
 
 
 def test_concurrent_metadata_operations():
-    """测试：并发元数据操作"""
+    """Test: concurrent metadata operations"""
 
     registry = SimpleRegistry()
     errors = []
@@ -173,7 +173,7 @@ def test_concurrent_metadata_operations():
 
 
 def test_concurrent_hook_registration():
-    """测试：并发 hook 注册"""
+    """Test: concurrent hook registration"""
 
     registry = SimpleRegistry()
     errors = []
@@ -204,7 +204,7 @@ def test_concurrent_hook_registration():
 
 
 def test_concurrent_update():
-    """测试：并发 update 操作"""
+    """Test: concurrent update operations"""
 
     registry = SimpleRegistry()
     errors = []
@@ -233,10 +233,10 @@ def test_concurrent_update():
 
 
 def test_lazyproxy_concurrent_resolve_single_call():
-    """测试：_LazyProxy 并发 resolve 仅调用一次 resolver（Issue 1 修复验证）"""
+    """Test: _LazyProxy concurrent resolve only calls resolver once (Issue 1 fix verification)"""
     from cullinan.core.application_context import _LazyProxy
 
-    call_count = [0]  # 用 list 实现跨线程可变计数器
+    call_count = [0]  # Use list for cross-thread mutable counter
     call_lock = threading.Lock()
 
     def resolver_with_side_effect():
@@ -246,11 +246,11 @@ def test_lazyproxy_concurrent_resolve_single_call():
 
     proxy = _LazyProxy(resolver_with_side_effect)
     errors = []
-    barrier = threading.Barrier(20)  # 所有线程同时启动
+    barrier = threading.Barrier(20)  # All threads start simultaneously
 
     def access_proxy():
         try:
-            barrier.wait()  # 最大化竞态窗口
+            barrier.wait()  # Maximize race window
             result = proxy._resolve()
             assert result == {"data": "resolved"}
         except Exception as e:
@@ -267,12 +267,12 @@ def test_lazyproxy_concurrent_resolve_single_call():
 
 
 def test_lazyproxy_resolve_returns_same_value():
-    """测试：_LazyProxy 多次 resolve 返回同一实例"""
+    """Test: _LazyProxy multiple resolves return the same instance"""
     from cullinan.core.application_context import _LazyProxy
     import random
 
     obj = object()
     proxy = _LazyProxy(lambda: obj)
     assert proxy._resolve() is obj
-    assert proxy._resolve() is obj  # 第二次应返回缓存值
+    assert proxy._resolve() is obj  # Second call should return cached value
 

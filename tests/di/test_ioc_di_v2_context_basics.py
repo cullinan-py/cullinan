@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Cullinan IoC/DI 2.0 - Context 基础功能测试
+"""Cullinan IoC/DI 2.0 - Context Basics Tests
 
-作者：Cullinan
+Author: Cullinan
 
-测试 PR-R1 的最小验收集合：
-1. singleton：同名两次 get() 返回同一对象
-2. prototype：同名两次 get() 返回不同对象
+Minimal acceptance test set for PR-R1:
+1. singleton: two get() calls with same name return the same object
+2. prototype: two get() calls with same name return different objects
 """
 
 import unittest
 import sys
 import os
 
-# 确保能导入 cullinan
+# Ensure cullinan is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cullinan.core.container import ApplicationContext
@@ -20,7 +20,7 @@ from cullinan.core.container import Definition, ScopeType
 
 
 class SimpleService:
-    """用于测试的简单服务类"""
+    """Simple service class for testing"""
 
     instance_count = 0
 
@@ -30,14 +30,14 @@ class SimpleService:
 
 
 class TestApplicationContextBasics(unittest.TestCase):
-    """ApplicationContext 基础功能测试"""
+    """ApplicationContext basic functionality tests"""
 
     def setUp(self):
-        """每个测试前重置计数器"""
+        """Reset counter before each test"""
         SimpleService.instance_count = 0
 
     def test_singleton_scope_returns_same_instance(self):
-        """singleton：同名两次 get() 返回同一对象"""
+        """singleton: two get() calls with same name return the same object"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -49,17 +49,17 @@ class TestApplicationContextBasics(unittest.TestCase):
 
         ctx.refresh()
 
-        # 两次 get 应该返回同一个实例
+        # Two get calls should return the same instance
         instance1 = ctx.get('SimpleService')
         instance2 = ctx.get('SimpleService')
 
         self.assertIs(instance1, instance2)
         self.assertEqual(instance1.id, instance2.id)
-        # 应该只创建了一次
+        # Should have created only once
         self.assertEqual(SimpleService.instance_count, 1)
 
     def test_prototype_scope_returns_different_instances(self):
-        """prototype：同名两次 get() 返回不同对象"""
+        """prototype: two get() calls with same name return different objects"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -71,20 +71,20 @@ class TestApplicationContextBasics(unittest.TestCase):
 
         ctx.refresh()
 
-        # 两次 get 应该返回不同的实例
+        # Two get calls should return different instances
         instance1 = ctx.get('SimpleService')
         instance2 = ctx.get('SimpleService')
 
         self.assertIsNot(instance1, instance2)
         self.assertNotEqual(instance1.id, instance2.id)
-        # 应该创建了两次
+        # Should have created twice
         self.assertEqual(SimpleService.instance_count, 2)
 
     def test_register_before_refresh_succeeds(self):
-        """refresh 前允许注册"""
+        """Registration allowed before refresh"""
         ctx = ApplicationContext()
 
-        # 应该不抛异常
+        # Should not raise exception
         ctx.register(Definition(
             name='Service1',
             factory=lambda c: object(),
@@ -103,7 +103,7 @@ class TestApplicationContextBasics(unittest.TestCase):
         self.assertFalse(ctx.is_frozen)
 
     def test_refresh_freezes_registry(self):
-        """refresh 后 registry 被冻结"""
+        """After refresh, registry is frozen"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -121,7 +121,7 @@ class TestApplicationContextBasics(unittest.TestCase):
         self.assertTrue(ctx.is_refreshed)
 
     def test_has_returns_correct_value(self):
-        """has() 正确返回 Definition 是否存在"""
+        """has() correctly returns whether Definition exists"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -135,7 +135,7 @@ class TestApplicationContextBasics(unittest.TestCase):
         self.assertFalse(ctx.has('NonExistingService'))
 
     def test_list_definitions(self):
-        """list_definitions() 返回所有已注册的名称"""
+        """list_definitions() returns all registered names"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -159,7 +159,7 @@ class TestApplicationContextBasics(unittest.TestCase):
         self.assertEqual(len(names), 2)
 
     def test_try_get_returns_none_for_missing(self):
-        """try_get() 对不存在的依赖返回 None"""
+        """try_get() returns None for non-existent dependency"""
         ctx = ApplicationContext()
         ctx.refresh()
 
@@ -168,7 +168,7 @@ class TestApplicationContextBasics(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_try_get_returns_instance_for_existing(self):
-        """try_get() 对存在的依赖返回实例"""
+        """try_get() returns instance for existing dependency"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -186,7 +186,7 @@ class TestApplicationContextBasics(unittest.TestCase):
         self.assertIsInstance(result, SimpleService)
 
     def test_eager_initialization(self):
-        """eager=True 的 Definition 在 refresh 时预创建"""
+        """eager=True Definition is pre-created on refresh"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -201,11 +201,11 @@ class TestApplicationContextBasics(unittest.TestCase):
 
         ctx.refresh()
 
-        # refresh 后应该已经创建
+        # After refresh, should already be created
         self.assertEqual(SimpleService.instance_count, 1)
 
     def test_non_eager_not_initialized_on_refresh(self):
-        """eager=False 的 Definition 在 refresh 时不创建"""
+        """eager=False Definition is not created on refresh"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -218,19 +218,19 @@ class TestApplicationContextBasics(unittest.TestCase):
 
         ctx.refresh()
 
-        # refresh 后应该还没创建
+        # After refresh, should not be created yet
         self.assertEqual(SimpleService.instance_count, 0)
 
-        # 首次 get 时才创建
+        # Created only on first get
         ctx.get('LazyService')
         self.assertEqual(SimpleService.instance_count, 1)
 
 
 class TestConditions(unittest.TestCase):
-    """条件功能测试"""
+    """Conditional functionality tests"""
 
     def test_condition_satisfied_allows_resolution(self):
-        """条件满足时允许解析"""
+        """Resolution allowed when condition is satisfied"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(
@@ -247,7 +247,7 @@ class TestConditions(unittest.TestCase):
         self.assertIsNotNone(result)
 
     def test_try_get_returns_none_when_condition_not_met(self):
-        """try_get 在条件不满足时返回 None"""
+        """try_get returns None when condition is not met"""
         ctx = ApplicationContext()
 
         ctx.register(Definition(

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Params Module Tests
 
-测试参数标记类。
+Tests parameter marker classes.
 
 Author: Cullinan
 """
@@ -20,10 +20,10 @@ from cullinan.web.params import (
 
 
 class TestUNSET(unittest.TestCase):
-    """测试 UNSET 哨兵"""
+    """Test UNSET sentinel"""
 
     def test_singleton(self):
-        """UNSET 应该是单例"""
+        """UNSET should be a singleton"""
         from cullinan.web.params.base import _UNSET
         a = _UNSET()
         b = _UNSET()
@@ -31,20 +31,20 @@ class TestUNSET(unittest.TestCase):
         self.assertIs(a, UNSET)
 
     def test_bool_is_false(self):
-        """UNSET 的布尔值应为 False"""
+        """UNSET boolean value should be False"""
         self.assertFalse(UNSET)
         self.assertFalse(bool(UNSET))
 
     def test_repr(self):
-        """UNSET 的字符串表示"""
+        """UNSET string representation"""
         self.assertEqual(repr(UNSET), '<UNSET>')
 
 
 class TestParam(unittest.TestCase):
-    """测试 Param 基类"""
+    """Test Param base class"""
 
     def test_default_values(self):
-        """默认值测试"""
+        """Default values test"""
         p = Param()
         self.assertEqual(p.type_, str)
         self.assertTrue(p.required)
@@ -52,23 +52,23 @@ class TestParam(unittest.TestCase):
         self.assertIsNone(p.name)
 
     def test_with_type(self):
-        """指定类型"""
+        """Specify type"""
         p = Param(int)
         self.assertEqual(p.type_, int)
 
     def test_with_default_sets_required_false(self):
-        """有默认值时 required 自动为 False"""
+        """required is automatically False when default is set"""
         p = Param(str, default='test')
         self.assertFalse(p.required)
         self.assertEqual(p.default, 'test')
 
     def test_explicit_required_with_default(self):
-        """显式 required=True 但有默认值时，required 仍为 False"""
+        """When required=True explicitly but has default, required is still False"""
         p = Param(str, required=True, default='test')
         self.assertFalse(p.required)
 
     def test_validators(self):
-        """验证器构建"""
+        """Validators construction"""
         p = Param(int, ge=0, le=100, min_length=1)
         validators = p.get_validators()
         self.assertEqual(len(validators), 3)
@@ -77,21 +77,21 @@ class TestParam(unittest.TestCase):
         self.assertIn(('min_length', 1), validators)
 
     def test_has_default(self):
-        """has_default 方法"""
+        """has_default method"""
         p1 = Param()
         p2 = Param(default='test')
         self.assertFalse(p1.has_default())
         self.assertTrue(p2.has_default())
 
     def test_get_default(self):
-        """get_default 方法"""
+        """get_default method"""
         p1 = Param()
         p2 = Param(default='test')
         self.assertIsNone(p1.get_default())
         self.assertEqual(p2.get_default(), 'test')
 
     def test_repr(self):
-        """字符串表示"""
+        """String representation"""
         p = Param(int, name='age', default=0)
         repr_str = repr(p)
         self.assertIn('Param', repr_str)
@@ -100,60 +100,60 @@ class TestParam(unittest.TestCase):
 
 
 class TestPath(unittest.TestCase):
-    """测试 Path 参数类型"""
+    """Test Path parameter type"""
 
     def test_source(self):
-        """来源标识"""
+        """Source identifier"""
         p = Path(int)
         self.assertEqual(p.source, 'path')
 
     def test_always_required(self):
-        """Path 参数始终必填"""
+        """Path parameter is always required"""
         p = Path(int)
         self.assertTrue(p.required)
 
     def test_no_default(self):
-        """Path 参数不支持默认值"""
+        """Path parameter does not support default values"""
         p = Path(int)
         self.assertIs(p.default, UNSET)
 
     def test_with_validators(self):
-        """带验证器"""
+        """With validators"""
         p = Path(int, ge=1)
         validators = p.get_validators()
         self.assertIn(('ge', 1), validators)
 
 
 class TestQuery(unittest.TestCase):
-    """测试 Query 参数类型"""
+    """Test Query parameter type"""
 
     def test_source(self):
-        """来源标识"""
+        """Source identifier"""
         p = Query(str)
         self.assertEqual(p.source, 'query')
 
     def test_with_default(self):
-        """带默认值"""
+        """With default value"""
         p = Query(int, default=1)
         self.assertFalse(p.required)
         self.assertEqual(p.default, 1)
 
     def test_optional(self):
-        """可选参数"""
+        """Optional parameter"""
         p = Query(str, required=False)
         self.assertFalse(p.required)
 
 
 class TestBody(unittest.TestCase):
-    """测试 Body 参数类型"""
+    """Test Body parameter type"""
 
     def test_source(self):
-        """来源标识"""
+        """Source identifier"""
         p = Body(str)
         self.assertEqual(p.source, 'body')
 
     def test_with_validators(self):
-        """带验证器"""
+        """With validators"""
         p = Body(int, ge=0, le=100)
         validators = p.get_validators()
         self.assertIn(('ge', 0), validators)
@@ -161,50 +161,50 @@ class TestBody(unittest.TestCase):
 
 
 class TestHeader(unittest.TestCase):
-    """测试 Header 参数类型"""
+    """Test Header parameter type"""
 
     def test_source(self):
-        """来源标识"""
+        """Source identifier"""
         p = Header(str)
         self.assertEqual(p.source, 'header')
 
     def test_with_alias(self):
-        """带别名"""
+        """With alias"""
         p = Header(str, alias='Authorization')
         self.assertEqual(p.alias, 'Authorization')
 
     def test_optional_with_default(self):
-        """可选带默认值"""
+        """Optional with default value"""
         p = Header(str, default='Bearer token')
         self.assertFalse(p.required)
         self.assertEqual(p.default, 'Bearer token')
 
 
 class TestFile(unittest.TestCase):
-    """测试 File 参数类型"""
+    """Test File parameter type"""
 
     def test_source(self):
-        """来源标识"""
+        """Source identifier"""
         p = File()
         self.assertEqual(p.source, 'file')
 
     def test_type_is_bytes(self):
-        """文件类型为 bytes"""
+        """File type is bytes"""
         p = File()
         self.assertEqual(p.type_, bytes)
 
     def test_max_size(self):
-        """最大文件大小"""
+        """Maximum file size"""
         p = File(max_size=1024)
         self.assertEqual(p.max_size, 1024)
 
     def test_allowed_types(self):
-        """允许的 MIME 类型"""
+        """Allowed MIME types"""
         p = File(allowed_types=['image/png', 'image/jpeg'])
         self.assertEqual(p.allowed_types, ['image/png', 'image/jpeg'])
 
     def test_repr(self):
-        """字符串表示"""
+        """String representation"""
         p = File(name='avatar', max_size=1024)
         repr_str = repr(p)
         self.assertIn('File', repr_str)

@@ -1,4 +1,4 @@
-"""专项回归：确保 Controller 实例通过 ApplicationContext 完成依赖注入。"""
+"""Dedicated regression: ensure Controller instances complete dependency injection via ApplicationContext."""
 
 import json
 import pytest

@@ -50,7 +50,7 @@ Cullinan 现在把显式运行时编排放在 `cullinan.application` 中，
 
 ### 迁移含义
 
-新的启动代码应优先使用 `from cullinan import application, configure, run`。
+新的启动代码应优先使用 `from cullinan import application, configure`，然后直接调用装饰后的入口方法。
 底层容器编排仍可直接使用 `ApplicationContext`；当你明确需要显式运行时编排时，
 再进入 `cullinan.application`，而不是把它当成默认开发者路径。
 

@@ -131,13 +131,13 @@ python tests/run_all_di_tests.py
 
 ```
 ======================================================================
-所有测试执行完成
+All tests completed
 ======================================================================
-  [PASS] 基础修复验证
-  [PASS] 全方位测试套件
-  [PASS] BotController 专项回归测试
+  [PASS] Basic fix verification
+  [PASS] Comprehensive test suite
+  [PASS] BotController regression test
 ======================================================================
-结果: 全部通过
+Result: All passed
 ```
 
 ## Modified Files

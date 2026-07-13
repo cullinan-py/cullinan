@@ -2,6 +2,7 @@ import logging
 
 logging.getLogger("cullinan").addHandler(logging.NullHandler())
 
+from cullinan._version import __version__ as _package_version
 from cullinan.application import (
     CullinanConfig,
     application as _application_decorator,
@@ -108,8 +109,7 @@ class _ApplicationFacade:
 
 
 application = _ApplicationFacade()
-
-__version__ = "0.93.post1"
+__version__ = _package_version
 
 __all__ = [
     "Auto",

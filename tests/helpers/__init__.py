@@ -1,1 +1,1 @@
-"""测试共享 helper 放在这里。"""
+"""Shared test helpers go here."""

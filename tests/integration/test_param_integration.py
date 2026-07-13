@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""参数系统在控制器方法中的集成回归。"""
+"""Integration regression for the parameter system in controller methods."""
 
 import inspect
 

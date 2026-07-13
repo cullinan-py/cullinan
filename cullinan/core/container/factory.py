@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""兼容转发到统一 Factory。"""
+"""Compatibility forward to unified Factory."""
 
 from ..factory import Factory
 

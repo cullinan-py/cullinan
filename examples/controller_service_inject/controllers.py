@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 @controller(url="/users")
 class UserController:
-    user_directory: UserDirectoryService  # ← 构造注入：一行就够了
+    user_directory: UserDirectoryService  # ← constructor injection: one line is enough
 
     @get_api(url="")
     def list_users(self):

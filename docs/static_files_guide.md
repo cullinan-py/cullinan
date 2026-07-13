@@ -36,7 +36,7 @@ boundary and assembled by the runtime.
 
 The result is a configuration that survives switching between Tornado
 and ASGI, packaging with Nuitka / PyInstaller, and integration testing
-through `get_asgi_app()` — without rewriting any handlers.
+through `main.get_asgi_app()` — without rewriting any handlers.
 
 ## Public API
 

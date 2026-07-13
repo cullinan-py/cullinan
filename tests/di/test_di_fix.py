@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""测试 ControllerRegistry 依赖注入修复
+"""Test ControllerRegistry dependency injection fix
 
 Author: Cullinan
 """
@@ -12,7 +12,7 @@ pytestmark = pytest.mark.filterwarnings(
 
 
 def reset_all_registries():
-    """重置所有注册表以便独立测试"""
+    """Reset all registries for independent testing"""
     from cullinan.web.controller.registry import reset_controller_registry
     from cullinan.core.pending import PendingRegistry
     from cullinan.core import set_application_context
@@ -23,7 +23,7 @@ def reset_all_registries():
 
 
 def test_controller_di():
-    """测试 Controller 依赖注入"""
+    """Test Controller dependency injection"""
     reset_all_registries()
 
     from cullinan.core import (
@@ -35,13 +35,13 @@ def test_controller_di():
         Inject
     )
 
-    # 创建一个测试服务
+    # Create a test service
     @service
     class TestService:
         def get_message(self):
             return 'Hello from TestService'
 
-    # 创建一个测试控制器
+    # Create a test controller
     @controller(url='/test')
     class TestController:
         test_service: TestService = Inject()
@@ -49,7 +49,7 @@ def test_controller_di():
         def test_method(self):
             return self.test_service.get_message()
 
-    # 创建 ApplicationContext 并设置全局引用
+    # Create ApplicationContext and set global reference
     ctx = ApplicationContext()
     set_application_context(ctx)
     try:
@@ -72,7 +72,7 @@ def test_controller_di():
 
 
 def test_multiple_services():
-    """测试多个服务注入"""
+    """Test multiple services injection"""
     reset_all_registries()
 
     from cullinan.core import (
@@ -101,7 +101,7 @@ def test_multiple_services():
         def get_names(self):
             return f'{self.service_a.name()} + {self.service_b.name()}'
 
-    # 新建 ApplicationContext
+    # Create new ApplicationContext
     ctx = ApplicationContext()
     set_application_context(ctx)
     try:
@@ -121,7 +121,7 @@ def test_multiple_services():
 
 
 def test_optional_injection():
-    """测试可选依赖注入"""
+    """Test optional dependency injection"""
     reset_all_registries()
 
     from cullinan.core import (
@@ -137,14 +137,14 @@ def test_optional_injection():
         def exists(self):
             return True
 
-    # 注意：MissingService 没有被 @service 装饰，所以不会被注册
+    # Note: MissingService is not decorated with @service, so it won't be registered
     class MissingService:
         pass
 
     @controller(url='/optional')
     class OptionalController:
         existing: ExistingService = Inject()
-        missing: MissingService = Inject(required=False)  # 可选依赖
+        missing: MissingService = Inject(required=False)  # Optional dependency
 
     ctx = ApplicationContext()
     set_application_context(ctx)

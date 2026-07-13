@@ -1,16 +1,16 @@
-# Cullinan 测试目录
+# Cullinan Test Directory
 
-`tests\` 现在按职责分层，`pytest` 是唯一正式入口；本次 application-first 更新相关覆盖也已经收敛到可直接收集的 pytest 测试。
+The `tests\` directory is organized by responsibility, and `pytest` is the only official entry point. The application-first update coverage has been consolidated into directly collectible pytest tests.
 
-## 运行方式
+## How to Run
 
-在仓库根目录执行：
+Run from the repository root:
 
 ```powershell
 .venv\Scripts\python -m pytest
 ```
 
-按目录执行：
+Run by directory:
 
 ```powershell
 .venv\Scripts\python -m pytest tests\core
@@ -21,39 +21,39 @@
 .venv\Scripts\python -m pytest tests\compat
 ```
 
-## 目录结构
+## Directory Structure
 
 ```text
 tests/
-├── compat/        # 兼容性与历史 API 行为
-├── core/          # 核心模块、配置、扫描、异常与基础行为
-├── di/            # IoC / DI、容器、生命周期、注册表
-├── integration/   # 跨模块集成测试
-├── regression/    # 历史缺陷回归与边界场景
-├── web/           # Web runtime、请求处理、参数/模型/编解码
-├── helpers/       # 共享 helper（非测试入口）
-└── conftest.py    # 共享 pytest 启动配置
+├── compat/        # Compatibility and historical API behavior
+├── core/          # Core modules, config, scanning, exceptions, and base behavior
+├── di/            # IoC / DI, container, lifecycle, registry
+├── integration/   # Cross-module integration tests
+├── regression/    # Historical defect regression and edge cases
+├── web/           # Web runtime, request handling, params/models/codec
+├── helpers/       # Shared helpers (not test entry points)
+└── conftest.py    # Shared pytest startup configuration
 ```
 
-## 约定
+## Conventions
 
-1. 正式测试文件统一命名为 `test_*.py`。
-2. 新增测试时优先放入对应领域目录；只有跨模块场景才放 `integration`。
-3. 新增或刷新测试时，不再使用 `run_*`、`quick_*`、`verify_*`、`diagnose_*` 这类脚本式主线测试。
-4. 历史 `if __name__ == "__main__"`、`main()`、`run_all_tests()` 直跑入口已清理；正式验证统一交给 pytest 收集。
-5. 若需要共享测试工具，放到 `tests\helpers\`，不要直接作为测试入口执行。
+1. Official test files are uniformly named `test_*.py`.
+2. When adding tests, place them in the corresponding domain directory first; only cross-module scenarios go in `integration`.
+3. When adding or refreshing tests, do not use script-style main-line tests like `run_*`, `quick_*`, `verify_*`, `diagnose_*`.
+4. Legacy `if __name__ == "__main__"`, `main()`, `run_all_tests()` direct-run entry points have been cleaned up; all official verification is handled by pytest collection.
+5. If you need shared test utilities, put them in `tests\helpers\`; do not use them directly as test entry points.
 
-## 编写建议
+## Writing Guidelines
 
-1. 优先编写可直接被 `pytest` 收集的测试函数或 `unittest.TestCase`。
-2. 避免依赖 `if __name__ == "__main__"`、`print("[PASS]")`、`return True/False` 的手工执行模式。
-3. 需要仓库根路径时，依赖 `tests\conftest.py` 提供的统一路径注入，不要在新文件里重复硬编码路径。
+1. Prefer writing test functions or `unittest.TestCase` classes that can be directly collected by `pytest`.
+2. Avoid relying on manual execution patterns like `if __name__ == "__main__"`, `print("[PASS]")`, `return True/False`.
+3. When you need the repository root path, rely on the unified path injection provided by `tests\conftest.py`; do not hardcode paths in new files.
 
-## 本次更新相关测试
+## Tests Related to This Update
 
-- `tests\core\test_application_model_refactor.py`：application-first 启动、模块归属、runtime 切换
-- `tests\core\test_public_api_boundaries.py`：顶层推荐 API、兼容导出 warning、公开边界收敛
-- `tests\core\test_decorators.py`：装饰器注册元数据与重扫能力
-- `tests\integration\test_adapter_integration.py`：ASGI / Tornado 适配器集成路径
-- `tests\integration\test_gateway_integration.py`：gateway 端到端行为的 pytest 化集成覆盖
-- `tests\web\test_openapi_generator.py`：OpenAPI 自动生成与公开 spec 路径覆盖
+- `tests\core\test_application_model_refactor.py`: application-first startup, module ownership, runtime switching
+- `tests\core\test_public_api_boundaries.py`: top-level recommended API, compat export warnings, public boundary consolidation
+- `tests\core\test_decorators.py`: decorator registration metadata and re-scan capability
+- `tests\integration\test_adapter_integration.py`: ASGI / Tornado adapter integration paths
+- `tests\integration\test_gateway_integration.py`: gateway end-to-end behavior pytest integration coverage
+- `tests\web\test_openapi_generator.py`: OpenAPI auto-generation and public spec path coverage

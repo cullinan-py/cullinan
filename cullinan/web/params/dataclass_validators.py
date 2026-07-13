@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Dataclass Validators
 
-为 dataclass 提供字段级校验装饰器。
+Provides field-level validation decorators for dataclasses.
 
 Author: Cullinan
 """
@@ -10,17 +10,17 @@ from typing import Any, Callable, Dict, List, Type
 import dataclasses
 
 
-# 存储每个 dataclass 的字段校验器
+# Store field validators for each dataclass
 _field_validators: Dict[Type, Dict[str, List[Callable]]] = {}
 
 
 class FieldValidationError(Exception):
-    """字段校验错误
+    """Field validation error
 
     Attributes:
-        field: 字段名
-        value: 字段值
-        message: 错误消息
+        field: Field name
+        value: Field value
+        message: Error message
     """
 
     def __init__(self, field: str, value: Any, message: str):
@@ -38,15 +38,15 @@ class FieldValidationError(Exception):
 
 
 def field_validator(*fields: str, mode: str = 'after'):
-    """字段校验器装饰器
+    """Field validator decorator
 
-    用于在 dataclass 中定义字段级别的校验逻辑。
+    Used to define field-level validation logic in a dataclass.
 
     Args:
-        *fields: 要校验的字段名列表
-        mode: 校验模式
-            - 'after': 在类型转换后校验（默认）
-            - 'before': 在类型转换前校验
+        *fields: List of field names to validate
+        mode: Validation mode
+            - 'after': Validate after type conversion (default)
+            - 'before': Validate before type conversion
 
     Example:
         from dataclasses import dataclass
@@ -80,18 +80,18 @@ def field_validator(*fields: str, mode: str = 'after'):
                 return v
     """
     def decorator(func: Callable) -> Callable:
-        # 检查是否是 classmethod
+        # Check if it's a classmethod
         if isinstance(func, classmethod):
-            # 获取实际函数
+            # Get the actual function
             actual_func = func.__func__
-            # 标记校验器属性
+            # Mark validator attributes
             actual_func._is_field_validator = True
             actual_func._validator_fields = fields
             actual_func._validator_mode = mode
-            # 返回原始 classmethod，保持其类型
+            # Return the original classmethod, preserving its type
             return func
         else:
-            # 普通函数
+            # Regular function
             func._is_field_validator = True
             func._validator_fields = fields
             func._validator_mode = mode
@@ -101,23 +101,23 @@ def field_validator(*fields: str, mode: str = 'after'):
 
 
 def register_validators(cls: Type) -> None:
-    """注册 dataclass 的所有字段校验器
+    """Register all field validators for a dataclass
 
     Args:
-        cls: dataclass 类
+        cls: dataclass class
     """
     if not dataclasses.is_dataclass(cls):
         return
 
     validators = {}
 
-    # 扫描类中的校验器方法
+    # Scan validator methods in the class
     for name in dir(cls):
         if name.startswith('_'):
             continue
 
         try:
-            # 使用 __dict__ 直接获取，避免描述符协议
+            # Use __dict__ to get directly, avoiding descriptor protocol
             if name in cls.__dict__:
                 method = cls.__dict__[name]
             else:
@@ -128,12 +128,12 @@ def register_validators(cls: Type) -> None:
         if method is None:
             continue
 
-        # 处理 classmethod 包装
+        # Handle classmethod wrapping
         actual_method = method
         if isinstance(method, classmethod):
             actual_method = method.__func__
 
-        # 检查是否是校验器
+        # Check if it's a validator
         if hasattr(actual_method, '_is_field_validator') and actual_method._is_field_validator:
             for field in actual_method._validator_fields:
                 if field not in validators:
@@ -148,13 +148,13 @@ def register_validators(cls: Type) -> None:
 
 
 def get_validators(cls: Type) -> Dict[str, List[dict]]:
-    """获取 dataclass 的字段校验器
+    """Get field validators for a dataclass
 
     Args:
-        cls: dataclass 类
+        cls: dataclass class
 
     Returns:
-        字段名到校验器列表的映射
+        Mapping of field names to validator lists
     """
     if cls not in _field_validators:
         register_validators(cls)
@@ -162,19 +162,19 @@ def get_validators(cls: Type) -> Dict[str, List[dict]]:
 
 
 def validate_field(cls: Type, field: str, value: Any, mode: str = 'after') -> Any:
-    """对字段值执行校验
+    """Validate a field value
 
     Args:
-        cls: dataclass 类
-        field: 字段名
-        value: 字段值
-        mode: 校验模式
+        cls: dataclass class
+        field: Field name
+        value: Field value
+        mode: Validation mode
 
     Returns:
-        校验/转换后的值
+        Validated/converted value
 
     Raises:
-        FieldValidationError: 校验失败
+        FieldValidationError: Validation failed
     """
     validators = get_validators(cls)
     field_validators = validators.get(field, [])
@@ -194,13 +194,13 @@ def validate_field(cls: Type, field: str, value: Any, mode: str = 'after') -> An
 
 
 def validate_dataclass(instance) -> None:
-    """校验整个 dataclass 实例
+    """Validate an entire dataclass instance
 
     Args:
-        instance: dataclass 实例
+        instance: dataclass instance
 
     Raises:
-        FieldValidationError: 校验失败
+        FieldValidationError: Validation failed
     """
     cls = type(instance)
 
@@ -213,17 +213,17 @@ def validate_dataclass(instance) -> None:
         field_name = field.name
         value = getattr(instance, field_name)
 
-        # 执行 after 模式的校验器
+        # Execute after-mode validators
         if field_name in validators:
             for validator in validators[field_name]:
                 if validator['mode'] == 'after':
                     try:
                         func = validator['func']
-                        # 处理 classmethod - 需要使用类作为第一个参数
+                        # Handle classmethod - need to use the class as the first argument
                         if isinstance(func, classmethod):
                             new_value = func.__func__(cls, value)
                         else:
-                            # 普通函数/方法
+                            # Regular function/method
                             new_value = func(cls, value)
                         setattr(instance, field_name, new_value)
                     except ValueError as e:
@@ -231,9 +231,9 @@ def validate_dataclass(instance) -> None:
 
 
 class validated_dataclass:
-    """带自动校验的 dataclass 装饰器
+    """Dataclass decorator with automatic validation
 
-    包装 @dataclass，自动在实例化后执行字段校验。
+    Wraps @dataclass, automatically executes field validation after instantiation.
 
     Example:
         from cullinan.web.params import validated_dataclass, field_validator
@@ -253,36 +253,36 @@ class validated_dataclass:
     """
 
     def __new__(cls, wrapped_cls=None, **kwargs):
-        """支持 @validated_dataclass 和 @validated_dataclass() 两种用法"""
+        """Supports both @validated_dataclass and @validated_dataclass() usage"""
         if wrapped_cls is not None:
-            # @validated_dataclass 不带括号
+            # @validated_dataclass without parentheses
             return cls._wrap_class(wrapped_cls, kwargs)
         else:
-            # @validated_dataclass() 带括号
+            # @validated_dataclass() with parentheses
             def decorator(c):
                 return cls._wrap_class(c, kwargs)
             return decorator
 
     @staticmethod
     def _wrap_class(cls, kwargs=None):
-        """包装类"""
+        """Wrap class"""
         if kwargs is None:
             kwargs = {}
 
-        # 应用 @dataclass
+        # Apply @dataclass
         if not dataclasses.is_dataclass(cls):
             cls = dataclasses.dataclass(cls, **kwargs)
 
-        # 注册校验器（在 @dataclass 之后）
+        # Register validators (after @dataclass)
         register_validators(cls)
 
-        # 保存原始的 __init__
+        # Save original __init__
         original_init = cls.__init__
 
         def new_init(self, *args, **kw):
-            # 调用原始的 __init__
+            # Call original __init__
             original_init(self, *args, **kw)
-            # 执行校验
+            # Execute validation
             validate_dataclass(self)
 
         cls.__init__ = new_init
@@ -291,6 +291,6 @@ class validated_dataclass:
 
 
 def clear_validators():
-    """清除所有已注册的校验器（用于测试）"""
+    """Clear all registered validators (for testing)"""
     _field_validators.clear()
 

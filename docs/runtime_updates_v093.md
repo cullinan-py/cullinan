@@ -52,7 +52,7 @@ re-exporting the shortest public startup path from top-level `cullinan`.
 
 ### Migration implication
 
-New bootstrap code should prefer `from cullinan import configure, module, run`.
+New bootstrap code should prefer `from cullinan import application, configure`, then call the decorated entry method directly.
 Keep using `ApplicationContext` for low-level container work, and use
 `cullinan.application` when you intentionally need explicit runtime orchestration
 rather than the default developer path.

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""可插拔模型处理器测试"""
+"""Pluggable model handler tests"""
 
 import sys
 import os
@@ -10,8 +10,8 @@ from typing import Optional
 
 
 def test_registry_basic():
-    """测试注册表基本功能"""
-    print("1. 测试注册表基本功能...")
+    """Test registry basic functionality"""
+    print("1. Testing registry basic functionality...")
 
     from cullinan.web.params.model_handlers import (
         get_model_handler_registry,
@@ -19,23 +19,23 @@ def test_registry_basic():
         DataclassHandler,
     )
 
-    # 重置注册表
+    # Reset registry
     reset_model_handler_registry()
 
-    # 获取注册表
+    # Get registry
     registry = get_model_handler_registry()
 
-    # 检查自动发现
+    # Check auto-discovery
     handlers = registry.get_handler_names()
     assert 'dataclass' in handlers, f"Expected 'dataclass' in {handlers}"
 
-    print(f"   已注册的处理器: {handlers}")
-    print("   基本功能测试通过")
+    print(f"   Registered handlers: {handlers}")
+    print("   Basic functionality test passed")
 
 
 def test_dataclass_handler():
-    """测试 dataclass 处理器"""
-    print("2. 测试 dataclass 处理器...")
+    """Test dataclass handler"""
+    print("2. Testing dataclass handler...")
 
     from cullinan.web.params.model_handlers import (
         get_model_handler_registry,
@@ -51,12 +51,12 @@ def test_dataclass_handler():
         age: int = 0
         email: Optional[str] = None
 
-    # 检查可处理
+    # Check can handle
     handler = registry.get_handler(User)
     assert handler is not None
     assert handler.name == 'dataclass'
 
-    # 测试解析
+    # Test resolution
     data = {'name': 'John', 'age': '25', 'email': 'john@example.com'}
     user = handler.resolve(User, data)
 
@@ -64,17 +64,17 @@ def test_dataclass_handler():
     assert user.age == 25
     assert user.email == 'john@example.com'
 
-    # 测试 to_dict
+    # Test to_dict
     result = handler.to_dict(user)
     assert result['name'] == 'John'
     assert result['age'] == 25
 
-    print("   dataclass 处理器测试通过")
+    print("   dataclass handler test passed")
 
 
 def test_param_resolver_with_dataclass():
-    """测试 ParamResolver 使用注册表"""
-    print("3. 测试 ParamResolver 使用模型处理器...")
+    """Test ParamResolver using registry"""
+    print("3. Testing ParamResolver with model handlers...")
 
     from cullinan.web.params import ParamResolver
     from cullinan.web.params.model_handlers import reset_model_handler_registry
@@ -89,7 +89,7 @@ def test_param_resolver_with_dataclass():
     def handler(self, user: CreateUserRequest):
         pass
 
-    # 分析参数
+    # Analyze parameters
     config = ParamResolver.analyze_params(handler)
 
     assert 'user' in config
@@ -97,12 +97,12 @@ def test_param_resolver_with_dataclass():
     assert config['user'].get('model_handler') is not None
     assert config['user']['model_handler'].name == 'dataclass'
 
-    print("   ParamResolver 模型处理器集成测试通过")
+    print("   ParamResolver model handler integration test passed")
 
 
 def test_custom_handler():
-    """测试自定义处理器注册"""
-    print("4. 测试自定义处理器注册...")
+    """Test custom handler registration"""
+    print("4. Testing custom handler registration...")
 
     from cullinan.web.params.model_handlers import (
         ModelHandler,
@@ -113,14 +113,14 @@ def test_custom_handler():
 
     reset_model_handler_registry()
 
-    # 创建自定义处理器
+    # Create custom handler
     class CustomModel:
-        """自定义模型类"""
+        """Custom model class"""
         def __init__(self, data):
             self.data = data
 
     class CustomHandler(ModelHandler):
-        priority = 100  # 高优先级
+        priority = 100  # High priority
         name = "custom"
 
         def can_handle(self, type_):
@@ -132,30 +132,30 @@ def test_custom_handler():
         def to_dict(self, instance):
             return instance.data
 
-    # 注册自定义处理器
+    # Register custom handler
     registry = get_model_handler_registry()
     registry.register(CustomHandler())
 
-    # 检查注册
+    # Check registration
     assert 'custom' in registry.get_handler_names()
 
-    # 检查优先级（custom 应该在最前面）
+    # Check priority (custom should be first)
     handlers = registry.handlers
     assert handlers[0].name == 'custom'
 
-    # 测试解析
+    # Test resolution
     handler = registry.get_handler(CustomModel)
     assert handler.name == 'custom'
 
     instance = handler.resolve(CustomModel, {'key': 'value'})
     assert instance.data == {'key': 'value'}
 
-    print("   自定义处理器测试通过")
+    print("   custom handler test passed")
 
 
 def test_pydantic_handler_optional():
-    """测试 Pydantic 处理器（可选）"""
-    print("5. 测试 Pydantic 处理器...")
+    """Test Pydantic handler (optional)"""
+    print("5. Testing Pydantic handler...")
 
     from cullinan.web.params.model_handlers import (
         get_model_handler_registry,
@@ -168,7 +168,7 @@ def test_pydantic_handler_optional():
     handlers = registry.get_handler_names()
 
     if 'pydantic' in handlers:
-        print("   Pydantic 已安装，测试 Pydantic 处理器...")
+        print("   Pydantic is installed, testing Pydantic handler...")
 
         from pydantic import BaseModel
 
@@ -180,23 +180,23 @@ def test_pydantic_handler_optional():
         assert handler is not None
         assert handler.name == 'pydantic'
 
-        # 测试解析
+        # Test resolution
         data = {'name': 'Jane', 'age': 30}
         user = handler.resolve(PydanticUser, data)
 
         assert user.name == 'Jane'
         assert user.age == 30
 
-        print("   Pydantic 处理器测试通过")
+        print("   Pydantic handler test passed")
     else:
-        print("   Pydantic 未安装，跳过 Pydantic 测试")
+        print("   Pydantic not installed, skipping Pydantic tests")
 
     return None
 
 
 def test_handler_priority():
-    """测试处理器优先级"""
-    print("6. 测试处理器优先级...")
+    """Test handler priority"""
+    print("6. Testing handler priority...")
 
     from cullinan.web.params.model_handlers import (
         get_model_handler_registry,
@@ -208,10 +208,10 @@ def test_handler_priority():
 
     handlers = registry.handlers
 
-    # 检查优先级排序（降序）
+    # Check priority sorting (descending)
     for i in range(len(handlers) - 1):
         assert handlers[i].priority >= handlers[i+1].priority, \
             f"Handler priority not sorted: {handlers[i].name}({handlers[i].priority}) < {handlers[i+1].name}({handlers[i+1].priority})"
 
-    print(f"   处理器优先级顺序: {[(h.name, h.priority) for h in handlers]}")
-    print("   处理器优先级测试通过")
+    print(f"   Handler priority order: {[(h.name, h.priority) for h in handlers]}")
+    print("   Handler priority test passed")

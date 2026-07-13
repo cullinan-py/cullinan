@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan FileInfo
 
-文件信息容器，用于处理上传的文件。
+File info container for handling uploaded files.
 
 Author: Cullinan
 """
@@ -13,28 +13,28 @@ from io import BytesIO
 
 
 class FileInfo:
-    """文件信息容器
+    """File info container
 
-    封装上传文件的元数据和内容，提供便捷的访问方法。
+    Encapsulates metadata and content of uploaded files, providing convenient access methods.
 
     Attributes:
-        filename: 原始文件名
-        content_type: MIME 类型
-        body: 文件内容 (bytes)
-        size: 文件大小 (bytes)
+        filename: Original filename
+        content_type: MIME type
+        body: File content (bytes)
+        size: File size (bytes)
 
     Example:
         @post_api(url='/upload')
         async def upload(self, avatar: File()):
-            # avatar 是 FileInfo 实例
+            # avatar is a FileInfo instance
             print(f"Filename: {avatar.filename}")
             print(f"Size: {avatar.size} bytes")
             print(f"Type: {avatar.content_type}")
 
-            # 保存文件
+            # Save file
             avatar.save('/path/to/uploads/')
 
-            # 或读取内容
+            # Or read content
             content = avatar.read()
     """
 
@@ -47,13 +47,13 @@ class FileInfo:
         content_type: str = None,
         field_name: str = None,
     ):
-        """初始化文件信息
+        """Initialize file info
 
         Args:
-            filename: 原始文件名
-            body: 文件内容
-            content_type: MIME 类型，如果不提供则自动检测
-            field_name: 表单字段名
+            filename: Original filename
+            body: File content
+            content_type: MIME type, auto-detected if not provided
+            field_name: Form field name
         """
         self._filename = filename
         self._body = body if body is not None else b''
@@ -62,87 +62,87 @@ class FileInfo:
 
     @property
     def filename(self) -> str:
-        """原始文件名"""
+        """Original filename"""
         return self._filename
 
     @property
     def content_type(self) -> str:
-        """MIME 类型"""
+        """MIME type"""
         return self._content_type
 
     @property
     def body(self) -> bytes:
-        """文件内容 (bytes)"""
+        """File content (bytes)"""
         return self._body
 
     @property
     def size(self) -> int:
-        """文件大小 (bytes)"""
+        """File size (bytes)"""
         return len(self._body)
 
     @property
     def field_name(self) -> Optional[str]:
-        """表单字段名"""
+        """Form field name"""
         return self._field_name
 
     @property
     def extension(self) -> str:
-        """文件扩展名 (不含点)"""
+        """File extension (without dot)"""
         _, ext = os.path.splitext(self._filename)
         return ext[1:] if ext else ''
 
     @property
     def basename(self) -> str:
-        """文件基本名 (不含扩展名)"""
+        """File base name (without extension)"""
         name, _ = os.path.splitext(self._filename)
         return name
 
     def read(self) -> bytes:
-        """读取文件内容
+        """Read file content
 
         Returns:
-            文件内容 (bytes)
+            File content (bytes)
         """
         return self._body
 
     def read_text(self, encoding: str = 'utf-8') -> str:
-        """以文本形式读取文件内容
+        """Read file content as text
 
         Args:
-            encoding: 文本编码
+            encoding: Text encoding
 
         Returns:
-            文件内容 (str)
+            File content (str)
         """
         return self._body.decode(encoding)
 
     def stream(self) -> BinaryIO:
-        """获取文件流
+        """Get file stream
 
         Returns:
-            BytesIO 对象
+            BytesIO object
         """
         return BytesIO(self._body)
 
     def save(self, path: str, filename: str = None) -> str:
-        """保存文件到磁盘
+        """Save file to disk
 
         Args:
-            path: 保存目录或完整路径
-            filename: 自定义文件名，不提供则使用原始文件名
+            path: Save directory or full path
+            filename: Custom filename, uses original filename if not provided
 
         Returns:
-            保存的完整路径
+            Full saved path
         """
         if os.path.isdir(path):
-            # 如果是目录，拼接文件名
+            # If directory, join with filename
             save_name = filename or self._filename
             full_path = os.path.join(path, save_name)
         else:
-            # 如果是完整路径
+            # If full path
             full_path = path
 
-        # 确保目录存在
+        # Ensure directory exists
         dir_path = os.path.dirname(full_path)
         if dir_path and not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -153,39 +153,39 @@ class FileInfo:
         return full_path
 
     def is_image(self) -> bool:
-        """检查是否是图片文件"""
+        """Check if image file"""
         return self._content_type.startswith('image/')
 
     def is_video(self) -> bool:
-        """检查是否是视频文件"""
+        """Check if video file"""
         return self._content_type.startswith('video/')
 
     def is_audio(self) -> bool:
-        """检查是否是音频文件"""
+        """Check if audio file"""
         return self._content_type.startswith('audio/')
 
     def is_text(self) -> bool:
-        """检查是否是文本文件"""
+        """Check if text file"""
         return self._content_type.startswith('text/')
 
     def is_pdf(self) -> bool:
-        """检查是否是 PDF 文件"""
+        """Check if PDF file"""
         return self._content_type == 'application/pdf'
 
     def match_type(self, pattern: str) -> bool:
-        """检查 MIME 类型是否匹配模式
+        """Check if MIME type matches pattern
 
         Args:
-            pattern: MIME 类型模式，支持通配符如 'image/*'
+            pattern: MIME type pattern, supports wildcards like 'image/*'
 
         Returns:
-            是否匹配
+            Whether it matches
         """
         if pattern == '*/*' or pattern == '*':
             return True
 
         if pattern.endswith('/*'):
-            # 通配符匹配，如 image/*
+            # Wildcard match, e.g. image/*
             prefix = pattern[:-1]  # 'image/'
             return self._content_type.startswith(prefix)
 
@@ -193,26 +193,26 @@ class FileInfo:
 
     @staticmethod
     def _detect_content_type(filename: str) -> str:
-        """根据文件名检测 MIME 类型
+        """Detect MIME type from filename
 
         Args:
-            filename: 文件名
+            filename: Filename
 
         Returns:
-            MIME 类型
+            MIME type
         """
         content_type, _ = mimetypes.guess_type(filename)
         return content_type or 'application/octet-stream'
 
     @classmethod
     def from_upload_payload(cls, file_obj) -> 'FileInfo':
-        """从传输层上传对象创建 FileInfo。
+        """Create FileInfo from a transport layer upload object.
 
         Args:
-            file_obj: 由具体 Web 后端提供的文件上传对象或字典
+            file_obj: File upload object or dict provided by the specific web backend
 
         Returns:
-            FileInfo 实例
+            FileInfo instance
         """
         return cls(
             filename=file_obj.get('filename', 'unknown'),
@@ -235,9 +235,9 @@ class FileInfo:
 
 
 class FileList:
-    """文件列表容器
+    """File list container
 
-    用于处理多文件上传的场景。
+    For handling multi-file upload scenarios.
 
     Example:
         @post_api(url='/upload-multiple')
@@ -250,10 +250,10 @@ class FileList:
     __slots__ = ('_files',)
 
     def __init__(self, files: List[FileInfo] = None):
-        """初始化文件列表
+        """Initialize file list
 
         Args:
-            files: FileInfo 列表
+            files: List of FileInfo
         """
         self._files = files or []
 
@@ -271,46 +271,46 @@ class FileList:
 
     @property
     def count(self) -> int:
-        """文件数量"""
+        """File count"""
         return len(self._files)
 
     @property
     def total_size(self) -> int:
-        """总文件大小"""
+        """Total file size"""
         return sum(f.size for f in self._files)
 
     @property
     def filenames(self) -> List[str]:
-        """所有文件名"""
+        """All filenames"""
         return [f.filename for f in self._files]
 
     def first(self) -> Optional[FileInfo]:
-        """获取第一个文件"""
+        """Get first file"""
         return self._files[0] if self._files else None
 
     def last(self) -> Optional[FileInfo]:
-        """获取最后一个文件"""
+        """Get last file"""
         return self._files[-1] if self._files else None
 
     def filter_by_type(self, pattern: str) -> 'FileList':
-        """按 MIME 类型过滤文件
+        """Filter files by MIME type
 
         Args:
-            pattern: MIME 类型模式
+            pattern: MIME type pattern
 
         Returns:
-            过滤后的 FileList
+            Filtered FileList
         """
         return FileList([f for f in self._files if f.match_type(pattern)])
 
     def save_all(self, directory: str) -> List[str]:
-        """保存所有文件到目录
+        """Save all files to directory
 
         Args:
-            directory: 保存目录
+            directory: Save directory
 
         Returns:
-            保存的文件路径列表
+            List of saved file paths
         """
         paths = []
         for f in self._files:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan ParamResolver Tests
 
-测试参数解析编排器。
+Tests parameter resolution orchestrator.
 
 Author: Cullinan
 """
@@ -22,7 +22,7 @@ from cullinan.web.params import (
 )
 
 
-# 测试用的模拟函数
+# Mock functions for testing
 
 def func_with_path_params(self, user_id: Path(int), name: Path(str)):
     pass
@@ -68,46 +68,46 @@ def func_with_mixed_params(
 
 
 class TestParamResolverAnalyze(unittest.TestCase):
-    """测试参数分析"""
+    """Test parameter analysis"""
 
     def test_analyze_path_params(self):
-        """分析路径参数"""
+        """Analyze path parameters"""
         config = ParamResolver.analyze_params(func_with_path_params)
         self.assertIn('user_id', config)
         self.assertEqual(config['user_id']['source'], 'path')
         self.assertEqual(config['user_id']['type'], int)
 
     def test_analyze_query_params(self):
-        """分析查询参数"""
+        """Analyze query parameters"""
         config = ParamResolver.analyze_params(func_with_query_params)
         self.assertIn('page', config)
         self.assertEqual(config['page']['source'], 'query')
         self.assertEqual(config['page']['default'], 1)
 
     def test_analyze_body_params(self):
-        """分析请求体参数"""
+        """Analyze body parameters"""
         config = ParamResolver.analyze_params(func_with_body_params)
         self.assertIn('name', config)
         self.assertEqual(config['name']['source'], 'body')
 
     def test_analyze_dynamic_body(self):
-        """分析 DynamicBody"""
+        """Analyze DynamicBody"""
         config = ParamResolver.analyze_params(func_with_dynamic_body)
         self.assertIn('body', config)
         self.assertEqual(config['body']['type'], DynamicBody)
 
     def test_analyze_dataclass(self):
-        """分析 dataclass"""
+        """Analyze dataclass"""
         config = ParamResolver.analyze_params(func_with_dataclass)
         self.assertIn('user', config)
         self.assertEqual(config['user']['type'], CreateUserRequest)
 
 
 class TestParamResolverResolve(unittest.TestCase):
-    """测试参数解析"""
+    """Test parameter resolution"""
 
     def test_resolve_path_params(self):
-        """解析路径参数"""
+        """Resolve path parameters"""
         result = ParamResolver.resolve(
             func_with_path_params,
             request=None,
@@ -117,7 +117,7 @@ class TestParamResolverResolve(unittest.TestCase):
         self.assertEqual(result['name'], 'test')
 
     def test_resolve_query_params(self):
-        """解析查询参数"""
+        """Resolve query parameters"""
         result = ParamResolver.resolve(
             func_with_query_params,
             request=None,
@@ -127,7 +127,7 @@ class TestParamResolverResolve(unittest.TestCase):
         self.assertEqual(result['size'], 20)
 
     def test_resolve_query_defaults(self):
-        """解析查询参数默认值"""
+        """Resolve query parameter defaults"""
         result = ParamResolver.resolve(
             func_with_query_params,
             request=None,
@@ -137,7 +137,7 @@ class TestParamResolverResolve(unittest.TestCase):
         self.assertEqual(result['size'], 10)
 
     def test_resolve_body_params(self):
-        """解析请求体参数"""
+        """Resolve body parameters"""
         result = ParamResolver.resolve(
             func_with_body_params,
             request=None,
@@ -147,7 +147,7 @@ class TestParamResolverResolve(unittest.TestCase):
         self.assertEqual(result['age'], 25)
 
     def test_resolve_dynamic_body(self):
-        """解析 DynamicBody"""
+        """Resolve DynamicBody"""
         result = ParamResolver.resolve(
             func_with_dynamic_body,
             request=None,
@@ -157,7 +157,7 @@ class TestParamResolverResolve(unittest.TestCase):
         self.assertEqual(result['body'].name, 'test')
 
     def test_resolve_dataclass(self):
-        """解析 dataclass"""
+        """Resolve dataclass"""
         result = ParamResolver.resolve(
             func_with_dataclass,
             request=None,
@@ -168,7 +168,7 @@ class TestParamResolverResolve(unittest.TestCase):
         self.assertEqual(result['user'].age, 30)
 
     def test_resolve_auto_type(self):
-        """解析 AutoType"""
+        """Resolve AutoType"""
         result = ParamResolver.resolve(
             func_with_auto_type,
             request=None,
@@ -184,7 +184,7 @@ class TestParamResolverResolve(unittest.TestCase):
         self.assertEqual(result['value'], True)
 
     def test_resolve_mixed_params(self):
-        """解析混合参数"""
+        """Resolve mixed parameters"""
         result = ParamResolver.resolve(
             func_with_mixed_params,
             request=None,
@@ -198,11 +198,11 @@ class TestParamResolverResolve(unittest.TestCase):
 
 
 class TestParamResolverValidation(unittest.TestCase):
-    """测试参数校验"""
+    """Test parameter validation"""
 
     def test_validation_ge(self):
-        """校验 ge 约束"""
-        # 正常值
+        """Validate ge constraint"""
+        # Normal value
         result = ParamResolver.resolve(
             func_with_query_params,
             request=None,
@@ -210,7 +210,7 @@ class TestParamResolverValidation(unittest.TestCase):
         )
         self.assertEqual(result['size'], 50)
 
-        # 超出范围
+        # Out of range
         with self.assertRaises(ResolveError):
             ParamResolver.resolve(
                 func_with_query_params,
@@ -219,20 +219,20 @@ class TestParamResolverValidation(unittest.TestCase):
             )
 
     def test_missing_required(self):
-        """缺少必填参数"""
+        """Missing required parameter"""
         with self.assertRaises(ResolveError):
             ParamResolver.resolve(
                 func_with_body_params,
                 request=None,
-                body_data={}  # 缺少 name
+                body_data={}  # missing name
             )
 
 
 class TestParamResolverAlias(unittest.TestCase):
-    """测试别名"""
+    """Test alias"""
 
     def test_header_alias(self):
-        """请求头别名"""
+        """Header alias"""
         result = ParamResolver.resolve(
             func_with_header_params,
             request=None,
@@ -242,10 +242,10 @@ class TestParamResolverAlias(unittest.TestCase):
 
 
 class TestParamResolverError(unittest.TestCase):
-    """测试错误处理"""
+    """Test error handling"""
 
     def test_error_to_dict(self):
-        """错误转字典"""
+        """Error to dict"""
         try:
             ParamResolver.resolve(
                 func_with_body_params,
@@ -260,18 +260,18 @@ class TestParamResolverError(unittest.TestCase):
 
 
 class TestParamResolverCache(unittest.TestCase):
-    """测试缓存"""
+    """Test cache"""
 
     def test_signature_cache(self):
-        """签名缓存"""
-        # 第一次调用
+        """Signature cache"""
+        # First call
         sig1 = ParamResolver.get_signature(func_with_path_params)
-        # 第二次调用应该返回相同对象
+        # Second call should return the same object
         sig2 = ParamResolver.get_signature(func_with_path_params)
         self.assertIs(sig1, sig2)
 
     def test_clear_cache(self):
-        """清空缓存"""
+        """Clear cache"""
         ParamResolver.get_signature(func_with_path_params)
         self.assertIn(func_with_path_params, ParamResolver._signature_cache)
         ParamResolver.clear_cache()

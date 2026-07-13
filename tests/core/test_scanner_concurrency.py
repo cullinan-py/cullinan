@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""测试 scanner 模块的并发安全性
+"""Test scanner module concurrency safety
 
-验证 _ensure_console_logging 在多线程环境下的 handler 去重（Issue 2 修复验证）
+Verify _ensure_console_logging handler deduplication in multi-threaded environment (Issue 2 fix verification)
 """
 
 import logging
@@ -11,18 +11,18 @@ import pytest
 
 
 def test_console_logging_concurrent_single_handler(monkeypatch):
-    """测试：10 线程同时调用 _ensure_console_logging 仅添加 1 个 handler"""
-    # 重置模块级状态
+    """Test: 10 threads calling _ensure_console_logging simultaneously only adds 1 handler"""
+    # Reset module-level state
     import cullinan.runtime.scanner as scanner_mod
     scanner_mod._logging_initialized = False
 
-    # 模拟非主模块启动（确保 is_started_directly 返回 False）
+    # Simulate non-main module startup (ensure is_started_directly returns False)
     monkeypatch.setattr(scanner_mod, 'is_started_directly', lambda: True)
     monkeypatch.setenv('CULLINAN_DISABLE_AUTO_CONSOLE', '0')
     monkeypatch.setenv('CULLINAN_FORCE_CONSOLE', '1')
 
     cullinan_logger = logging.getLogger('cullinan')
-    # 清空已有 handlers（pytest 也会给 root logger 添加 handler，需一并清除）
+    # Clear existing handlers (pytest also adds handler to root logger, must clear all)
     logging.getLogger().handlers.clear()
     cullinan_logger.handlers.clear()
 
@@ -46,26 +46,26 @@ def test_console_logging_concurrent_single_handler(monkeypatch):
 
     assert len(errors) == 0, f"Errors: {errors}"
 
-    # 所有线程应返回同一个 handler 或 None
+    # All threads should return the same handler or None
     non_none_results = [r for r in results if r is not None]
-    # 至少一个线程成功添加了 handler
+    # At least one thread should have successfully added a handler
     assert len(non_none_results) >= 1
 
-    # cullinan logger 应仅有 1 个 StreamHandler
+    # cullinan logger should have only 1 StreamHandler
     stream_handlers = [h for h in cullinan_logger.handlers
                        if isinstance(h, logging.StreamHandler)]
     assert len(stream_handlers) == 1, (
         f"Expected 1 StreamHandler, got {len(stream_handlers)}"
     )
 
-    # 清理
+    # Cleanup
     scanner_mod._logging_initialized = False
     logging.getLogger().handlers.clear()
     cullinan_logger.handlers.clear()
 
 
 def test_console_logging_env_disable(monkeypatch):
-    """测试：CULLINAN_DISABLE_AUTO_CONSOLE=1 时不添加 handler"""
+    """Test: CULLINAN_DISABLE_AUTO_CONSOLE=1 does not add handler"""
     import cullinan.runtime.scanner as scanner_mod
     scanner_mod._logging_initialized = False
 
@@ -78,21 +78,21 @@ def test_console_logging_env_disable(monkeypatch):
     assert result is None
     assert scanner_mod._logging_initialized is True
 
-    # 不应添加任何 handler
+    # Should not add any handler
     stream_handlers = [h for h in cullinan_logger.handlers
                        if isinstance(h, logging.StreamHandler)]
     assert len(stream_handlers) == 0
 
-    # 清理
+    # Cleanup
     scanner_mod._logging_initialized = False
 
 
 def test_is_started_directly_uses_getframe():
-    """验证：is_started_directly 使用 sys._getframe() 优化路径（Issue 9 修复）"""
+    """Verify: is_started_directly uses sys._getframe() optimized path (Issue 9 fix)"""
     from cullinan.runtime.scanner import is_started_directly
 
-    # 基本调用不抛异常即验证 _getframe 路径可用
+    # Basic call not raising exception verifies _getframe path works
     result = is_started_directly()
-    # pytest 以 __main__ 运行，应返回 True
+    # pytest runs as __main__, should return True
     assert isinstance(result, bool)
     assert result is True

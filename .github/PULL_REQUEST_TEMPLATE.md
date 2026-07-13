@@ -1,25 +1,24 @@
-## Summary / 摘要
+## Summary
 
-<!-- What does this PR change and why? 这个 PR 改了什么、为什么？ -->
+<!-- What does this PR change and why? -->
 
 Closes #
 
-## Four-aspect sync / 四方面同步
+## Four-aspect sync
 
-- [ ] Code / 代码 — implementation + public API
-- [ ] Tests / 测试 — covers both engines (Tornado + ASGI) + public API path
-- [ ] Examples / 示例 — runnable demo updated (if user-facing)
-- [ ] Docs / 文档 — `docs/` + `docs/zh/` + nav/README (if user-facing)
+- [ ] Code - implementation + public API
+- [ ] Tests - covers both engines (Tornado + ASGI) + public API path
+- [ ] Examples - runnable demo updated (if user-facing)
+- [ ] Docs - `docs/` + `docs/zh/` + nav/README (if user-facing)
 
-> N/A is acceptable for pure internal refactors — explain below.
-> 纯内部重构可填 N/A，请在下方说明。
+> N/A is acceptable for pure internal refactors - explain below.
 
-## Checks / 自检
+## Checks
 
 - [ ] `ruff check .` passes
 - [ ] `python -m pytest tests -q` passes (no regression)
-- [ ] Version strings synced if bumped (`setup.py` / `cullinan/__init__.py` / `cullinan/core/__init__.py`)
+- [ ] Version strings synced if bumped (`cullinan/_version.py` / `pyproject.toml` dynamic version / `cullinan/__init__.py` / `cullinan/core/__init__.py`)
 
-## Notes / 说明
+## Notes
 
-<!-- Breaking changes, migration, follow-ups. 破坏性变更/迁移/后续。 -->
+<!-- Breaking changes, migration, follow-ups. -->

@@ -28,14 +28,14 @@ pr_links: []
 ### 推荐默认 API
 
 - `cullinan` —— 常规业务项目应优先使用的顶层应用 API：
-  - 启动入口：`@application`、`configure(...)`、`run(...)`、`get_asgi_app(...)`
+  - 启动入口：`@application`、`configure(...)`，然后直接调用入口方法（例如 `main()`）
   - 声明入口：`@service`、`@controller`、`@module`（高级边界）、路由装饰器
   - 注入 / 参数：`Inject`、`InjectByName`、`Path`、`Query`、`Body` 等
   - 框架心智：装饰器优先的业务代码、组件发现、IoC/DI 装配，以及带有热插拔语义的模块边界
 
 ### 高级集成 API
 
-- `cullinan.application` —— 面向维护者与框架感知型集成的高级公开应用语义（`Application`、`Runtime`、`module`）
+- `cullinan.application` —— 面向维护者与框架感知型集成的高级公开应用语义（`Application`、`Runtime`、`module`、`run`、`get_asgi_app`）
 - `cullinan.transport.adapter` —— 服务器集成（`WebAdapter`、`TornadoAdapter`、`ASGIAdapter`）
 - `cullinan.web.gateway` —— 请求 / 响应 / dispatcher 契约
 - `cullinan.core` —— 低层容器与生命周期原语
@@ -43,6 +43,14 @@ pr_links: []
 这些高级模块都不是默认的应用开发心智模型。常规业务代码应停留在顶层 `cullinan` API，以及框架自身的装饰器 / DI / 模块边界语义上，而不是转向低层运行时编排或具体服务器适配器。
 
 对于常规应用，请优先使用顶层 `cullinan` API。高级模块应显式从对应子模块导入，这样在代码评审、IDE 补全和 onboarding 文档中都能更清楚地看到边界。
+
+v0.94 Phase A 的冻结口径使用各包的 `__all__` 作为可审阅导出契约：
+
+- `cullinan.__all__` —— 常规应用应使用的启动、声明与请求处理 API
+- `cullinan.application.__all__` —— 高级 application/runtime 辅助入口，包括 `run()` 与 `get_asgi_app()`
+- `cullinan.web.__all__` / `cullinan.core.__all__` —— 显式业务 Web 面与容器/生命周期面
+
+未出现在对应 `__all__` 列表中的符号应视为私有实现细节。带 `_` 前缀的兼容性导出可以继续存在，但不属于默认业务公开稳定承诺。
 
 ## v0.90+ 新增：参数系统
 

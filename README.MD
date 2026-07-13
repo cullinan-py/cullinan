@@ -134,7 +134,7 @@ class GreetingService:
 
 @controller(url="/hello")
 class HelloController:
-    greeting_service: GreetingService  # ← 构造注入：一行就够了
+    greeting_service: GreetingService  # constructor injection: one line is all you need
 
     @get_api(url="")
     def hello(self):
@@ -181,7 +181,7 @@ If you are new to Cullinan, use this order:
 Then move into the documentation knowledge base:
 
 - [`docs/README.md`](docs/README.md) - English knowledge base home
-- [`docs/zh/README.md`](docs/zh/README.md) - 中文知识库首页
+- [`docs/zh/README.md`](docs/zh/README.md) - Chinese knowledge base home
 - [`docs/getting_started.md`](docs/getting_started.md) - recommended application entry
 - [`docs/framework_semantics.md`](docs/framework_semantics.md) - framework concepts and semantics
 - [`docs/examples.md`](docs/examples.md) - example navigation page
@@ -202,23 +202,24 @@ Then move into the documentation knowledge base:
 - [Parameter System Guide](https://cullinan-py.github.io/cullinan/parameter_system_guide/)
 - [Testing & Verification](https://cullinan-py.github.io/cullinan/testing/)
 
-### 中文
+### Chinese
 
-- [文档首页](https://cullinan-py.github.io/cullinan/zh/)
-- [快速开始](https://cullinan-py.github.io/cullinan/zh/getting_started/)
-- [框架语义](https://cullinan-py.github.io/cullinan/zh/framework_semantics/)
-- [示例导航](https://cullinan-py.github.io/cullinan/zh/examples/)
-- [依赖注入指南](https://cullinan-py.github.io/cullinan/zh/dependency_injection_guide/)
-- [Web Runtime 指南](https://cullinan-py.github.io/cullinan/zh/web_runtime_guide/)
-- [静态文件与 SPA 指南](https://cullinan-py.github.io/cullinan/zh/static_files_guide/)
-- [参数系统指南](https://cullinan-py.github.io/cullinan/zh/parameter_system_guide/)
-- [测试与验证](https://cullinan-py.github.io/cullinan/zh/testing/)
+- [Documentation home](https://cullinan-py.github.io/cullinan/zh/)
+- [Getting Started](https://cullinan-py.github.io/cullinan/zh/getting_started/)
+- [Framework Semantics](https://cullinan-py.github.io/cullinan/zh/framework_semantics/)
+- [Examples](https://cullinan-py.github.io/cullinan/zh/examples/)
+- [Dependency Injection Guide](https://cullinan-py.github.io/cullinan/zh/dependency_injection_guide/)
+- [Web Runtime Guide](https://cullinan-py.github.io/cullinan/zh/web_runtime_guide/)
+- [Static Files and SPA Guide](https://cullinan-py.github.io/cullinan/zh/static_files_guide/)
+- [Parameter System Guide](https://cullinan-py.github.io/cullinan/zh/parameter_system_guide/)
+- [Testing & Verification](https://cullinan-py.github.io/cullinan/zh/testing/)
 
 ---
 
 ## Current series
 
-**v0.93** makes the public application path more explicit around:
+**v0.94a1** is the Phase A convergence cut for the 1.0 roadmap. This release line
+locks down the public surface and packaging baseline around:
 
 - `@application` + `@configure(...)` + `main()` as the startup flow
 - decorator-first discovery through Python imports
@@ -228,6 +229,8 @@ Then move into the documentation knowledge base:
   advanced semantic namespaces under `cullinan.application`, `cullinan.web`,
   and `cullinan.core`
 - engine-neutral runtime selection over Tornado / ASGI backends
+- `pyproject.toml` + `setuptools.build_meta` packaging with `setup.py` kept as a compatibility shim
+- PEP 561 typed-package distribution via `cullinan/py.typed`
 
 Version-specific details and migration notes live in the documentation knowledge base rather
 than in the homepage narrative.

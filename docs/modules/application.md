@@ -27,7 +27,7 @@ still land here when they need the fuller application model:
 - `@configure(...)` attaches startup settings to that method
 - calling the entry method starts through the curated top-level API
 - `@module` declares an advanced boundary when you need module ownership, reload, and hot-pluggable runtime behavior
-- top-level `run()` / `get_asgi_app()` are the shortest public startup path
+- explicit runtime helpers live on `cullinan.application` and on the decorated entry method (`main.run()` / `main.get_asgi_app()`)
 
 The bootstrap contract also depends on the framework semantics documented in [Framework Semantics](../framework_semantics.md): component discovery is import-executed, automatic scanning only guarantees module-top-level decorated components, and structural registration freezes after `refresh()`.
 
@@ -49,7 +49,7 @@ class GreetingService:
 
 @controller(url="/api")
 class GreetingController:
-    greeting_service: GreetingService  # ← 构造注入
+    greeting_service: GreetingService  # constructor injection
 
     @get_api(url="/whoami")
     def whoami(self):

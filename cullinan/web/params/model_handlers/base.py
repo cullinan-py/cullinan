@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan Model Handler Base
 
-模型处理器基类，定义可插拔的模型解析接口。
+Model handler base class, defines the pluggable model resolution interface.
 
 Author: Cullinan
 """
@@ -11,15 +11,15 @@ from typing import Any, Dict, Type
 
 
 class ModelHandler(ABC):
-    """模型处理器基类
+    """Model handler base class
 
-    所有模型处理器（如 dataclass、Pydantic、attrs 等）都需要继承此类。
+    All model handlers (e.g., dataclass, Pydantic, attrs, etc.) must inherit from this class.
 
-    处理器通过注册表管理，核心代码不直接依赖具体实现。
+    Handlers are managed via a registry, core code does not directly depend on concrete implementations.
 
     Attributes:
-        priority: 优先级，数值越大越先匹配（默认 0）
-        name: 处理器名称
+        priority: Priority, higher values are matched first (default 0)
+        name: Handler name
     """
 
     priority: int = 0
@@ -27,71 +27,71 @@ class ModelHandler(ABC):
 
     @abstractmethod
     def can_handle(self, type_: Type) -> bool:
-        """检查是否能处理该类型
+        """Check if this handler can handle the given type
 
         Args:
-            type_: 类型
+            type_: Type
 
         Returns:
-            True 如果能处理
+            True if it can handle
         """
         pass
 
     @abstractmethod
     def resolve(self, model_class: Type, data: Dict[str, Any]) -> Any:
-        """解析数据为模型实例
+        """Resolve data into a model instance
 
         Args:
-            model_class: 模型类
-            data: 请求数据字典
+            model_class: Model class
+            data: Request data dictionary
 
         Returns:
-            模型实例
+            Model instance
 
         Raises:
-            ModelHandlerError: 解析失败
+            ModelHandlerError: Resolution failed
         """
         pass
 
     @abstractmethod
     def to_dict(self, instance: Any) -> Dict[str, Any]:
-        """将模型实例转换为字典
+        """Convert model instance to dict
 
         Args:
-            instance: 模型实例
+            instance: Model instance
 
         Returns:
-            字典
+            Dictionary
         """
         pass
 
     def get_source(self) -> str:
-        """获取参数来源
+        """Get parameter source
 
-        默认返回 'body'，子类可覆盖。
+        Returns 'body' by default, subclasses can override.
 
         Returns:
-            参数来源字符串
+            Parameter source string
         """
         return 'body'
 
     def is_required_by_default(self) -> bool:
-        """默认是否必填
+        """Whether required by default
 
         Returns:
-            True 如果默认必填
+            True if required by default
         """
         return True
 
 
 class ModelHandlerError(Exception):
-    """模型处理器错误
+    """Model handler error
 
     Attributes:
-        message: 错误消息
-        model_class: 模型类
-        errors: 错误详情列表
-        handler_name: 处理器名称
+        message: Error message
+        model_class: Model class
+        errors: List of error details
+        handler_name: Handler name
     """
 
     def __init__(
@@ -111,7 +111,7 @@ class ModelHandlerError(Exception):
         return f"ModelHandlerError({self.message!r}, handler={self.handler_name})"
 
     def to_dict(self) -> dict:
-        """转换为字典格式"""
+        """Convert to dict format"""
         return {
             'message': self.message,
             'model': self.model_class.__name__ if self.model_class else None,

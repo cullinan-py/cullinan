@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""RawBody 与 DynamicBody 赋值语法回归。"""
+"""RawBody and DynamicBody assignment syntax regression."""
 
 from cullinan.web.params import DynamicBody, Header, ParamResolver, RawBody
 
