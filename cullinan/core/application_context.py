@@ -25,10 +25,12 @@ from .exceptions import (
     DependencyTypeResolutionError,
     LifecycleError,
     RegistryFrozenError,
+    ScopeViolationError,
 )
 from .diagnostics import (
     format_circular_dependency_error,
     format_missing_dependency_error,
+    format_scope_violation_error,
 )
 from .injection_types import Provider
 from .lifecycle_enhanced import LifecyclePhase
@@ -551,21 +553,51 @@ class ApplicationContext:
         Recursively traverses each singleton/prototype component's explicit
         dependencies and implicit dependencies (field injection markers),
         detecting request-scoped beans in the full transitive closure.
+
+        Performance (A4): uses a cross-origin ``verified_safe`` memo so each
+        component subgraph is fully traversed at most once across all origins,
+        reducing worst-case complexity from O(N^2 * M) to O(N + E).
         """
         from .decorators import get_injection_markers
+
+        # Cross-origin cache: components whose transitive closure has been
+        # confirmed not to reach a request-scoped component. Subsequent
+        # origins that reach one of these nodes can short-circuit.
+        verified_safe: Set[str] = set()
 
         for definition in self._definition_registry.values():
             if definition.scope not in (ScopeType.SINGLETON, ScopeType.PROTOTYPE):
                 continue
+            if definition.name in verified_safe:
+                continue
             self._check_transitive_scope(
                 definition.name, set(), definition.name, definition.scope,
                 get_injection_markers,
+                path=[definition.name],
+                verified_safe=verified_safe,
             )
 
     def _check_transitive_scope(self, name, visited, origin_name, origin_scope,
-                                get_injection_markers):
-        """Recursively check transitive scope constraints."""
+                                get_injection_markers, path=None, verified_safe=None):
+        """Recursively check transitive scope constraints.
+
+        Args:
+            path: Ordered dependency chain from the origin component to the
+                current node (inclusive). Used to build ``ScopeViolationError.
+                dependency_chain`` on violation (A4).
+            verified_safe: Cross-origin memo of components confirmed safe.
+                When a node is in this set, its subgraph has already been
+                validated and can be skipped (A4 perf).
+        """
+        if path is None:
+            path = [name]
+        if verified_safe is None:
+            verified_safe = set()
+
         if name in visited:
+            return
+        if name in verified_safe:
+            # Cross-origin cache hit: this subgraph was already validated.
             return
         visited.add(name)
 
@@ -580,22 +612,31 @@ class ApplicationContext:
                 self._check_transitive_scope(
                     dep_name, visited, origin_name, origin_scope,
                     get_injection_markers,
+                    path=path + [dep_name],
+                    verified_safe=verified_safe,
                 )
                 continue
             if dep_def.scope == ScopeType.REQUEST:
-                raise LifecycleError(
-                    format_semantic_message(
+                full_chain = path + [dep_name]
+                raise ScopeViolationError(
+                    message=format_semantic_message(
                         "lifecycle-request-scope",
                         f"{origin_scope.name.title()} component '{origin_name}' "
                         f"depends transitively on request-scoped component '{dep_name}' "
-                        f"(dependency path includes '{name}').",
+                        f"(dependency path includes '{name}'). "
+                        f"Dependency chain: {' -> '.join(full_chain)}",
                         "Resolve that dependency inside a request context, "
                         "or adjust the component scopes.",
-                    )
+                    ),
+                    dependency_chain=full_chain,
+                    origin_name=origin_name,
+                    violating_component=dep_name,
                 )
             self._check_transitive_scope(
                 dep_name, visited, origin_name, origin_scope,
                 get_injection_markers,
+                path=path + [dep_name],
+                verified_safe=verified_safe,
             )
 
         # Check field injection implicit dependencies
@@ -614,22 +655,31 @@ class ApplicationContext:
                             self._check_transitive_scope(
                                 dep_name, visited, origin_name, origin_scope,
                                 get_injection_markers,
+                                path=path + [dep_name],
+                                verified_safe=verified_safe,
                             )
                             continue
                         if dep_def.scope == ScopeType.REQUEST:
-                            raise LifecycleError(
-                                format_semantic_message(
+                            full_chain = path + [dep_name]
+                            raise ScopeViolationError(
+                                message=format_semantic_message(
                                     "lifecycle-request-scope",
                                     f"{origin_scope.name.title()} component '{origin_name}' "
                                     f"depends transitively on request-scoped component "
-                                    f"'{dep_name}' via field '{attr_name}' on '{name}'.",
+                                    f"'{dep_name}' via field '{attr_name}' on '{name}'. "
+                                    f"Dependency chain: {' -> '.join(full_chain)}",
                                     "Resolve that dependency inside a request context, "
                                     "or adjust the component scopes.",
-                                )
+                                ),
+                                dependency_chain=full_chain,
+                                origin_name=origin_name,
+                                violating_component=dep_name,
                             )
                         self._check_transitive_scope(
                             dep_name, visited, origin_name, origin_scope,
                             get_injection_markers,
+                            path=path + [dep_name],
+                            verified_safe=verified_safe,
                         )
 
             # Check constructor injection implicit dependencies
@@ -643,24 +693,36 @@ class ApplicationContext:
                     self._check_transitive_scope(
                         dep_name, visited, origin_name, origin_scope,
                         get_injection_markers,
+                        path=path + [dep_name],
+                        verified_safe=verified_safe,
                     )
                     continue
                 if dep_def.scope == ScopeType.REQUEST:
                     cls_name = getattr(target_cls, "__name__", str(target_cls))
-                    raise LifecycleError(
-                        format_semantic_message(
+                    full_chain = path + [dep_name]
+                    raise ScopeViolationError(
+                        message=format_semantic_message(
                             "lifecycle-request-scope",
                             f"{origin_scope.name.title()} component '{origin_name}' "
                             f"depends transitively on request-scoped component "
-                            f"'{dep_name}' via constructor injection on '{cls_name}'.",
+                            f"'{dep_name}' via constructor injection on '{cls_name}'. "
+                            f"Dependency chain: {' -> '.join(full_chain)}",
                             "Resolve that dependency inside a request context, "
                             "or adjust the component scopes.",
-                        )
+                        ),
+                        dependency_chain=full_chain,
+                        origin_name=origin_name,
+                        violating_component=dep_name,
                     )
                 self._check_transitive_scope(
                     dep_name, visited, origin_name, origin_scope,
                     get_injection_markers,
+                    path=path + [dep_name],
+                    verified_safe=verified_safe,
                 )
+
+        # Subgraph fully traversed without violation: memoize as safe.
+        verified_safe.add(name)
 
     def _resolve_constructor_dependency_names(
         self, cls, markers, type_hints,

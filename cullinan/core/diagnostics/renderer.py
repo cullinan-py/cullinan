@@ -152,6 +152,34 @@ def format_missing_dependency_error(
     return "\n".join(lines)
 
 
+def format_scope_violation_error(
+    chain: List[str],
+    origin: str,
+    violating: str,
+) -> str:
+    """Format a human-readable scope violation error message.
+
+    Args:
+        chain: Ordered dependency chain from origin to the violating
+            request-scoped component (inclusive of both endpoints).
+        origin: Name of the origin component (singleton/prototype).
+        violating: Name of the violating request-scoped component.
+
+    Returns:
+        A formatted scope violation error message including the full
+        dependency chain, aligned with ``format_circular_dependency_error``.
+    """
+    chain_str = render_resolution_path(chain)
+    return (
+        f"Scope violation detected:\n"
+        f"  Origin: {origin}\n"
+        f"  Violating component: {violating} (request-scoped)\n"
+        f"  Dependency chain: {chain_str}\n"
+        f"Resolve the request-scoped dependency inside a request context, "
+        f"or adjust the component scopes."
+    )
+
+
 __all__ = [
     'render_resolution_path',
     'render_injection_point',
@@ -159,4 +187,5 @@ __all__ = [
     'render_dependency_error',
     'format_circular_dependency_error',
     'format_missing_dependency_error',
+    'format_scope_violation_error',
 ]

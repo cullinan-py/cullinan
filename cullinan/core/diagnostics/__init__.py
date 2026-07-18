@@ -20,6 +20,7 @@ from .exceptions import (
     ConditionNotMetError,
     CreationError,
     LifecycleError,
+    ScopeViolationError,
 )
 
 from .renderer import (
@@ -29,6 +30,7 @@ from .renderer import (
     render_dependency_error,
     format_circular_dependency_error,
     format_missing_dependency_error,
+    format_scope_violation_error,
 )
 
 from .types import LifecycleState, LifecycleAware
@@ -45,6 +47,7 @@ __all__ = [
     'ConditionNotMetError',
     'CreationError',
     'LifecycleError',
+    'ScopeViolationError',
 
     # Rendering
     'render_resolution_path',
@@ -53,6 +56,7 @@ __all__ = [
     'render_dependency_error',
     'format_circular_dependency_error',
     'format_missing_dependency_error',
+    'format_scope_violation_error',
 
     # Types
     'LifecycleState',

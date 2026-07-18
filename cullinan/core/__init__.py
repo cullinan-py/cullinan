@@ -46,7 +46,8 @@ from .exceptions import (
     ScopeNotActiveError,
     ConditionNotMetError,
     CreationError,
-    LifecycleError
+    LifecycleError,
+    ScopeViolationError,
 )
 
 # ============================================================================
@@ -68,6 +69,7 @@ from .diagnostics import (
     render_candidate_sources,
     format_circular_dependency_error,
     format_missing_dependency_error,
+    format_scope_violation_error,
 )
 from .injection_types import Provider
 from .semantic_rules import (
@@ -222,6 +224,7 @@ __all__ = [
     'render_candidate_sources',
     'format_circular_dependency_error',
     'format_missing_dependency_error',
+    'format_scope_violation_error',
 
     # Exceptions
     'CullinanCoreError',
@@ -235,6 +238,7 @@ __all__ = [
     'ConditionNotMetError',
     'CreationError',
     'LifecycleError',
+    'ScopeViolationError',
 
     # Decorators (Primary API)
     'service',

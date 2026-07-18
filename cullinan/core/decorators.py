@@ -465,7 +465,14 @@ class Lazy:
 # Utility Functions
 # =============================================================================
 
-def get_injection_markers(cls: Type) -> dict:
+# Module-level cache for injection markers extraction results.
+# Mirrors ``_global_type_hints_cache``: ``dir(cls)`` results are stable for the
+# lifetime of a class object, so ``id(cls)`` is a safe cache key. This avoids
+# re-scanning every node during transitive scope validation (A4 perf).
+_injection_markers_cache: Dict[tuple, dict] = {}
+
+
+def get_injection_markers(cls: Type, *, skip_private: bool = False) -> dict:
     """Extract all injection markers from a class.
     
     Scans class attributes and type annotations for Inject, InjectByName,
@@ -473,15 +480,27 @@ def get_injection_markers(cls: Type) -> dict:
     
     Args:
         cls: The class to scan
+        skip_private: When ``True``, single-underscore-prefixed attributes
+            (``_xxx``) are skipped, treating them as private injection
+            points. Defaults to ``False`` to preserve the v0.93a11+ behavior
+            where single-underscore attributes remain visible to the
+            injection system. See A2 (strict_private_injection).
         
     Returns:
         Dict mapping attribute names to their injection markers
     """
+    cache_key = (id(cls), skip_private)
+    cached = _injection_markers_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     markers = {}
     
     # Check class attributes for marker instances
     for attr_name in dir(cls):
         if attr_name.startswith('__') and attr_name.endswith('__'):
+            continue
+        if skip_private and attr_name.startswith('_'):
             continue
         try:
             attr_value = getattr(cls, attr_name, None)
@@ -489,8 +508,18 @@ def get_injection_markers(cls: Type) -> dict:
                 markers[attr_name] = attr_value
         except Exception:
             pass
-    
+
+    _injection_markers_cache[cache_key] = markers
     return markers
+
+
+def invalidate_injection_markers_cache() -> None:
+    """Clear the module-level injection markers cache.
+
+    Use after dynamic class reloads (e.g., in test suites) to ensure
+    stale cached markers are not reused.
+    """
+    _injection_markers_cache.clear()
 
 
 def get_type_hints_safe(cls: Type) -> dict:
