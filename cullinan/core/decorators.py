@@ -15,6 +15,7 @@ Author: Cullinan
 """
 
 import inspect
+import weakref
 from typing import Type, Optional, List, Any, Dict
 
 from .pending import PendingRegistry, PendingRegistration, ComponentType
@@ -467,9 +468,14 @@ class Lazy:
 
 # Module-level cache for injection markers extraction results.
 # Mirrors ``_global_type_hints_cache``: ``dir(cls)`` results are stable for the
-# lifetime of a class object, so ``id(cls)`` is a safe cache key. This avoids
-# re-scanning every node during transitive scope validation (A4 perf).
-_injection_markers_cache: Dict[tuple, dict] = {}
+# lifetime of a class object. Uses a WeakKeyDictionary keyed by the class
+# object itself (not ``id(cls)``) so that cache entries are automatically
+# evicted when the class is garbage-collected, preventing stale results from
+# ``id()`` reuse. This avoids re-scanning every node during transitive scope
+# validation (A4 perf).
+_injection_markers_cache: "weakref.WeakKeyDictionary[type, Dict[bool, dict]]" = (
+    weakref.WeakKeyDictionary()
+)
 
 
 def get_injection_markers(cls: Type, *, skip_private: bool = False) -> dict:
@@ -489,10 +495,11 @@ def get_injection_markers(cls: Type, *, skip_private: bool = False) -> dict:
     Returns:
         Dict mapping attribute names to their injection markers
     """
-    cache_key = (id(cls), skip_private)
-    cached = _injection_markers_cache.get(cache_key)
-    if cached is not None:
-        return cached
+    per_class = _injection_markers_cache.get(cls)
+    if per_class is not None:
+        cached = per_class.get(skip_private)
+        if cached is not None:
+            return cached
 
     markers = {}
     
@@ -509,7 +516,10 @@ def get_injection_markers(cls: Type, *, skip_private: bool = False) -> dict:
         except Exception:
             pass
 
-    _injection_markers_cache[cache_key] = markers
+    if per_class is None:
+        per_class = {}
+        _injection_markers_cache[cls] = per_class
+    per_class[skip_private] = markers
     return markers
 
 
