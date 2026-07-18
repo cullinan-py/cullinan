@@ -1938,15 +1938,22 @@ class ApplicationContext:
             self._lifecycle_phases[name] = LifecyclePhase.DESTROYED
 
     def _call_lifecycle_method(self, name: str, instance: Any, sync_method: str, async_method: str) -> None:
+        # A3: critical hooks (on_post_construct / on_pre_destroy) always
+        # propagate. non-critical hooks (on_startup / on_shutdown) only
+        # propagate when strict_lifecycle is enabled; otherwise they are
+        # logged and swallowed to avoid cascading failures (v0.94 default).
+        is_critical = self._is_critical_lifecycle(sync_method, async_method)
+        should_raise = is_critical or self._strict_lifecycle
+
         async_func = getattr(instance, async_method, None)
         if async_func and callable(async_func) and self._is_user_defined_method(instance, async_method):
             try:
                 self._run_coroutine(async_func())
             except Exception as exc:
                 logger.error("Lifecycle method %s.%s failed: %s", name, async_method, exc)
-                if self._is_critical_lifecycle(sync_method, async_method):
+                if should_raise:
                     raise LifecycleError(
-                        f"Critical lifecycle method '{name}.{async_method}' failed: {exc}"
+                        f"Lifecycle method '{name}.{async_method}' failed: {exc}"
                     ) from exc
 
         sync_func = getattr(instance, sync_method, None)
@@ -1957,9 +1964,9 @@ class ApplicationContext:
                     self._run_coroutine(result)
             except Exception as exc:
                 logger.error("Lifecycle method %s.%s failed: %s", name, sync_method, exc)
-                if self._is_critical_lifecycle(sync_method, async_method):
+                if should_raise:
                     raise LifecycleError(
-                        f"Critical lifecycle method '{name}.{sync_method}' failed: {exc}"
+                        f"Lifecycle method '{name}.{sync_method}' failed: {exc}"
                     ) from exc
 
     @staticmethod
