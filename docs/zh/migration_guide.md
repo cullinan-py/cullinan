@@ -7,6 +7,38 @@
 
 本指南帮助您从 Cullinan 1.x 迁移到 0.93（0.90）。
 
+## v0.95a1 迁移说明（Track A 内部重构）
+
+v0.95a1 是一个非破坏性版本，新增弃用标记和可选严格开关。既有代码无需修改即可继续运行，但建议尽早迁移。
+
+### 自 v0.95 起弃用（v0.97 移除）
+
+五个遗留兼容符号现已正式弃用。每次使用都会同时发出标准 `DeprecationWarning`（工具链可识别）和既有 `CompatibilitySemanticWarning`（去重语义提醒）。
+
+| 弃用符号 | 替代方案 |
+|---------|---------|
+| `@injectable` | `@service` / `@component` / `@controller`（类自动可注入） |
+| `@inject_constructor` | `ApplicationContext.refresh()` |
+| `InjectionRegistry` | `ApplicationContext` / `get_application_context()` |
+| `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
+| `reset_injection_registry()` | 显式创建新的 `ApplicationContext` |
+
+在 CI 中将弃用警告视为错误：
+
+```bash
+python -m pytest -W error::DeprecationWarning
+```
+
+### 可选严格开关
+
+- `strict_private_injection=True`（或 `CULLINAN_STRICT_PRIVATE_INJECTION=1`）：
+  注入标记扫描器跳过单下划线（`_xxx`）类属性。默认 `False` 保留 v0.93a11+ 行为。
+- `strict_lifecycle=True`：`on_startup`/`on_shutdown` 失败以 `LifecycleError` 抛出。默认 `False` 保留 v0.94 行为（记录并吞掉）。
+
+### 结构化作用域违规
+
+传递作用域违规现在抛出 `ScopeViolationError`（`LifecycleError` 的子类）。既有 `except LifecycleError` 处理器继续有效。新异常携带 `dependency_chain`、`origin_name`、`violating_component` 字段，提供更丰富的诊断信息；使用 `format_scope_violation_error()` 渲染人类可读的链路描述。
+
 ## 破坏性变更
 
 ### 1. 单一入口
