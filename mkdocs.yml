@@ -129,6 +129,7 @@ plugins:
             Migration Guide v2: 迁移指南 v2
             Import Migration 0.90: 0.90 导入迁移
             Dependency Injection: 依赖注入
+            Framework Semantics: 框架语义
             Web Runtime: Web Runtime
             Static Files & SPA: 静态文件与 SPA
             DI Quick Reference: DI 快速参考
