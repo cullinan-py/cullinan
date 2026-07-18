@@ -160,9 +160,13 @@ class ApplicationContext:
         "_state",
         "_id",
         "_health_checks",
+        "_strict_private_injection",
+        "_strict_lifecycle",
     )
 
-    def __init__(self, container_id: Optional[str] = None):
+    def __init__(self, container_id: Optional[str] = None, *,
+                 strict_private_injection: bool = False,
+                 strict_lifecycle: bool = False):
         self._definition_registry = DefinitionRegistry()
         self._scope_manager = ScopeManager(root_id=container_id or hex(id(self)))
         self._lock = threading.RLock()
@@ -174,6 +178,21 @@ class ApplicationContext:
         self._state = ContainerState.CREATED
         self._id = self._scope_manager.root_id
         self._health_checks: List[Any] = []
+        # A2: strict_private_injection - when True, single-underscore (_xxx)
+        # attributes are skipped by the injection marker scanner. Default
+        # False preserves the v0.93a11+ behavior where _xxx is visible to
+        # the injection system. CULLINAN_STRICT_PRIVATE_INJECTION=1 env var
+        # provides a global opt-in for CI / strict projects.
+        self._strict_private_injection = strict_private_injection or (
+            __import__("os").environ.get(
+                "CULLINAN_STRICT_PRIVATE_INJECTION", ""
+            ).lower() in ("1", "true", "yes")
+        )
+        # A3: strict_lifecycle - when True, non-critical lifecycle exceptions
+        # are re-raised instead of being logged and swallowed. Default False
+        # preserves the existing ApplicationContext behavior where only
+        # critical lifecycle methods propagate.
+        self._strict_lifecycle = strict_lifecycle
 
     # ========================================================================
     # Registration API
@@ -432,12 +451,13 @@ class ApplicationContext:
     def _validate_injection_contracts(self) -> None:
         from .decorators import get_injection_markers
 
+        skip_private = self._strict_private_injection
         for definition in self._definition_registry.values():
             target_cls = definition.type_
             if target_cls is None or not inspect.isclass(target_cls):
                 continue
 
-            markers = get_injection_markers(target_cls)
+            markers = get_injection_markers(target_cls, skip_private=skip_private)
 
             type_hints, raw_annotations, type_hint_error = self._get_class_type_hints(target_cls)
 
@@ -557,8 +577,18 @@ class ApplicationContext:
         Performance (A4): uses a cross-origin ``verified_safe`` memo so each
         component subgraph is fully traversed at most once across all origins,
         reducing worst-case complexity from O(N^2 * M) to O(N + E).
+
+        A2: when ``self._strict_private_injection`` is True, the injection
+        marker scanner skips single-underscore (_xxx) attributes, treating
+        them as strictly private (opt-out from the v0.93a11+ default where
+        _xxx is visible to the injection system).
         """
         from .decorators import get_injection_markers
+
+        skip_private = self._strict_private_injection
+
+        def _scan_markers(cls):
+            return get_injection_markers(cls, skip_private=skip_private)
 
         # Cross-origin cache: components whose transitive closure has been
         # confirmed not to reach a request-scoped component. Subsequent
@@ -572,7 +602,7 @@ class ApplicationContext:
                 continue
             self._check_transitive_scope(
                 definition.name, set(), definition.name, definition.scope,
-                get_injection_markers,
+                _scan_markers,
                 path=[definition.name],
                 verified_safe=verified_safe,
             )
@@ -961,7 +991,7 @@ class ApplicationContext:
             setattr(instance, attr_name, value)
 
         # ── Field injection (skips properties already set by constructor) ──
-        markers = get_injection_markers(cls)
+        markers = get_injection_markers(cls, skip_private=self._strict_private_injection)
         type_hints, raw_annotations, type_hint_error = self._get_class_type_hints(cls)
 
         for attr_name, marker in markers.items():
@@ -1007,7 +1037,7 @@ class ApplicationContext:
         if not annotations:
             return {}
 
-        markers = get_injection_markers(cls)
+        markers = get_injection_markers(cls, skip_private=self._strict_private_injection)
         class_dict = cls.__dict__
         type_hints, _raw, _err = self._get_class_type_hints(cls)
 
