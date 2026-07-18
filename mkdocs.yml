@@ -7,25 +7,27 @@ use_directory_urls: true
 
 nav:
   - Home: README.md
-  - Application Build:
+  - Getting Started:
     - Overview: start/index.md
-    - Getting Started: getting_started.md
+    - Quick Start: getting_started.md
     - Examples: examples.md
     - Build & Run: build_run.md
-  - Framework Semantics:
+  - Core Concepts:
     - Overview: concepts/index.md
     - Framework Semantics: framework_semantics.md
     - Architecture: architecture.md
-  - Engineering Practices:
+  - Guides:
     - Overview: how-to/index.md
-    - Dependency Injection Guide: dependency_injection_guide.md
-    - Web Runtime Guide: web_runtime_guide.md
-    - Static Files and SPA Guide: static_files_guide.md
+    - Dependency Injection: dependency_injection_guide.md
+    - Web Runtime: web_runtime_guide.md
+    - Static Files & SPA: static_files_guide.md
+    - Parameter System: parameter_system_guide.md
     - DI Quick Reference: quick_reference_di.md
-    - Parameter System Guide: parameter_system_guide.md
-    - Packaging Guide: packaging.md
+    - Packaging: packaging.md
     - Testing: testing.md
     - Contributing: contributing.md
+    - Extension Development: extension_development_guide.md
+    - Quick Start Extensions: quick_start_extensions.md
   - API Reference:
     - Overview: reference/index.md
     - API Reference Overview: api_reference.md
@@ -34,7 +36,7 @@ nav:
       - core: modules/core.md
       - controller: modules/controller.md
       - service: modules/service.md
-  - Internals & Extensions:
+  - Internals:
     - Overview: internals/index.md
     - Application Runtime: wiki/application_runtime.md
     - Components: wiki/components.md
@@ -44,14 +46,12 @@ nav:
     - Middleware: wiki/middleware.md
     - Extensions: wiki/extensions.md
     - RESTful API: wiki/restful_api.md
-    - Extension Development: extension_development_guide.md
-    - Quick Start Extensions: quick_start_extensions.md
-  - Migration & Version Notes:
+  - Migration:
     - Overview: migration/index.md
-    - Final Structure Migration: migration_to_final_semantic_layout.md
-    - Runtime Consolidation: runtime_updates_v093.md
     - Migration Guide: migration_guide.md
     - Migration Guide v2: migration_guide_v2.md
+    - Final Structure Migration: migration_to_final_semantic_layout.md
+    - Runtime Consolidation: runtime_updates_v093.md
     - Import Migration 0.90: import_migration_090.md
 
 # Exclude internal documentation files from nav warnings
@@ -59,6 +59,7 @@ not_in_nav: |
   /cullinan_documentation_plan.md
   /REFACTORING_VERIFICATION_REPORT.md
   /bugfix_controller_di.md
+  /template/**
   /templates/**
   /work/**
   /superpowers/**
@@ -96,14 +97,14 @@ plugins:
           link: /zh/
           nav_translations:
             Home: 首页
-            Application Build: 应用构建
-            Framework Semantics: 框架语义
-            Engineering Practices: 工程实践
-            API Reference: API 参考
-            Internals & Extensions: 运行时与扩展
-            Migration & Version Notes: 版本迁移
-            Overview: 总览
             Getting Started: 快速开始
+            Core Concepts: 核心概念
+            Guides: 工程指南
+            API Reference: API 参考
+            Internals: 内部机制
+            Migration: 版本迁移
+            Overview: 总览
+            Quick Start: 快速开始
             API Reference Overview: API 参考总览
             Architecture: 架构设计
             Runtime Consolidation: 运行时整合
@@ -127,15 +128,15 @@ plugins:
             Migration Guide: 迁移指南
             Migration Guide v2: 迁移指南 v2
             Import Migration 0.90: 0.90 导入迁移
-            Dependency Injection Guide: 依赖注入指南
-            Web Runtime Guide: Web Runtime 指南
-            Static Files and SPA Guide: 静态文件与 SPA 指南
+            Dependency Injection: 依赖注入
+            Web Runtime: Web Runtime
+            Static Files & SPA: 静态文件与 SPA
             DI Quick Reference: DI 快速参考
-            Parameter System Guide: 参数系统指南
+            Parameter System: 参数系统
             Extension Development: 扩展开发
             Quick Start Extensions: 扩展快速入门
             Build & Run: 构建与运行
-            Packaging Guide: 打包指南
+            Packaging: 打包
             Testing: 测试
             Contributing: 贡献指南
 
