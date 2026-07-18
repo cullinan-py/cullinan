@@ -216,5 +216,181 @@ class TestCacheInvalidation(unittest.TestCase):
         self.assertNotIn("_req", m_strict)
 
 
+# ── PM AC-A2-4 acceptance scenarios (TS-1 to TS-6) ─────────────────────
+# PM-defined authoritative test scenarios for strict_private_injection.
+# These map 1:1 to PM's table (msg_e95f8d797d1e, art_a78302c5d6c8).
+
+
+class _DatabaseService:
+    """Type used for bare-annotation constructor injection (TS-6)."""
+    pass
+
+
+class _SingletonWithPrivateBareAnnotation:
+    """TS-6: _internal_db uses bare type annotation (constructor injection)."""
+    _internal_db: _DatabaseService
+
+
+class _SingletonWithPublicBareAnnotation:
+    """TS-6 companion: public `db` bare type annotation (must still inject)."""
+    db: _DatabaseService
+
+
+def _build_context_private_bare_annotation(*, strict_private_injection=False):
+    """Context with a request-scoped DatabaseService and a singleton that
+    has a private bare-annotation ``_internal_db: _DatabaseService``."""
+    ctx = ApplicationContext(strict_private_injection=strict_private_injection)
+    ctx.register(Definition(
+        name="DatabaseService",
+        factory=lambda c: _DatabaseService(),
+        scope=ScopeType.REQUEST,
+        type_=_DatabaseService,
+        source="test:DatabaseService",
+    ))
+    ctx.register(Definition(
+        name="SingletonWithPrivateBareAnnotation",
+        factory=lambda c: _SingletonWithPrivateBareAnnotation(),
+        scope=ScopeType.SINGLETON,
+        type_=_SingletonWithPrivateBareAnnotation,
+        source="test:SingletonWithPrivateBareAnnotation",
+    ))
+    return ctx
+
+
+def _build_context_public_bare_annotation(*, strict_private_injection=False):
+    """Context with a request-scoped DatabaseService and a singleton that
+    has a public bare-annotation ``db: _DatabaseService``."""
+    ctx = ApplicationContext(strict_private_injection=strict_private_injection)
+    ctx.register(Definition(
+        name="DatabaseService",
+        factory=lambda c: _DatabaseService(),
+        scope=ScopeType.REQUEST,
+        type_=_DatabaseService,
+        source="test:DatabaseService",
+    ))
+    ctx.register(Definition(
+        name="SingletonWithPublicBareAnnotation",
+        factory=lambda c: _SingletonWithPublicBareAnnotation(),
+        scope=ScopeType.SINGLETON,
+        type_=_SingletonWithPublicBareAnnotation,
+        source="test:SingletonWithPublicBareAnnotation",
+    ))
+    return ctx
+
+
+class TestPMAcceptanceScenarios(unittest.TestCase):
+    """PM AC-A2-4 authoritative test scenarios TS-1 through TS-6."""
+
+    def setUp(self):
+        invalidate_injection_markers_cache()
+
+    # TS-1: default False, _req InjectByName -> scanned, scope violation raises
+    def test_TS1_default_scans_private_injectbyname_and_raises(self):
+        """TS-1: strict_private_injection=False (default), _req = InjectByName("X")
+        is scanned and triggers scope violation (LifecycleError).
+        Aligns with test_underscore_prefixed_injection_also_checked L183."""
+        ctx = _build_context_with_private_di(strict_private_injection=False)
+        with self.assertRaises(ScopeViolationError):
+            ctx.refresh()
+
+    # TS-2: strict=True, _req InjectByName -> skipped, no scope check
+    def test_TS2_strict_skips_private_injectbyname_no_violation(self):
+        """TS-2: strict_private_injection=True, _req = InjectByName("X") is
+        skipped, stays as the unresolved InjectByName marker (not injected),
+        no scope validation triggered."""
+        invalidate_injection_markers_cache()
+        ctx = _build_context_with_private_di(strict_private_injection=True)
+        # Should NOT raise because _req is skipped.
+        ctx.refresh()
+        instance = ctx.get("SingletonWithPrivateDI")
+        # _req was NOT injected: it still holds the InjectByName marker
+        # (or is absent), but it is NOT the resolved _RequestScoped instance.
+        value = getattr(instance, "_req", None)
+        self.assertNotIsInstance(value, _RequestScoped)
+
+    # TS-3: strict=True, req (no prefix) -> still injected
+    def test_TS3_strict_keeps_public_injectbyname(self):
+        """TS-3: strict_private_injection=True, req = InjectByName("X") (no
+        underscore prefix) is still scanned normally."""
+        invalidate_injection_markers_cache()
+        # Use a valid singleton->singleton context so public req resolves.
+        ctx = ApplicationContext(strict_private_injection=True)
+        ctx.register(Definition(
+            name="RequestScopedService",
+            factory=lambda c: _RequestScoped(),
+            scope=ScopeType.SINGLETON,
+            source="test:RequestScopedService",
+        ))
+        ctx.register(Definition(
+            name="SingletonWithPublicDI",
+            factory=lambda c: _SingletonWithPublicDI(),
+            scope=ScopeType.SINGLETON,
+            type_=_SingletonWithPublicDI,
+            source="test:SingletonWithPublicDI",
+        ))
+        ctx.refresh()
+        instance = ctx.get("SingletonWithPublicDI")
+        self.assertIsNotNone(getattr(instance, "req", None))
+
+    # TS-4: CULLINAN_STRICT_PRIVATE_INJECTION=1, _req -> equivalent to TS-2
+    def test_TS4_env_var_equivalent_to_strict_mode(self):
+        """TS-4: CULLINAN_STRICT_PRIVATE_INJECTION=1, _req = InjectByName("X")
+        is skipped (equivalent to TS-2 via env var fallback)."""
+        invalidate_injection_markers_cache()
+        with patch.dict(os.environ, {"CULLINAN_STRICT_PRIVATE_INJECTION": "1"}):
+            ctx = _build_context_with_private_di()
+            # Should NOT raise because _req is skipped via env var.
+            ctx.refresh()
+            instance = ctx.get("SingletonWithPrivateDI")
+            value = getattr(instance, "_req", None)
+            self.assertNotIsInstance(value, _RequestScoped)
+
+    # TS-5: explicit False + env=1 -> OR logic, strict wins
+    def test_TS5_explicit_false_with_env_one_still_strict(self):
+        """TS-5: strict_private_injection=False + env=1 -> OR logic means env
+        var wins (any True -> strict). Validates OR logic end-to-end."""
+        invalidate_injection_markers_cache()
+        with patch.dict(os.environ, {"CULLINAN_STRICT_PRIVATE_INJECTION": "1"}):
+            ctx = _build_context_with_private_di(strict_private_injection=False)
+            # OR logic: False or True = True -> _req skipped, no violation.
+            ctx.refresh()
+            instance = ctx.get("SingletonWithPrivateDI")
+            value = getattr(instance, "_req", None)
+            self.assertNotIsInstance(value, _RequestScoped)
+
+    # TS-6: strict=True, _internal_db: DatabaseService (bare type annotation) -> skipped
+    def test_TS6_strict_skips_private_bare_annotation_constructor(self):
+        """TS-6: strict_private_injection=True, _internal_db: DatabaseService
+        (bare type annotation, constructor injection path) is skipped.
+        No scope violation, no DependencyNotFoundError, attr stays unset."""
+        invalidate_injection_markers_cache()
+        ctx = _build_context_private_bare_annotation(strict_private_injection=True)
+        # Should NOT raise: _internal_db is skipped, so no scope check, no
+        # DependencyNotFoundError for the unresolvable private annotation.
+        ctx.refresh()
+        instance = ctx.get("SingletonWithPrivateBareAnnotation")
+        # _internal_db was skipped by strict mode, so it remains unset
+        # (constructor injection did not set it).
+        self.assertFalse(hasattr(instance, "_internal_db") and
+                         getattr(instance, "_internal_db", None) is not None)
+
+    def test_TS6_default_scans_private_bare_annotation_and_raises(self):
+        """TS-6 companion: default (strict=False), _internal_db: DatabaseService
+        (bare type annotation) IS scanned and triggers scope violation.
+        Validates the default constructor-injection path is unaffected."""
+        invalidate_injection_markers_cache()
+        ctx = _build_context_private_bare_annotation(strict_private_injection=False)
+        with self.assertRaises(ScopeViolationError):
+            ctx.refresh()
+
+    def test_TS6_strict_keeps_public_bare_annotation(self):
+        """TS-6 companion: strict=True, db: DatabaseService (public bare type
+        annotation) is still scanned and triggers scope violation."""
+        invalidate_injection_markers_cache()
+        ctx = _build_context_public_bare_annotation(strict_private_injection=True)
+        with self.assertRaises(ScopeViolationError):
+            ctx.refresh()
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -496,6 +496,10 @@ class ApplicationContext:
         for attr_name, annotation in annotations.items():
             if attr_name in markers:
                 continue
+            # A2: strict_private_injection skips single-underscore bare type
+            # annotations (constructor injection path), mirroring get_injection_markers.
+            if self._strict_private_injection and attr_name.startswith('_'):
+                continue
             if attr_name in class_dict and class_dict[attr_name] is not None:
                 continue
 
@@ -765,6 +769,10 @@ class ApplicationContext:
         result: List[str] = []
         for attr_name in annotations:
             if attr_name in markers:
+                continue
+            # A2: strict_private_injection skips single-underscore bare type
+            # annotations (constructor injection path), mirroring get_injection_markers.
+            if self._strict_private_injection and attr_name.startswith('_'):
                 continue
             if attr_name in class_dict and class_dict[attr_name] is not None:
                 continue
@@ -1045,6 +1053,10 @@ class ApplicationContext:
         for attr_name, annotation in annotations.items():
             # Skip field-injection markers — those are handled separately.
             if attr_name in markers:
+                continue
+            # A2: strict_private_injection skips single-underscore bare type
+            # annotations (constructor injection path), mirroring get_injection_markers.
+            if self._strict_private_injection and attr_name.startswith('_'):
                 continue
             # Skip literal defaults, e.g. ``timeout: int = 5``.
             if attr_name in class_dict and class_dict[attr_name] is not None:
