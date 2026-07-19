@@ -9,7 +9,6 @@
 退出码 0 = 全部通过
 """
 import json, os, sys, tempfile, pathlib, shutil
-from datetime import datetime, timezone
 
 MERGE_SCRIPT = """
 import json, os, pathlib

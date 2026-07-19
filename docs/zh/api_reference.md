@@ -171,7 +171,7 @@ v0.94 Phase A 的冻结口径使用各包的 `__all__` 作为可审阅导出契�
 | `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
 | `reset_injection_registry()` | 显式创建新的 `ApplicationContext` |
 
-详见 [框架语义](concepts/framework_semantics.md) §5-§8。
+详见 [框架语义](framework_semantics.md) §5-§8。
 
 ## 重新生成 API 文档（步骤示例）
 

@@ -181,7 +181,7 @@ A complete API reference can be populated using this structure, either via autom
 | `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
 | `reset_injection_registry()` | Create a new `ApplicationContext` explicitly |
 
-See [Framework Semantics](concepts/framework_semantics.md) §5-§8 for full details.
+See [Framework Semantics](framework_semantics.md) §5-§8 for full details.
 
 ## Regenerating API documentation (example workflow)
 

@@ -30,7 +30,6 @@ from .exceptions import (
 from .diagnostics import (
     format_circular_dependency_error,
     format_missing_dependency_error,
-    format_scope_violation_error,
 )
 from .injection_types import Provider
 from .lifecycle_enhanced import LifecyclePhase

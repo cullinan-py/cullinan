@@ -5,7 +5,6 @@ S4 (v0.95a1): origin/preview 为 pre 通道唯一权威来源。release/v0.93-pr
 转为只读归档，不再触发 pre 通道部署。preview 分支名优先于版本号 'a' 判定。
 """
 import sys
-from packaging.version import Version
 
 
 def detect_channel(branch, version, default_branch="master", event_name="push",
