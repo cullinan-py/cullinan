@@ -76,6 +76,7 @@ exclude_docs: |
   zh/work/
   templates/
   zh/templates/
+  superpowers/
 
 # Plugins: enable search and static-i18n for bilingual support
 plugins:
