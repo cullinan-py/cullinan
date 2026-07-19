@@ -25,6 +25,7 @@ from .exceptions import (
     DependencyTypeResolutionError,
     LifecycleError,
     RegistryFrozenError,
+    ScopeViolationError,
 )
 from .diagnostics import (
     format_circular_dependency_error,
@@ -158,9 +159,13 @@ class ApplicationContext:
         "_state",
         "_id",
         "_health_checks",
+        "_strict_private_injection",
+        "_strict_lifecycle",
     )
 
-    def __init__(self, container_id: Optional[str] = None):
+    def __init__(self, container_id: Optional[str] = None, *,
+                 strict_private_injection: bool = False,
+                 strict_lifecycle: bool = False):
         self._definition_registry = DefinitionRegistry()
         self._scope_manager = ScopeManager(root_id=container_id or hex(id(self)))
         self._lock = threading.RLock()
@@ -172,6 +177,21 @@ class ApplicationContext:
         self._state = ContainerState.CREATED
         self._id = self._scope_manager.root_id
         self._health_checks: List[Any] = []
+        # A2: strict_private_injection - when True, single-underscore (_xxx)
+        # attributes are skipped by the injection marker scanner. Default
+        # False preserves the v0.93a11+ behavior where _xxx is visible to
+        # the injection system. CULLINAN_STRICT_PRIVATE_INJECTION=1 env var
+        # provides a global opt-in for CI / strict projects.
+        self._strict_private_injection = strict_private_injection or (
+            __import__("os").environ.get(
+                "CULLINAN_STRICT_PRIVATE_INJECTION", ""
+            ).lower() in ("1", "true", "yes")
+        )
+        # A3: strict_lifecycle - when True, non-critical lifecycle exceptions
+        # are re-raised instead of being logged and swallowed. Default False
+        # preserves the existing ApplicationContext behavior where only
+        # critical lifecycle methods propagate.
+        self._strict_lifecycle = strict_lifecycle
 
     # ========================================================================
     # Registration API
@@ -430,12 +450,13 @@ class ApplicationContext:
     def _validate_injection_contracts(self) -> None:
         from .decorators import get_injection_markers
 
+        skip_private = self._strict_private_injection
         for definition in self._definition_registry.values():
             target_cls = definition.type_
             if target_cls is None or not inspect.isclass(target_cls):
                 continue
 
-            markers = get_injection_markers(target_cls)
+            markers = get_injection_markers(target_cls, skip_private=skip_private)
 
             type_hints, raw_annotations, type_hint_error = self._get_class_type_hints(target_cls)
 
@@ -473,6 +494,10 @@ class ApplicationContext:
 
         for attr_name, annotation in annotations.items():
             if attr_name in markers:
+                continue
+            # A2: strict_private_injection skips single-underscore bare type
+            # annotations (constructor injection path), mirroring get_injection_markers.
+            if self._strict_private_injection and attr_name.startswith('_'):
                 continue
             if attr_name in class_dict and class_dict[attr_name] is not None:
                 continue
@@ -551,21 +576,61 @@ class ApplicationContext:
         Recursively traverses each singleton/prototype component's explicit
         dependencies and implicit dependencies (field injection markers),
         detecting request-scoped beans in the full transitive closure.
+
+        Performance (A4): uses a cross-origin ``verified_safe`` memo so each
+        component subgraph is fully traversed at most once across all origins,
+        reducing worst-case complexity from O(N^2 * M) to O(N + E).
+
+        A2: when ``self._strict_private_injection`` is True, the injection
+        marker scanner skips single-underscore (_xxx) attributes, treating
+        them as strictly private (opt-out from the v0.93a11+ default where
+        _xxx is visible to the injection system).
         """
         from .decorators import get_injection_markers
+
+        skip_private = self._strict_private_injection
+
+        def _scan_markers(cls):
+            return get_injection_markers(cls, skip_private=skip_private)
+
+        # Cross-origin cache: components whose transitive closure has been
+        # confirmed not to reach a request-scoped component. Subsequent
+        # origins that reach one of these nodes can short-circuit.
+        verified_safe: Set[str] = set()
 
         for definition in self._definition_registry.values():
             if definition.scope not in (ScopeType.SINGLETON, ScopeType.PROTOTYPE):
                 continue
+            if definition.name in verified_safe:
+                continue
             self._check_transitive_scope(
                 definition.name, set(), definition.name, definition.scope,
-                get_injection_markers,
+                _scan_markers,
+                path=[definition.name],
+                verified_safe=verified_safe,
             )
 
     def _check_transitive_scope(self, name, visited, origin_name, origin_scope,
-                                get_injection_markers):
-        """Recursively check transitive scope constraints."""
+                                get_injection_markers, path=None, verified_safe=None):
+        """Recursively check transitive scope constraints.
+
+        Args:
+            path: Ordered dependency chain from the origin component to the
+                current node (inclusive). Used to build ``ScopeViolationError.
+                dependency_chain`` on violation (A4).
+            verified_safe: Cross-origin memo of components confirmed safe.
+                When a node is in this set, its subgraph has already been
+                validated and can be skipped (A4 perf).
+        """
+        if path is None:
+            path = [name]
+        if verified_safe is None:
+            verified_safe = set()
+
         if name in visited:
+            return
+        if name in verified_safe:
+            # Cross-origin cache hit: this subgraph was already validated.
             return
         visited.add(name)
 
@@ -580,22 +645,31 @@ class ApplicationContext:
                 self._check_transitive_scope(
                     dep_name, visited, origin_name, origin_scope,
                     get_injection_markers,
+                    path=path + [dep_name],
+                    verified_safe=verified_safe,
                 )
                 continue
             if dep_def.scope == ScopeType.REQUEST:
-                raise LifecycleError(
-                    format_semantic_message(
+                full_chain = path + [dep_name]
+                raise ScopeViolationError(
+                    message=format_semantic_message(
                         "lifecycle-request-scope",
                         f"{origin_scope.name.title()} component '{origin_name}' "
                         f"depends transitively on request-scoped component '{dep_name}' "
-                        f"(dependency path includes '{name}').",
+                        f"(dependency path includes '{name}'). "
+                        f"Dependency chain: {' -> '.join(full_chain)}",
                         "Resolve that dependency inside a request context, "
                         "or adjust the component scopes.",
-                    )
+                    ),
+                    dependency_chain=full_chain,
+                    origin_name=origin_name,
+                    violating_component=dep_name,
                 )
             self._check_transitive_scope(
                 dep_name, visited, origin_name, origin_scope,
                 get_injection_markers,
+                path=path + [dep_name],
+                verified_safe=verified_safe,
             )
 
         # Check field injection implicit dependencies
@@ -614,22 +688,31 @@ class ApplicationContext:
                             self._check_transitive_scope(
                                 dep_name, visited, origin_name, origin_scope,
                                 get_injection_markers,
+                                path=path + [dep_name],
+                                verified_safe=verified_safe,
                             )
                             continue
                         if dep_def.scope == ScopeType.REQUEST:
-                            raise LifecycleError(
-                                format_semantic_message(
+                            full_chain = path + [dep_name]
+                            raise ScopeViolationError(
+                                message=format_semantic_message(
                                     "lifecycle-request-scope",
                                     f"{origin_scope.name.title()} component '{origin_name}' "
                                     f"depends transitively on request-scoped component "
-                                    f"'{dep_name}' via field '{attr_name}' on '{name}'.",
+                                    f"'{dep_name}' via field '{attr_name}' on '{name}'. "
+                                    f"Dependency chain: {' -> '.join(full_chain)}",
                                     "Resolve that dependency inside a request context, "
                                     "or adjust the component scopes.",
-                                )
+                                ),
+                                dependency_chain=full_chain,
+                                origin_name=origin_name,
+                                violating_component=dep_name,
                             )
                         self._check_transitive_scope(
                             dep_name, visited, origin_name, origin_scope,
                             get_injection_markers,
+                            path=path + [dep_name],
+                            verified_safe=verified_safe,
                         )
 
             # Check constructor injection implicit dependencies
@@ -643,24 +726,36 @@ class ApplicationContext:
                     self._check_transitive_scope(
                         dep_name, visited, origin_name, origin_scope,
                         get_injection_markers,
+                        path=path + [dep_name],
+                        verified_safe=verified_safe,
                     )
                     continue
                 if dep_def.scope == ScopeType.REQUEST:
                     cls_name = getattr(target_cls, "__name__", str(target_cls))
-                    raise LifecycleError(
-                        format_semantic_message(
+                    full_chain = path + [dep_name]
+                    raise ScopeViolationError(
+                        message=format_semantic_message(
                             "lifecycle-request-scope",
                             f"{origin_scope.name.title()} component '{origin_name}' "
                             f"depends transitively on request-scoped component "
-                            f"'{dep_name}' via constructor injection on '{cls_name}'.",
+                            f"'{dep_name}' via constructor injection on '{cls_name}'. "
+                            f"Dependency chain: {' -> '.join(full_chain)}",
                             "Resolve that dependency inside a request context, "
                             "or adjust the component scopes.",
-                        )
+                        ),
+                        dependency_chain=full_chain,
+                        origin_name=origin_name,
+                        violating_component=dep_name,
                     )
                 self._check_transitive_scope(
                     dep_name, visited, origin_name, origin_scope,
                     get_injection_markers,
+                    path=path + [dep_name],
+                    verified_safe=verified_safe,
                 )
+
+        # Subgraph fully traversed without violation: memoize as safe.
+        verified_safe.add(name)
 
     def _resolve_constructor_dependency_names(
         self, cls, markers, type_hints,
@@ -673,6 +768,10 @@ class ApplicationContext:
         result: List[str] = []
         for attr_name in annotations:
             if attr_name in markers:
+                continue
+            # A2: strict_private_injection skips single-underscore bare type
+            # annotations (constructor injection path), mirroring get_injection_markers.
+            if self._strict_private_injection and attr_name.startswith('_'):
                 continue
             if attr_name in class_dict and class_dict[attr_name] is not None:
                 continue
@@ -899,7 +998,7 @@ class ApplicationContext:
             setattr(instance, attr_name, value)
 
         # ── Field injection (skips properties already set by constructor) ──
-        markers = get_injection_markers(cls)
+        markers = get_injection_markers(cls, skip_private=self._strict_private_injection)
         type_hints, raw_annotations, type_hint_error = self._get_class_type_hints(cls)
 
         for attr_name, marker in markers.items():
@@ -945,7 +1044,7 @@ class ApplicationContext:
         if not annotations:
             return {}
 
-        markers = get_injection_markers(cls)
+        markers = get_injection_markers(cls, skip_private=self._strict_private_injection)
         class_dict = cls.__dict__
         type_hints, _raw, _err = self._get_class_type_hints(cls)
 
@@ -953,6 +1052,10 @@ class ApplicationContext:
         for attr_name, annotation in annotations.items():
             # Skip field-injection markers — those are handled separately.
             if attr_name in markers:
+                continue
+            # A2: strict_private_injection skips single-underscore bare type
+            # annotations (constructor injection path), mirroring get_injection_markers.
+            if self._strict_private_injection and attr_name.startswith('_'):
                 continue
             # Skip literal defaults, e.g. ``timeout: int = 5``.
             if attr_name in class_dict and class_dict[attr_name] is not None:
@@ -1846,15 +1949,22 @@ class ApplicationContext:
             self._lifecycle_phases[name] = LifecyclePhase.DESTROYED
 
     def _call_lifecycle_method(self, name: str, instance: Any, sync_method: str, async_method: str) -> None:
+        # A3: critical hooks (on_post_construct / on_pre_destroy) always
+        # propagate. non-critical hooks (on_startup / on_shutdown) only
+        # propagate when strict_lifecycle is enabled; otherwise they are
+        # logged and swallowed to avoid cascading failures (v0.94 default).
+        is_critical = self._is_critical_lifecycle(sync_method, async_method)
+        should_raise = is_critical or self._strict_lifecycle
+
         async_func = getattr(instance, async_method, None)
         if async_func and callable(async_func) and self._is_user_defined_method(instance, async_method):
             try:
                 self._run_coroutine(async_func())
             except Exception as exc:
                 logger.error("Lifecycle method %s.%s failed: %s", name, async_method, exc)
-                if self._is_critical_lifecycle(sync_method, async_method):
+                if should_raise:
                     raise LifecycleError(
-                        f"Critical lifecycle method '{name}.{async_method}' failed: {exc}"
+                        f"Lifecycle method '{name}.{async_method}' failed: {exc}"
                     ) from exc
 
         sync_func = getattr(instance, sync_method, None)
@@ -1865,9 +1975,9 @@ class ApplicationContext:
                     self._run_coroutine(result)
             except Exception as exc:
                 logger.error("Lifecycle method %s.%s failed: %s", name, sync_method, exc)
-                if self._is_critical_lifecycle(sync_method, async_method):
+                if should_raise:
                     raise LifecycleError(
-                        f"Critical lifecycle method '{name}.{sync_method}' failed: {exc}"
+                        f"Lifecycle method '{name}.{sync_method}' failed: {exc}"
                     ) from exc
 
     @staticmethod

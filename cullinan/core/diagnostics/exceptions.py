@@ -12,6 +12,7 @@ from ..exceptions import (
     RegistryError,
     RegistryFrozenError,
     ScopeNotActiveError,
+    ScopeViolationError,
 )
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "ConditionNotMetError",
     "CreationError",
     "LifecycleError",
+    "ScopeViolationError",
 ]

@@ -196,3 +196,30 @@ class AmbiguousDependencyError(DependencyResolutionError):
 class LifecycleError(CullinanCoreError):
     """Exception raised for lifecycle management errors."""
     pass
+
+
+class ScopeViolationError(LifecycleError):
+    """Exception raised when scope constraints are violated.
+
+    A singleton/prototype component transitively depends on a request-scoped
+    component. Carries the full dependency chain from the origin component to
+    the violating request-scoped component, aligned with
+    :class:`CircularDependencyError`.
+
+    Inherits from :class:`LifecycleError` for backward compatibility
+    (``isinstance(e, LifecycleError)`` remains ``True``).
+    """
+
+    def __init__(
+        self,
+        message: str,
+        dependency_chain: Optional[List[str]] = None,
+        origin_name: Optional[str] = None,
+        violating_component: Optional[str] = None,
+        **kwargs
+    ):
+        super().__init__(message)
+        self.message = message
+        self.dependency_chain = dependency_chain or []
+        self.origin_name = origin_name
+        self.violating_component = violating_component

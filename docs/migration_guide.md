@@ -8,6 +8,49 @@
 
 This guide helps you migrate from Cullinan 1.x to 0.93 (0.90).
 
+## v0.95a1 migration notes (Track A internal refactor)
+
+v0.95a1 is a non-breaking release that adds deprecation markers and optional
+strict switches. Existing code continues to work without changes, but you are
+encouraged to migrate now.
+
+### Deprecated since v0.95 (removed in v0.97)
+
+The five legacy compatibility symbols are now formally deprecated. Both a
+standard `DeprecationWarning` (tool-chain visible) and the existing
+`CompatibilitySemanticWarning` (deduplicated semantic reminder) fire on each
+use.
+
+| Deprecated symbol | Replacement |
+|-------------------|-------------|
+| `@injectable` | `@service` / `@component` / `@controller` (classes are auto-injectable) |
+| `@inject_constructor` | `ApplicationContext.refresh()` |
+| `InjectionRegistry` | `ApplicationContext` / `get_application_context()` |
+| `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
+| `reset_injection_registry()` | Create a new `ApplicationContext` explicitly |
+
+To surface deprecation warnings as errors in CI:
+
+```bash
+python -m pytest -W error::DeprecationWarning
+```
+
+### Optional strict switches
+
+- `strict_private_injection=True` (or `CULLINAN_STRICT_PRIVATE_INJECTION=1`):
+  single-underscore (`_xxx`) class attributes are skipped by the injection
+  marker scanner. Default `False` preserves v0.93a11+ behavior.
+- `strict_lifecycle=True`: `on_startup`/`on_shutdown` failures propagate as
+  `LifecycleError`. Default `False` preserves v0.94 behavior (log and swallow).
+
+### Structured scope violations
+
+Transitive scope violations now raise `ScopeViolationError` (a subclass of
+`LifecycleError`). Existing `except LifecycleError` handlers continue to work.
+The new exception carries `dependency_chain`, `origin_name`, and
+`violating_component` fields for richer diagnostics; use
+`format_scope_violation_error()` to render a human-readable chain.
+
 ## Breaking Changes
 
 ### 1. Single Entry Point

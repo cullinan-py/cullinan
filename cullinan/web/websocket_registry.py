@@ -245,11 +245,10 @@ def websocket_handler(url: Optional[str] = None, **options) -> Callable:
                 pass
     """
     def decorator(handler_class: Type[Any]) -> Type[Any]:
-        # 1. Mark as injectable (compatibility - no-op in 0.93)
-        from cullinan.core import injectable
-        handler_class = injectable(handler_class)
+        # injectable() was a no-op since v0.93 and is deprecated in v0.95.
+        # Classes are automatically injectable; no marker needed here.
 
-        # 2. Register to WebSocketRegistry
+        # 1. Register to WebSocketRegistry
         registry = get_websocket_registry()
         name = handler_class.__name__
         registry.register(name, handler_class, url=url, **options)
