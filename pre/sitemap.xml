@@ -1,605 +1,605 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/api_reference/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/api_reference/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/api_reference/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/api_reference/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/api_reference/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/api_reference/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/architecture/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/architecture/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/architecture/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/architecture/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/architecture/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/architecture/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/bugfix_controller_di/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/bugfix_controller_di/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/bugfix_controller_di/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/bugfix_controller_di/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/bugfix_controller_di/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/bugfix_controller_di/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/build_run/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/build_run/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/build_run/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/build_run/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/build_run/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/build_run/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/contributing/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/contributing/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/contributing/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/contributing/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/contributing/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/contributing/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/cullinan_documentation_plan/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/cullinan_documentation_plan/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/cullinan_documentation_plan/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/cullinan_documentation_plan/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/cullinan_documentation_plan/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/cullinan_documentation_plan/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/dependency_injection_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/dependency_injection_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/dependency_injection_guide/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/dependency_injection_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/dependency_injection_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/dependency_injection_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/examples/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/examples/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/examples/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/examples/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/examples/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/examples/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/extension_development_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/extension_development_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/extension_development_guide/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/extension_development_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/extension_development_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/extension_development_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/framework_semantics/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/framework_semantics/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/framework_semantics/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/framework_semantics/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/framework_semantics/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/framework_semantics/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/getting_started/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/getting_started/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/getting_started/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/getting_started/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/getting_started/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/getting_started/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/import_migration_090/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/import_migration_090/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/import_migration_090/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/import_migration_090/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/import_migration_090/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/import_migration_090/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/migration_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/migration_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/migration_guide/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/migration_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/migration_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/migration_guide_v2/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/migration_guide_v2/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/migration_guide_v2/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/migration_guide_v2/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/migration_guide_v2/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_guide_v2/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/migration_to_final_semantic_layout/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/migration_to_final_semantic_layout/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/migration_to_final_semantic_layout/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/migration_to_final_semantic_layout/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/migration_to_final_semantic_layout/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_to_final_semantic_layout/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/packaging/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/packaging/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/packaging/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/packaging/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/packaging/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/packaging/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/parameter_system_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/parameter_system_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/parameter_system_guide/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/parameter_system_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/parameter_system_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/parameter_system_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/quick_reference_di/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/quick_reference_di/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/quick_reference_di/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/quick_reference_di/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/quick_reference_di/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/quick_reference_di/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/quick_start_extensions/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/quick_start_extensions/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/quick_start_extensions/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/quick_start_extensions/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/quick_start_extensions/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/quick_start_extensions/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/runtime_updates_v093/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/runtime_updates_v093/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/runtime_updates_v093/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/runtime_updates_v093/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/runtime_updates_v093/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/runtime_updates_v093/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/static_files_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/static_files_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/static_files_guide/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/static_files_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/static_files_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/static_files_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/testing/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/testing/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/testing/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/testing/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/testing/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/testing/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/web_runtime_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/web_runtime_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/web_runtime_guide/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/web_runtime_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/web_runtime_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/web_runtime_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/concepts/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/concepts/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/concepts/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/concepts/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/concepts/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/concepts/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/how-to/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/how-to/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/how-to/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/how-to/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/how-to/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/how-to/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/internals/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/internals/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/internals/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/internals/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/migration/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/migration/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/migration/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/migration/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/migration/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/migration/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/modules/application/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/modules/application/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/modules/application/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/modules/application/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/modules/application/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/modules/application/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/modules/controller/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/modules/controller/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/modules/controller/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/modules/controller/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/modules/controller/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/modules/controller/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/modules/core/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/modules/core/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/modules/core/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/modules/core/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/modules/core/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/modules/core/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/modules/service/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/modules/service/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/modules/service/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/modules/service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/modules/service/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/modules/service/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/reference/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/reference/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/reference/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/reference/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/reference/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/reference/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/start/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/start/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/start/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/start/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/start/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/start/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/template/release-note-template/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/template/release-note-template/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/template/release-note-template/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/template/release-note-template/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/template/release-note-template/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/template/release-note-template/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/wiki/application_runtime/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/application_runtime/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/application_runtime/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/application_runtime/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/application_runtime/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/application_runtime/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/wiki/components/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/components/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/components/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/components/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/components/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/components/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/wiki/decorators/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/decorators/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/decorators/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/decorators/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/decorators/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/decorators/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/wiki/extensions/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/extensions/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/extensions/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/extensions/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/extensions/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/extensions/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/wiki/injection/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/injection/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/injection/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/injection/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/injection/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/injection/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/wiki/lifecycle/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/lifecycle/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/lifecycle/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/lifecycle/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/lifecycle/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/lifecycle/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/wiki/middleware/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/middleware/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/middleware/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/middleware/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/middleware/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/middleware/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/wiki/restful_api/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/restful_api/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/restful_api/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/restful_api/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/restful_api/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/restful_api/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/api_reference/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/api_reference/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/api_reference/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/api_reference/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/api_reference/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/api_reference/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/architecture/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/architecture/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/architecture/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/architecture/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/architecture/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/architecture/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/bugfix_controller_di/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/bugfix_controller_di/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/bugfix_controller_di/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/bugfix_controller_di/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/bugfix_controller_di/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/bugfix_controller_di/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/build_run/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/build_run/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/build_run/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/build_run/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/build_run/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/build_run/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/contributing/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/contributing/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/contributing/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/contributing/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/contributing/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/contributing/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/cullinan_documentation_plan/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/cullinan_documentation_plan/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/cullinan_documentation_plan/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/cullinan_documentation_plan/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/cullinan_documentation_plan/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/cullinan_documentation_plan/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/dependency_injection_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/dependency_injection_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/dependency_injection_guide/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/dependency_injection_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/dependency_injection_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/dependency_injection_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/examples/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/examples/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/examples/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/examples/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/examples/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/examples/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/extension_development_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/extension_development_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/extension_development_guide/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/extension_development_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/extension_development_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/extension_development_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/framework_semantics/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/framework_semantics/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/framework_semantics/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/framework_semantics/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/framework_semantics/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/framework_semantics/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/getting_started/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/getting_started/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/getting_started/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/getting_started/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/getting_started/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/getting_started/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/import_migration_090/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/import_migration_090/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/import_migration_090/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/import_migration_090/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/import_migration_090/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/import_migration_090/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/migration_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/migration_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/migration_guide/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/migration_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/migration_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/migration_guide_v2/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/migration_guide_v2/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/migration_guide_v2/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/migration_guide_v2/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_guide_v2/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/migration_guide_v2/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/migration_to_final_semantic_layout/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/migration_to_final_semantic_layout/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/migration_to_final_semantic_layout/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/migration_to_final_semantic_layout/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_to_final_semantic_layout/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/migration_to_final_semantic_layout/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/packaging/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/packaging/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/packaging/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/packaging/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/packaging/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/packaging/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/parameter_system_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/parameter_system_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/parameter_system_guide/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/parameter_system_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/parameter_system_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/parameter_system_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/quick_reference_di/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/quick_reference_di/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/quick_reference_di/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/quick_reference_di/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/quick_reference_di/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/quick_reference_di/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/quick_start_extensions/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/quick_start_extensions/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/quick_start_extensions/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/quick_start_extensions/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/quick_start_extensions/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/quick_start_extensions/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/runtime_updates_v093/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/runtime_updates_v093/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/runtime_updates_v093/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/runtime_updates_v093/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/runtime_updates_v093/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/runtime_updates_v093/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/static_files_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/static_files_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/static_files_guide/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/static_files_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/static_files_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/static_files_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/testing/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/testing/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/testing/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/testing/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/testing/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/testing/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/web_runtime_guide/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/web_runtime_guide/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/web_runtime_guide/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/web_runtime_guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/web_runtime_guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/web_runtime_guide/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/concepts/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/concepts/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/concepts/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/concepts/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/concepts/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/concepts/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/how-to/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/how-to/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/how-to/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/how-to/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/how-to/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/how-to/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/internals/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/internals/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/internals/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/internals/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/migration/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/migration/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/migration/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/migration/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/migration/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/migration/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/modules/application/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/modules/application/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/modules/application/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/modules/application/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/modules/application/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/modules/application/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/modules/controller/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/modules/controller/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/modules/controller/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/modules/controller/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/modules/controller/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/modules/controller/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/modules/core/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/modules/core/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/modules/core/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/modules/core/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/modules/core/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/modules/core/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/modules/service/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/modules/service/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/modules/service/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/modules/service/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/modules/service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/modules/service/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/reference/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/reference/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/reference/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/reference/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/reference/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/reference/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/start/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/start/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/start/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/start/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/start/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/start/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/template/release-note-template/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/template/release-note-template/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/template/release-note-template/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/template/release-note-template/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/template/release-note-template/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/template/release-note-template/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/wiki/application_runtime/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/application_runtime/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/application_runtime/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/application_runtime/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/application_runtime/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/application_runtime/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/wiki/components/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/components/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/components/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/components/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/components/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/components/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/wiki/decorators/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/decorators/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/decorators/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/decorators/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/decorators/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/decorators/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/wiki/extensions/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/extensions/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/extensions/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/extensions/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/extensions/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/extensions/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/wiki/injection/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/injection/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/injection/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/injection/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/injection/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/injection/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/wiki/lifecycle/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/lifecycle/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/lifecycle/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/lifecycle/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/lifecycle/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/lifecycle/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/wiki/middleware/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/middleware/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/middleware/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/middleware/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/middleware/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/middleware/"/>
     </url>
     <url>
-        <loc>https://plumeink.github.io/Cullinan/pre/zh/wiki/restful_api/</loc>
-        <lastmod>2026-06-30</lastmod>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/restful_api/</loc>
+        <lastmod>2026-07-19</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://plumeink.github.io/Cullinan/pre/zh/wiki/restful_api/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://plumeink.github.io/Cullinan/pre/wiki/restful_api/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/restful_api/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/restful_api/"/>
     </url>
 </urlset>
