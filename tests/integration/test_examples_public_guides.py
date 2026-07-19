@@ -327,7 +327,7 @@ def test_root_readme_keeps_default_path_on_top_level_api():
     assert "create_app()" not in readme
     assert "- `cullinan.application` - application definition, configuration, and startup" not in readme
     assert "top-level `cullinan` API" in readme
-    assert "**v0.94a1**" in readme
+    assert "**v0.95a1**" in readme
 
 
 def test_getting_started_stays_on_business_first_onboarding_path():
