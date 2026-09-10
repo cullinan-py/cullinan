@@ -158,6 +158,31 @@ For each module, the API reference is recommended to follow this structure:
 
 A complete API reference can be populated using this structure, either via automated generation or by manual curation.
 
+## v0.95 additions (Track A internal refactor)
+
+### New public API symbols
+
+| Symbol | Location | Type | Description |
+|--------|----------|------|-------------|
+| `ScopeViolationError` | `cullinan.core.exceptions` | exception (subclass of `LifecycleError`) | Raised when a singleton/prototype component transitively depends on a request-scoped component. Carries `dependency_chain`, `origin_name`, `violating_component`. |
+| `format_scope_violation_error` | `cullinan.core.diagnostics` | function | Renders a human-readable description of a scope violation from the dependency chain, origin, and violating component. |
+| `strict_private_injection` | `ApplicationContext.__init__` | kwarg | When `True`, single-underscore (`_xxx`) attributes are skipped by the injection marker scanner. Default `False`. |
+| `strict_lifecycle` | `ApplicationContext.__init__` | kwarg | When `True`, non-critical lifecycle hook failures (`on_startup`/`on_shutdown`) propagate as `LifecycleError`. Default `False`. |
+| `skip_private` | `get_injection_markers` | kwarg | When `True`, skips single-underscore-prefixed attributes during marker scanning. Default `False`. |
+| `CULLINAN_STRICT_PRIVATE_INJECTION` | environment variable | config | Set to `1`/`true`/`yes` to globally enable `strict_private_injection` for all `ApplicationContext` instances. |
+
+### Deprecated symbols (removed in v0.97)
+
+| Symbol | Replacement |
+|--------|-------------|
+| `injectable` | `@service` / `@component` / `@controller` |
+| `inject_constructor` | `ApplicationContext.refresh()` |
+| `InjectionRegistry` | `ApplicationContext` / `get_application_context()` |
+| `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
+| `reset_injection_registry()` | Create a new `ApplicationContext` explicitly |
+
+See [Framework Semantics](framework_semantics.md) §5-§8 for full details.
+
 ## Regenerating API documentation (example workflow)
 
 When adding automation later, a static analysis script can be used to generate the API index and keep this page in sync with the source. A typical workflow might be:

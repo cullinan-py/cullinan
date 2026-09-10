@@ -148,6 +148,31 @@ v0.94 Phase A 的冻结口径使用各包的 `__all__` 作为可审阅导出契�
 
 完整 API 参考可以通过自动生成脚本或手工整理的方式填充上述结构。
 
+## v0.95 新增（Track A 内部重构）
+
+### 新增公共 API 符号
+
+| 符号 | 位置 | 类型 | 说明 |
+|------|------|------|------|
+| `ScopeViolationError` | `cullinan.core.exceptions` | 异常（`LifecycleError` 子类） | 当单例/原型组件传递依赖请求作用域组件时抛出。携带 `dependency_chain`、`origin_name`、`violating_component`。 |
+| `format_scope_violation_error` | `cullinan.core.diagnostics` | 函数 | 根据依赖链、起源、违规组件渲染人类可读的作用域违规描述。 |
+| `strict_private_injection` | `ApplicationContext.__init__` | 关键字参数 | 为 `True` 时，注入标记扫描器跳过单下划线（`_xxx`）属性。默认 `False`。 |
+| `strict_lifecycle` | `ApplicationContext.__init__` | 关键字参数 | 为 `True` 时，非关键生命周期钩子失败（`on_startup`/`on_shutdown`）以 `LifecycleError` 抛出。默认 `False`。 |
+| `skip_private` | `get_injection_markers` | 关键字参数 | 为 `True` 时，扫描标记时跳过单下划线前缀属性。默认 `False`。 |
+| `CULLINAN_STRICT_PRIVATE_INJECTION` | 环境变量 | 配置 | 设为 `1`/`true`/`yes` 可对所有 `ApplicationContext` 实例全局启用 `strict_private_injection`。 |
+
+### 弃用符号（v0.97 移除）
+
+| 符号 | 替代方案 |
+|------|---------|
+| `injectable` | `@service` / `@component` / `@controller` |
+| `inject_constructor` | `ApplicationContext.refresh()` |
+| `InjectionRegistry` | `ApplicationContext` / `get_application_context()` |
+| `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
+| `reset_injection_registry()` | 显式创建新的 `ApplicationContext` |
+
+详见 [框架语义](framework_semantics.md) §5-§8。
+
 ## 重新生成 API 文档（步骤示例）
 
 在后续实现自动化时，可以选择使用静态分析脚本生成 API 索引并更新本页面。典型流程示例：

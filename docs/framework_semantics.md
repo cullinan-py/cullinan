@@ -116,11 +116,72 @@ Cullinan treats scope compatibility as a hard rule. In particular, a `singleton`
 
 **Transitive enforcement**: The scope check now recurses through the full dependency chain — both explicit `dependencies=[...]` declarations and field injection markers (`Inject()`, `InjectByName()`). A singleton depending on another singleton that transitively requires a request-scoped object is detected and rejected at `refresh()`, with the full chain reported in the error message.
 
-## 6. Compatibility APIs are compatibility only
+**Structured scope violations (v0.95)**: Scope violations now raise `ScopeViolationError` (a subclass of `LifecycleError`) which carries three diagnostic fields:
 
-Legacy surfaces such as `@injectable`, `@inject_constructor`, and `get_injection_registry()` remain available so older code can still import them, but they are **not** the recommended programming model anymore. Cullinan now warns when these APIs are used.
+- `dependency_chain`: the ordered list of component names from the origin singleton to the violating request-scoped component (inclusive).
+- `origin_name`: the name of the root component whose scope was violated.
+- `violating_component`: the name of the request-scoped component that was reached transitively.
 
-## 7. How to read warnings and errors
+The `format_scope_violation_error()` helper in `cullinan.core.diagnostics` renders a human-readable chain description. Because `ScopeViolationError` inherits from `LifecycleError`, existing `except LifecycleError` handlers continue to work.
+
+**Performance (v0.95)**: The transitive scope validator uses cross-origin memoization (`verified_safe` set) so each component subgraph is fully traversed at most once across all origins, reducing worst-case complexity from O(N²×M) to O(N+E). The `get_injection_markers()` scanner is also cached per class via a `WeakKeyDictionary`, avoiding repeated `dir()` scans.
+
+## 6. Injection visibility and private conventions (v0.95)
+
+The injection marker scanner (`get_injection_markers`) scans class attributes for `Inject`, `InjectByName`, and `Lazy` markers. As of v0.93a11 (commit c888738, constructor injection feature), single-underscore-prefixed attributes (`_xxx`) are **visible** to the injection system - only dunder attributes (`__xxx__`) are skipped. This is an intentional design decision: constructor injection needs to scan class-level bare type annotations, and filtering all `_`-prefixed attributes would miss `_internal_db: DatabaseService`-style private injection points.
+
+This does **not** conflict with the "underscore = private" convention in [[公共 API 暴露准则]] §3, which constrains the private-ness of **framework-exported symbols** (i.e. users should not `from cullinan import _internal_helper`). The injection scanner operates on **user-defined class attributes**, which is a different layer.
+
+For projects that want strict private semantics (single-underscore attributes skipped), `ApplicationContext` accepts a `strict_private_injection` opt-out switch:
+
+```python
+ctx = ApplicationContext(strict_private_injection=True)
+```
+
+The `CULLINAN_STRICT_PRIVATE_INJECTION=1` environment variable provides a global opt-in (useful for CI / strict projects). The default (`False`) preserves the v0.93a11+ behavior.
+
+## 7. Lifecycle exception propagation (v0.95)
+
+`ApplicationContext` (the v0.94 main lifecycle path) distinguishes critical and non-critical lifecycle hooks:
+
+| Hook | Default failure behavior | Rationale |
+|------|-------------------------|-----------|
+| `on_post_construct` / `on_post_construct_async` | **Raise** `LifecycleError` | Component state inconsistent, cannot continue initialization |
+| `on_pre_destroy` / `on_pre_destroy_async` | **Raise** `LifecycleError` | Resource cleanup failure may cause leaks |
+| `on_startup` / `on_startup_async` | **Log and swallow** | Avoid cascading failures, allow partial startup |
+| `on_shutdown` / `on_shutdown_async` | **Log and swallow** | Best-effort shutdown, avoid disrupting other components' cleanup |
+
+All raised exceptions use `raise LifecycleError(...) from exc` to preserve the `__cause__` chain per [[错误码与异常分级规范]] §3.
+
+For projects that want all lifecycle failures to propagate (aligning with `LifecycleManager`'s `force=False` behavior), `ApplicationContext` accepts a `strict_lifecycle` switch:
+
+```python
+ctx = ApplicationContext(strict_lifecycle=True)
+```
+
+When enabled, `on_startup` / `on_shutdown` failures also raise `LifecycleError`. The default (`False`) preserves the v0.94 behavior. The legacy `LifecycleManager` path is intentionally **not** modified; its behavior remains unchanged for existing direct users.
+
+## 8. Compatibility APIs are deprecated (v0.95)
+
+Legacy surfaces such as `@injectable`, `@inject_constructor`, `InjectionRegistry`, `get_injection_registry()`, and `reset_injection_registry()` remain available so older code can still import them, but they are **deprecated since v0.95** and will be **removed in v0.97**.
+
+As of v0.95, these symbols carry:
+
+- `@deprecated` decorator emitting standard `DeprecationWarning` (tool-chain visible via `pytest -W error::DeprecationWarning`, linters, IDEs).
+- `__deprecated__ = True` and `__deprecated_info__ = {version, alternative, removal_version}` metadata for programmatic detection.
+- The existing `CompatibilitySemanticWarning` (via `warn_semantic_once`) continues to fire as a deduplicated semantic reminder.
+
+**Migration**:
+
+| Deprecated symbol | Replacement |
+|-------------------|-------------|
+| `@injectable` | `@service` / `@component` / `@controller` (classes are auto-injectable) |
+| `@inject_constructor` | `ApplicationContext.refresh()` (handles constructor injection uniformly) |
+| `InjectionRegistry` | `ApplicationContext` / `get_application_context()` |
+| `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
+| `reset_injection_registry()` | Create a new `ApplicationContext` explicitly |
+
+## 9. How to read warnings and errors
 
 Cullinan now formats key diagnostics as:
 
@@ -130,7 +191,7 @@ Cullinan now formats key diagnostics as:
 
 When the framework can prove a core semantic violation, startup fails. When code is still technically runnable but likely misleading, Cullinan emits a warning instead.
 
-## 8. Module discovery in compiled environments
+## 10. Module discovery in compiled environments
 
 When Cullinan runs under Nuitka or PyInstaller, standard `pkgutil.walk_packages` may not find all user modules — especially in `--onefile` mode where the filesystem layout differs from development.
 

@@ -4,7 +4,17 @@ on:
   push:
     branches:
       - master
-      - release/**
+      - preview
+      - feat/v0.94**
+    paths:
+      - 'docs/**'
+      - 'overrides/**'
+      - '.github/workflows/mkdocs-build.yml'
+      - 'mkdocs.yml'
+      - 'pyproject.toml'
+      - 'cullinan/_version.py'
+      - 'cullinan/__init__.py'
+      - 'cullinan/core/__init__.py'
     tags-ignore:
       - '**'
   pull_request:
@@ -18,6 +28,11 @@ on:
       - 'cullinan/__init__.py'
       - 'cullinan/core/__init__.py'
   workflow_dispatch:
+    inputs:
+      force_channel:
+        description: 'Force deploy channel (skip=auto-detect, stable, pre)'
+        required: false
+        default: 'skip'
 
 concurrency:
   group: docs-gh-pages-publish
@@ -56,6 +71,7 @@ jobs:
         id: channel
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch || github.event.repository.master_branch || 'main' }}
+          FORCE_CHANNEL: ${{ github.event.inputs.force_channel || 'skip' }}
         shell: bash
         run: |
           python - <<'PY'
@@ -78,13 +94,13 @@ jobs:
           )
 
           if not version_match or not init_match or not core_match or not dynamic_match or not attr_match:
-            raise SystemExit("Unable to detect package version from cullinan/_version.py or pyproject.toml")
+              raise SystemExit("Unable to detect package version from cullinan/_version.py or pyproject.toml")
 
           version = version_match.group(1)
           version_attr = attr_match.group(1)
 
           if version_attr != "cullinan._version.__version__":
-            raise SystemExit(f"Unexpected setuptools version attr: {version_attr}")
+              raise SystemExit(f"Unexpected setuptools version attr: {version_attr}")
           branch = os.environ.get("GITHUB_REF_NAME", "")
           event_name = os.environ.get("GITHUB_EVENT_NAME", "")
           ref_type = os.environ.get("GITHUB_REF_TYPE", "")
@@ -92,28 +108,43 @@ jobs:
           is_pre = "a" in version
           is_default_branch = branch == default_branch
           is_tag_ref = ref_type == "tag"
+          # S4 (v0.95a1): origin/preview is the single authoritative source for
+          # the pre channel. Branch name takes priority over the version 'a'
+          # check, so preview always maps to pre regardless of version content.
+          # release/** branches no longer trigger pre (release/v0.93-pre is now
+          # a read-only archive).
+          is_preview_branch = branch == "preview"
 
-          if is_default_branch and not is_pre:
-            channel = "stable"
-          elif (not is_default_branch) and is_pre:
-            channel = "pre"
+          # force_channel (workflow_dispatch) overrides auto-detection.
+          # Allowed values: skip (auto), stable, pre.
+          force_channel = os.environ.get("FORCE_CHANNEL", "skip").strip().lower()
+          if force_channel in ("stable", "pre"):
+              channel = force_channel
           else:
-            channel = "skip"
+              if is_default_branch and not is_pre:
+                channel = "stable"
+              elif is_preview_branch:
+                channel = "pre"
+              elif (not is_default_branch) and is_pre and not branch.startswith("release/"):
+                channel = "pre"
+              else:
+                channel = "skip"
 
           outputs = {
-            "version": version,
-            "branch": branch,
-            "default_branch": default_branch,
-            "event_name": event_name,
-            "ref_type": ref_type,
-            "is_tag_ref": str(is_tag_ref).lower(),
-            "is_pre": str(is_pre).lower(),
-            "channel": channel,
-            "should_deploy": str(
-              event_name in {"push", "workflow_dispatch"}
-              and channel in {"stable", "pre"}
-              and not is_tag_ref
-            ).lower(),
+              "version": version,
+              "branch": branch,
+              "default_branch": default_branch,
+              "event_name": event_name,
+              "ref_type": ref_type,
+              "is_tag_ref": str(is_tag_ref).lower(),
+              "is_pre": str(is_pre).lower(),
+              "is_preview_branch": str(is_preview_branch).lower(),
+              "channel": channel,
+              "should_deploy": str(
+                event_name in {"push", "workflow_dispatch"}
+                and channel in {"stable", "pre"}
+                and not is_tag_ref
+              ).lower(),
           }
 
           github_output = pathlib.Path(os.environ["GITHUB_OUTPUT"])
@@ -248,8 +279,11 @@ jobs:
         env:
           CHANNEL: ${{ steps.channel.outputs.channel }}
           SYNC_BRANCH: ${{ steps.deploy_gate.outputs.sync_branch }}
-          STABLE_VERSION: ${{ steps.channel.outputs.channel == 'stable' && steps.channel.outputs.version || steps.published.outputs.stable_version }}
-          PRE_VERSION: ${{ steps.channel.outputs.channel == 'pre' && steps.channel.outputs.version || steps.published.outputs.pre_version }}
+          # B1 fix: env vars carry ONLY the current channel's version.
+          # The other channel's version is preserved from gh-pages/versions.json
+          # by the merge-update script below (read-merge-write single field).
+          STABLE_VERSION: ${{ steps.channel.outputs.channel == 'stable' && steps.channel.outputs.version || '' }}
+          PRE_VERSION: ${{ steps.channel.outputs.channel == 'pre' && steps.channel.outputs.version || '' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -263,29 +297,22 @@ jobs:
           mkdir -p .deploy-tmp
 
           if [ "$CHANNEL" = "stable" ]; then
-            if [ -d .gh-pages/pre ]; then
-              mv .gh-pages/pre .deploy-tmp/pre
-            fi
-            if [ -f .gh-pages/CNAME ]; then
-              mv .gh-pages/CNAME .deploy-tmp/CNAME
-            fi
-            if [ -f .gh-pages/versions.json ]; then
-              mv .gh-pages/versions.json .deploy-tmp/versions.json
-            fi
-            # Save .git before dotglob wildcard removes it
+            # B1 fix: preserve .git, then delete only the stable site files at the
+            # top level of .gh-pages. Keep pre/, CNAME, versions.json, .nojekyll
+            # and any future top-level metadata file (no whitelist maintenance).
             if [ -d .gh-pages/.git ]; then
               mv .gh-pages/.git .deploy-tmp/.git
             fi
-            rm -rf .gh-pages/*
+            find .gh-pages -mindepth 1 -maxdepth 1 \
+              ! -name 'pre' \
+              ! -name 'CNAME' \
+              ! -name 'versions.json' \
+              ! -name '.nojekyll' \
+              ! -name '.git' \
+              -exec rm -rf {} +
             cp -R site/. .gh-pages/
             if [ -d .deploy-tmp/.git ]; then
               mv .deploy-tmp/.git .gh-pages/.git
-            fi
-            if [ -d .deploy-tmp/pre ]; then
-              mv .deploy-tmp/pre .gh-pages/pre
-            fi
-            if [ -f .deploy-tmp/CNAME ]; then
-              mv .deploy-tmp/CNAME .gh-pages/CNAME
             fi
           else
             rm -rf .gh-pages/pre
@@ -299,21 +326,39 @@ jobs:
           import pathlib
           from datetime import datetime, timezone
 
+          # B1 fix: merge-update versions.json. Read existing gh-pages/versions.json,
+          # update ONLY the current channel's field, preserve the other channel's field.
+          versions_file = pathlib.Path(".gh-pages/versions.json")
+          existing = {}
+          if versions_file.exists():
+              try:
+                  existing = json.loads(versions_file.read_text(encoding="utf-8"))
+              except (json.JSONDecodeError, OSError):
+                  existing = {}
+
+          channel = os.environ.get("CHANNEL", "")
+          stable_version = os.environ.get("STABLE_VERSION", "")
+          pre_version = os.environ.get("PRE_VERSION", "")
+
+          stable_entry = existing.get("stable", {})
+          pre_entry = existing.get("pre", {})
+
+          if channel == "stable":
+              stable_entry = {"version": stable_version, "path": "/"}
+              # pre_entry preserved from existing
+          elif channel == "pre":
+              pre_entry = {"version": pre_version, "path": "/pre/"}
+              # stable_entry preserved from existing
+
           payload = {
-            "stable": {
-              "version": os.environ.get("STABLE_VERSION", ""),
-              "path": "/",
-            },
-            "pre": {
-              "version": os.environ.get("PRE_VERSION", ""),
-              "path": "/pre/",
-            },
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+              "stable": stable_entry,
+              "pre": pre_entry,
+              "updated_at": datetime.now(timezone.utc).isoformat(),
           }
 
-          pathlib.Path(".gh-pages/versions.json").write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
+          versions_file.write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
           )
           pathlib.Path(".gh-pages/.nojekyll").write_text("", encoding="utf-8")
           PY

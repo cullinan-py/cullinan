@@ -73,7 +73,7 @@ EXPECTED_TOP_LEVEL_EXPORTS = [
     "websocket_handler",
 ]
 
-EXPECTED_PACKAGE_VERSION = "0.94"
+EXPECTED_PACKAGE_VERSION = "0.95"
 
 EXPECTED_APPLICATION_EXPORTS = [
     "Application",
@@ -157,6 +157,7 @@ EXPECTED_CORE_EXPORTS = [
     "render_candidate_sources",
     "format_circular_dependency_error",
     "format_missing_dependency_error",
+    "format_scope_violation_error",
     "CullinanCoreError",
     "RegistryError",
     "RegistryFrozenError",
@@ -168,6 +169,7 @@ EXPECTED_CORE_EXPORTS = [
     "ConditionNotMetError",
     "CreationError",
     "LifecycleError",
+    "ScopeViolationError",
     "service",
     "controller",
     "component",
