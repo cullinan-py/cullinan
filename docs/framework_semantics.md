@@ -116,7 +116,7 @@ Cullinan treats scope compatibility as a hard rule. In particular, a `singleton`
 
 **Transitive enforcement**: The scope check now recurses through the full dependency chain — both explicit `dependencies=[...]` declarations and field injection markers (`Inject()`, `InjectByName()`). A singleton depending on another singleton that transitively requires a request-scoped object is detected and rejected at `refresh()`, with the full chain reported in the error message.
 
-**Structured scope violations (v0.95a1)**: Scope violations now raise `ScopeViolationError` (a subclass of `LifecycleError`) which carries three diagnostic fields:
+**Structured scope violations (v0.95)**: Scope violations now raise `ScopeViolationError` (a subclass of `LifecycleError`) which carries three diagnostic fields:
 
 - `dependency_chain`: the ordered list of component names from the origin singleton to the violating request-scoped component (inclusive).
 - `origin_name`: the name of the root component whose scope was violated.
@@ -124,9 +124,9 @@ Cullinan treats scope compatibility as a hard rule. In particular, a `singleton`
 
 The `format_scope_violation_error()` helper in `cullinan.core.diagnostics` renders a human-readable chain description. Because `ScopeViolationError` inherits from `LifecycleError`, existing `except LifecycleError` handlers continue to work.
 
-**Performance (v0.95a1)**: The transitive scope validator uses cross-origin memoization (`verified_safe` set) so each component subgraph is fully traversed at most once across all origins, reducing worst-case complexity from O(N²×M) to O(N+E). The `get_injection_markers()` scanner is also cached per class via a `WeakKeyDictionary`, avoiding repeated `dir()` scans.
+**Performance (v0.95)**: The transitive scope validator uses cross-origin memoization (`verified_safe` set) so each component subgraph is fully traversed at most once across all origins, reducing worst-case complexity from O(N²×M) to O(N+E). The `get_injection_markers()` scanner is also cached per class via a `WeakKeyDictionary`, avoiding repeated `dir()` scans.
 
-## 6. Injection visibility and private conventions (v0.95a1)
+## 6. Injection visibility and private conventions (v0.95)
 
 The injection marker scanner (`get_injection_markers`) scans class attributes for `Inject`, `InjectByName`, and `Lazy` markers. As of v0.93a11 (commit c888738, constructor injection feature), single-underscore-prefixed attributes (`_xxx`) are **visible** to the injection system - only dunder attributes (`__xxx__`) are skipped. This is an intentional design decision: constructor injection needs to scan class-level bare type annotations, and filtering all `_`-prefixed attributes would miss `_internal_db: DatabaseService`-style private injection points.
 
@@ -140,7 +140,7 @@ ctx = ApplicationContext(strict_private_injection=True)
 
 The `CULLINAN_STRICT_PRIVATE_INJECTION=1` environment variable provides a global opt-in (useful for CI / strict projects). The default (`False`) preserves the v0.93a11+ behavior.
 
-## 7. Lifecycle exception propagation (v0.95a1)
+## 7. Lifecycle exception propagation (v0.95)
 
 `ApplicationContext` (the v0.94 main lifecycle path) distinguishes critical and non-critical lifecycle hooks:
 
@@ -161,11 +161,11 @@ ctx = ApplicationContext(strict_lifecycle=True)
 
 When enabled, `on_startup` / `on_shutdown` failures also raise `LifecycleError`. The default (`False`) preserves the v0.94 behavior. The legacy `LifecycleManager` path is intentionally **not** modified; its behavior remains unchanged for existing direct users.
 
-## 8. Compatibility APIs are deprecated (v0.95a1)
+## 8. Compatibility APIs are deprecated (v0.95)
 
 Legacy surfaces such as `@injectable`, `@inject_constructor`, `InjectionRegistry`, `get_injection_registry()`, and `reset_injection_registry()` remain available so older code can still import them, but they are **deprecated since v0.95** and will be **removed in v0.97**.
 
-As of v0.95a1, these symbols carry:
+As of v0.95, these symbols carry:
 
 - `@deprecated` decorator emitting standard `DeprecationWarning` (tool-chain visible via `pytest -W error::DeprecationWarning`, linters, IDEs).
 - `__deprecated__ = True` and `__deprecated_info__ = {version, alternative, removal_version}` metadata for programmatic detection.

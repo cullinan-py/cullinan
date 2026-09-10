@@ -158,7 +158,7 @@ For each module, the API reference is recommended to follow this structure:
 
 A complete API reference can be populated using this structure, either via automated generation or by manual curation.
 
-## v0.95a1 additions (Track A internal refactor)
+## v0.95 additions (Track A internal refactor)
 
 ### New public API symbols
 

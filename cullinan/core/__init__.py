@@ -2,13 +2,13 @@
 """Core module for Cullinan framework.
 
 This module provides foundational components for the Cullinan framework:
-- ApplicationContext: Single entry point for IoC/DI (0.94a1)
+- ApplicationContext: Single entry point for IoC/DI
 - Decorators: @service, @controller, @component
 - Dependency Injection: Inject, InjectByName, Lazy
 - Unified lifecycle management (all components share same lifecycle)
 - Core exceptions and types
 
-Version: 0.94a1
+The runtime version comes from cullinan/_version.py (single source of truth).
 """
 
 from cullinan._version import __version__ as _package_version

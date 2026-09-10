@@ -218,7 +218,7 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
-**v0.95a1** is the Phase A convergence cut for the 1.0 roadmap, continuing the
+**v0.95** is the Phase A convergence cut for the 1.0 roadmap, continuing the
 v0.94 opt iteration. This release line locks down the public surface and
 packaging baseline around:
 
