@@ -2,602 +2,602 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
         <loc>https://cullinan-py.github.io/cullinan/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/api_reference/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/api_reference/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/api_reference/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/architecture/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/architecture/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/architecture/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/bugfix_controller_di/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/bugfix_controller_di/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/bugfix_controller_di/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/build_run/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/build_run/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/build_run/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/contributing/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/contributing/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/contributing/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/cullinan_documentation_plan/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/cullinan_documentation_plan/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/cullinan_documentation_plan/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/dependency_injection_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/dependency_injection_guide/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/dependency_injection_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/examples/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/examples/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/examples/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/extension_development_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/extension_development_guide/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/extension_development_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/framework_semantics/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/framework_semantics/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/framework_semantics/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/getting_started/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/getting_started/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/getting_started/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/import_migration_090/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/import_migration_090/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/import_migration_090/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/migration_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/migration_guide/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/migration_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/migration_guide_v2/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/migration_guide_v2/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/migration_guide_v2/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/migration_to_final_semantic_layout/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/migration_to_final_semantic_layout/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/migration_to_final_semantic_layout/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/packaging/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/packaging/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/packaging/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/parameter_system_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/parameter_system_guide/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/parameter_system_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/quick_reference_di/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/quick_reference_di/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/quick_reference_di/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/quick_start_extensions/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/quick_start_extensions/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/quick_start_extensions/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/runtime_updates_v093/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/runtime_updates_v093/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/runtime_updates_v093/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/static_files_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/static_files_guide/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/static_files_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/testing/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/testing/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/testing/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/web_runtime_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/web_runtime_guide/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/web_runtime_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/concepts/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/concepts/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/concepts/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/how-to/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/how-to/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/how-to/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/internals/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/internals/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/internals/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/migration/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/migration/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/migration/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/modules/application/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/modules/application/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/modules/application/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/modules/controller/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/modules/controller/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/modules/controller/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/modules/core/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/modules/core/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/modules/core/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/modules/service/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/modules/service/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/modules/service/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/reference/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/reference/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/reference/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/start/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/start/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/start/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/template/release-note-template/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/template/release-note-template/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/template/release-note-template/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/wiki/application_runtime/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/application_runtime/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/application_runtime/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/wiki/components/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/components/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/components/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/wiki/decorators/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/decorators/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/decorators/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/wiki/extensions/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/extensions/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/extensions/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/wiki/injection/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/injection/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/injection/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/wiki/lifecycle/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/lifecycle/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/lifecycle/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/wiki/middleware/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/middleware/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/middleware/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/wiki/restful_api/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/restful_api/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/restful_api/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/api_reference/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/api_reference/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/api_reference/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/architecture/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/architecture/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/architecture/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/bugfix_controller_di/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/bugfix_controller_di/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/bugfix_controller_di/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/build_run/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/build_run/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/build_run/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/contributing/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/contributing/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/contributing/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/cullinan_documentation_plan/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/cullinan_documentation_plan/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/cullinan_documentation_plan/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/dependency_injection_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/dependency_injection_guide/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/dependency_injection_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/examples/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/examples/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/examples/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/extension_development_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/extension_development_guide/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/extension_development_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/framework_semantics/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/framework_semantics/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/framework_semantics/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/getting_started/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/getting_started/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/getting_started/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/import_migration_090/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/import_migration_090/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/import_migration_090/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/migration_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/migration_guide/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/migration_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/migration_guide_v2/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/migration_guide_v2/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/migration_guide_v2/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/migration_to_final_semantic_layout/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/migration_to_final_semantic_layout/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/migration_to_final_semantic_layout/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/packaging/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/packaging/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/packaging/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/parameter_system_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/parameter_system_guide/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/parameter_system_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/quick_reference_di/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/quick_reference_di/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/quick_reference_di/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/quick_start_extensions/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/quick_start_extensions/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/quick_start_extensions/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/runtime_updates_v093/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/runtime_updates_v093/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/runtime_updates_v093/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/static_files_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/static_files_guide/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/static_files_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/testing/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/testing/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/testing/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/web_runtime_guide/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/web_runtime_guide/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/web_runtime_guide/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/concepts/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/concepts/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/concepts/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/how-to/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/how-to/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/how-to/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/internals/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/internals/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/internals/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/migration/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/migration/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/migration/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/modules/application/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/modules/application/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/modules/application/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/modules/controller/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/modules/controller/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/modules/controller/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/modules/core/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/modules/core/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/modules/core/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/modules/service/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/modules/service/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/modules/service/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/reference/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/reference/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/reference/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/start/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/start/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/start/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/template/release-note-template/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/template/release-note-template/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/template/release-note-template/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/wiki/application_runtime/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/application_runtime/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/application_runtime/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/wiki/components/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/components/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/components/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/wiki/decorators/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/decorators/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/decorators/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/wiki/extensions/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/extensions/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/extensions/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/wiki/injection/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/injection/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/injection/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/wiki/lifecycle/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/lifecycle/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/lifecycle/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/wiki/middleware/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/middleware/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/middleware/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/zh/wiki/restful_api/</loc>
-        <lastmod>2026-07-13</lastmod>
+        <lastmod>2026-09-10</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/zh/wiki/restful_api/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/wiki/restful_api/"/>
