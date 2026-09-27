@@ -57,7 +57,7 @@ The **1.0 public API freeze** upgrades the previous, narrower export freeze
 into the stability contract for the 1.0 line. It has three parts:
 
 - **Effective point** — declared on **2026-09-27**. The **`1.0` line is not
-  yet released; the current published version is `0.95`.** This section
+  yet released.** This section
   declares the stability contract that the 1.0 line will carry from this point
   on — it is not a claim that `1.0` has shipped. From this point on, any change
   to a symbol inside the frozen set is a post-freeze change.
@@ -196,7 +196,7 @@ A complete API reference can be populated using this structure, either via autom
 | `CULLINAN_STRICT_PRIVATE_INJECTION` | environment variable | config | Set to `1`/`true`/`yes` to globally enable `strict_private_injection` for all `ApplicationContext` instances. |
 | `builtin_middleware` | `configure` | kwarg | Controls the built-in gateway middleware layer (the access-log middleware). `None` (default) installs the framework default, `[]` switches the built-in layer off, a list replaces it. |
 
-### Deprecated symbols (removed in v0.97)
+### Deprecated symbols (removed in a future release)
 
 | Symbol | Replacement |
 |--------|-------------|

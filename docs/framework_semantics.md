@@ -163,7 +163,7 @@ When enabled, `on_startup` / `on_shutdown` failures also raise `LifecycleError`.
 
 ## 8. Compatibility APIs are deprecated (v0.95)
 
-Legacy surfaces such as `@injectable`, `@inject_constructor`, `InjectionRegistry`, `get_injection_registry()`, and `reset_injection_registry()` remain available so older code can still import them, but they are **deprecated since v0.95** and will be **removed in v0.97**.
+Legacy surfaces such as `@injectable`, `@inject_constructor`, `InjectionRegistry`, `get_injection_registry()`, and `reset_injection_registry()` remain available so older code can still import them, but they are **deprecated since v0.95** and will be **removed in a future release**. No specific removal version is promised up front: the value is derived from the release line in force at removal time, and the `removal_version` field below always reports the current one.
 
 As of v0.95, these symbols carry:
 

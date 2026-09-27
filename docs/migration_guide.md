@@ -14,12 +14,14 @@ v0.95 is a non-breaking release that adds deprecation markers and optional
 strict switches. Existing code continues to work without changes, but you are
 encouraged to migrate now.
 
-### Deprecated since v0.95 (removed in v0.97)
+### Deprecated since v0.95 (removed in a future release)
 
 The five legacy compatibility symbols are now formally deprecated. Both a
 standard `DeprecationWarning` (tool-chain visible) and the existing
 `CompatibilitySemanticWarning` (deduplicated semantic reminder) fire on each
-use.
+use. No specific removal version is promised up front: the value is derived
+from the release line in force at removal time, and each symbol's
+`__deprecated_info__['removal_version']` reports the current one.
 
 | Deprecated symbol | Replacement |
 |-------------------|-------------|
@@ -227,7 +229,7 @@ class ItemController:
 
 ## Deprecated APIs
 
-The following APIs are deprecated in 0.93 and will be removed in 3.0:
+The following APIs are deprecated in 0.93 and will be removed in a future release:
 
 | Deprecated API | Replacement |
 |----------------|-------------|

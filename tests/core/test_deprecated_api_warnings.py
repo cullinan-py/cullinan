@@ -23,6 +23,7 @@ import cullinan.core as core
 from cullinan.support.deprecation import (
     DEPRECATION_WINDOW_MINORS,
     EXTENDED_DEPRECATION_WINDOW_MINORS,
+    _release_pair,
     current_version,
     deprecated,
     get_deprecation_info,
@@ -78,7 +79,11 @@ class TestDeprecationMetadata:
         info = get_deprecation_info(obj)
         assert info is not None, f"{name} missing __deprecated_info__"
         assert info["version"] == "0.95"
-        assert info["removal_version"] == "0.97"
+        # Derived, never hard-coded: ``removal_version`` follows the version in
+        # ``cullinan._version`` plus the standard window, so pinning a literal
+        # here would only move the per-release edit from the source into the
+        # test (and drift the moment the framework version advances).
+        assert info["removal_version"] == resolve_removal_version()
         assert info["alternative"], f"{name} alternative must not be empty"
 
     @pytest.mark.parametrize("name", LEGACY_SYMBOLS)
@@ -99,7 +104,9 @@ class TestDeprecationWarningOnUse:
         msg = str(deps[0].message)
         assert "deprecated" in msg
         assert "0.95" in msg
-        assert "0.97" in msg
+        # Derived, never hard-coded: the message quotes the SSOT-derived removal
+        # version, so it must track the framework version automatically.
+        assert resolve_removal_version() in msg
 
     def test_inject_constructor_emits_deprecation_warning(self):
         with warnings.catch_warnings(record=True) as caught:
@@ -222,9 +229,34 @@ class TestRuleBasedDeprecationWindow:
     CORE_REMOVAL_FLOOR = "0.97"
     COMPATIBILITY_REMOVAL_FLOOR = "1.0"
 
+    def test_deprecation_windows_are_pinned_policy_values(self):
+        # The two windows are policy *knobs*, not derived data: widening one
+        # silently pushes every removal version further out, and the floor
+        # guards in this class cannot catch that (they only reject narrowing).
+        # Pin the exact values so a change to the policy can only land as a
+        # deliberate, visible edit to this test - never as a silent drift.
+        #
+        # Both constants are an internal implementation detail rather than a
+        # public compatibility commitment, so they are intentionally kept off
+        # the published API surface and pinned here, on the test side, instead.
+        assert DEPRECATION_WINDOW_MINORS == 2, (
+            f"expected the standard window to be 2, got "
+            f"{DEPRECATION_WINDOW_MINORS}; the window is a policy parameter and "
+            f"any change must be a reviewed edit (it shifts every removal version)"
+        )
+        assert EXTENDED_DEPRECATION_WINDOW_MINORS == 5, (
+            f"expected the extended window to be 5, got "
+            f"{EXTENDED_DEPRECATION_WINDOW_MINORS}; the window is a policy "
+            f"parameter and any change must be a reviewed edit (it shifts the "
+            f"compatibility surface's removal version)"
+        )
+
     def test_resolve_removal_version_is_current_minor_plus_window(self):
-        major, minor = current_version().split(".")[:2]
-        total = int(major) * 100 + int(minor) + DEPRECATION_WINDOW_MINORS
+        # Parse with the module's own resolver instead of re-implementing the
+        # arithmetic here: a hand-rolled ``split`` + ``int`` pair breaks on a
+        # prerelease suffix (``0.96a1``), while the SSOT parser is suffix-aware.
+        major, minor = _release_pair(current_version())
+        total = major * 100 + minor + DEPRECATION_WINDOW_MINORS
 
         assert resolve_removal_version() == f"{total // 100}.{total % 100}"
 

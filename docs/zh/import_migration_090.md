@@ -12,7 +12,7 @@ Cullinan 0.90 重新组织了 `core/` 模块，实现了清晰的职责分离：
 - **`diagnostics/`** - 异常与错误渲染
 - **`lifecycle/`** - 生命周期管理
 - **`request/`** - 请求上下文
-- **`legacy/`** - 已弃用组件（将在 1.0 中移除）
+- **`legacy/`** - 已弃用组件（将在未来版本中移除）
 
 ---
 
@@ -82,10 +82,10 @@ Cullinan 0.90 重新组织了 `core/` 模块，实现了清晰的职责分离：
 
 ## 遗留导入（已弃用）
 
-以下导入已弃用，将在 1.0 中移除：
+以下导入已弃用，将在未来版本中移除：
 
 ```python
-# 已弃用 - 将在 1.0 中移除
+# 已弃用 - 将在未来版本中移除
 from cullinan.core.injection import Inject, InjectByName, injectable
 from cullinan.core.provider import Provider, ProviderRegistry
 from cullinan.core.facade import IoCFacade, get_ioc_facade
@@ -235,7 +235,7 @@ A: 旧的顶层文件（如 `cullinan.core.exceptions`）暂时仍可用，但�
 
 ### Q: 遗留模块什么时候移除？
 
-A: `cullinan.core.legacy/` 中的组件将在 1.0 版本中完全移除。
+A: `cullinan.core.legacy/` 中的组件将在未来版本中移除（不预先承诺具体版本）。
 
 ### Q: 如何验证迁移是否成功？
 

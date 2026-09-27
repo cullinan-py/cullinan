@@ -13,7 +13,7 @@ Cullinan 0.90 introduces a reorganized `core/` module with clear separation of c
 - **`diagnostics/`** - Exceptions and error rendering
 - **`lifecycle/`** - Lifecycle management
 - **`request/`** - Request context
-- **`legacy/`** - Deprecated components (will be removed in 1.0)
+- **`legacy/`** - Deprecated components (will be removed in a future release)
 
 ---
 
@@ -83,10 +83,10 @@ Cullinan 0.90 introduces a reorganized `core/` module with clear separation of c
 
 ## Legacy Imports (Deprecated)
 
-The following imports are deprecated and will be removed in 1.0:
+The following imports are deprecated and will be removed in a future release:
 
 ```python
-# Deprecated - will be removed in 1.0
+# Deprecated - will be removed in a future release
 from cullinan.core.injection import Inject, InjectByName, injectable
 from cullinan.core.provider import Provider, ProviderRegistry
 from cullinan.core.facade import IoCFacade, get_ioc_facade
