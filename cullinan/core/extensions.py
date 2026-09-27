@@ -165,7 +165,7 @@ class ExtensionRegistry:
             ExtensionPoint(
                 category=ExtensionCategory.ROUTING,
                 name='custom_handler',
-                description='Register custom Tornado request handlers',
+                description='Register custom route handlers',
             ),
         ])
 
