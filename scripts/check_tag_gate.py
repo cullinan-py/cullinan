@@ -1,5 +1,5 @@
 """
-Pre-tag manual gate verification (v0.95a1 tightened, v0.95 delivered).
+Pre-tag manual gate verification.
 
 git has no native pre-tag hook, so this script mechanizes the pre-tag
 confirmations:
@@ -17,7 +17,12 @@ confirmations:
         primary enforcement runs on every PR/push in CI.
 
 Usage:
-  python scripts/check_tag_gate.py --sign-off-token <TOKEN> --review-token <TOKEN> --sync-token <TOKEN> [--version 0.95] [--meta-sync-range <base>..<head>]
+  python scripts/check_tag_gate.py --sign-off-token <TOKEN> --review-token <TOKEN> --sync-token <TOKEN> [--version <VERSION>] [--meta-sync-range <base>..<head>]
+
+``--version`` is optional and defaults to the version read from
+``cullinan/_version.py`` (the single source of truth), so this usage line
+never pins a release number: pass it only to assert an expected version
+explicitly.
 
 Exit code: 0 = PASS (git tag may proceed), 1 = FAIL (blocked).
 """

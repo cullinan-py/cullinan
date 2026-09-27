@@ -163,7 +163,7 @@ ctx = ApplicationContext(strict_lifecycle=True)
 
 ## 8. 兼容 API 已弃用（v0.95）
 
-像 `@injectable`、`@inject_constructor`、`InjectionRegistry`、`get_injection_registry()`、`reset_injection_registry()` 这样的旧接口仍然保留，目的是让历史代码还能导入，但它们**自 v0.95 起弃用**，将在**未来版本中移除**。此处不预先承诺具体移除版本：该值按移除时的发布线推导，下文的 `removal_version` 字段始终报告当前值。
+像 `@injectable`、`@inject_constructor`、`InjectionRegistry`、`get_injection_registry()`、`reset_injection_registry()` 这样的旧接口仍然保留，目的是让历史代码还能导入，但它们**自 v0.95 起弃用**，将在**未来版本中移除**。此处不预先承诺具体移除版本：该值由该接口**弃用时的发布线**加上**固定的弃用窗口**推导得出，因此对外报出的值保持固定，不会随每次发布后滑。下文的 `removal_version` 字段报告的就是这个推导值。
 
 自 v0.95 起，这些符号携带：
 

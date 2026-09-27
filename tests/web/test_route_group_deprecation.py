@@ -43,14 +43,43 @@ def test_removal_version_is_derived_from_the_announced_anchor():
     assert info["removal_version"] == "0.97"
 
 
-def test_route_types_module_writes_no_hand_typed_removal_version():
+def test_no_carrier_module_writes_a_hand_typed_removal_version():
+    """Every deprecation carrier derives its removal version; none writes one.
+
+    Three modules attach deprecation metadata: ``cullinan.core`` (five
+    compatibility symbols), ``cullinan.web.gateway`` (``RouteGroup``) and
+    ``cullinan.web.middleware.legacy`` (two helpers). Each derives the removal
+    version from its announced anchor plus a window, so a hand-written
+    ``removal_version="..."`` literal must not appear in any of them - such a
+    literal is exactly what a later edit would drift with. The scan covers
+    every carrier, not just one, so what the guard promises equals what it
+    checks. ``cullinan/support/deprecation.py`` is deliberately not a carrier:
+    the literal it shows lives inside a docstring example for callers, not in
+    framework metadata.
+    """
+    import importlib
     from pathlib import Path
 
-    import cullinan.web.gateway.route_types as module
+    # ``cullinan.web.middleware`` is reachable as a module through the import
+    # system, but its package attribute is bound to the ``middleware``
+    # decorator, so ``import cullinan.web.middleware.legacy as X`` fails. Resolve
+    # each carrier through ``importlib`` to read the module object itself.
+    carrier_modules = {
+        "cullinan/core/__init__.py": importlib.import_module("cullinan.core"),
+        "cullinan/web/gateway/route_types.py": importlib.import_module(
+            "cullinan.web.gateway.route_types"
+        ),
+        "cullinan/web/middleware/legacy.py": importlib.import_module(
+            "cullinan.web.middleware.legacy"
+        ),
+    }
 
-    source = Path(module.__file__).read_text(encoding="utf-8")
-    # A hand-written removal version would drift from the single source of truth.
-    assert 'removal_version="' not in source
+    for relative, module in carrier_modules.items():
+        source = Path(module.__file__).read_text(encoding="utf-8")
+        assert 'removal_version="' not in source, (
+            f"{relative} pins a removal version as a literal; derive it from "
+            "the anchor and window instead"
+        )
 
 
 def test_constructing_a_route_group_warns_but_stays_usable():

@@ -310,6 +310,7 @@ Request → Adapter(Tornado/ASGI) → WebRequest → Middleware Pipeline
 | `self.write()` in controllers | Deprecated | End of the deprecation window |
 | Old middleware (`Middleware` base) | Auto-bridged | End of the deprecation window |
 
-Removal versions are not hand-written. They are derived from the framework
-version and a fixed deprecation window (`current minor + N`), so this table
-cannot drift from the version the code reports.
+Removal versions are not hand-written. Each is derived from the release line
+the surface was deprecated on plus a fixed deprecation window, so the value
+this table shows stays fixed instead of drifting one minor further out on each
+release.

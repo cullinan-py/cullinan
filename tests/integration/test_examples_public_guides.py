@@ -1,10 +1,14 @@
 import ast
 import asyncio
+import doctest
 import hashlib
 import importlib
 import json
+import os
 import re
+import subprocess
 import sys
+import textwrap
 import warnings
 from pathlib import Path
 from typing import NamedTuple
@@ -1048,3 +1052,290 @@ def test_application_module_docs_prefer_entry_method_helpers_over_top_level_runt
     assert "main.get_asgi_app()" in application_module
     assert "main.run()" in zh_application_module
     assert "main.get_asgi_app()" in zh_application_module
+
+
+# ---------------------------------------------------------------------------
+# Docstring example gate (the same public-example guarantee, extended from
+# ``docs/**`` to the examples shown in ``cullinan/**`` docstrings).
+#
+# A docstring example is treated as code when it is either a doctest example
+# (``>>>`` prompts) or an indented block that parses as Python. Two things are
+# checked, both fail-closed:
+#   * a code-like block - one that imports ``cullinan`` - must parse, or the
+#     gate fails with the file name and line instead of skipping it;
+#   * every collected example that references ``cullinan`` is executed in a
+#     sandboxed subprocess where names a snippet leaves undefined are stubbed
+#     out. An example fails the gate when the framework itself raises - the
+#     traceback carries a frame inside ``cullinan/`` - or when an import does
+#     not resolve. A docstring snippet is illustrative, so a name it never
+#     defines is not a failure; a call that the framework rejects is.
+# ---------------------------------------------------------------------------
+
+CULLINAN_ROOT = Path("cullinan").resolve()
+
+# Runs a batch of example sources in one process. Each source is compiled and
+# executed with a namespace that stubs undefined names, so a snippet can be
+# exercised without supplying the surrounding application. Results are
+# reported as JSON on the real stdout (any output the examples themselves
+# print is captured and discarded so it cannot pollute the report).
+_DOCSTRING_EXAMPLE_RUNNER = r'''
+import io
+import json
+import sys
+
+payload = json.loads(sys.stdin.read())
+import cullinan
+
+_real_stdout = sys.stdout
+
+
+class _Stub:
+    """Stand-in for a name a docstring example leaves undefined."""
+
+    def __init__(self, name):
+        self._name = name
+
+    def __call__(self, *args, **kwargs):
+        return _Stub(self._name)
+
+    def __getattr__(self, item):
+        if item.startswith("__"):
+            raise AttributeError(item)
+        return _Stub(self._name + "." + item)
+
+    def __getitem__(self, item):
+        return _Stub(self._name)
+
+    def __iter__(self):
+        return iter(())
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        return False
+
+
+class _Namespace(dict):
+    def __missing__(self, key):
+        if key.startswith("__"):
+            raise KeyError(key)
+        value = _Stub(key)
+        self[key] = value
+        return value
+
+
+results = []
+for index, source in enumerate(payload):
+    namespace = _Namespace({"__name__": "cullinan_docstring_example"})
+    for symbol in dir(cullinan):
+        if not symbol.startswith("_"):
+            try:
+                namespace[symbol] = getattr(cullinan, symbol)
+            except Exception:
+                pass
+    sys.stdout = io.StringIO()
+    try:
+        exec(compile(source, "<cullinan-docstring-example-%d>" % index, "exec"), namespace)
+    except BaseException as exc:  # noqa: BLE001 - every failure is reported
+        frames = []
+        tb = exc.__traceback__
+        while tb is not None:
+            frames.append(tb.tb_frame.f_code.co_filename)
+            tb = tb.tb_next
+        results.append({
+            "status": "error",
+            "type": type(exc).__name__,
+            "message": str(exc)[:200],
+            "frames": frames,
+            "import_error": isinstance(exc, ImportError),
+        })
+    else:
+        results.append({"status": "ok"})
+    finally:
+        sys.stdout = _real_stdout
+
+_real_stdout.write(json.dumps(results))
+'''
+
+
+def _iter_cullinan_docstrings():
+    """Yield ``(relative_path, qualname, docstring)`` for ``cullinan/**``."""
+    for path in sorted(Path("cullinan").rglob("*.py")):
+        relative = path.as_posix()
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(
+                node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+            ):
+                continue
+            docstring = ast.get_docstring(node, clean=False)
+            if docstring:
+                yield relative, getattr(node, "name", relative) or relative, docstring
+
+
+def _iter_indented_example_blocks(docstring: str):
+    """Yield ``(line, code)`` for indented blocks under an ``Example`` heading."""
+    lines = docstring.splitlines()
+    index = 0
+    while index < len(lines):
+        heading = lines[index].strip().rstrip(":").lower()
+        if heading not in ("example", "examples", "usage"):
+            index += 1
+            continue
+        base_indent = len(lines[index]) - len(lines[index].lstrip())
+        cursor = index + 1
+        block = []
+        while cursor < len(lines):
+            line = lines[cursor]
+            if line.strip() == "":
+                block.append("")
+                cursor += 1
+                continue
+            if len(line) - len(line.lstrip()) <= base_indent:
+                break
+            block.append(line)
+            cursor += 1
+        code = textwrap.dedent("\n".join(block)).strip()
+        if code:
+            yield index + 1, code
+        index = cursor
+
+
+def _looks_like_doctest(code: str) -> bool:
+    return any(line.strip().startswith(">>>") for line in code.splitlines())
+
+
+def _collect_cullinan_docstring_examples():
+    """Return ``(examples, errors)`` for the docstrings of ``cullinan/**``.
+
+    ``examples`` holds ``(relative_path, qualname, source)`` tuples; ``errors``
+    holds a message per code-like block that does not parse. Doctest examples
+    are extracted with ``doctest``; indented blocks are collected when they
+    parse as Python.
+    """
+    examples = []
+    errors = []
+    parser = doctest.DocTestParser()
+    for relative, qualname, docstring in _iter_cullinan_docstrings():
+        try:
+            doctest_examples = parser.get_examples(docstring)
+        except ValueError:
+            doctest_examples = []
+        for example in doctest_examples:
+            examples.append((relative, qualname, example.source))
+        for line, code in _iter_indented_example_blocks(docstring):
+            if _looks_like_doctest(code):
+                continue  # covered by the doctest pass above
+            try:
+                ast.parse(code)
+            except SyntaxError as error:
+                if "from cullinan" in code or "import cullinan" in code:
+                    detail = str(error).splitlines()[0] if str(error) else "syntax error"
+                    errors.append(f"{relative}:{line}: code example does not parse ({detail})")
+                continue
+            examples.append((relative, qualname, code))
+    return examples, errors
+
+
+def _run_docstring_examples(sources):
+    """Execute the example sources in a sandboxed subprocess; return the results."""
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = os.pathsep.join(
+        [str(Path.cwd()), environment.get("PYTHONPATH", "")]
+    ).rstrip(os.pathsep)
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-c", _DOCSTRING_EXAMPLE_RUNNER],
+            input=json.dumps(list(sources)),
+            capture_output=True,
+            text=True,
+            cwd=str(Path.cwd()),
+            env=environment,
+            timeout=180,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise AssertionError(
+            "a docstring example did not finish within the time limit; a docstring "
+            "example must not block (start servers, wait on input, ...)"
+        ) from error
+    if completed.returncode != 0:
+        raise AssertionError(
+            "the docstring example sandbox failed to run:\n" + completed.stderr[-1000:]
+        )
+    return json.loads(completed.stdout)
+
+
+def _frame_is_framework(frame: str) -> bool:
+    """True when a traceback frame points inside the framework package."""
+    if not frame or frame.startswith("<"):
+        return False
+    try:
+        return CULLINAN_ROOT in Path(frame).resolve().parents
+    except OSError:
+        return False
+
+
+def test_cullinan_docstring_examples_are_executable():
+    """Every ``cullinan`` example in a docstring runs without a framework error.
+
+    The gate extends the public-doc example guarantee (``docs/**``) to the
+    examples embedded in ``cullinan/**`` docstrings. An example fails when an
+    import it shows does not resolve, or when the framework raises while the
+    example runs - the ``body_decoder`` snippet that passed an instance to a
+    registry expecting a class is the registered red case. Undefined names are
+    stubbed, so no illustrative snippet has to be rewritten to satisfy the
+    gate; a call the framework rejects still fails it.
+    """
+    examples, errors = _collect_cullinan_docstring_examples()
+    scanned = [example for example in examples if "cullinan" in example[2]]
+    assert scanned, "the docstring example gate matched no cullinan example"
+
+    results = _run_docstring_examples([source for _, _, source in scanned])
+
+    failures = list(errors)
+    for (relative, qualname, _source), result in zip(scanned, results):
+        if result["status"] == "ok":
+            continue
+        if result["import_error"] or any(
+            _frame_is_framework(frame) for frame in result["frames"]
+        ):
+            failures.append(
+                f"{relative}::{qualname}: {result['type']}: {result['message']}"
+            )
+
+    assert not failures, (
+        "docstring examples that do not run through the framework:\n"
+        + "\n".join(failures)
+    )
+
+
+def test_docstring_example_runner_flags_a_framework_error():
+    """Red/green control for the docstring example runner itself.
+
+    A documented call the framework accepts passes; the same call with an
+    instance where the registry requires a class fails, and the failure is
+    attributed to the framework frame. This keeps the gate falsifiable: if the
+    runner stopped executing examples, the red case here would stop failing.
+    """
+    accepted = (
+        "from cullinan.web.middleware import get_middleware_registry\n"
+        "from cullinan.web.middleware.body_decoder import BodyDecoderMiddleware\n"
+        "registry = get_middleware_registry()\n"
+        "registry.register(BodyDecoderMiddleware)\n"
+    )
+    rejected = (
+        "from cullinan.web.middleware import get_middleware_registry\n"
+        "from cullinan.web.middleware.body_decoder import BodyDecoderMiddleware\n"
+        "registry = get_middleware_registry()\n"
+        "registry.register(BodyDecoderMiddleware())\n"
+    )
+
+    results = _run_docstring_examples([accepted, rejected])
+
+    assert results[0]["status"] == "ok"
+    assert results[1]["status"] == "error"
+    assert any(_frame_is_framework(frame) for frame in results[1]["frames"])
