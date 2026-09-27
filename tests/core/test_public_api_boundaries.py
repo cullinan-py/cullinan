@@ -75,6 +75,25 @@ EXPECTED_TOP_LEVEL_EXPORTS = [
 
 EXPECTED_PACKAGE_VERSION = "0.95"
 
+# ---------------------------------------------------------------------------
+# 1.0 public API freeze contract (symbol-name granularity).
+#
+# Scope: exactly four package ``__all__`` lists -- ``cullinan`` /
+# ``cullinan.application`` / ``cullinan.web`` / ``cullinan.core``.  The
+# ``cullinan.web.gateway`` facade is deliberately *outside* the contract.
+# ``FROZEN_PUBLIC_API_CONTRACT`` is bound below, after the ``EXPECTED_*``
+# snapshots it references are declared.
+# ---------------------------------------------------------------------------
+FROZEN_PUBLIC_API_SYMBOL_COUNTS = {
+    "cullinan": 44,
+    "cullinan.application": 26,
+    "cullinan.web": 34,
+    "cullinan.core": 72,
+}
+
+# Explicitly excluded from the 1.0 freeze (layered gateway facade).
+FROZEN_PUBLIC_API_EXCLUDED_MODULES = ("cullinan.web.gateway",)
+
 EXPECTED_APPLICATION_EXPORTS = [
     "Application",
     "ApplicationMetadata",
@@ -216,6 +235,39 @@ EXPECTED_CORE_EXPORTS = [
     "reset_injection_registry",
 ]
 
+# The four frozen contracts, bound to their checked-in snapshots.  Kept as a
+# mapping so the runtime check (M-1 ~ M-4) and the static snapshot stay tied
+# to one source of truth.
+FROZEN_PUBLIC_API_CONTRACT = {
+    "cullinan": EXPECTED_TOP_LEVEL_EXPORTS,
+    "cullinan.application": EXPECTED_APPLICATION_EXPORTS,
+    "cullinan.web": EXPECTED_WEB_EXPORTS,
+    "cullinan.core": EXPECTED_CORE_EXPORTS,
+}
+
+
+def _check_frozen_export_contract(contract: dict[str, list[str]]) -> None:
+    """Apply the frozen-contract checks to ``contract`` (M-1 ~ M-3).
+
+    Kept as a helper so the falsifiability test can run the *exact same*
+    checks against a synthetic package.
+
+    * M-1 -- ``__all__`` is read at runtime through ``importlib`` (never an
+      AST literal), so dynamically appended exports are covered.
+    * M-2 -- every listed name is resolved for real: ``getattr`` must succeed
+      and must not be ``None`` (a module-level ``__getattr__`` may legally
+      return ``None`` for an import that failed).
+    * M-3 -- the symbol-name set *and* the count must match the snapshot.
+    """
+    for module_name, expected in contract.items():
+        module = importlib.import_module(module_name)  # M-1
+        names = list(module.__all__)  # M-1
+        assert len(names) == len(expected), module_name  # M-3
+        assert names == list(expected), module_name  # M-3
+        for symbol in names:
+            resolved = getattr(module, symbol)  # M-2
+            assert resolved is not None, f"{module_name}.{symbol} resolves to None"
+
 
 def _write_package(tmp_path: Path, package_name: str, files: dict[str, str]) -> str:
     root = tmp_path / package_name
@@ -266,11 +318,68 @@ def test_top_level_public_api_hides_advanced_runtime_symbols():
     assert "reset_controller_registry" not in public_exports
 
 
-def test_public_api_export_lists_are_frozen_for_v094_phase_a():
+def test_public_api_export_lists_are_frozen_for_1_0():
+    """Static snapshot: the checked-in contract must equal the live lists."""
     assert cullinan.__all__ == EXPECTED_TOP_LEVEL_EXPORTS
     assert application.__all__ == EXPECTED_APPLICATION_EXPORTS
     assert web_api.__all__ == EXPECTED_WEB_EXPORTS
     assert core_api.__all__ == EXPECTED_CORE_EXPORTS
+
+
+def test_public_api_frozen_contract_is_resolvable_at_runtime():
+    """1.0 freeze contract, verified by real execution (M-1 ~ M-4).
+
+    The static snapshot above cannot see a name whose ``__all__`` entry
+    resolves to ``None`` through a module-level ``__getattr__`` (PEP 562);
+    importing and resolving each name for real can.
+    """
+    _check_frozen_export_contract(FROZEN_PUBLIC_API_CONTRACT)  # M-1 ~ M-3
+
+    for module_name, expected_count in FROZEN_PUBLIC_API_SYMBOL_COUNTS.items():
+        module = importlib.import_module(module_name)
+        assert len(module.__all__) == expected_count, module_name
+
+    for module_name in FROZEN_PUBLIC_API_EXCLUDED_MODULES:  # M-4
+        assert module_name not in FROZEN_PUBLIC_API_CONTRACT
+        gateway = importlib.import_module(module_name)
+        assert list(gateway.__all__) not in [
+            list(expected) for expected in FROZEN_PUBLIC_API_CONTRACT.values()
+        ]
+
+
+def test_frozen_contract_check_rejects_none_resolving_symbol(tmp_path, monkeypatch):
+    """Falsifiability of M-2: a symbol that resolves to ``None`` must fail.
+
+    Mirrors the ``cullinan.transport.adapter`` shape, where ``__all__``
+    lists names that the module-level ``__getattr__`` can return as
+    ``None``.  A static literal comparison would pass; this check must not.
+    """
+    package_name = "frozen_contract_none_probe"
+    _write_package(
+        tmp_path,
+        package_name,
+        {
+            "__init__.py": """
+                __all__ = ["Real", "Ghost"]
+
+                class Real:
+                    pass
+
+                def __getattr__(name):
+                    if name == "Ghost":
+                        return None
+                    raise AttributeError(name)
+            """,
+        },
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    _clear_modules(package_name)
+
+    try:
+        with pytest.raises(AssertionError):
+            _check_frozen_export_contract({package_name: ["Real", "Ghost"]})
+    finally:
+        _clear_modules(package_name)
 
 
 def test_typed_marker_is_present_in_the_package_tree():
