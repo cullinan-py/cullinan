@@ -194,16 +194,18 @@ main()
 
 ### 第 4 步：处理请求作用域
 
+请求作用域由框架绑定。传输适配器会在每次分发前后自动打开并关闭请求上下文，因此请求作用域依赖会针对当前活动请求解析，无需手动 enter/exit。请把处理器层保持为传输中立：改用具引擎中立形态的 controller，而不是服务器专属的 handler：
+
 ```python
-# 在请求处理器中
-class MyHandler(RequestHandler):
-    def get(self):
-        ctx.enter_request_context()
-        try:
-            service = ctx.get('RequestScopedService')
-            # ... 使用服务 ...
-        finally:
-            ctx.exit_request_context()
+from cullinan import controller, get_api
+
+
+@controller(url='/items')
+class ItemController:
+    @get_api(url='/{item_id}')
+    def get_item(self, item_id: str):
+        # 运行在本请求由适配器建立的请求上下文中，请求作用域的工作据此解析。
+        return {"item_id": item_id}
 ```
 
 ## 已弃用的 API

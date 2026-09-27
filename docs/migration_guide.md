@@ -206,16 +206,23 @@ The entry method is now the recommended default entrypoint. `configure(root_modu
 
 ### Step 4: Handle Request Scope
 
+Request scope is bound for you. The transport adapter opens a request context
+around every dispatch and closes it afterwards, so request-scoped dependencies
+resolve against the active request without any manual enter/exit. Keep the
+handler layer transport-neutral by writing a controller instead of a
+server-specific handler:
+
 ```python
-# In request handler
-class MyHandler(RequestHandler):
-    def get(self):
-        ctx.enter_request_context()
-        try:
-            service = ctx.get('RequestScopedService')
-            # ... use service ...
-        finally:
-            ctx.exit_request_context()
+from cullinan import controller, get_api
+
+
+@controller(url='/items')
+class ItemController:
+    @get_api(url='/{item_id}')
+    def get_item(self, item_id: str):
+        # Runs inside the request context the adapter established for this
+        # request, so request-scoped work resolves against it.
+        return {"item_id": item_id}
 ```
 
 ## Deprecated APIs
