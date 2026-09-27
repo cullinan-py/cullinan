@@ -148,7 +148,7 @@ def get_decoded_body(request: Any) -> dict:
     """Get the decoded request body
 
     Args:
-        request: Tornado request object (or handler.request)
+        request: Engine-neutral request object holding the decoded body
 
     Returns:
         Decoded dict (returns empty dict if not decoded or decode failed)
@@ -167,7 +167,7 @@ def set_decoded_body(request: Any, data: dict) -> None:
     """Manually set the decoded request body (for testing)
 
     Args:
-        request: Tornado request object
+        request: Engine-neutral request object to attach the body to
         data: Data to set
     """
     setattr(request, '_decoded_body', data)

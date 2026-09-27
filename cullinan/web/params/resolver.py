@@ -263,7 +263,7 @@ class ParamResolver:
 
         Args:
             func: Controller method
-            request: Tornado request object
+            request: Engine-neutral request object
             url_params: URL path parameters
             query_params: Query parameters
             body_data: Request body data (decoded)
