@@ -65,10 +65,13 @@ backend-specific behavior that diverges between engines.
 
 ## Versioning
 
-Follows PEP 440. `0.93aN` for feature iterations, `0.93aN.postM` for
-patch/defect fixes (no new public API). The canonical package version now lives
-in `cullinan/_version.py`; `pyproject.toml`, `cullinan/__init__.py`, and
-`cullinan/core/__init__.py` must stay aligned to that single source.
+Follows PEP 440. An `aN` suffix marks a feature iteration, which may add to the
+public API; a `.postM` suffix marks a patch/defect fix that adds no new public
+API. Because the release line advances over time, this section deliberately
+describes the suffixes by meaning instead of pinning them to a specific major
+or minor version. The canonical package version lives in `cullinan/_version.py`;
+`pyproject.toml`, `cullinan/__init__.py`, and `cullinan/core/__init__.py` must
+stay aligned to that single source.
 
 ## Reporting issues
 
