@@ -8,14 +8,14 @@ deprecated, and the deprecation is carried by the **class** because a dataclass
 field cannot be decorated.
 
 The class and the field both stay usable for the whole deprecation window; the
-removal version is derived from the framework version rather than hand-written,
-so this surface cannot introduce a second, drifting removal version.
+removal version is derived from the release line the surface was deprecated on
+rather than hand-written, so this surface cannot introduce a second, drifting
+removal version.
 """
 import dataclasses
 import warnings
 
 from cullinan.support.deprecation import (
-    current_version,
     get_deprecation_info,
     is_deprecated,
     resolve_removal_version,
@@ -32,13 +32,15 @@ def test_route_group_is_marked_deprecated():
     assert "middleware" in info["alternative"]
 
 
-def test_removal_version_is_derived_from_the_framework_version():
+def test_removal_version_is_derived_from_the_announced_anchor():
     info = get_deprecation_info(RouteGroup)
 
-    # Derived, never hard-coded: it follows the version in ``cullinan._version``
-    # and the standard deprecation window.
-    assert info["removal_version"] == resolve_removal_version()
-    assert info["removal_version"] == resolve_removal_version(current_version())
+    # Derived, never hard-coded: it follows the release line this surface was
+    # deprecated on - its own ``version`` - plus the standard deprecation window.
+    # Anchoring on the release in flight instead would report a removal version
+    # one minor further out than the one this surface advertised.
+    assert info["removal_version"] == resolve_removal_version(info["version"])
+    assert info["removal_version"] == "0.97"
 
 
 def test_route_types_module_writes_no_hand_typed_removal_version():

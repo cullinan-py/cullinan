@@ -7,7 +7,7 @@ the standard deprecation metadata and emit both a ``DeprecationWarning``
 reminder) when used.
 
 Covered symbols (deprecated since v0.95; the removal version is derived from
-the framework version and the deprecation window):
+the version the surface was deprecated on plus the deprecation window):
     - injectable
     - inject_constructor
     - InjectionRegistry
@@ -40,6 +40,12 @@ LEGACY_SYMBOLS = [
     "get_injection_registry",
     "reset_injection_registry",
 ]
+
+# The release line the shipped surfaces were deprecated on. It is the *anchor*
+# of their removal windows: ``anchor + window`` reproduces the removal version
+# each surface already advertised, and unlike the in-flight version it does not
+# move when the framework is released.
+ANNOUNCED_ANCHOR = "0.95"
 
 
 def _version_index(version: str) -> int:
@@ -79,11 +85,14 @@ class TestDeprecationMetadata:
         info = get_deprecation_info(obj)
         assert info is not None, f"{name} missing __deprecated_info__"
         assert info["version"] == "0.95"
-        # Derived, never hard-coded: ``removal_version`` follows the version in
-        # ``cullinan._version`` plus the standard window, so pinning a literal
-        # here would only move the per-release edit from the source into the
-        # test (and drift the moment the framework version advances).
-        assert info["removal_version"] == resolve_removal_version()
+        # Derived, never hard-coded: ``removal_version`` is the anchor this
+        # surface was deprecated on (its own ``version``) plus the standard
+        # window, so pinning a literal here would only move the per-release edit
+        # from the source into the test.
+        assert info["removal_version"] == resolve_removal_version(
+            info["version"], window=DEPRECATION_WINDOW_MINORS
+        )
+        assert info["removal_version"] == "0.97"
         assert info["alternative"], f"{name} alternative must not be empty"
 
     @pytest.mark.parametrize("name", LEGACY_SYMBOLS)
@@ -104,9 +113,9 @@ class TestDeprecationWarningOnUse:
         msg = str(deps[0].message)
         assert "deprecated" in msg
         assert "0.95" in msg
-        # Derived, never hard-coded: the message quotes the SSOT-derived removal
-        # version, so it must track the framework version automatically.
-        assert resolve_removal_version() in msg
+        # Derived, never hard-coded: the message quotes the anchored removal
+        # version, so it must track the deprecation anchor automatically.
+        assert resolve_removal_version(ANNOUNCED_ANCHOR) in msg
 
     def test_inject_constructor_emits_deprecation_warning(self):
         with warnings.catch_warnings(record=True) as caught:
@@ -215,12 +224,13 @@ class TestBehaviorPreserved:
 
 
 class TestRuleBasedDeprecationWindow:
-    """The removal version is derived from the version SSOT, never hard-coded.
+    """The removal version is derived from a version anchor, never hard-coded.
 
     The rule-based refactor must not pull an existing deprecation forward: each
     surface's derived removal version must stay at or behind the value it
-    advertised before the refactor (its ``floor``). Narrowing any window drops a
-    surface below its floor and turns these guards red.
+    advertised before the refactor (its ``floor``). Narrowing a window, or
+    anchoring a surface on the in-flight version instead of the version it was
+    deprecated on, drops that surface below its floor and turns these guards red.
     """
 
     # Floors captured from the pre-refactor source: the core compatibility
@@ -251,7 +261,12 @@ class TestRuleBasedDeprecationWindow:
             f"compatibility surface's removal version)"
         )
 
-    def test_resolve_removal_version_is_current_minor_plus_window(self):
+    def test_omitting_the_anchor_defaults_to_the_current_version(self):
+        # The anchor is usually passed explicitly, because a shipped surface was
+        # deprecated on some earlier release line. Omitting it is the one case
+        # where the current version *is* the anchor: a deprecation created on the
+        # in-flight version, which has no earlier release line to reproduce.
+        #
         # Parse with the module's own resolver instead of re-implementing the
         # arithmetic here: a hand-rolled ``split`` + ``int`` pair breaks on a
         # prerelease suffix (``0.96a1``), while the SSOT parser is suffix-aware.
@@ -304,13 +319,117 @@ class TestRuleBasedDeprecationWindow:
                 f"advertised before the refactor ({self.COMPATIBILITY_REMOVAL_FLOOR})"
             )
 
-    def test_core_aliases_derive_from_the_standard_window(self):
-        expected = resolve_removal_version(window=DEPRECATION_WINDOW_MINORS)
+    def test_core_aliases_derive_from_the_announced_anchor_and_standard_window(self):
+        expected = resolve_removal_version(
+            ANNOUNCED_ANCHOR, window=DEPRECATION_WINDOW_MINORS
+        )
+        # The anchored result must reproduce the advertised value, not slide past
+        # it: that equivalence is the whole point of the anchor.
+        assert expected == self.CORE_REMOVAL_FLOOR
         for name in LEGACY_SYMBOLS:
             assert get_deprecation_info(getattr(core, name))["removal_version"] == expected
 
-    def test_compatibility_surface_derives_from_the_extended_window(self):
-        expected = resolve_removal_version(window=EXTENDED_DEPRECATION_WINDOW_MINORS)
+    def test_compatibility_surface_derives_from_the_announced_anchor_and_extended_window(self):
+        expected = resolve_removal_version(
+            ANNOUNCED_ANCHOR, window=EXTENDED_DEPRECATION_WINDOW_MINORS
+        )
+        assert expected == self.COMPATIBILITY_REMOVAL_FLOOR
         legacy = importlib.import_module("cullinan.web.middleware.legacy")
         for name in ("register_middleware_manual", "get_registered_middlewares"):
             assert get_deprecation_info(getattr(legacy, name))["removal_version"] == expected
+
+
+class TestAnnouncedAnchor:
+    """The removal window is anchored on the version a surface was deprecated on.
+
+    Anchoring on the in-flight version made every advertised removal version slide
+    one minor further out per release, so the announced value could never actually
+    be reached. The cases below are red against a current-version anchor and green
+    against the deprecation-version anchor.
+    """
+
+    # --- green: the anchored rule reproduces the announced values ------------
+
+    def test_standard_window_reproduces_the_announced_core_value(self):
+        assert resolve_removal_version(ANNOUNCED_ANCHOR) == "0.97"
+
+    def test_extended_window_reproduces_the_announced_compatibility_value(self):
+        assert (
+            resolve_removal_version(
+                ANNOUNCED_ANCHOR, window=EXTENDED_DEPRECATION_WINDOW_MINORS
+            )
+            == "1.0"
+        )
+
+    @pytest.mark.parametrize("name", LEGACY_SYMBOLS)
+    def test_core_symbols_report_the_announced_value(self, name):
+        assert get_deprecation_info(getattr(core, name))["removal_version"] == "0.97"
+
+    def test_gateway_route_group_reports_the_announced_value(self):
+        route_types = importlib.import_module("cullinan.web.gateway.route_types")
+        assert get_deprecation_info(route_types.RouteGroup)["removal_version"] == "0.97"
+
+    def test_legacy_middleware_helpers_report_the_announced_value(self):
+        legacy = importlib.import_module("cullinan.web.middleware.legacy")
+        for name in ("register_middleware_manual", "get_registered_middlewares"):
+            assert get_deprecation_info(getattr(legacy, name))["removal_version"] == "1.0"
+
+    def test_decorator_default_is_anchored_on_the_deprecation_version(self):
+        @deprecated(version="0.95", alternative="the replacement helper")
+        def _sample():
+            return None
+
+        # A current-version anchor would give ``0.96a1 + 5 == 1.1``; anchoring on
+        # the deprecation version gives the announced ``0.95 + 5 == 1.0``.
+        assert get_deprecation_info(_sample)["removal_version"] == "1.0"
+
+    # --- red: the anchor is no longer the in-flight version -------------------
+
+    def test_the_anchor_is_not_the_current_version(self):
+        # Boundary pair: the same window against the anchored release line and
+        # against its predecessor differs by exactly one minor.
+        assert resolve_removal_version(ANNOUNCED_ANCHOR) == "0.97"
+        assert resolve_removal_version("0.94") == "0.96"
+        # ... and neither coincides with a current-version anchor.
+        assert resolve_removal_version(ANNOUNCED_ANCHOR) != resolve_removal_version()
+
+    def test_anchor_and_window_are_independent_inputs(self):
+        # One anchor, several windows: the window stays the only policy knob, so
+        # widening it can only be a deliberate edit.
+        assert resolve_removal_version(ANNOUNCED_ANCHOR, window=1) == "0.96"
+        assert resolve_removal_version(ANNOUNCED_ANCHOR, window=2) == "0.97"
+        assert resolve_removal_version(ANNOUNCED_ANCHOR, window=5) == "1.0"
+
+    # --- the guard that rules out reading the anchor off the literal ---------
+
+    def test_a_legacy_version_literal_is_not_a_usable_anchor(self):
+        # ``0.8`` belongs to the earlier one-byte minor numbering and parses as
+        # minor 8, not 80. Using such a decorator literal as the anchor derives a
+        # removal version *earlier* than the current release, which the guard
+        # below rejects - hence the explicit anchors on the shipped surfaces.
+        assert (
+            resolve_removal_version("0.8", window=EXTENDED_DEPRECATION_WINDOW_MINORS)
+            == "0.13"
+        )
+
+    def test_no_shipped_surface_is_past_its_removal_version(self):
+        major, minor = _release_pair(current_version())
+        current_index = major * 100 + minor
+
+        reported = [
+            get_deprecation_info(getattr(core, name))["removal_version"]
+            for name in LEGACY_SYMBOLS
+        ]
+        route_types = importlib.import_module("cullinan.web.gateway.route_types")
+        reported.append(get_deprecation_info(route_types.RouteGroup)["removal_version"])
+        legacy = importlib.import_module("cullinan.web.middleware.legacy")
+        reported.extend(
+            get_deprecation_info(getattr(legacy, name))["removal_version"]
+            for name in ("register_middleware_manual", "get_registered_middlewares")
+        )
+
+        for version in reported:
+            assert _version_index(version) > current_index, (
+                f"reported removal version {version!r} is not after the current "
+                f"version {current_version()!r}"
+            )

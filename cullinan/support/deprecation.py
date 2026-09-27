@@ -14,10 +14,13 @@ from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-# Deprecation windows, counted in minor releases. The concrete removal version
-# is derived from the framework version (the single source of truth in
-# ``cullinan._version``), so no version literal is written by hand anywhere in
-# the codebase.
+# Deprecation windows, counted in minor releases. The removal version a surface
+# advertises is ``anchor + window``, where the *anchor* is the version line the
+# surface was deprecated on - never "whatever version happens to be current".
+# Anchoring on the current version made every advertised removal version slide
+# one minor further out on each release, so the announced value could in
+# practice never be reached; anchoring on the deprecation version keeps the
+# advertised value fixed and reproducible.
 #
 # Each surface picks the window that reproduces the removal version it already
 # advertised. A window is an internal policy knob used to preserve that
@@ -27,8 +30,8 @@ DEPRECATION_WINDOW_MINORS = 2
 
 # The legacy middleware registration helpers and the decorator's implicit
 # default were announced with a removal one major step further out; this wider
-# window reproduces that announcement so the rule-based refactor never pulls
-# them forward.
+# window reproduces that announcement when it is applied to the anchor those
+# surfaces were deprecated on (``0.95 + 5 == 1.0``).
 EXTENDED_DEPRECATION_WINDOW_MINORS = 5
 
 # The framework numbers minors as a two-digit step (``0.95`` ... ``0.99``) before
@@ -56,13 +59,20 @@ def resolve_removal_version(
     version: Optional[str] = None,
     window: int = DEPRECATION_WINDOW_MINORS,
 ) -> str:
-    """Derive a removal version as ``current minor + window``.
+    """Derive a removal version as ``anchor minor + window``.
 
-    The value is computed from the version in ``cullinan._version`` rather than
-    hard-coded, so adding a new deprecation cannot introduce a further,
-    inconsistent removal version. The minor field rolls over into the major
-    field the same way the framework's release numbering does (``0.99`` + one
-    minor becomes ``1.0``).
+    ``version`` is the *anchor*: the release line the surface was deprecated
+    on, i.e. the version that makes ``anchor + window`` reproduce the removal
+    version the surface already advertised. Surfaces announced before the
+    in-flight version must pass it explicitly; omitting it is correct only for
+    a deprecation created *on* the in-flight version, where the current version
+    is itself the anchor.
+
+    The value is computed from the anchor rather than hard-coded, so no version
+    literal has to be written by hand to express a removal schedule, and adding
+    a new deprecation cannot introduce a further, inconsistent removal version.
+    The minor field rolls over into the major field the same way the framework's
+    release numbering does (``0.99`` + one minor becomes ``1.0``).
 
     Example:
         >>> resolve_removal_version("0.95")  # window defaults to 2
@@ -86,22 +96,30 @@ def deprecated(version: str,
         version: Version in which the API was deprecated
         alternative: Description of the alternative API to use
         removal_version: Version in which the API will be removed. When omitted,
-            it is derived from the framework version and the compatibility
-            window (``current minor + EXTENDED_DEPRECATION_WINDOW_MINORS``)
-            instead of being hard-coded - that window keeps the removal version
-            this default already advertised.
+            it is derived from ``version`` and the compatibility window
+            (``version + EXTENDED_DEPRECATION_WINDOW_MINORS``) instead of being
+            hard-coded - that window reproduces the removal version this default
+            already advertised.
         category: Warning category (default: DeprecationWarning)
 
     Example:
+        Pass ``removal_version`` explicitly whenever ``version`` names a release
+        line whose ``+ window`` arithmetic would not reproduce the advertised
+        value (a legacy ``0.8`` literal parses as minor ``8``, not ``80``):
+
         >>> @deprecated(
         ...     version="0.8",
         ...     alternative="resolve_dependency()",
+        ...     removal_version="1.0",
         ... )
         ... def get_service_by_name(name: str):
         ...     return registry.get_instance(name)
     """
+    # The implicit default is anchored on *this* deprecation's version, not on
+    # whatever version is in force when the module is imported, so the advertised
+    # removal version stops sliding one minor further out per release.
     resolved_removal_version = removal_version or resolve_removal_version(
-        window=EXTENDED_DEPRECATION_WINDOW_MINORS
+        version, window=EXTENDED_DEPRECATION_WINDOW_MINORS
     )
 
     def decorator(obj):

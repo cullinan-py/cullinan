@@ -112,9 +112,12 @@ from .pending import PendingRegistry, PendingRegistration, ComponentType
 # Compatibility Aliases (for backward compatibility)
 # ============================================================================
 
-# Removal version for this legacy compatibility surface, derived from the
-# framework version and the standard deprecation window rather than hard-coded.
-_REMOVAL_VERSION = _resolve_removal_version()
+# Removal version for this legacy compatibility surface. The anchor is the
+# release line this surface was deprecated on (the ``version="0.95"`` literal
+# carried by the five symbols below), not whatever version happens to be
+# current - the latter would slide the advertised value one minor further out
+# on every release.
+_REMOVAL_VERSION = _resolve_removal_version("0.95")
 
 # injectable is now a no-op, classes are automatically injectable
 @_deprecated(

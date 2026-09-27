@@ -24,10 +24,13 @@ from cullinan.support.deprecation import resolve_removal_version as _resolve_rem
 
 logger = logging.getLogger(__name__)
 
-# Derived from the framework version + the compatibility window, never
-# hard-coded; the wider window keeps the removal version this legacy surface
-# already advertised.
-_REMOVAL_VERSION = _resolve_removal_version(window=_EXTENDED_WINDOW)
+# Removal version for this legacy surface. The anchor is the release line the
+# helpers' removal was announced on (``0.95``), which together with the wider
+# window reproduces the advertised ``1.0``. It is deliberately *not* the
+# ``version="0.8"`` literal below: ``0.8`` belongs to the earlier, one-byte
+# minor numbering, so it parses as minor ``8`` rather than ``80`` and would
+# derive ``0.13`` - a removal version earlier than the current release.
+_REMOVAL_VERSION = _resolve_removal_version("0.95", window=_EXTENDED_WINDOW)
 
 
 @deprecated(
