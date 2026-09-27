@@ -162,3 +162,6 @@ Icon
 
 .agents
 skills-lock.json
+
+# Local agent working directory (machine-specific layout and internal references)
+.workbuddy/

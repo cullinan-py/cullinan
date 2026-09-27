@@ -108,7 +108,7 @@ jobs:
           is_pre = "a" in version
           is_default_branch = branch == default_branch
           is_tag_ref = ref_type == "tag"
-          # S4 (v0.95a1): origin/preview is the single authoritative source for
+          # v0.95a1: origin/preview is the single authoritative source for
           # the pre channel. Branch name takes priority over the version 'a'
           # check, so preview always maps to pre regardless of version content.
           # release/** branches no longer trigger pre (release/v0.93-pre is now

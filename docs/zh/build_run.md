@@ -2,7 +2,7 @@ title: "本地构建与运行"
 slug: "build-run"
 module: []
 tags: ["build", "run"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

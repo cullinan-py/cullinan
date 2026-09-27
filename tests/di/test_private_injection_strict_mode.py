@@ -10,7 +10,7 @@ Context: commit c888738 (v0.93a11+) intentionally changed
 ``get_injection_markers`` to only skip dunder (``__xxx__``) attributes,
 making single-underscore attributes visible to the injection system.
 ``strict_private_injection`` provides an opt-out for projects that want
-strict private semantics per [[公共 API 暴露准则]] §3.
+strict private semantics for the public API surface.
 """
 import os
 import unittest
@@ -216,9 +216,9 @@ class TestCacheInvalidation(unittest.TestCase):
         self.assertNotIn("_req", m_strict)
 
 
-# ── PM AC-A2-4 acceptance scenarios (TS-1 to TS-6) ─────────────────────
-# PM-defined authoritative test scenarios for strict_private_injection.
-# These map 1:1 to PM's table (msg_e95f8d797d1e, art_a78302c5d6c8).
+# ── Authoritative acceptance scenarios (TS-1 to TS-6) ─────────────────
+# Authoritative test scenarios for strict_private_injection.
+# Each label TS-1..TS-6 is a distinct, self-contained case.
 
 
 class _DatabaseService:
@@ -278,8 +278,8 @@ def _build_context_public_bare_annotation(*, strict_private_injection=False):
     return ctx
 
 
-class TestPMAcceptanceScenarios(unittest.TestCase):
-    """PM AC-A2-4 authoritative test scenarios TS-1 through TS-6."""
+class TestAuthoritativeAcceptanceScenarios(unittest.TestCase):
+    """Authoritative acceptance scenarios TS-1 through TS-6."""
 
     def setUp(self):
         invalidate_injection_markers_cache()

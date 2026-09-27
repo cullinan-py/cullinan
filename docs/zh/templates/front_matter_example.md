@@ -28,7 +28,7 @@ title: "Front matter example"
 slug: "front-matter-example"
 module: []
 tags: ["template"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: draft
 locale: zh

@@ -2,7 +2,7 @@ title: "应用运行时模型"
 slug: "wiki-application-runtime"
 module: ["cullinan.application"]
 tags: ["wiki", "application", "runtime", "module"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

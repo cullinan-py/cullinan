@@ -26,10 +26,10 @@ python -m pytest tests -q    # full test suite - must stay green
 python -m build && twine check dist/*   # packaging health
 ```
 
-## Four-aspect sync (mandatory)
+## A complete change (mandatory)
 
-Any feature, behavior change, or rename MUST advance four aspects **together**
-in the same PR:
+Any feature, behavior change, or rename MUST update **all of the parts below
+together**, in the same PR:
 
 1. **Code** - implementation under `cullinan/`, exposed through the
    relevant `__init__` public API.
@@ -40,7 +40,9 @@ in the same PR:
 4. **Docs** - bilingual `docs/<feature>_guide.md` + `docs/zh/...`, and
    update `mkdocs.yml` nav + `README.MD`.
 
-A change is not "done" until all four align.
+A change is not "done" until the code, tests, examples, and docs all agree.
+
+If an item does not apply to this change, mark it N/A and explain why.
 
 ## Engine neutrality
 
@@ -57,7 +59,7 @@ backend-specific behavior that diverges between engines.
 
 - Use a clear type prefix: `feat:`, `fix:`, `docs:`, `ci:`, `build:`,
   `refactor:`, `test:`.
-- Describe the root cause and which of the four aspects you touched.
+- Describe the root cause and which parts of the change you touched (code, tests, examples, docs).
 - Keep the trailer when applicable:
   `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`.
 

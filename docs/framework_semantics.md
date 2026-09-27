@@ -1,7 +1,7 @@
 title: "Framework Semantics"
 slug: "framework-semantics"
 tags: ["guide", "semantics", "diagnostics"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en
@@ -130,7 +130,7 @@ The `format_scope_violation_error()` helper in `cullinan.core.diagnostics` rende
 
 The injection marker scanner (`get_injection_markers`) scans class attributes for `Inject`, `InjectByName`, and `Lazy` markers. As of v0.93a11 (commit c888738, constructor injection feature), single-underscore-prefixed attributes (`_xxx`) are **visible** to the injection system - only dunder attributes (`__xxx__`) are skipped. This is an intentional design decision: constructor injection needs to scan class-level bare type annotations, and filtering all `_`-prefixed attributes would miss `_internal_db: DatabaseService`-style private injection points.
 
-This does **not** conflict with the "underscore = private" convention in [[公共 API 暴露准则]] §3, which constrains the private-ness of **framework-exported symbols** (i.e. users should not `from cullinan import _internal_helper`). The injection scanner operates on **user-defined class attributes**, which is a different layer.
+This does **not** conflict with the "underscore = private" convention for the public API surface (see [API Reference](api_reference.md) for the export-contract rule that decides which symbols are private), which constrains the private-ness of **framework-exported symbols** (i.e. users should not `from cullinan import _internal_helper`). The injection scanner operates on **user-defined class attributes**, which is a different layer.
 
 For projects that want strict private semantics (single-underscore attributes skipped), `ApplicationContext` accepts a `strict_private_injection` opt-out switch:
 
@@ -151,7 +151,7 @@ The `CULLINAN_STRICT_PRIVATE_INJECTION=1` environment variable provides a global
 | `on_startup` / `on_startup_async` | **Log and swallow** | Avoid cascading failures, allow partial startup |
 | `on_shutdown` / `on_shutdown_async` | **Log and swallow** | Best-effort shutdown, avoid disrupting other components' cleanup |
 
-All raised exceptions use `raise LifecycleError(...) from exc` to preserve the `__cause__` chain per [[错误码与异常分级规范]] §3.
+All raised exceptions use `raise LifecycleError(...) from exc` to preserve the `__cause__` chain, in line with this project's rule that framework-internal errors keep their original cause attached.
 
 For projects that want all lifecycle failures to propagate (aligning with `LifecycleManager`'s `force=False` behavior), `ApplicationContext` accepts a `strict_lifecycle` switch:
 

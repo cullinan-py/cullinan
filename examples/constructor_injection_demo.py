@@ -3,7 +3,7 @@
 
 Usage::
 
-    cd G:/pj/Cullinan_aiasset && python examples/constructor_injection_demo.py
+    cd <repo-root> && python examples/constructor_injection_demo.py
 
 Core demo: bare type annotations = constructor injection, zero boilerplate.
 """

@@ -1,19 +1,20 @@
 """
-打 tag 前的手动门禁校验脚本（版本规范 S6，v0.95a1 修进降级项，v0.95 兑现）。
+Pre-tag manual gate verification (v0.95a1 tightened, v0.95 delivered).
 
-git 原生无 pre-tag hook，本脚本将「命令骨架第 5 步 (a)(b)(c) 确认」机械化：
-  (a) QA 签收消息 ID 已提供且非空（thread 证据）
-  (b) review 门禁消息 ID 已提供且非空（thread 证据）
-  (c) 五方面同步达标（本地可验证部分）：
-      - 版本号 SSOT 对齐（cullinan.__version__ 与 cullinan.core.__version__ 一致）
-      - Release Notes 就位（根目录 RELEASE-v{version}.md）
-      - README "Current series" 指向当前版本
-      - 工作树 clean（tag 须指向已提交状态）
+git has no native pre-tag hook, so this script mechanizes the pre-tag
+confirmations:
+  (a) a sign-off token was provided and is non-empty (thread evidence)
+  (b) a review token was provided and is non-empty (thread evidence)
+  (c) release readiness (locally verifiable parts):
+      - version SSOT aligned (cullinan.__version__ == cullinan.core.__version__)
+      - release notes present (RELEASE-v{version}.md at the repo root)
+      - README "Current series" points at the current version
+      - working tree clean (a tag must point at a committed state)
 
-用法：
-  python scripts/check_tag_gate.py --qa-msg <MSG_ID> --review-msg <MSG_ID> [--version 0.95]
+Usage:
+  python scripts/check_tag_gate.py --sign-off-token <TOKEN> --review-token <TOKEN> --sync-token <TOKEN> [--version 0.95]
 
-退出码：0 = PASS（方可执行 git tag），1 = FAIL（阻断）。
+Exit code: 0 = PASS (git tag may proceed), 1 = FAIL (blocked).
 """
 import argparse
 import re
@@ -34,11 +35,13 @@ def read_ssot_version():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Pre-tag gate verification (spec S6)")
-    parser.add_argument("--qa-msg", required=True,
-                        help="(a) QA sign-off message ID in the release thread")
-    parser.add_argument("--review-msg", required=True,
-                        help="(b) Review gate completion message ID in the release thread")
+    parser = argparse.ArgumentParser(description="Pre-tag gate verification")
+    parser.add_argument("--sign-off-token", required=True,
+                        help="(a) non-empty sign-off token issued by the maintainer")
+    parser.add_argument("--review-token", required=True,
+                        help="(b) non-empty review token issued by the maintainer")
+    parser.add_argument("--sync-token", required=True,
+                        help="an opaque sync credential issued by the maintainer")
     parser.add_argument("--version", default=None,
                         help="Expected version (default: read from cullinan/_version.py)")
     args = parser.parse_args()
@@ -52,15 +55,19 @@ def main():
         if not ok:
             fails.append(label)
 
-    # (a) QA 签收证据
-    check("(a) QA sign-off message ID provided", bool(args.qa_msg.strip()),
-          args.qa_msg.strip() or "empty")
+    # (a) sign-off evidence
+    check("(a) sign-off token provided", bool(args.sign_off_token.strip()),
+          args.sign_off_token.strip() or "empty")
 
-    # (b) review 门禁证据
-    check("(b) Review gate message ID provided", bool(args.review_msg.strip()),
-          args.review_msg.strip() or "empty")
+    # (b) review evidence
+    check("(b) review token provided", bool(args.review_token.strip()),
+          args.review_token.strip() or "empty")
 
-    # (c) 五方面同步（本地可验证部分）
+    # sync credential present (opaque: existence only, meaning is not interpreted here)
+    check("Sync credential provided", bool(args.sync_token.strip()),
+          args.sync_token.strip() or "empty")
+
+    # (c) release readiness (locally verifiable parts)
     ssot = read_ssot_version()
     expected = args.version or ssot
     check("Version SSOT readable (cullinan/_version.py)", ssot is not None)
@@ -96,9 +103,9 @@ def main():
         return 1
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     print(f"TAG GATE PASS -- version {expected} @ {stamp}")
-    print(f"  (a) QA sign-off message : {args.qa_msg.strip()}")
-    print(f"  (b) Review gate message : {args.review_msg.strip()}")
-    print("  (c) Five-aspect sync    : SSOT aligned / release notes / README / clean tree")
+    print(f"  (a) sign-off token  : {args.sign_off_token.strip()}")
+    print(f"  (b) review token    : {args.review_token.strip()}")
+    print("  (c) release readiness: SSOT aligned / release notes / README / clean tree")
     return 0
 
 

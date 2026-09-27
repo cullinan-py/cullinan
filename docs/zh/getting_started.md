@@ -2,7 +2,7 @@ title: "Cullinan 快速开始"
 slug: "getting-started"
 module: ["cullinan"]
 tags: ["getting-started", "tutorial"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

@@ -4,7 +4,7 @@
 Verifies:
 - ScopeViolationError is raised (not plain LifecycleError) on scope violation.
 - ScopeViolationError carries the full dependency_chain, origin_name, and
-  violating_component fields (AC-A4-3).
+  violating_component fields.
 - ScopeViolationError remains a LifecycleError subclass (backward compat).
 - Existing keyword-based assertions (``assertIn("request-scoped", ...)``)
   continue to pass.
@@ -179,7 +179,7 @@ class TestScopeValidationPerformance(unittest.TestCase):
         finally:
             ctx.shutdown()
         elapsed = time.perf_counter() - start
-        # Threshold per ARCH: 5 seconds (QA confirms final value).
+        # Threshold: 5 seconds for the 120-component graph.
         self.assertLess(elapsed, 5.0, f"scope validation took {elapsed:.3f}s, exceeding 5s threshold")
 
 

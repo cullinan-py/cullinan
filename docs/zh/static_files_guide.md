@@ -2,7 +2,7 @@ title: "静态文件与 SPA 指南"
 slug: "static-files-guide"
 module: ["cullinan.web.static"]
 tags: ["web", "static", "spa", "caching"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

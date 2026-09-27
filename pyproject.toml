@@ -10,7 +10,7 @@ readme = { file = "README.MD", content-type = "text/markdown" }
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
 authors = [
-  { name = "cullinan-py", email = "cullinan@plumeink.com" },
+  { name = "plumeink", email = "cullinan@plumeink.com" },
 ]
 classifiers = [
   "Programming Language :: Python :: 3.9",

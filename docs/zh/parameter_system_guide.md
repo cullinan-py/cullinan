@@ -3,7 +3,7 @@ title: "参数系统指南"
 slug: "parameter-system-guide"
 module: ["cullinan.web.params", "cullinan.codec"]
 tags: ["params", "api", "guide"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: new
 locale: zh

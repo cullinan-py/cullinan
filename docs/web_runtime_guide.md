@@ -2,7 +2,7 @@ title: "Web Runtime Guide"
 slug: "web-runtime-guide"
 module: ["cullinan.web.gateway", "cullinan.transport.adapter"]
 tags: ["web", "runtime", "gateway"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en

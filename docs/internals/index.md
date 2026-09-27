@@ -2,7 +2,7 @@ title: "Internals & Extensions"
 slug: "internals-and-extensions"
 module: []
 tags: ["docs", "internals", "knowledge-base"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en

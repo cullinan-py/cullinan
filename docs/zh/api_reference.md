@@ -2,7 +2,7 @@ title: "API 参考"
 slug: "api-reference"
 module: []
 tags: ["api", "reference"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

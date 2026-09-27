@@ -2,7 +2,7 @@ title: "Cullinan Documentation"
 slug: "docs-home"
 module: []
 tags: ["docs", "home", "knowledge-base"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en

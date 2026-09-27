@@ -2,7 +2,7 @@ title: "最终结构迁移说明"
 slug: "final-structure-migration"
 module: []
 tags: ["migration", "final-structure", "semantics"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

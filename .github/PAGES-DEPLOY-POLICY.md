@@ -18,7 +18,7 @@ at the environment gate (the job shows `failure` with zero steps executed).
 | `gh-pages`     | historical | Legacy Pages source branch |
 | `master`       | historical | Stable release channel |
 | `release/*`    | historical | Release tag/branch channel |
-| `preview`      | 2026-07-19 (S4, v0.95a1) | Pre-release channel authoritative source. Per S4 spec, `preview` is the single authoritative source for the `pre` documentation channel. |
+| `preview`      | 2026-07-19 (v0.95a1) | Pre-release channel authoritative source. `preview` is the single authoritative source for the `pre` documentation channel. |
 
 ## Maintenance Rule
 
@@ -37,5 +37,5 @@ DELETE /repos/{owner}/{repo}/environments/github-pages/deployment-branch-policie
 
 ## Related
 
-- S4 spec (channel mapping): `preview` -> `pre` channel
+- Channel mapping: `preview` -> `pre` channel
 - Workflow file: `.github/workflows/mkdocs-build.yml` (`deploy` job, `environment: github-pages`)

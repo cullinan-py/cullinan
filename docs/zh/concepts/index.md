@@ -2,7 +2,7 @@ title: "框架语义"
 slug: "framework-concepts"
 module: []
 tags: ["docs", "concepts", "knowledge-base"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

@@ -2,7 +2,7 @@ title: "cullinan.application module"
 slug: "modules-application"
 module: ["cullinan.application"]
 tags: ["api", "module", "application"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en

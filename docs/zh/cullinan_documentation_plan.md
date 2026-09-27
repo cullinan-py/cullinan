@@ -2,7 +2,7 @@ title: "Cullinan 文档编写计划书"
 slug: "documentation-plan"
 module: ["docs"]
 tags: ["plan", "documentation"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: draft
 locale: zh
@@ -128,7 +128,7 @@ TL;DR：为 Cullinan（基于 Tornado 的 IoC/DI 框架）编写中英双语文�
 - F2. 文档内部审校（结构、事实、示例可运行）（2 人日）
 - F3. 最终质量门（运行测试、示例验证、提交 PR）（1 人日）
 
-里程碑 F：双语文档 1:1 对应通过 QA。
+里程碑 F：双语文档 1:1 对应通过质量评审。
 
 总体里程碑时间表（可通过并行工作缩短）：
 - 第 1 周：完成阶段 A

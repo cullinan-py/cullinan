@@ -1,7 +1,7 @@
 title: "框架语义规则"
 slug: "framework-semantics"
 tags: ["guide", "semantics", "diagnostics"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh
@@ -130,7 +130,7 @@ Cullinan 把作用域兼容性视为硬规则。尤其是 `singleton` 组件不�
 
 注入标记扫描器（`get_injection_markers`）扫描类属性以查找 `Inject`、`InjectByName`、`Lazy` 标记。自 v0.93a11（commit c888738，构造器注入功能）起，单下划线前缀属性（`_xxx`）对注入系统**可见**--只有 dunder 属性（`__xxx__`）被跳过。这是有意的设计决策：构造器注入需要扫描类级裸类型标注，过滤所有 `_` 前缀属性会漏掉 `_internal_db: DatabaseService` 这类"私有但需要构造器注入"的属性。
 
-这与 [[公共 API 暴露准则]] §3 的"下划线=私有"约定**不冲突**。规范 §3 约束的是**框架导出符号**的私有性（即用户不应 `from cullinan import _internal_helper`）。注入扫描器操作的是**用户自定义类属性**，属于不同层面。
+这与本项目公共 API 面的"下划线=私有"约定**不冲突**（该约定的公开表述见 [API 参考](api_reference.md) 的导出契约一节）。该约定约束的是**框架导出符号**的私有性（即用户不应 `from cullinan import _internal_helper`）。注入扫描器操作的是**用户自定义类属性**，属于不同层面。
 
 对于需要严格私有语义（跳过单下划线属性）的项目，`ApplicationContext` 提供 `strict_private_injection` opt-out 开关：
 
@@ -151,7 +151,7 @@ ctx = ApplicationContext(strict_private_injection=True)
 | `on_startup` / `on_startup_async` | **记录并吞掉** | 避免级联失败，允许部分启动 |
 | `on_shutdown` / `on_shutdown_async` | **记录并吞掉** | 尽力关闭，避免中断其他组件清理 |
 
-所有抛出的异常使用 `raise LifecycleError(...) from exc` 保留 `__cause__` 链，符合 [[错误码与异常分级规范]] §3。
+所有抛出的异常使用 `raise LifecycleError(...) from exc` 保留 `__cause__` 链，符合本项目「框架内部错误保留原始成因」的约定。
 
 对于需要所有生命周期失败都传播的项目（对齐 `LifecycleManager` 的 `force=False` 行为），`ApplicationContext` 提供 `strict_lifecycle` 开关：
 

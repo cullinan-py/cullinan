@@ -2,7 +2,7 @@ title: "示例与指引"
 slug: "examples"
 module: []
 tags: ["examples"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

@@ -2,7 +2,7 @@ title: "Getting Started with Cullinan"
 slug: "getting-started"
 module: ["cullinan"]
 tags: ["getting-started", "tutorial"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en
