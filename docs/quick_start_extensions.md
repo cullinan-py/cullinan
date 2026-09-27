@@ -235,7 +235,7 @@ The framework provides 6 major extension point categories:
    - `config_provider`
 
 6. **Handler**
-   - Custom Tornado Handler
+   - Custom Route Handler
 
 ---
 

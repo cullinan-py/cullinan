@@ -57,8 +57,8 @@ Cullinan 提供 6 大类扩展点：
 |-----|------|---------|
 | **Middleware** | 请求/响应拦截 | 认证、日志、CORS |
 | **Lifecycle** | 生命周期钩子 | 初始化、启动、关闭 |
-| **Injection** | 依赖注入 | 自定义 Scope、Provider |
-| **Routing** | 路由处理 | 自定义 Handler |
+| **Injection** | 依赖注入 | Scope、Provider |
+| **Routing** | 路由处理 | 自定义 Controller |
 | **Configuration** | 配置管理 | 配置源、环境适配 |
 | **Handler** | 请求处理器 | 自定义请求处理逻辑 |
 
@@ -170,51 +170,20 @@ class AuthMiddleware(Middleware):
 
 ## 依赖注入扩展 {#di-extensions}
 
-### 自定义 Scope
+### Scope（作用域）
 
-Scope 定义依赖的生命周期（单例、请求级、会话级等）。
+Scope 定义依赖的生命周期。Cullinan 内置三种作用域，注册时通过 `ScopeType` 选择：
 
 ```python
-from cullinan.core.scope import Scope
-from typing import Any, Optional
+from cullinan.core import ScopeType
 
-class SessionScope(Scope):
-    """会话级作用域"""
-    
-    def __init__(self):
-        super().__init__('session')
-        self._instances = {}  # {session_id: {key: instance}}
-    
-    def get(self, key: str) -> Optional[Any]:
-        """获取实例"""
-        session_id = self._get_current_session_id()
-        if session_id and session_id in self._instances:
-            return self._instances[session_id].get(key)
-        return None
-    
-    def set(self, key: str, value: Any) -> None:
-        """设置实例"""
-        session_id = self._get_current_session_id()
-        if session_id:
-            if session_id not in self._instances:
-                self._instances[session_id] = {}
-            self._instances[session_id][key] = value
-    
-    def clear(self) -> None:
-        """清理当前会话"""
-        session_id = self._get_current_session_id()
-        if session_id and session_id in self._instances:
-            del self._instances[session_id]
-    
-    def _get_current_session_id(self) -> Optional[str]:
-        """从请求上下文获取会话 ID"""
-        from cullinan.core.context import get_current_context
-        try:
-            context = get_current_context()
-            return context.get('session_id')
-        except:
-            return None
+ScopeType.SINGLETON   # 整个应用上下文内单例
+ScopeType.PROTOTYPE   # 每次解析都新建实例
+ScopeType.REQUEST     # 每个请求作用域一个实例
 ```
+
+需要请求级生命周期时请使用请求作用域。新增作用域类型不属于公开扩展面，因此扩展
+应当组合使用上面的内置作用域，而不是子类化某个作用域类。
 
 ### 自定义 Provider
 
@@ -223,7 +192,7 @@ Provider 负责创建和管理依赖实例。
 #### 工厂模式 Provider
 
 ```python
-from cullinan.core.provider import Provider
+from cullinan.core import Provider
 
 class FactoryProvider(Provider):
     """每次都创建新实例"""
@@ -346,37 +315,44 @@ class AsyncService(Service):
 
 ## 路由扩展 {#routing-extensions}
 
-### 自定义 Tornado Handler
+自定义路由通过 Cullinan 的引擎中立 controller 层声明。同一份业务代码在 Tornado
+与 ASGI 两个后端上都经共享网关分发，因此推荐以 controller 类作为扩展点，而不是
+引擎原生的 handler。
+
+### 用 Controller 声明自定义路由
 
 ```python
-import tornado.web
 from cullinan import application, configure
+from cullinan.web.controller import controller, get_api, post_api
 
 
-class CustomHandler(tornado.web.RequestHandler):
-    """自定义请求处理器"""
+@controller(url='/custom')
+class CustomController:
+    """自定义路由集合"""
 
-    def get(self):
-        self.write({"message": "Custom handler"})
+    @get_api(url='/')
+    def index(self):
+        return {"message": "Custom handler"}
 
-    def post(self):
-        data = self.get_json_argument()
-        self.write({"received": data})
+    @get_api(url='/(?P<item_id>[0-9]+)')
+    def show(self, item_id: int):
+        return {"message": "Custom handler", "item_id": item_id}
+
+    @post_api(url='/')
+    def create(self, payload: dict):
+        return {"received": payload}
 
 
 @configure(user_packages=["__main__"])
 @application
 def main(): ...
 
-# 注册自定义 Handler
 if __name__ == '__main__':
-    application.run(main, handlers=[
-        (r'/custom', CustomHandler),
-        (r'/custom/(?P<id>[0-9]+)', CustomHandler),
-    ])
+    # Controller 路由会被自动发现并注册。
+    application.run(main)
 ```
 
-### 与 Controller 混合使用
+### 与其他 Controller 混合使用
 
 ```python
 from cullinan import application, configure
@@ -390,19 +366,25 @@ class UserController:
         return {"users": []}
 
 
+@controller(url='/health')
+class HealthController:
+    @get_api(url='/')
+    def status(self):
+        return {"status": "ok"}
+
+
 @configure(user_packages=["__main__"])
 @application
 def main(): ...
 
-# CustomHandler 和 UserController 可以共存
 if __name__ == '__main__':
-    application.run(
-        main,
-        handlers=[
-            (r'/health', HealthCheckHandler),  # 自定义
-        ]
-    )  # UserController 会自动注册
+    # CustomController 与 UserController 可以共存，二者都会注册。
+    application.run(main)
 ```
+
+> [!NOTE]
+> 引擎原生 handler 会绕过共享网关，因此在 ASGI 后端上行为不同，不是推荐的
+> 扩展方式。请改用上面的 controller 层声明路由，以保持行为引擎中立。
 
 ---
 

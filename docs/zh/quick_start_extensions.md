@@ -234,7 +234,7 @@ registry.register(MyMiddleware, priority=100)
    - `config_provider`
 
 6. **Handler（处理器）**
-   - 自定义 Tornado Handler
+   - 自定义路由处理器
 
 ---
 
