@@ -558,10 +558,64 @@ def _init_framework():
     return ctx, pending_count
 
 
+def _register_declared_middleware(pipeline, config) -> None:
+    """Install middleware declared through ``@configure(middlewares=[...])``.
+
+    Each entry is either a ``GatewayMiddleware`` instance or a
+    ``(instance, options)`` tuple, where ``options`` carries the
+    ``before`` / ``after`` / ``priority`` ordering hints.
+    """
+    from cullinan.web.gateway import GatewayMiddleware
+
+    declared = getattr(config, "middlewares", None)
+    if not declared:
+        return
+
+    for item in declared:
+        if isinstance(item, tuple):
+            if len(item) != 2 or not isinstance(item[1], dict):
+                raise ValueError(
+                    "Each declarative middleware entry must be a GatewayMiddleware "
+                    "instance or a (instance, options) tuple."
+                )
+            middleware, options = item
+        else:
+            middleware, options = item, {}
+
+        if isinstance(middleware, type):
+            middleware = middleware()
+        if not isinstance(middleware, GatewayMiddleware):
+            raise TypeError(
+                "Declarative middleware must be a GatewayMiddleware instance or class, "
+                f"got {type(middleware).__name__!r}."
+            )
+        pipeline.add(middleware, **options)
+
+    # Force resolution so a bad anchor, an ambiguous anchor or a cycle fails at
+    # startup rather than on the first request.
+    pipeline.list_middleware()
+
+    logger.info(
+        "└---registered %d declared middleware from configure(middlewares=...)",
+        len(declared),
+    )
+
+
 def _setup_middleware_pipeline():
-    """Wire legacy @middleware-registered middleware into the gateway pipeline."""
+    """Wire declared + legacy @middleware-registered middleware into the pipeline.
+
+    Declared middleware is consumed here — the same fixed assembly point used for
+    the built-in middleware — so ordering follows the declaration, not the moment
+    a middleware happened to be registered. Declaration problems (bad anchor,
+    cycle, ambiguous anchor, wrong type) surface here instead of being swallowed.
+    """
+    from cullinan.support.config import get_config
+    from cullinan.web.gateway import get_pipeline
+
+    _register_declared_middleware(get_pipeline(), get_config())
+
     try:
-        from cullinan.web.gateway import get_pipeline, AccessLogMiddleware, LegacyMiddlewareBridge
+        from cullinan.web.gateway import AccessLogMiddleware, LegacyMiddlewareBridge
         from cullinan.web.middleware import get_middleware_registry
 
         pipeline = get_pipeline()
