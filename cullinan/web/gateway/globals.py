@@ -4,7 +4,7 @@
 Provides module-level access to the shared Dispatcher, Router, and Pipeline
 instances used by the framework.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import logging

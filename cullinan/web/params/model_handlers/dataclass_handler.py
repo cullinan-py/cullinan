@@ -3,7 +3,7 @@
 
 Built-in dataclass model handler.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import dataclasses

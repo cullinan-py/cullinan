@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test ControllerRegistry dependency injection fix
 
-Author: Cullinan
+Author: plumeink
 """
 
 import pytest

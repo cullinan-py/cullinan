@@ -5,7 +5,7 @@ Pluggable model handler module.
 
 Provides a unified model resolution interface, supporting multiple model libraries such as dataclass, Pydantic, etc.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Any, Dict, List, Optional, Type

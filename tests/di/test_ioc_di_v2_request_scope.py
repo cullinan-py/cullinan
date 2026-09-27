@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan IoC/DI 2.0 - Request Scope Tests
 
-Author: Cullinan
+Author: plumeink
 
 Minimal acceptance test set for PR-R6:
 1. Resolving request scope without RequestContext: raises ScopeNotActiveError

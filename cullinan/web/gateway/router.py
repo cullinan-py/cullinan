@@ -8,7 +8,7 @@ Implements a radix-tree (prefix tree) based router with support for:
 - Wildcard:           /static/**
 - Per-method routing: GET /users  vs  POST /users
 
-Author: Cullinan
+Author: plumeink
 """
 
 import logging

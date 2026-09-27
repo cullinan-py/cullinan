@@ -3,7 +3,7 @@
 
 Request body decoding middleware, automatically decodes the request body before it enters the Handler.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import logging

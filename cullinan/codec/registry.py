@@ -3,7 +3,7 @@
 
 Codec registry that manages all BodyCodec and ResponseCodec instances.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Any, Dict, List, Optional, Tuple, Type

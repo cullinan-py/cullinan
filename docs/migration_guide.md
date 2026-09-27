@@ -1,7 +1,7 @@
 # Cullinan 0.93 Migration Guide
 
 > **Version**: v0.90  
-> **Author**: Cullinan
+> **Author**: plumeink
 
 > **Upgrade-only page:** use this when moving existing code, not when learning the
 > recommended API path for a new project.

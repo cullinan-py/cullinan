@@ -9,7 +9,7 @@ The gateway layer provides the transport-agnostic HTTP abstraction:
 - MiddlewarePipeline – onion-model middleware chain
 - ExceptionHandler – global exception → response conversion
 
-Author: Cullinan
+Author: plumeink
 """
 
 from .web_core import (

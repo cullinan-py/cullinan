@@ -10,7 +10,7 @@ Design principles:
 - Interface segregation: only expose necessary methods
 - Single responsibility: only responsible for providing dependencies, not lifecycle management
 
-Author: Cullinan
+Author: plumeink
 """
 
 from abc import ABC, abstractmethod

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan IoC/DI 2.0 - Factory Integration Tests
 
-Author: Cullinan
+Author: plumeink
 
 Minimal acceptance test set for PR-R4:
 1. Real injection based on existing injection capabilities

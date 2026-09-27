@@ -3,7 +3,7 @@
 
 Parameter validator, validates whether parameter values satisfy constraints.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import re

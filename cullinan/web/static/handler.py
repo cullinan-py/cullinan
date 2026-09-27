@@ -5,7 +5,7 @@ This module is engine-neutral: the handler returns a :class:`WebResponse`
 and the active driver adapter writes it out, so Tornado and ASGI behave
 identically.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from __future__ import annotations

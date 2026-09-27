@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan IoC/DI 2.0 diagnostic and exception tests.
 
-Author: Cullinan
+Author: plumeink
 
 Minimal acceptance coverage for PR-R3:
 1. Missing dependency errors expose injection_point, dependency_name,

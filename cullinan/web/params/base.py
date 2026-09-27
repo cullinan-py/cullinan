@@ -3,7 +3,7 @@
 
 Defines the infrastructure for parameter marker classes.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Any, List, Optional, Type, Union

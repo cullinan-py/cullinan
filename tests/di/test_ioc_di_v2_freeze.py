@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan IoC/DI 2.0 - Freeze Mechanism Tests
 
-Author: Cullinan
+Author: plumeink
 
 Minimal acceptance test set for PR-R2:
 1. register succeeds before refresh

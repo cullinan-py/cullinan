@@ -3,7 +3,7 @@
 
 Testing type conversion and automatic type inference.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import unittest

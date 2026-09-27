@@ -3,7 +3,7 @@
 
 Tests dataclass model resolution.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import unittest

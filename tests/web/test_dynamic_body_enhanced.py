@@ -3,7 +3,7 @@
 
 Tests newly added empty-check and safe-access methods.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import sys

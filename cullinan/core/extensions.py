@@ -5,7 +5,7 @@ Provides a unified way to register and discover framework extension points,
 making it easier for users to extend the framework without deep knowledge
 of internal implementation.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import List, Dict, Optional, Any, Type

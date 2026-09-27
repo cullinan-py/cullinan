@@ -3,7 +3,7 @@
 
 Response model decorator, used to define API response schemas.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Any, Type, List, Dict, Callable

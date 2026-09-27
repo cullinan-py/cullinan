@@ -3,7 +3,7 @@
 
 Parameter resolution orchestrator, coordinates all layers to complete parameter resolution.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import inspect

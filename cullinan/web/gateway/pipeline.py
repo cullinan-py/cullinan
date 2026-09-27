@@ -5,7 +5,7 @@ Implements the onion-model middleware pipeline that wraps the core
 dispatch logic.  Every request flows through all middleware in order;
 responses flow back in reverse order.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import heapq

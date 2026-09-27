@@ -34,7 +34,7 @@ Response:
 Orchestration:
 - ParamResolver: Parameter resolution orchestrator
 
-Author: Cullinan
+Author: plumeink
 """
 
 from .base import Param, UNSET

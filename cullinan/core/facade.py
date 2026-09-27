@@ -7,7 +7,7 @@ coordinates ProviderRegistry, InjectionRegistry, and ServiceRegistry.
 This facade reduces complexity for end users while maintaining the flexibility
 of the underlying three-tier registry architecture.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Type, TypeVar, Optional, Any, Dict, List

@@ -4,7 +4,7 @@
 Defines the data structures used by Router and Dispatcher for route
 registration and matching.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from dataclasses import dataclass, field

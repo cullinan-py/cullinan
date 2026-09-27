@@ -3,7 +3,7 @@
 
 Defines the contract that all runtime adapters must implement.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import logging

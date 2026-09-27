@@ -11,7 +11,7 @@ All decorators use the two-phase registration pattern:
 1. Decorator execution: Collect metadata to PendingRegistry
 2. ApplicationContext.refresh(): Process and register all components
 
-Author: Cullinan
+Author: plumeink
 """
 
 import inspect

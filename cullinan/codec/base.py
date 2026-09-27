@@ -3,7 +3,7 @@
 
 Defines the BodyCodec and ResponseCodec abstract base classes.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from abc import ABC, abstractmethod

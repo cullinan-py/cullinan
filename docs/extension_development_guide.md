@@ -1,7 +1,7 @@
 # Cullinan Extension Development Guide
 
 > **Version**: 0.96a1
-> **Author**: Cullinan  
+> **Author**: plumeink  
 > **Last Updated**: 2026-09-28
 
 > **Advanced topic:** this guide is for framework extension work, not the default
@@ -668,5 +668,5 @@ class TestMyMiddleware(ServiceTestCase):
 ---
 
 **Version**: 0.96a1
-**Author**: Cullinan  
+**Author**: plumeink  
 **Last Updated**: 2026-09-28

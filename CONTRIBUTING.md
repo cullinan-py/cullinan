@@ -60,8 +60,10 @@ backend-specific behavior that diverges between engines.
 - Use a clear type prefix: `feat:`, `fix:`, `docs:`, `ci:`, `build:`,
   `refactor:`, `test:`.
 - Describe the root cause and which parts of the change you touched (code, tests, examples, docs).
-- Keep the trailer when applicable:
-  `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`.
+- Attribute the project to `plumeink` and only to `plumeink`. Do not add AI
+  co-author trailers or any other attribution: every public-facing name in this
+  repository is `plumeink`, and the product name `Cullinan` is the project name
+  rather than an author.
 
 ## Versioning
 

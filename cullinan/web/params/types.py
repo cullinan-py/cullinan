@@ -3,7 +3,7 @@
 
 Defines various parameter source types: Path, Query, Body, Header, File.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Any, List, Optional, Type

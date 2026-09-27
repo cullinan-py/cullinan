@@ -10,7 +10,7 @@ This example shows:
 3. Discovering available extension points
 4. Mixing decorator and manual registration
 
-Author: Cullinan
+Author: plumeink
 """
 
 import logging

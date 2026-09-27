@@ -1,6 +1,6 @@
 # Controller 依赖注入 Bug 修复说明
 
-Author: Cullinan
+Author: plumeink
 
 ## 问题描述
 

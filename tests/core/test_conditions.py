@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for conditional decorators.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import pytest
