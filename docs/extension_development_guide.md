@@ -1,8 +1,8 @@
 # Cullinan Extension Development Guide
 
-> **Version**: 0.95
+> **Version**: 0.96a1
 > **Author**: Cullinan  
-> **Last Updated**: 2026-02-19
+> **Last Updated**: 2026-09-28
 
 > **Advanced topic:** this guide is for framework extension work, not the default
 > application learning path.
@@ -667,6 +667,6 @@ class TestMyMiddleware(ServiceTestCase):
 
 ---
 
-**Version**: 0.95
+**Version**: 0.96a1
 **Author**: Cullinan  
-**Last Updated**: 2026-06-01
+**Last Updated**: 2026-09-28

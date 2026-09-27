@@ -219,9 +219,24 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
-**v0.95** is the Phase A convergence cut for the 1.0 roadmap, continuing the
-v0.94 opt iteration. This release line locks down the public surface and
-packaging baseline around:
+**v0.96a1** is the first alpha of the 0.96 line. It closes the capability gaps
+found in the 0.95 middleware surface and declares the public API stability
+freeze ahead of the 1.0 milestone:
+
+- a single ordering key for the gateway middleware pipeline, so a middleware
+  declared on the application and one added to the pipeline can be ordered
+  against each other
+- `configure(builtin_middleware=...)` to switch the built-in access-log layer
+  off or replace it
+- `drain_timeout` wired to the real shutdown-timeout source, with the default
+  behaviour unchanged
+- `RouteGroup.middleware_tags` deprecated
+- the 1.0 public API stability freeze declared in the API reference
+- engine-neutral wording across the guides, examples and public docstrings
+
+**v0.95** remains the current stable line. It is the Phase A convergence cut for
+the 1.0 roadmap, continuing the v0.94 opt iteration, and locks down the public
+surface and packaging baseline around:
 
 - `@application` + `@configure(...)` + `main()` as the startup flow
 - decorator-first discovery through Python imports

@@ -665,7 +665,10 @@ def test_root_readme_keeps_default_path_on_top_level_api():
     assert "create_app()" not in readme
     assert "- `cullinan.application` - application definition, configuration, and startup" not in readme
     assert "top-level `cullinan` API" in readme
-    assert "**v0.95**" in readme
+    # Pin the *current* release line the README's "Current series" section
+    # advertises; asserting the previous line would stay green forever once the
+    # README keeps it as historical context, making the guard vacuous.
+    assert "**v0.96a1**" in readme
 
 
 def test_getting_started_stays_on_business_first_onboarding_path():
@@ -1025,7 +1028,7 @@ def test_current_version_markers_follow_v094a1_release_line():
         extension_guide,
         zh_extension_guide,
     ):
-        assert "0.95" in content
+        assert "0.96a1" in content
         assert "0.94a1" not in content
 
 
