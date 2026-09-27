@@ -210,3 +210,49 @@ configure(explicit_modules=[
 This list is used as the highest-priority strategy (S0) in the unified scan pipeline, before falling back to `user_packages` (S1) and other heuristics. Each entry is recursively walked for subpackages.
 
 **Deep subpackage discovery**: `list_submodules()` now supplements `pkgutil.walk_packages` with filesystem-based recursive scanning. If a deeply nested package (e.g., `club.fnep.infrastructure.discord`) is missed by `walk_packages`, the filesystem fallback discovers it by walking `__init__.py` directories and `.py` files directly.
+
+## 11. Declared components must be assembled or reported (v0.96a2)
+
+Component discovery is import-executed (§1), but assembly only scans the
+packages listed in `user_packages`. A component whose decorator ran while its
+package was **not** listed is therefore *declared* but not *assembled*.
+
+Cullinan no longer drops it silently:
+
+- `Application.get_declaration_diff()` returns the reconciliation as
+  `declared` / `assembled` / `dropped` (plus `dropped_count`).
+- When `dropped` is non-empty, a **`component-declared-not-assembled`**
+  diagnostic is emitted at **WARNING** level — no debug switch is required — and
+  a matching WARNING record is logged. Startup is **not** blocked.
+
+The two usual causes and their fixes:
+
+| Cause | Fix |
+|-------|-----|
+| The declaring package is missing from `user_packages` | Add it: `@configure(user_packages=["my_package"])` |
+| The component is not defined at module top level | Move it to module top level |
+
+```python
+from cullinan import application, configure
+
+@configure(user_packages=["my_app"])
+@application
+def main(): ...
+```
+
+Inspect the reconciliation directly:
+
+```python
+from cullinan.application import Application
+
+app = Application(main)
+app.build()
+diff = app.get_declaration_diff()
+print(diff.dropped)        # declared but never assembled
+print(diff.dropped_count)  # len(diff.dropped)
+app.uninstall()
+```
+
+`Application` is the advanced runtime facade; regular business code should stay
+on `@application` + `@configure(...)` and only reach for
+`get_declaration_diff()` when diagnosing discovery boundaries.

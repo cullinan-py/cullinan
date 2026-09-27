@@ -210,3 +210,42 @@ configure(explicit_modules=[
 该列表作为统一扫描管道中的最高优先级策略（S0），在回退到 `user_packages`（S1）等启发式方法之前使用。每个条目会被递归遍历以发现子包。
 
 **深层子包发现**：`list_submodules()` 现在会在 `pkgutil.walk_packages` 基础上增加基于文件系统的递归扫描回退。如果深层嵌套包（如 `club.fnep.infrastructure.discord`）被 `walk_packages` 遗漏，文件系统回退会通过直接遍历 `__init__.py` 目录和 `.py` 文件来发现它们。
+
+## 11. 已声明的组件必须被装配，或被报告（v0.96a2）
+
+组件发现依赖导入执行（见 §1），但装配只会扫描 `user_packages` 中列出的包。若某组件的装饰器已经执行（即**已声明**），而它所在的包**未**列入 `user_packages`，它就会「已声明但未装配」。
+
+Cullinan 不再静默丢弃这种情况：
+
+- `Application.get_declaration_diff()` 返回对账结果：`declared` / `assembled` / `dropped`（以及 `dropped_count`）。
+- 当 `dropped` 非空时，会以 **WARNING** 级别发出 **`component-declared-not-assembled`** 诊断（无需任何 debug 开关），并记录一条对应的 WARNING 日志。启动**不会**被阻断。
+
+两种常见原因与对应修法：
+
+| 原因 | 修法 |
+|------|------|
+| 声明该组件的包未列入 `user_packages` | 加入即可：`@configure(user_packages=["my_package"])` |
+| 组件不在模块顶层定义 | 将其移到模块顶层 |
+
+```python
+from cullinan import application, configure
+
+@configure(user_packages=["my_app"])
+@application
+def main(): ...
+```
+
+也可直接查看对账结果：
+
+```python
+from cullinan.application import Application
+
+app = Application(main)
+app.build()
+diff = app.get_declaration_diff()
+print(diff.dropped)        # 已声明但从未装配
+print(diff.dropped_count)  # len(diff.dropped)
+app.uninstall()
+```
+
+`Application` 是高级运行时门面；常规业务代码应停留在 `@application` + `@configure(...)`，仅在诊断发现边界时才使用 `get_declaration_diff()`。

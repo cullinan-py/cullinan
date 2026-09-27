@@ -563,6 +563,12 @@ def test_testing_flow_example_stays_executable():
     module.run_example_assertions()
 
 
+def test_component_discovery_boundary_example_reports_dropped_component():
+    _clear_example_modules("examples.component_discovery_boundary")
+    module = importlib.import_module("examples.component_discovery_boundary.demo")
+    module.run_example_assertions()
+
+
 def test_static_files_example_serves_assets_and_spa_fallback():
     main = _load_entry_method("examples.static_files_and_spa.root")
     app = main.get_asgi_app()

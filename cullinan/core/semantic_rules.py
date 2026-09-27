@@ -37,6 +37,11 @@ SEMANTIC_RULES: Dict[str, str] = {
         "Automatic discovery and assembly only guarantee module-top-level components "
         "whose decorators ran during import."
     ),
+    "component-declared-not-assembled": (
+        "Every component declared by a decorator is either assembled or explicitly "
+        "reported: declarations that the assembly pass did not pick up are surfaced "
+        "instead of being dropped silently."
+    ),
     "inject-unique-binding": (
         "Inject() only accepts type contracts that normalize stably and map to exactly one component."
     ),
