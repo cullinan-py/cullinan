@@ -220,7 +220,7 @@ Cullinan 不再静默丢弃这种情况：
 - `Application.get_declaration_diff()` 返回对账结果：`declared` / `assembled` / `dropped`（以及 `dropped_count`）。
 - 当 `dropped` 非空时，会以 **WARNING** 级别发出 **`component-declared-not-assembled`** 诊断（无需任何 debug 开关）。该诊断通过 Python 标准 `warnings` 机制发出，类别为 `ComponentDiscoveryWarning`（`UserWarning` 的子类）。由于 `UserWarning` 的默认过滤动作是 `default`，该诊断**默认即可见**：会按位置打印一次，并同时给出数量与受影响的组件名单。启动**不会**被阻断。
 
-  > Cullinan 会保持自身日志命名空间的安静。导入时 `cullinan` logger 会被挂上 `NullHandler`，框架自身的 `logger.warning(...)` 记录因此「创建后被吞掉」——不会到达 root logger 的 handler，该 logger **不是**默认可见的通道。（当框架**自动启用自带控制台日志**时——直接启动的进程、或 `CULLINAN_FORCE_CONSOLE`——它会挂上 console handler，此时记录**会**被打印；它随后置的 `propagate = False` 只是为避免同一记录被重复输出。）不要寄望于等到一条日志来判断诊断是否触发，请改为观察 `warnings` 通道（例如 `warnings.catch_warnings(record=True)`）。
+  > Cullinan 会保持自身日志命名空间的安静。导入时 `cullinan` logger 会被挂上 `NullHandler`。这**不会**阻断传播——该 logger 的 `propagate` 仍为 `True`，而 `NullHandler` 只是自己拒绝输出、并不拦截，因此框架自身的 `logger.warning(...)` 记录照常向上传递到 root logger。记录本身**无论是否配置 logging 都会被创建并发出**；之所以默认没有任何输出，有两个原因：`cullinan` logger 上的 `NullHandler` 本身**已算一个 handler**，所以 stdlib 的 `lastResort` 兜底**不会**接管；而传播路径上也没有任何真实的 handler（root logger 默认没有）。因此该 logger **不是**默认可见的通道，但只要传播路径上出现**任意一个** handler，它就不再安静——例如 `logging.basicConfig(level=logging.ERROR)` 就是在 root logger 上装一个（测试框架的日志捕获同样会装一个）。框架自带的 console handler（在 `CULLINAN_FORCE_CONSOLE=1` 时、或在进程以真实文件直接启动并经由旧式入口时安装）只存在于那些**旧式兼容入口**（`cullinan.application.run()` / `cullinan.application.get_asgi_app()` 与旧式的 `cullinan.runtime.scanner.run()`）上，**不会**挂载在推荐的 `@application` → `entry.run()` 路径上。不要寄望于等到一条日志来判断诊断是否触发，请改为观察 `warnings` 通道（例如 `warnings.catch_warnings(record=True)`）。
 
 两种常见原因与对应修法：
 

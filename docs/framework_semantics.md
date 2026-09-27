@@ -230,13 +230,23 @@ Cullinan no longer drops it silently:
   affected component names. Startup is **not** blocked.
 
   > Cullinan keeps its own logging namespace quiet. On import the `cullinan`
-  > logger gets a `NullHandler`, so the framework's own `logger.warning(...)`
-  > records are created but swallowed — they never reach the root logger's
-  > handlers, and the logger is **not** a default-visible channel. (When the
-  > framework auto-enables its own console logging — a directly started process,
-  > or `CULLINAN_FORCE_CONSOLE` — it attaches a console handler, so a record
-  > *is* shown; the `propagate = False` it then sets merely prevents the same
-  > record from being emitted twice.) Do not wait for a log line to learn that
+  > logger gets a `NullHandler`. This does **not** block propagation — the logger
+  > keeps `propagate=True`, and a `NullHandler` only declines to emit rather than
+  > intercepting, so the framework's own `logger.warning(...)` records still
+  > travel up to the root logger as usual. Such a record is created and emitted
+  > either way, yet nothing is printed by default, for two reasons: the
+  > `NullHandler` on the `cullinan` logger already counts as a handler, so the
+  > stdlib `lastResort` fallback never takes over; and there is no real handler
+  > along the path (the root logger has none by default). The logger is therefore
+  > **not** a default-visible channel, but it stops being quiet as soon as **any**
+  > handler exists along the path — for example
+  > `logging.basicConfig(level=logging.ERROR)` installs one on the root logger (a
+  > test framework's log capture installs one too). The framework attaches its own
+  > console handler only on legacy/compatibility entry points
+  > (`cullinan.application.run()` / `cullinan.application.get_asgi_app()` and the
+  > legacy `cullinan.runtime.scanner.run()`), gated by `CULLINAN_FORCE_CONSOLE=1`
+  > or a directly started process; it is **not** attached on the recommended
+  > `@application` → `entry.run()` path. Do not wait for a log line to learn that
   > the diagnostic fired — watch the `warnings` channel instead (for example,
   > `warnings.catch_warnings(record=True)`).
 

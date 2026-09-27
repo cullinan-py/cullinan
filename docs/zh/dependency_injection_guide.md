@@ -245,7 +245,9 @@ DI 与生命周期属于同一运行时模型。受管组件可实现：
 关键生命周期阶段的异常会被传播，防止组件在不一致状态下运行：
 
 - **`on_post_construct`** 和 **`on_pre_destroy`**：异常会重新抛出为 `LifecycleError`。`on_post_construct` 失败意味着组件未就绪，不应对外提供服务。
-- **`on_startup`** 和 **`on_shutdown`**：异常会记录为错误但**不会**中断容器。这避免了单个组件的启动失败级联影响其他组件。
+- **`on_startup`** 和 **`on_shutdown`**：异常会以 **ERROR** 级别记录到框架自身的 `cullinan` logger 上，但**不会**中断容器。这避免了单个组件的启动失败级联影响其他组件。
+
+  Cullinan 会保持自身日志命名空间的安静：导入时 `cullinan` logger 会被挂上 `NullHandler`。这**不会**阻断传播——该 logger 的 `propagate` 仍为 `True`，而 `NullHandler` 只是自己拒绝输出、并不拦截，因此记录照常向上传递到 root logger。默认没有输出由**两个**条件共同造成：包 logger 上挂着的 `NullHandler` 已使「找到 handler」成立，stdlib 的 `lastResort` 因此不接管；而该路径上又没有别的 handler 可供输出。记录本身**无论是否配置 logging 都会被创建并发出**；只要传播路径上出现**任意一个** handler，它就会显现——例如 `logging.basicConfig(level=logging.ERROR)` 就是在 root logger 上装一个（测试框架的日志捕获同样会装一个）。常规的 `@application` 启动不会挂载任何 console handler，因此在应用自行配置 logging 之前不会有任何输出。框架自带的 console handler（在 `CULLINAN_FORCE_CONSOLE=1` 时、或在进程以真实文件直接启动并经由旧式入口时安装）只存在于那些**旧式兼容入口**（`cullinan.application.run()` / `cullinan.application.get_asgi_app()` 与旧式的 `cullinan.runtime.scanner.run()`）上，**不会**挂载在推荐的 `@application` → `entry.run()` 路径上。
 
 控制器路由注册失败同样会抛出 `LifecycleError`——路由无法注册的控制器属于硬启动错误。
 
