@@ -198,7 +198,8 @@ def get_injection_registry():
 
     .. deprecated:: 0.95
         Use :class:`ApplicationContext` or :func:`get_application_context`
-        instead. This symbol will be removed in v0.97.
+        instead. This symbol will be removed once its deprecation window
+        elapses.
     """
     warn_semantic_once(
         key="compatibility:get_injection_registry",
@@ -220,7 +221,8 @@ def reset_injection_registry():
 
     .. deprecated:: 0.95
         Create a new :class:`ApplicationContext` explicitly when you need a
-        fresh container. This symbol will be removed in v0.97.
+        fresh container. This symbol will be removed once its deprecation
+        window elapses.
     """
     warn_semantic_once(
         key="compatibility:reset_injection_registry",
