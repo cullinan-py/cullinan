@@ -179,7 +179,30 @@ class AuthMiddleware(GatewayMiddleware):
 get_pipeline().add(AuthMiddleware())
 ```
 
-**向后兼容**：旧的 `@middleware` 类通过 `LegacyMiddlewareBridge` 自动桥接。
+**向后兼容**：旧的 `@middleware` 类仍会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。
+
+#### v0.96a1：遗留中间件纳入声明式排序
+
+过去，旧的 `@middleware` 类会被折叠成**单个**桥接层，且始终位于内置 access log 层**内侧**，因此遗留 `priority` 无法移动它 —— 该优先级只在遗留链**内部**排序，从不跨越桥接边界。现在每个遗留中间件各自成为一个管线层，并与声明层、内置层共用同一个声明式 `priority` 键排序，因此一个较低的遗留 `priority` 现在可以把遗留中间件放到内置层**外侧**。
+
+**受影响者界定。** 只有使用旧中间件协议（`@middleware(priority=...)` / `cullinan.web.middleware`）的应用才会受影响，且仅在以下情形可见变化：某个遗留中间件声明的优先级**不等于**默认值 `100`，或某个遗留层与声明了自身优先级的 `configure(middlewares=[...])` 条目发生交互。
+
+| 场景 | 变更前（外 → 内） | 变更后（外 → 内） | 是否可见变化 |
+|---|---|---|---|
+| 未声明 priority（默认 `100`） | 内置 access log、遗留 | 内置 access log、遗留 | 否 |
+| 遗留 `priority` 小于 `100`（如 `50`） | 内置 access log、遗留 | 遗留、内置 access log | **是** —— 遗留层现在包裹内置层 |
+| 遗留 `priority` 大于 `100`（如 `150`） | 内置 access log、遗留 | 内置 access log、遗留（更靠内） | 否 |
+| 两个同 `priority` 的遗留并列项（如都用默认 `100`） | 内置 access log、并列项按声明序 | 内置 access log、并列项按声明序 | 否 —— 并列序保持声明序 |
+
+遗留中间件**彼此之间**的相对顺序不变，请求/响应的展开顺序也不变。唯一变化的是「声明了低于内置层 `100` 的 priority」的那一层的位置：它现在包裹内置层，而不是被内置层包裹。
+
+**`priority` 在何处决定顺序。** 只有当两个遗留中间件的 `priority` **不同**时，`priority` 键才决定它们的相对顺序；此时顺序由声明的 priority 取值决定，与二者谁先注册无关。当两个遗留中间件声明**相同** `priority` 时，它们互为并列项，并列项之间的顺序由**声明序**破平 —— 即它们通过 `@middleware` 注册 / 被导入的先后顺序。在同一模块内这就是源码顺序，因此解析结果是确定性的：同一组声明总是得到同一顺序。若要摆脱对声明序的依赖，请给同 `priority` 的并列项显式声明不同的 `priority`。
+
+**迁移动作。** 多数应用**无需改动** —— 使用默认优先级时解析顺序完全一致。仅当你**依赖**整条遗留链始终位于内置层内侧、并**曾以为**遗留 `priority` 无法跨越桥接边界时，才需要复核你声明的 `priority` 取值，确认新位置符合预期。
+
+**自省面。** `cullinan.web.gateway.get_pipeline().list_middleware()` 现在按遗留中间件**逐个**列出条目 —— 条目数由**单个桥接条目变为每个已注册中间件各一条** —— 且每条以**真实中间件**命名（而非桥接名），因此解析后的顺序可直接读取。
+
+内置层同样是声明式的：`configure(builtin_middleware=[...])` 可替换它，`configure(builtin_middleware=[])` 可关闭它。
 
 ### 7. OpenAPI 集成
 

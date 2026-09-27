@@ -57,10 +57,39 @@ configure(middlewares=[(AuditMiddleware(), {"priority": 10})])
 
 完全不做声明时，最先声明的中间件保持最外层。
 
+### 控制内置层
+
+框架自己会装一层内置中间件 —— access log 中间件。它同样是声明式的：`configure(builtin_middleware=[...])` 可用你自己的实现替换它，`builtin_middleware=[]` 则把它整个关掉。
+
+```python
+from cullinan import application, configure
+from cullinan.web.gateway import GatewayMiddleware
+
+
+class MyAccessLog(GatewayMiddleware):
+    async def __call__(self, request, call_next):
+        response = await call_next(request)
+        print(request.method, request.path, response.status_code)
+        return response
+
+
+# 用等效实现替换内置 access log。
+@configure(user_packages=["your_app"], builtin_middleware=[MyAccessLog()])
+@application
+def main(): ...
+```
+
+传入空列表即可让内置层完全不进入管线：
+
+```python
+configure(user_packages=["your_app"], builtin_middleware=[])
+```
+
+省略该参数则保持框架默认，既有应用不受影响。无论内置层最终是什么，它都与 `middlewares` 参与同一套声明式排序。
+
 ### 遗留：`process_request` / `process_response`
 
-`cullinan.web.middleware.Middleware` 上的钩子对仍然可用，并由
-`LegacyMiddlewareBridge` 自动桥接进 gateway pipeline。仅用于既有集成：
+`cullinan.web.middleware.Middleware` 上的钩子对仍然可用，并会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。每个桥接层与内置层、声明层共用同一个声明式 `priority` 键排序，因此 `@middleware(priority=10)` 的遗留中间件会落在内置 access log（默认 `100`）更外层。仅用于既有集成：
 
 ```python
 from cullinan.web.middleware import Middleware, middleware

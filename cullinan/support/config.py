@@ -124,6 +124,14 @@ class CullinanConfig:
         # order never depends on registration timing.
         self.middlewares: List[Any] = []
 
+        # The built-in gateway middleware layer. ``None`` (the default) installs
+        # the framework default (the access-log middleware). Pass an empty list
+        # to switch the built-in layer off, or a list of
+        # ``GatewayMiddleware`` instances / classes / ``(instance, options)``
+        # tuples to replace it. The built-in layer shares the declarative
+        # ordering of ``middlewares``.
+        self.builtin_middleware: Optional[List[Any]] = None
+
         # OpenAPI auto-generation
         # Set to True to auto-register /openapi.json and /openapi.yaml endpoints
         # Can also be set via env var CULLINAN_OPENAPI_ENABLED=1
@@ -194,6 +202,11 @@ class CullinanConfig:
         if 'middlewares' in config:
             value = config['middlewares']
             self.middlewares = list(value) if value else []
+        if 'builtin_middleware' in config:
+            value = config['builtin_middleware']
+            # ``None`` means "use the framework default"; an empty list means
+            # "install no built-in middleware", so the two must not be conflated.
+            self.builtin_middleware = list(value) if value is not None else None
         return self
 
     def to_dict(self) -> dict:
@@ -213,6 +226,9 @@ class CullinanConfig:
             'explicit_modules': self.explicit_modules,
             'static_files': list(self.static_files),
             'middlewares': list(self.middlewares),
+            'builtin_middleware': (
+                None if self.builtin_middleware is None else list(self.builtin_middleware)
+            ),
         }
 
 
@@ -278,6 +294,7 @@ def configure(
     static_files: Optional[List[Any]] = None,
     *,
     middlewares: Optional[List[Any]] = None,
+    builtin_middleware: Optional[List[Any]] = None,
 ):
     """Configure the Cullinan framework.
 
@@ -308,6 +325,13 @@ def configure(
             runs on a more outer layer; the default is 100). Declared middleware
             is assembled at the framework startup point, so the pipeline order
             follows the declaration rather than registration timing.
+        builtin_middleware: Optional control for the **built-in** gateway
+            middleware layer (the access-log middleware). ``None`` (the default)
+            installs the framework default; an empty list switches the built-in
+            layer off; a list of ``GatewayMiddleware`` instances / classes /
+            ``(instance, options)`` tuples replaces it. The built-in layer is
+            assembled at the same startup point and shares the declarative
+            ordering of ``middlewares``.
 
     Example:
         >>> from cullinan import configure
@@ -378,6 +402,9 @@ def configure(
 
     if middlewares is not None:
         _config.middlewares = list(middlewares)
+
+    if builtin_middleware is not None:
+        _config.builtin_middleware = list(builtin_middleware)
 
     return _config
 

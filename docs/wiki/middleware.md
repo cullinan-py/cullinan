@@ -68,11 +68,48 @@ configure(middlewares=[(AuditMiddleware(), {"priority": 10})])
 With no declaration at all, the first declared middleware stays the outermost
 layer.
 
+### Controlling the built-in layer
+
+The framework installs a built-in layer of its own — the access-log middleware.
+It is declarative too: `configure(builtin_middleware=[...])` replaces it with
+your own layer, and `builtin_middleware=[]` switches it off entirely.
+
+```python
+from cullinan import application, configure
+from cullinan.web.gateway import GatewayMiddleware
+
+
+class MyAccessLog(GatewayMiddleware):
+    async def __call__(self, request, call_next):
+        response = await call_next(request)
+        print(request.method, request.path, response.status_code)
+        return response
+
+
+# Replace the built-in access log with an equivalent implementation.
+@configure(user_packages=["your_app"], builtin_middleware=[MyAccessLog()])
+@application
+def main(): ...
+```
+
+Pass an empty list to keep the built-in layer out of the pipeline altogether:
+
+```python
+configure(user_packages=["your_app"], builtin_middleware=[])
+```
+
+Omitting the parameter keeps the framework default, so existing applications are
+unaffected. Whatever the built-in layer ends up being, it takes part in the same
+declarative ordering as `middlewares`.
+
 ### Legacy: `process_request` / `process_response`
 
 The hook pair on `cullinan.web.middleware.Middleware` still works and is
-auto-bridged into the gateway pipeline by `LegacyMiddlewareBridge`. Keep it only
-for existing integrations:
+auto-bridged into the gateway pipeline — one layer per legacy middleware. Each
+bridged layer is ordered by the same declarative `priority` key as the built-in
+and declared layers, so a legacy `@middleware(priority=10)` lands on a more
+outer layer than the built-in access log (default `100`). Keep it only for
+existing integrations:
 
 ```python
 from cullinan.web.middleware import Middleware, middleware

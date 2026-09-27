@@ -179,7 +179,61 @@ class AuthMiddleware(GatewayMiddleware):
 get_pipeline().add(AuthMiddleware())
 ```
 
-**Backward compatibility**: Old `@middleware` classes are auto-bridged via `LegacyMiddlewareBridge`.
+**Backward compatibility**: Old `@middleware` classes are still auto-bridged into the gateway pipeline — one layer per legacy middleware.
+
+#### v0.96a1: Legacy middleware join the declarative order
+
+Legacy `@middleware` classes used to be collapsed into a single bridge layer
+that always sat *inside* the built-in access-log layer, so a legacy `priority`
+could not move it — the priority only ranked middleware within the legacy chain
+and never crossed the bridge boundary. Each legacy middleware is now bridged as
+its own pipeline layer and ordered by the same declarative `priority` key as the
+declared and built-in layers, so a low legacy `priority` can now place a legacy
+middleware outside the built-in layer.
+
+**Who is affected.** Only applications that use the legacy middleware protocol
+(`@middleware(priority=...)` / `cullinan.web.middleware`) are affected, and the
+change is visible only when a legacy middleware declares a priority other than
+the default `100`, or when a legacy layer interacts with a declared
+`configure(middlewares=[...])` entry that declares its own priority.
+
+| Scenario | Before (outer → inner) | After (outer → inner) | Visible change? |
+|---|---|---|---|
+| no priority declared (default `100`) | built-in access log, legacy | built-in access log, legacy | no |
+| legacy `priority` below `100` (e.g. `50`) | built-in access log, legacy | legacy, built-in access log | **yes** — the legacy layer now wraps the built-in layer |
+| legacy `priority` above `100` (e.g. `150`) | built-in access log, legacy | built-in access log, legacy (still inside) | no |
+| two legacy peers with the *same* priority (e.g. both default `100`) | built-in access log, then the peers in declaration order | built-in access log, then the peers in declaration order | no — the tie keeps the declaration order |
+
+The relative order *between* legacy middleware is unchanged, and so is the
+request/response unwinding order. Only the placement of a legacy layer that
+declares a priority below the built-in layer's `100` changes: it now wraps the
+built-in layer instead of sitting inside it.
+
+**Where the `priority` order is decided.** The `priority` key fixes the relative
+order of two legacy middleware only when their priorities **differ**; in that
+case the order is determined by the declared priority values, and it does not
+depend on which of them was registered first. When two legacy middleware declare
+the **same** priority they are peers, and the order among those peers is broken
+by their **declaration order** — the order in which they are registered through
+`@middleware` / imported. Within a module that is the source order, so the
+resolved order is deterministic: the same declarations always produce the same
+order. To make the order independent of the declaration order, give
+same-priority peers distinct explicit priorities.
+
+**What to check.** Most applications need no change — with the default priority
+the resolved order is identical. Only if you relied on the whole legacy chain
+always sitting inside the built-in layer, and assumed a legacy `priority` could
+never cross the bridge boundary, review the `priority` values you declared and
+confirm the new placement matches your intent.
+
+**Introspection.** `cullinan.web.gateway.get_pipeline().list_middleware()`
+reports one entry per legacy middleware — the entry count goes from a single
+bridge entry to one entry per registered middleware — and each entry is named
+after the real middleware instead of after the bridge, so the resolved order is
+directly readable.
+
+The built-in layer is declarative too: `configure(builtin_middleware=[...])`
+replaces it, and `configure(builtin_middleware=[])` switches it off.
 
 ### 7. OpenAPI Integration
 

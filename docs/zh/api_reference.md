@@ -160,6 +160,7 @@ v0.94 Phase A 的冻结口径使用各包的 `__all__` 作为可审阅导出契�
 | `strict_lifecycle` | `ApplicationContext.__init__` | 关键字参数 | 为 `True` 时，非关键生命周期钩子失败（`on_startup`/`on_shutdown`）以 `LifecycleError` 抛出。默认 `False`。 |
 | `skip_private` | `get_injection_markers` | 关键字参数 | 为 `True` 时，扫描标记时跳过单下划线前缀属性。默认 `False`。 |
 | `CULLINAN_STRICT_PRIVATE_INJECTION` | 环境变量 | 配置 | 设为 `1`/`true`/`yes` 可对所有 `ApplicationContext` 实例全局启用 `strict_private_injection`。 |
+| `builtin_middleware` | `configure` | 关键字参数 | 控制内置 gateway 中间件层（access log 中间件）。`None`（默认）安装框架默认，`[]` 关闭内置层，列表则替换它。 |
 
 ### 弃用符号（v0.97 移除）
 
@@ -170,6 +171,7 @@ v0.94 Phase A 的冻结口径使用各包的 `__all__` 作为可审阅导出契�
 | `InjectionRegistry` | `ApplicationContext` / `get_application_context()` |
 | `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
 | `reset_injection_registry()` | 显式创建新的 `ApplicationContext` |
+| `RouteGroup` | `configure(middlewares=[...])` / `@middleware`（不支持按组匹配的中间件标签） |
 
 详见 [框架语义](framework_semantics.md) §5-§8。
 

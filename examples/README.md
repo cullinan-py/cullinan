@@ -8,9 +8,10 @@ This directory is the single source of runnable examples for the current Cullina
 2. `examples/controller_service_inject/`
 3. `examples/middleware_and_module/`
 4. `examples/middleware_pipeline/`
-5. `examples/parameter_handling/`
-6. `examples/testing_flow/`
-7. `examples/static_files_and_spa/`
+5. `examples/middleware_control/`
+6. `examples/parameter_handling/`
+7. `examples/testing_flow/`
+8. `examples/static_files_and_spa/`
 
 ## Run examples
 
@@ -18,6 +19,7 @@ This directory is the single source of runnable examples for the current Cullina
 - `python -m examples.controller_service_inject`
 - `python -m examples.middleware_and_module`
 - `python -m examples.middleware_pipeline`
+- `python -m examples.middleware_control`
 - `python -m examples.parameter_handling`
 - `python -m pytest examples/testing_flow/test_app.py -q`
 - `python -m examples.static_files_and_spa`
@@ -42,11 +44,14 @@ other legacy demos were cleaned up when their referenced APIs (`cullinan.run`,
 
 ## Middleware examples
 
-Two maintained examples cover middleware, with different teaching goals:
+Three maintained examples cover middleware, with different teaching goals:
 
 - `examples/middleware_pipeline/` — the **recommended** onion protocol
   (`async __call__(request, call_next)`), declared through
   `@configure(middlewares=[...])` with explicit order controls.
+- `examples/middleware_control/` — replacing/switching off the **built-in**
+  middleware layer through `@configure(builtin_middleware=[...])`, and letting a
+  legacy `@middleware(priority=...)` class join the same declarative ordering.
 - `examples/middleware_and_module/` — the **compatibility** protocol
   (`process_request` / `process_response`), still auto-bridged into the same
   gateway pipeline.

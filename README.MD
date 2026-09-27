@@ -175,8 +175,9 @@ If you are new to Cullinan, use this order:
 1. [`examples/minimal_app/`](examples/minimal_app) - shortest public entrypoint
 2. [`examples/controller_service_inject/`](examples/controller_service_inject) - service/controller layering with `Inject()`
 3. [`examples/middleware_and_module/`](examples/middleware_and_module) - `@module` boundaries and middleware semantics
-4. [`examples/parameter_handling/`](examples/parameter_handling) - method-level `Path`, `Query`, and `Body`
-5. [`examples/testing_flow/`](examples/testing_flow) - public-API testing with `get_asgi_app()`
+4. [`examples/middleware_control/`](examples/middleware_control) - turn the built-in middleware layer off or replace it, and unify legacy `@middleware` ordering with `@configure(...)`
+5. [`examples/parameter_handling/`](examples/parameter_handling) - method-level `Path`, `Query`, and `Body`
+6. [`examples/testing_flow/`](examples/testing_flow) - public-API testing with `get_asgi_app()`
 
 Then move into the documentation knowledge base:
 

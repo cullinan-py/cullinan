@@ -170,6 +170,7 @@ A complete API reference can be populated using this structure, either via autom
 | `strict_lifecycle` | `ApplicationContext.__init__` | kwarg | When `True`, non-critical lifecycle hook failures (`on_startup`/`on_shutdown`) propagate as `LifecycleError`. Default `False`. |
 | `skip_private` | `get_injection_markers` | kwarg | When `True`, skips single-underscore-prefixed attributes during marker scanning. Default `False`. |
 | `CULLINAN_STRICT_PRIVATE_INJECTION` | environment variable | config | Set to `1`/`true`/`yes` to globally enable `strict_private_injection` for all `ApplicationContext` instances. |
+| `builtin_middleware` | `configure` | kwarg | Controls the built-in gateway middleware layer (the access-log middleware). `None` (default) installs the framework default, `[]` switches the built-in layer off, a list replaces it. |
 
 ### Deprecated symbols (removed in v0.97)
 
@@ -180,6 +181,7 @@ A complete API reference can be populated using this structure, either via autom
 | `InjectionRegistry` | `ApplicationContext` / `get_application_context()` |
 | `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
 | `reset_injection_registry()` | Create a new `ApplicationContext` explicitly |
+| `RouteGroup` | `configure(middlewares=[...])` / `@middleware` (per-group middleware tags are not supported) |
 
 See [Framework Semantics](framework_semantics.md) §5-§8 for full details.
 

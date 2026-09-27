@@ -101,10 +101,24 @@ response.freeze()
 
 `WebRuntime` tracks the active runtime instance and supports staged replacement / draining. This is useful when a server or adapter swaps runtime state while in-flight requests still exist.
 
+The drain bound is configurable. `WebRuntimeConfig.drain_timeout` (default `30.0`
+seconds) is the timeout the finalise path hands to the application context while
+it waits for request scopes to finish. It is passed through the runtime
+configuration:
+
+```python
+from cullinan.web.gateway import WebRuntimeConfig
+
+runtime_config = WebRuntimeConfig(drain_timeout=10.0)
+```
+
+Leaving the field at its default reproduces the previous behaviour exactly,
+because `30.0` is the value the shutdown call used to hard-code.
+
 ## Middleware and exception flow
 
 - `MiddlewarePipeline` composes gateway middleware
-- `LegacyMiddlewareBridge` can bridge older middleware registrations into the gateway pipeline
+- legacy `@middleware` registrations are bridged into the gateway pipeline as individual layers
 - `ExceptionHandler` turns uncaught exceptions into HTTP responses
 
 ## Migration notes

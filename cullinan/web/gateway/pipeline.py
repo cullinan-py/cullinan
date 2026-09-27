@@ -211,7 +211,7 @@ class MiddlewarePipeline:
         descriptors: List[Dict[str, Any]] = []
         for order, entry in enumerate(self._resolved()):
             descriptor: Dict[str, Any] = {
-                'name': entry.middleware.__class__.__name__,
+                'name': getattr(entry.middleware, 'display_name', None) or entry.middleware.__class__.__name__,
                 'order': order,
             }
             if entry.priority is not None:
@@ -450,4 +450,35 @@ class LegacyMiddlewareBridge(GatewayMiddleware):
 
         # Process response through legacy chain (reverse)
         self._chain.process_response(request, resp)
+        return resp
+
+
+class _LegacyMiddlewareAdapter(GatewayMiddleware):
+    """Internal adapter exposing **one** legacy middleware as a pipeline layer.
+
+    The legacy ``process_request`` / ``process_response`` hook pair is
+    synchronous and chain-oriented. Adapting a single instance at a time lets
+    every legacy middleware become its own pipeline entry, so the declarative
+    ``priority`` ordering — and the public reflection via ``list_middleware()`` —
+    apply uniformly across built-in, declared and legacy middleware, instead of
+    the whole legacy chain collapsing into one opaque wrapper.
+
+    ``display_name`` carries the wrapped middleware's class name so the
+    reflection API reports the real layer, not this adapter.
+    """
+
+    def __init__(self, legacy_middleware: Any) -> None:
+        self._middleware = legacy_middleware
+        self.display_name = legacy_middleware.__class__.__name__
+
+    async def __call__(self, request: WebRequest, call_next: HandlerCallable) -> WebResponse:
+        processed = self._middleware.process_request(request)
+        if processed is None:
+            # Same fixed rejection contract as LegacyMiddlewareBridge: the
+            # legacy hook protocol can only accept or reject.
+            return WebResponse.error(403, 'Request rejected by middleware')
+
+        resp = await call_next(request)
+
+        self._middleware.process_response(request, resp)
         return resp
