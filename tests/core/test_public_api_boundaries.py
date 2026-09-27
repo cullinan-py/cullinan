@@ -469,7 +469,7 @@ def test_application_entry_method_runs_without_boundary_warning(tmp_path, monkey
         assert captured["settings"]["template_path"].endswith("templates")
         # static_path must NOT be injected: it would make Tornado auto-register
         # its native StaticFileHandler at /static/, shadowing router-based
-        # StaticFiles mounts (ADR-001 engine neutrality).
+        # StaticFiles mounts (engine-neutral router registration).
         assert "static_path" not in captured["settings"]
         assert isinstance(captured["global_headers"], list)
         assert not any(isinstance(item.message, PublicAPISemanticWarning) for item in caught)

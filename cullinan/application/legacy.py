@@ -789,8 +789,8 @@ def _build_tornado_settings():
     the ``/static`` prefix — requests hit Tornado's native handler (pointing at
     ``cwd/static``) and return a Tornado 404 instead of reaching the dispatcher.
 
-    Static files are an engine-neutral, router-registered capability per
-    ADR-001 (declarative ``StaticFiles`` -> ``Router`` -> ``Dispatcher``), so the
+    Static files are an engine-neutral, router-registered capability
+    (declarative ``StaticFiles`` -> ``Router`` -> ``Dispatcher``), so the
     Tornado-native static handler must stay disabled to keep behaviour identical
     across the Tornado and ASGI backends. ``template_path`` registers no handler
     and is left in place for Tornado templating in custom handlers.
