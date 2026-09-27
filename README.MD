@@ -244,6 +244,30 @@ than in the homepage narrative.
 
 ---
 
+## Project status
+
+This repository is a **fork** ([`plumeink/cullinan`](https://github.com/plumeink/cullinan))
+maintained by [`plumeink`](https://github.com/plumeink). It is **not** the upstream Cullinan
+repository itself: the upstream project belongs to the GitHub organization
+[`cullinan-py`](https://github.com/cullinan-py), and ongoing iteration on this fork is
+proposed through pull requests opened from fork branches.
+
+Cullinan is the project name, and `cullinan` is the package name published on PyPI:
+
+```bash
+pip install cullinan
+```
+
+Verify the install with a one-line smoke check:
+
+```bash
+python -c "from cullinan import application, configure; import cullinan; print(cullinan.__version__)"
+```
+
+Maintainer: **`plumeink`**.
+
+---
+
 ## Project links
 
 - **GitHub**: https://github.com/cullinan-py/cullinan

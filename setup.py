@@ -3,7 +3,7 @@
 
 Project metadata now lives in ``pyproject.toml``. This file stays in place so
 existing ``python setup.py ...`` workflows can continue to delegate to
-setuptools while v0.94 is mid-migration.
+setuptools while the packaging configuration is mid-migration to ``pyproject.toml``.
 """
 
 from setuptools import __version__ as setuptools_version
