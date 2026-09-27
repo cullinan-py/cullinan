@@ -6,10 +6,10 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the Cullinan Tornado-based IoC/DI framework with type-safe parameters, pluggable model handlers, and Pydantic integration">
+        <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content="Cullinan">
+        <meta name="author" content="plumeink">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/zh/import_migration_090/">
@@ -90,10 +90,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.95a1"
-      data-stable-version="0.94"
+      data-current-version="0.96a1"
+      data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.95a1"
+      data-pre-version="0.96a1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2603,7 +2603,7 @@
 <li><strong><code>diagnostics/</code></strong> - 异常与错误渲染</li>
 <li><strong><code>lifecycle/</code></strong> - 生命周期管理</li>
 <li><strong><code>request/</code></strong> - 请求上下文</li>
-<li><strong><code>legacy/</code></strong> - 已弃用组件（将在 1.0 中移除）</li>
+<li><strong><code>legacy/</code></strong> - 已弃用组件（将在未来版本中移除）</li>
 </ul>
 <hr />
 <h2 id="_2">快速迁移对照表<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
@@ -2791,8 +2791,8 @@
 </table>
 <hr />
 <h2 id="_9">遗留导入（已弃用）<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<p>以下导入已弃用，将在 1.0 中移除：</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># 已弃用 - 将在 1.0 中移除</span>
+<p>以下导入已弃用，将在未来版本中移除：</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 已弃用 - 将在未来版本中移除</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core.injection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inject</span><span class="p">,</span> <span class="n">InjectByName</span><span class="p">,</span> <span class="n">injectable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core.provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provider</span><span class="p">,</span> <span class="n">ProviderRegistry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core.facade</span><span class="w"> </span><span class="kn">import</span> <span class="n">IoCFacade</span><span class="p">,</span> <span class="n">get_ioc_facade</span>
@@ -2814,10 +2814,10 @@
 
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">ApplicationContext</span><span class="p">()</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Definition</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;UserService&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'UserService'</span><span class="p">,</span>
     <span class="n">factory</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">UserService</span><span class="p">(),</span>
     <span class="n">scope</span><span class="o">=</span><span class="n">ScopeType</span><span class="o">.</span><span class="n">SINGLETON</span><span class="p">,</span>
-    <span class="n">source</span><span class="o">=</span><span class="s1">&#39;service:UserService&#39;</span>
+    <span class="n">source</span><span class="o">=</span><span class="s1">'service:UserService'</span>
 <span class="p">))</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 </code></pre></div>
@@ -2832,10 +2832,10 @@
 
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">ApplicationContext</span><span class="p">()</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Definition</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;UserService&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'UserService'</span><span class="p">,</span>
     <span class="n">factory</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">UserService</span><span class="p">(),</span>
     <span class="n">scope</span><span class="o">=</span><span class="n">ScopeType</span><span class="o">.</span><span class="n">SINGLETON</span><span class="p">,</span>
-    <span class="n">source</span><span class="o">=</span><span class="s1">&#39;service:UserService&#39;</span>
+    <span class="n">source</span><span class="o">=</span><span class="s1">'service:UserService'</span>
 <span class="p">))</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 </code></pre></div>
@@ -2844,65 +2844,76 @@
 <p>可以使用以下正则表达式批量更新导入：</p>
 <h3 id="linuxmac-sed">Linux/Mac (sed)<a class="headerlink" href="#linuxmac-sed" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># 容器导入</span>
-sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/from cullinan\.core\.application_context import/from cullinan.core.container import/g&#39;</span><span class="w"> </span>*.py
-sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/from cullinan\.core\.definitions import/from cullinan.core.container import/g&#39;</span><span class="w"> </span>*.py
-sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/from cullinan\.core\.factory import/from cullinan.core.container import/g&#39;</span><span class="w"> </span>*.py
-sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/from cullinan\.core\.scope_manager import/from cullinan.core.container import/g&#39;</span><span class="w"> </span>*.py
+sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'s/from cullinan\.core\.application_context import/from cullinan.core.container import/g'</span><span class="w"> </span>*.py
+sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'s/from cullinan\.core\.definitions import/from cullinan.core.container import/g'</span><span class="w"> </span>*.py
+sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'s/from cullinan\.core\.factory import/from cullinan.core.container import/g'</span><span class="w"> </span>*.py
+sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'s/from cullinan\.core\.scope_manager import/from cullinan.core.container import/g'</span><span class="w"> </span>*.py
 
 <span class="c1"># 异常导入</span>
-sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/from cullinan\.core\.exceptions import/from cullinan.core.diagnostics import/g&#39;</span><span class="w"> </span>*.py
+sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'s/from cullinan\.core\.exceptions import/from cullinan.core.diagnostics import/g'</span><span class="w"> </span>*.py
 
 <span class="c1"># 请求上下文导入</span>
-sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/from cullinan\.core\.context import/from cullinan.core.request import/g&#39;</span><span class="w"> </span>*.py
+sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'s/from cullinan\.core\.context import/from cullinan.core.request import/g'</span><span class="w"> </span>*.py
 </code></pre></div>
 <h3 id="windows-powershell">Windows (PowerShell)<a class="headerlink" href="#windows-powershell" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c"># 容器导入</span>
 <span class="nb">Get-ChildItem</span> <span class="n">-Filter</span> <span class="p">*.</span><span class="n">py</span> <span class="n">-Recurse</span> <span class="p">|</span> <span class="k">ForEach</span><span class="n">-Object</span> <span class="p">{</span>
-    <span class="p">(</span><span class="nb">Get-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span><span class="p">)</span> <span class="o">-replace</span> <span class="s1">&#39;from cullinan\.core\.application_context import&#39;</span><span class="p">,</span> <span class="s1">&#39;from cullinan.core.container import&#39;</span> <span class="p">|</span> <span class="nb">Set-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span>
+    <span class="p">(</span><span class="nb">Get-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span><span class="p">)</span> <span class="o">-replace</span> <span class="s1">'from cullinan\.core\.application_context import'</span><span class="p">,</span> <span class="s1">'from cullinan.core.container import'</span> <span class="p">|</span> <span class="nb">Set-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span>
 <span class="p">}</span>
 
 <span class="c"># 异常导入</span>
 <span class="nb">Get-ChildItem</span> <span class="n">-Filter</span> <span class="p">*.</span><span class="n">py</span> <span class="n">-Recurse</span> <span class="p">|</span> <span class="k">ForEach</span><span class="n">-Object</span> <span class="p">{</span>
-    <span class="p">(</span><span class="nb">Get-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span><span class="p">)</span> <span class="o">-replace</span> <span class="s1">&#39;from cullinan\.core\.exceptions import&#39;</span><span class="p">,</span> <span class="s1">&#39;from cullinan.core.diagnostics import&#39;</span> <span class="p">|</span> <span class="nb">Set-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span>
+    <span class="p">(</span><span class="nb">Get-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span><span class="p">)</span> <span class="o">-replace</span> <span class="s1">'from cullinan\.core\.exceptions import'</span><span class="p">,</span> <span class="s1">'from cullinan.core.diagnostics import'</span> <span class="p">|</span> <span class="nb">Set-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span>
 <span class="p">}</span>
 
 <span class="c"># 请求上下文导入</span>
 <span class="nb">Get-ChildItem</span> <span class="n">-Filter</span> <span class="p">*.</span><span class="n">py</span> <span class="n">-Recurse</span> <span class="p">|</span> <span class="k">ForEach</span><span class="n">-Object</span> <span class="p">{</span>
-    <span class="p">(</span><span class="nb">Get-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span><span class="p">)</span> <span class="o">-replace</span> <span class="s1">&#39;from cullinan\.core\.context import&#39;</span><span class="p">,</span> <span class="s1">&#39;from cullinan.core.request import&#39;</span> <span class="p">|</span> <span class="nb">Set-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span>
+    <span class="p">(</span><span class="nb">Get-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span><span class="p">)</span> <span class="o">-replace</span> <span class="s1">'from cullinan\.core\.context import'</span><span class="p">,</span> <span class="s1">'from cullinan.core.request import'</span> <span class="p">|</span> <span class="nb">Set-Content</span> <span class="nv">$_</span><span class="p">.</span><span class="n">FullName</span>
 <span class="p">}</span>
 </code></pre></div>
 <hr />
 <h2 id="_12">无需更改的导入<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
-<p>以下导入保持不变，可以继续使用：</p>
+<p>以下导入均可正常使用。属于顶层入口面的名字仍从 <code>cullinan</code> 导入；位于独立模块中的名字从对应模块导入：</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># 这些导入方式保持不变</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="c1"># 配置</span>
     <span class="n">configure</span><span class="p">,</span> <span class="n">get_config</span><span class="p">,</span> <span class="n">CullinanConfig</span><span class="p">,</span>
 
     <span class="c1"># 服务层</span>
-    <span class="n">Service</span><span class="p">,</span> <span class="n">ServiceRegistry</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">get_service_registry</span><span class="p">,</span>
+    <span class="n">service</span><span class="p">,</span>
 
     <span class="c1"># 控制器</span>
-    <span class="n">ControllerRegistry</span><span class="p">,</span> <span class="n">get_controller_registry</span><span class="p">,</span>
     <span class="n">get_api</span><span class="p">,</span> <span class="n">post_api</span><span class="p">,</span> <span class="n">patch_api</span><span class="p">,</span> <span class="n">delete_api</span><span class="p">,</span> <span class="n">put_api</span><span class="p">,</span>
-    <span class="n">Handler</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span>
+    <span class="n">response</span><span class="p">,</span>
 
     <span class="c1"># 中间件</span>
-    <span class="n">Middleware</span><span class="p">,</span> <span class="n">MiddlewareChain</span><span class="p">,</span> <span class="n">middleware</span><span class="p">,</span>
+    <span class="n">Middleware</span><span class="p">,</span> <span class="n">middleware</span><span class="p">,</span>
 
     <span class="c1"># WebSocket</span>
-    <span class="n">WebSocketRegistry</span><span class="p">,</span> <span class="n">websocket_handler</span><span class="p">,</span>
-
-    <span class="c1"># 测试</span>
-    <span class="n">ServiceTestCase</span><span class="p">,</span> <span class="n">MockService</span><span class="p">,</span> <span class="n">TestRegistry</span><span class="p">,</span>
+    <span class="n">websocket_handler</span><span class="p">,</span>
 <span class="p">)</span>
+
+<span class="c1"># 服务层类与注册表</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">Service</span><span class="p">,</span> <span class="n">ServiceRegistry</span><span class="p">,</span> <span class="n">get_service_registry</span>
+
+<span class="c1"># 控制器注册表与请求处理器基类</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">ControllerRegistry</span><span class="p">,</span> <span class="n">get_controller_registry</span><span class="p">,</span> <span class="n">Handler</span>
+
+<span class="c1"># 中间件链</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.middleware</span><span class="w"> </span><span class="kn">import</span> <span class="n">MiddlewareChain</span>
+
+<span class="c1"># WebSocket 注册表</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.websocket_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebSocketRegistry</span>
+
+<span class="c1"># 测试辅助</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.testing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServiceTestCase</span><span class="p">,</span> <span class="n">MockService</span><span class="p">,</span> <span class="n">TestRegistry</span>
 </code></pre></div>
 <hr />
 <h2 id="_13">常见问题<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h2>
 <h3 id="q">Q: 旧的导入还能用吗？<a class="headerlink" href="#q" title="Permanent link">&para;</a></h3>
 <p>A: 旧的顶层文件（如 <code>cullinan.core.exceptions</code>）暂时仍可用，但会发出弃用警告。建议尽快迁移到新路径。</p>
 <h3 id="q_1">Q: 遗留模块什么时候移除？<a class="headerlink" href="#q_1" title="Permanent link">&para;</a></h3>
-<p>A: <code>cullinan.core.legacy/</code> 中的组件将在 1.0 版本中完全移除。</p>
+<p>A: <code>cullinan.core.legacy/</code> 中的组件将在未来版本中移除（不预先承诺具体版本）。</p>
 <h3 id="q_2">Q: 如何验证迁移是否成功？<a class="headerlink" href="#q_2" title="Permanent link">&para;</a></h3>
 <p>A: 运行测试并确保没有 <code>ImportError</code> 或 <code>DeprecationWarning</code>：</p>
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v<span class="w"> </span>--tb<span class="o">=</span>short
@@ -2978,7 +2989,7 @@ sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/fro
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.95a1", "pre_is_available": true, "pre_label": "0.95a1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

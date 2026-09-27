@@ -6,10 +6,10 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the Cullinan Tornado-based IoC/DI framework with type-safe parameters, pluggable model handlers, and Pydantic integration">
+        <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content=""Cullinan"">
+        <meta name="author" content=""plumeink"">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/contributing/">
@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.95a1"
-      data-stable-version="0.94"
+      data-current-version="0.96a1"
+      data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.95a1"
+      data-pre-version="0.96a1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -965,6 +965,31 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -988,6 +1013,80 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#set-up-a-development-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set up a development environment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-open-a-pull-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before you open a pull request
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-complete-contribution-includes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a complete contribution includes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reporting-issues-and-proposing-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting issues and proposing changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -2001,6 +2100,69 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#set-up-a-development-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set up a development environment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-open-a-pull-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before you open a pull request
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-complete-contribution-includes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a complete contribution includes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reporting-issues-and-proposing-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting issues and proposing changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2017,7 +2179,45 @@
 
 
 <h1 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h1>
-<p>Placeholder: contribution guidelines, PR checklist, doc template, front-matter requirements, and review process.</p>
+<p>Thanks for your interest in improving Cullinan. This page covers how to set up a
+development environment, the checks that run before a change is merged, and what
+a complete contribution looks like.</p>
+<h2 id="set-up-a-development-environment">Set up a development environment<a class="headerlink" href="#set-up-a-development-environment" title="Permanent link">&para;</a></h2>
+<p>Requires Python <strong>3.9+</strong>.</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="c1"># Windows: .venv\Scripts\activate   |   Unix: source .venv/bin/activate</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</code></pre></div>
+<h2 id="before-you-open-a-pull-request">Before you open a pull request<a class="headerlink" href="#before-you-open-a-pull-request" title="Permanent link">&para;</a></h2>
+<p>Run the same checks CI runs, and make sure they pass locally:</p>
+<div class="highlight"><pre><span></span><code>ruff<span class="w"> </span>check<span class="w"> </span>.<span class="w">                 </span><span class="c1"># lint</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests<span class="w"> </span>-q<span class="w">    </span><span class="c1"># full test suite - must stay green</span>
+python<span class="w"> </span>-m<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>twine<span class="w"> </span>check<span class="w"> </span>dist/*<span class="w">   </span><span class="c1"># packaging health</span>
+</code></pre></div>
+<h2 id="what-a-complete-contribution-includes">What a complete contribution includes<a class="headerlink" href="#what-a-complete-contribution-includes" title="Permanent link">&para;</a></h2>
+<p>Any feature, behavior change, or rename should update all of the parts below
+together, in the same pull request:</p>
+<ul>
+<li><strong>Code</strong> - implementation under <code>cullinan/</code>, exposed through the relevant
+  <code>__init__</code> public API.</li>
+<li><strong>Tests</strong> - pytest cases under <code>tests/</code> covering <strong>both engines</strong>
+  (Tornado + ASGI) plus the public-API path, including negative and edge cases.</li>
+<li><strong>Examples</strong> - a runnable demo under <code>examples/&lt;feature&gt;/</code>, kept in sync with
+  <code>docs/examples.md</code>.</li>
+<li><strong>Docs</strong> - bilingual <code>docs/&lt;feature&gt;_guide.md</code> + <code>docs/zh/...</code>, and update the
+  <code>mkdocs.yml</code> navigation when you add or rename a page.</li>
+</ul>
+<h2 id="running-the-examples">Running the examples<a class="headerlink" href="#running-the-examples" title="Permanent link">&para;</a></h2>
+<p>Each example is runnable on its own:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>examples.minimal_app
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>examples/testing_flow/test_app.py<span class="w"> </span>-q
+</code></pre></div>
+<h2 id="reporting-issues-and-proposing-changes">Reporting issues and proposing changes<a class="headerlink" href="#reporting-issues-and-proposing-changes" title="Permanent link">&para;</a></h2>
+<p>Use the issue templates (bug report / feature request) to file an issue, and
+open a pull request against <code>master</code>. Include the Cullinan version, your Python
+version, the runtime you use (Tornado or ASGI), and a minimal repro when
+reporting a bug.</p>
 
 
 
@@ -2086,7 +2286,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.95a1", "pre_is_available": true, "pre_label": "0.95a1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

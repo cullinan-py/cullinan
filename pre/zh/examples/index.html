@@ -6,10 +6,10 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the Cullinan Tornado-based IoC/DI framework with type-safe parameters, pluggable model handlers, and Pydantic integration">
+        <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content=""Cullinan"">
+        <meta name="author" content=""plumeink"">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/zh/examples/">
@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.95a1"
-      data-stable-version="0.94"
+      data-current-version="0.96a1"
+      data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.95a1"
+      data-pre-version="0.96a1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2170,6 +2170,8 @@
 <li><code>examples/minimal_app/</code> —— 最短公开入口</li>
 <li><code>examples/controller_service_inject/</code> —— <code>@service</code>、<code>@controller</code> 与 <code>Inject()</code> 的业务分层</li>
 <li><code>examples/middleware_and_module/</code> —— 什么时候值得在入口方法之上再显式引入 <code>@module</code></li>
+<li><code>examples/middleware_pipeline/</code> —— 通过 <code>@configure(middlewares=[...])</code> 声明中间件顺序</li>
+<li><code>examples/middleware_control/</code> —— 替换/关闭内置中间件层，并统一旧式中间件的排序</li>
 <li><code>examples/parameter_handling/</code> —— <code>Path</code>、<code>Query</code>、<code>Body</code> 的控制器方法参数绑定</li>
 <li><code>examples/testing_flow/</code> —— 不启动真实服务进程时通过 <code>main.get_asgi_app()</code> 做测试</li>
 </ol>
@@ -2198,9 +2200,21 @@
 </tr>
 <tr>
 <td><code>examples/middleware_and_module/</code></td>
-<td>模块边界归属与中间件管线扩展</td>
+<td>模块边界归属与兼容版中间件协议</td>
 <td><code>python -m examples.middleware_and_module</code></td>
 <td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_and_module">在 GitHub 查看</a></td>
+</tr>
+<tr>
+<td><code>examples/middleware_pipeline/</code></td>
+<td>通过 <code>@configure(middlewares=[...])</code> 声明中间件顺序 + 公开反射 API</td>
+<td><code>python -m examples.middleware_pipeline</code></td>
+<td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_pipeline">在 GitHub 查看</a></td>
+</tr>
+<tr>
+<td><code>examples/middleware_control/</code></td>
+<td>通过 <code>builtin_middleware=[...]</code> 控制内置中间件层，并统一旧式中间件的排序</td>
+<td><code>python -m examples.middleware_control</code></td>
+<td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_control">在 GitHub 查看</a></td>
 </tr>
 <tr>
 <td><code>examples/parameter_handling/</code></td>
@@ -2238,6 +2252,8 @@ Cullinan 当前想表达的概念放在最前面：</p>
 <li>根目录 <code>examples/README.md</code> 会同步这条学习链路，方便直接看仓库的开发者。</li>
 <li>也可以直接从 <a href="https://github.com/cullinan-py/cullinan/tree/main/examples"><code>examples/</code></a> 浏览已入库的示例源码。</li>
 <li><code>tests/integration/test_examples_public_guides.py</code> 会对当前维护的示例做 smoke test。</li>
+<li>中间件有两个维护中的示例：<code>examples/middleware_pipeline/</code> 使用推荐的洋葱协议，
+  而 <code>examples/middleware_and_module/</code> 使用兼容协议。详见<a href="../wiki/middleware/">中间件</a>。</li>
 <li>如果你第一次接触 Cullinan，建议先完成 <code>examples/minimal_app/</code>，再进入
   <code>examples/controller_service_inject/</code>。</li>
 </ul>
@@ -2309,7 +2325,7 @@ Cullinan 当前想表达的概念放在最前面：</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.95a1", "pre_is_available": true, "pre_label": "0.95a1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

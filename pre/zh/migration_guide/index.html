@@ -6,10 +6,10 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the Cullinan Tornado-based IoC/DI framework with type-safe parameters, pluggable model handlers, and Pydantic integration">
+        <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content="Cullinan">
+        <meta name="author" content="plumeink">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_guide/">
@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.95a1"
-      data-stable-version="0.94"
+      data-current-version="0.96a1"
+      data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.95a1"
+      data-pre-version="0.96a1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1877,22 +1877,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#v095a1-track-a" class="md-nav__link">
+  <a href="#v095-track-a" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v0.95a1 迁移说明（Track A 内部重构）
+        v0.95 迁移说明（Track A 内部重构）
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="v0.95a1 迁移说明（Track A 内部重构）">
+    <nav class="md-nav" aria-label="v0.95 迁移说明（Track A 内部重构）">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v095-v097" class="md-nav__link">
+  <a href="#v095" class="md-nav__link">
     <span class="md-ellipsis">
       
-        自 v0.95 起弃用（v0.97 移除）
+        自 v0.95 起弃用（将在未来版本中移除）
       
     </span>
   </a>
@@ -2272,22 +2272,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#v095a1-track-a" class="md-nav__link">
+  <a href="#v095-track-a" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v0.95a1 迁移说明（Track A 内部重构）
+        v0.95 迁移说明（Track A 内部重构）
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="v0.95a1 迁移说明（Track A 内部重构）">
+    <nav class="md-nav" aria-label="v0.95 迁移说明（Track A 内部重构）">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v095-v097" class="md-nav__link">
+  <a href="#v095" class="md-nav__link">
     <span class="md-ellipsis">
       
-        自 v0.95 起弃用（v0.97 移除）
+        自 v0.95 起弃用（将在未来版本中移除）
       
     </span>
   </a>
@@ -2518,14 +2518,14 @@
 <h1 id="cullinan-093">Cullinan 0.93 迁移指南<a class="headerlink" href="#cullinan-093" title="Permanent link">&para;</a></h1>
 <blockquote>
 <p><strong>版本</strong>：v0.90<br />
-<strong>作者</strong>：Cullinan</p>
+<strong>作者</strong>：plumeink</p>
 <p><strong>仅用于升级：</strong> 这页用于迁移既有代码，不用于学习新项目的推荐 API 路径。</p>
 </blockquote>
 <p>本指南帮助您从 Cullinan 1.x 迁移到 0.93（0.90）。</p>
-<h2 id="v095a1-track-a">v0.95a1 迁移说明（Track A 内部重构）<a class="headerlink" href="#v095a1-track-a" title="Permanent link">&para;</a></h2>
-<p>v0.95a1 是一个非破坏性版本，新增弃用标记和可选严格开关。既有代码无需修改即可继续运行，但建议尽早迁移。</p>
-<h3 id="v095-v097">自 v0.95 起弃用（v0.97 移除）<a class="headerlink" href="#v095-v097" title="Permanent link">&para;</a></h3>
-<p>五个遗留兼容符号现已正式弃用。每次使用都会同时发出标准 <code>DeprecationWarning</code>（工具链可识别）和既有 <code>CompatibilitySemanticWarning</code>（去重语义提醒）。</p>
+<h2 id="v095-track-a">v0.95 迁移说明（Track A 内部重构）<a class="headerlink" href="#v095-track-a" title="Permanent link">&para;</a></h2>
+<p>v0.95 是一个非破坏性版本，新增弃用标记和可选严格开关。既有代码无需修改即可继续运行，但建议尽早迁移。</p>
+<h3 id="v095">自 v0.95 起弃用（将在未来版本中移除）<a class="headerlink" href="#v095" title="Permanent link">&para;</a></h3>
+<p>五个遗留兼容符号现已正式弃用。每次使用都会同时发出标准 <code>DeprecationWarning</code>（工具链可识别）和既有 <code>CompatibilitySemanticWarning</code>（去重语义提醒）。此处不预先承诺具体移除版本：该值按移除时的发布线推导，各符号的 <code>__deprecated_info__['removal_version']</code> 报告当前值。</p>
 <table>
 <thead>
 <tr>
@@ -2580,10 +2580,10 @@
 
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">ApplicationContext</span><span class="p">()</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Definition</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;MyService&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'MyService'</span><span class="p">,</span>
     <span class="n">factory</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">MyService</span><span class="p">(),</span>
     <span class="n">scope</span><span class="o">=</span><span class="n">ScopeType</span><span class="o">.</span><span class="n">SINGLETON</span><span class="p">,</span>
-    <span class="n">source</span><span class="o">=</span><span class="s1">&#39;service:MyService&#39;</span>
+    <span class="n">source</span><span class="o">=</span><span class="s1">'service:MyService'</span>
 <span class="p">))</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 </code></pre></div></p>
@@ -2591,7 +2591,7 @@
 <p>在 0.93 中，注册表在 <code>refresh()</code> 后被冻结。任何尝试注册新依赖的操作都会抛出 <code>RegistryFrozenError</code>。</p>
 <p><strong>之前（1.x）：</strong>
 <div class="highlight"><pre><span></span><code><span class="c1"># 可以随时注册</span>
-<span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s1">&#39;NewService&#39;</span><span class="p">,</span> <span class="n">NewService</span><span class="p">)</span>
+<span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s1">'NewService'</span><span class="p">,</span> <span class="n">NewService</span><span class="p">)</span>
 </code></pre></div></p>
 <p><strong>之后（0.93）：</strong>
 <div class="highlight"><pre><span></span><code><span class="n">ctx</span> <span class="o">=</span> <span class="n">ApplicationContext</span><span class="p">()</span>
@@ -2603,23 +2603,23 @@
 <p>请求作用域依赖现在严格要求 <code>RequestContext</code>。</p>
 <p><strong>之前（1.x）：</strong>
 <div class="highlight"><pre><span></span><code><span class="c1"># 可能静默失败或返回错误实例</span>
-<span class="n">instance</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;RequestScoped&#39;</span><span class="p">)</span>
+<span class="n">instance</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'RequestScoped'</span><span class="p">)</span>
 </code></pre></div></p>
 <p><strong>之后（0.93）：</strong>
 <div class="highlight"><pre><span></span><code><span class="n">ctx</span><span class="o">.</span><span class="n">enter_request_context</span><span class="p">()</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">instance</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;RequestScoped&#39;</span><span class="p">)</span>  <span class="c1"># 正常</span>
+    <span class="n">instance</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'RequestScoped'</span><span class="p">)</span>  <span class="c1"># 正常</span>
 <span class="k">finally</span><span class="p">:</span>
     <span class="n">ctx</span><span class="o">.</span><span class="n">exit_request_context</span><span class="p">()</span>
 
 <span class="c1"># 没有上下文：</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;RequestScoped&#39;</span><span class="p">)</span>  <span class="c1"># ScopeNotActiveError!</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'RequestScoped'</span><span class="p">)</span>  <span class="c1"># ScopeNotActiveError!</span>
 </code></pre></div></p>
 <h3 id="4">4. 结构化异常<a class="headerlink" href="#4" title="Permanent link">&para;</a></h3>
 <p>所有异常现在都携带结构化诊断字段。</p>
 <p><strong>之前（1.x）：</strong>
 <div class="highlight"><pre><span></span><code><span class="k">try</span><span class="p">:</span>
-    <span class="n">registry</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="s1">&#39;Missing&#39;</span><span class="p">)</span>
+    <span class="n">registry</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="s1">'Missing'</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>  <span class="c1"># 通用消息</span>
 </code></pre></div></p>
@@ -2627,11 +2627,11 @@
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">DependencyNotFoundError</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Missing&#39;</span><span class="p">)</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'Missing'</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">DependencyNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">dependency_name</span><span class="p">)</span>      <span class="c1"># &#39;Missing&#39;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">resolution_path</span><span class="p">)</span>      <span class="c1"># [&#39;ParentService&#39;, &#39;Missing&#39;]</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">candidate_sources</span><span class="p">)</span>    <span class="c1"># [{&#39;source&#39;: &#39;...&#39;, &#39;reason&#39;: &#39;...&#39;}]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">dependency_name</span><span class="p">)</span>      <span class="c1"># 'Missing'</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">resolution_path</span><span class="p">)</span>      <span class="c1"># ['ParentService', 'Missing']</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">candidate_sources</span><span class="p">)</span>    <span class="c1"># [{'source': '...', 'reason': '...'}]</span>
 </code></pre></div></p>
 <h3 id="5">5. 循环依赖检测<a class="headerlink" href="#5" title="Permanent link">&para;</a></h3>
 <p>循环依赖现在产生稳定、有序的链路。</p>
@@ -2659,10 +2659,10 @@
 
 <span class="c1"># 新风格</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Definition</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;UserService&#39;</span><span class="p">,</span>
-    <span class="n">factory</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">UserService</span><span class="p">(</span><span class="n">user_repo</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;UserRepository&#39;</span><span class="p">)),</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">'UserService'</span><span class="p">,</span>
+    <span class="n">factory</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">UserService</span><span class="p">(</span><span class="n">user_repo</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'UserRepository'</span><span class="p">)),</span>
     <span class="n">scope</span><span class="o">=</span><span class="n">ScopeType</span><span class="o">.</span><span class="n">SINGLETON</span><span class="p">,</span>
-    <span class="n">source</span><span class="o">=</span><span class="s1">&#39;service:UserService&#39;</span>
+    <span class="n">source</span><span class="o">=</span><span class="s1">'service:UserService'</span>
 <span class="p">))</span>
 </code></pre></div>
 <h3 id="3_1">第 3 步：更新应用启动<a class="headerlink" href="#3_1" title="Permanent link">&para;</a></h3>
@@ -2672,7 +2672,7 @@
 <span class="c1"># 新风格</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
 
-<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;your_app&quot;</span><span class="p">])</span>
+<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"your_app"</span><span class="p">])</span>
 <span class="nd">@application</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
 
@@ -2680,18 +2680,19 @@
 </code></pre></div>
 <p>入口方法现在是推荐的默认入口。<code>configure(root_module=...)</code> 已不再属于默认公开启动模型。</p>
 <h3 id="4_1">第 4 步：处理请求作用域<a class="headerlink" href="#4_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="c1"># 在请求处理器中</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">MyHandler</span><span class="p">(</span><span class="n">RequestHandler</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">enter_request_context</span><span class="p">()</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">service</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;RequestScopedService&#39;</span><span class="p">)</span>
-            <span class="c1"># ... 使用服务 ...</span>
-        <span class="k">finally</span><span class="p">:</span>
-            <span class="n">ctx</span><span class="o">.</span><span class="n">exit_request_context</span><span class="p">()</span>
+<p>请求作用域由框架绑定。传输适配器会在每次分发前后自动打开并关闭请求上下文，因此请求作用域依赖会针对当前活动请求解析，无需手动 enter/exit。请把处理器层保持为传输中立：改用具引擎中立形态的 controller，而不是服务器专属的 handler：</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">controller</span><span class="p">,</span> <span class="n">get_api</span>
+
+
+<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/items'</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ItemController</span><span class="p">:</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/</span><span class="si">{item_id}</span><span class="s1">'</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="c1"># 运行在本请求由适配器建立的请求上下文中，请求作用域的工作据此解析。</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"item_id"</span><span class="p">:</span> <span class="n">item_id</span><span class="p">}</span>
 </code></pre></div>
 <h2 id="api">已弃用的 API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h2>
-<p>以下 API 在 0.93 中已弃用，将在 3.0 中移除：</p>
+<p>以下 API 在 0.93 中已弃用，将在未来版本中移除：</p>
 <table>
 <thead>
 <tr>
@@ -2805,7 +2806,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.95a1", "pre_is_available": true, "pre_label": "0.95a1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

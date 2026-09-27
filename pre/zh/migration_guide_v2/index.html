@@ -6,10 +6,10 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the Cullinan Tornado-based IoC/DI framework with type-safe parameters, pluggable model handlers, and Pydantic integration">
+        <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content="Cullinan">
+        <meta name="author" content="plumeink">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_guide_v2/">
@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.95a1"
-      data-stable-version="0.94"
+      data-current-version="0.96a1"
+      data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.95a1"
+      data-pre-version="0.96a1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2083,6 +2083,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v096a1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.96a1：遗留中间件纳入声明式排序
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2534,6 +2545,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v096a1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.96a1：遗留中间件纳入声明式排序
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2770,8 +2792,10 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inject</span>
 
 <span class="c1"># v0.93 — 新增语义导入</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">WebRequest</span><span class="p">,</span> <span class="n">WebResponse</span><span class="p">,</span>          <span class="c1"># 统一请求/响应</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebRequest</span><span class="p">,</span> <span class="n">WebResponse</span>   <span class="c1"># 统一请求/响应</span>
+
+<span class="c1"># 网关层：路由、分发、中间件管线与 OpenAPI 规范</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Router</span><span class="p">,</span> <span class="n">Dispatcher</span><span class="p">,</span>               <span class="c1"># 网关层</span>
     <span class="n">GatewayMiddleware</span><span class="p">,</span> <span class="n">CORSMiddleware</span><span class="p">,</span><span class="c1"># 中间件管线</span>
     <span class="n">OpenAPIGenerator</span><span class="p">,</span>                 <span class="c1"># OpenAPI 规范</span>
@@ -2783,11 +2807,11 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <h3 id="2-controller">2. Controller 变更<a class="headerlink" href="#2-controller" title="Permanent link">&para;</a></h3>
 <h4 id="v09xcontroller-tornado-selfwrite">v0.9x：Controller 方法使用 Tornado 的 <code>self.write()</code><a class="headerlink" href="#v09xcontroller-tornado-selfwrite" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><span class="c1"># v0.9x — handler 直接操作 tornado 内部 API</span>
-<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/api/users&#39;</span><span class="p">)</span>
+<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/api/users'</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserController</span><span class="p">:</span>
-    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/</span><span class="si">{id}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/</span><span class="si">{id}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">user_id</span> <span class="o">=</span> <span class="n">url_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)</span>
+        <span class="n">user_id</span> <span class="o">=</span> <span class="n">url_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'id'</span><span class="p">)</span>
         <span class="c1"># ... 业务逻辑 ...</span>
         <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="n">user_data</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
 </code></pre></div>
@@ -2795,15 +2819,15 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <div class="highlight"><pre><span></span><code><span class="c1"># v0.93 — 传输无关，返回 WebResponse</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebResponse</span>
 
-<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/api/users&#39;</span><span class="p">)</span>
+<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/api/users'</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserController</span><span class="p">:</span>
     <span class="n">user_service</span><span class="p">:</span> <span class="n">UserService</span> <span class="o">=</span> <span class="n">Inject</span><span class="p">()</span>
 
-    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/</span><span class="si">{id}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/</span><span class="si">{id}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
         <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_service</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="mi">404</span><span class="p">,</span> <span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="mi">404</span><span class="p">,</span> <span class="s2">"User not found"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
 </code></pre></div>
 <p><strong>向后兼容</strong>：旧的 <code>HttpResponse</code> 返回类型仍然有效 — <code>Dispatcher</code> 会自动转换。</p>
@@ -2846,7 +2870,7 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <h4 id="v094a1-helper">v0.94a1：优先使用入口方法；只有在需要时再显式调用运行时 helper<a class="headerlink" href="#v094a1-helper" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
 
-<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;myapp&quot;</span><span class="p">])</span>
+<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"myapp"</span><span class="p">])</span>
 <span class="nd">@application</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
 
@@ -2861,10 +2885,10 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span>
 
 <span class="n">configure</span><span class="p">(</span>
-    <span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;myapp&#39;</span><span class="p">],</span>
+    <span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">'myapp'</span><span class="p">],</span>
     <span class="c1"># v0.93 新增选项：</span>
-    <span class="c1"># server_engine=&#39;auto&#39;,           # &#39;auto&#39;、&#39;tornado&#39; 或 &#39;asgi&#39;</span>
-    <span class="c1"># asgi_server=&#39;uvicorn&#39;,          # &#39;uvicorn&#39; 或 &#39;hypercorn&#39;</span>
+    <span class="c1"># server_engine='auto',           # 'auto'、'tornado' 或 'asgi'</span>
+    <span class="c1"># asgi_server='uvicorn',          # 'uvicorn' 或 'hypercorn'</span>
     <span class="c1"># route_trailing_slash=False,</span>
     <span class="c1"># route_case_sensitive=True,</span>
     <span class="c1"># debug=False,</span>
@@ -2881,28 +2905,72 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
         <span class="k">pass</span>
 </code></pre></div>
 <h4 id="v093">v0.93：中间件在洋葱管线中<a class="headerlink" href="#v093" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayMiddleware</span><span class="p">,</span> <span class="n">get_pipeline</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayMiddleware</span><span class="p">,</span> <span class="n">get_pipeline</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">AuthMiddleware</span><span class="p">(</span><span class="n">GatewayMiddleware</span><span class="p">):</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">call_next</span><span class="p">):</span>
-        <span class="n">token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_header</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">)</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_header</span><span class="p">(</span><span class="s1">'Authorization'</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">token</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="mi">401</span><span class="p">,</span> <span class="s2">&quot;Unauthorized&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="mi">401</span><span class="p">,</span> <span class="s2">"Unauthorized"</span><span class="p">)</span>
         <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">response</span>
 
 <span class="c1"># 注册</span>
 <span class="n">get_pipeline</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">AuthMiddleware</span><span class="p">())</span>
 </code></pre></div>
-<p><strong>向后兼容</strong>：旧的 <code>@middleware</code> 类通过 <code>LegacyMiddlewareBridge</code> 自动桥接。</p>
+<p><strong>向后兼容</strong>：旧的 <code>@middleware</code> 类仍会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。</p>
+<h4 id="v096a1">v0.96a1：遗留中间件纳入声明式排序<a class="headerlink" href="#v096a1" title="Permanent link">&para;</a></h4>
+<p>过去，旧的 <code>@middleware</code> 类会被折叠成<strong>单个</strong>桥接层，且始终位于内置 access log 层<strong>内侧</strong>，因此遗留 <code>priority</code> 无法移动它 —— 该优先级只在遗留链<strong>内部</strong>排序，从不跨越桥接边界。现在每个遗留中间件各自成为一个管线层，并与声明层、内置层共用同一个声明式 <code>priority</code> 键排序，因此一个较低的遗留 <code>priority</code> 现在可以把遗留中间件放到内置层<strong>外侧</strong>。</p>
+<p><strong>受影响者界定。</strong> 只有使用旧中间件协议（<code>@middleware(priority=...)</code> / <code>cullinan.web.middleware</code>）的应用才会受影响，且仅在以下情形可见变化：某个遗留中间件声明的优先级<strong>不等于</strong>默认值 <code>100</code>，或某个遗留层与声明了自身优先级的 <code>configure(middlewares=[...])</code> 条目发生交互。</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>变更前（外 → 内）</th>
+<th>变更后（外 → 内）</th>
+<th>是否可见变化</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>未声明 priority（默认 <code>100</code>）</td>
+<td>内置 access log、遗留</td>
+<td>内置 access log、遗留</td>
+<td>否</td>
+</tr>
+<tr>
+<td>遗留 <code>priority</code> 小于 <code>100</code>（如 <code>50</code>）</td>
+<td>内置 access log、遗留</td>
+<td>遗留、内置 access log</td>
+<td><strong>是</strong> —— 遗留层现在包裹内置层</td>
+</tr>
+<tr>
+<td>遗留 <code>priority</code> 大于 <code>100</code>（如 <code>150</code>）</td>
+<td>内置 access log、遗留</td>
+<td>内置 access log、遗留（更靠内）</td>
+<td>否</td>
+</tr>
+<tr>
+<td>两个同 <code>priority</code> 的遗留并列项（如都用默认 <code>100</code>）</td>
+<td>内置 access log、并列项按声明序</td>
+<td>内置 access log、并列项按声明序</td>
+<td>否 —— 并列序保持声明序</td>
+</tr>
+</tbody>
+</table>
+<p>遗留中间件<strong>彼此之间</strong>的相对顺序不变，请求/响应的展开顺序也不变。唯一变化的是「声明了低于内置层 <code>100</code> 的 priority」的那一层的位置：它现在包裹内置层，而不是被内置层包裹。</p>
+<p><strong><code>priority</code> 在何处决定顺序。</strong> 只有当两个遗留中间件的 <code>priority</code> <strong>不同</strong>时，<code>priority</code> 键才决定它们的相对顺序；此时顺序由声明的 priority 取值决定，与二者谁先注册无关。当两个遗留中间件声明<strong>相同</strong> <code>priority</code> 时，它们互为并列项，并列项之间的顺序由<strong>声明序</strong>破平 —— 即它们通过 <code>@middleware</code> 注册 / 被导入的先后顺序。在同一模块内这就是源码顺序，因此解析结果是确定性的：同一组声明总是得到同一顺序。若要摆脱对声明序的依赖，请给同 <code>priority</code> 的并列项显式声明不同的 <code>priority</code>。</p>
+<p><strong>迁移动作。</strong> 多数应用<strong>无需改动</strong> —— 使用默认优先级时解析顺序完全一致。仅当你<strong>依赖</strong>整条遗留链始终位于内置层内侧、并<strong>曾以为</strong>遗留 <code>priority</code> 无法跨越桥接边界时，才需要复核你声明的 <code>priority</code> 取值，确认新位置符合预期。</p>
+<p><strong>自省面。</strong> <code>cullinan.web.gateway.get_pipeline().list_middleware()</code> 现在按遗留中间件<strong>逐个</strong>列出条目 —— 条目数由<strong>单个桥接条目变为每个已注册中间件各一条</strong> —— 且每条以<strong>真实中间件</strong>命名（而非桥接名），因此解析后的顺序可直接读取。</p>
+<p>内置层同样是声明式的：<code>configure(builtin_middleware=[...])</code> 可替换它，<code>configure(builtin_middleware=[])</code> 可关闭它。</p>
 <h3 id="7-openapi">7. OpenAPI 集成<a class="headerlink" href="#7-openapi" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAPIGenerator</span><span class="p">,</span> <span class="n">get_router</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAPIGenerator</span><span class="p">,</span> <span class="n">get_router</span>
 
 <span class="c1"># 从所有已注册路由自动生成规范</span>
 <span class="n">gen</span> <span class="o">=</span> <span class="n">OpenAPIGenerator</span><span class="p">(</span>
-    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;My API&#39;</span><span class="p">,</span>
-    <span class="n">version</span><span class="o">=</span><span class="s1">&#39;1.0.0&#39;</span><span class="p">,</span>
-    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;我的 API&#39;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s1">'My API'</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s1">'1.0.0'</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">'我的 API'</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># 注册 /openapi.json 和 /openapi.yaml 端点</span>
@@ -2914,12 +2982,12 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 </code></pre></div>
 <h3 id="8-websocket">8. WebSocket 变更<a class="headerlink" href="#8-websocket" title="Permanent link">&para;</a></h3>
 <h4 id="v09x-tornado-websocket">v0.9x：仅 Tornado WebSocket<a class="headerlink" href="#v09x-tornado-websocket" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="nd">@websocket_handler</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/ws/chat&#39;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="nd">@websocket_handler</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/ws/chat'</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ChatHandler</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write_message</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;echo: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_message</span><span class="p">(</span><span class="sa">f</span><span class="s2">"echo: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
 </code></pre></div>
@@ -2955,30 +3023,31 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <tr>
 <td><code>Handler</code> 类</td>
 <td>弃用（警告）</td>
-<td>v3.0</td>
+<td>弃用窗口结束时</td>
 </tr>
 <tr>
 <td><code>HttpResponse</code></td>
 <td>弃用（自动桥接）</td>
-<td>v3.0</td>
+<td>弃用窗口结束时</td>
 </tr>
 <tr>
 <td><code>EncapsulationHandler.add_url()</code></td>
 <td>仅内部使用</td>
-<td>v3.0</td>
+<td>弃用窗口结束时</td>
 </tr>
 <tr>
 <td>controller 中的 <code>self.write()</code></td>
 <td>弃用</td>
-<td>v3.0</td>
+<td>弃用窗口结束时</td>
 </tr>
 <tr>
 <td>旧中间件（<code>Middleware</code> 基类）</td>
 <td>自动桥接</td>
-<td>v3.0</td>
+<td>弃用窗口结束时</td>
 </tr>
 </tbody>
 </table>
+<p>移除版本不手工书写，而是由框架版本与固定的弃用窗口（<code>当前 minor + N</code>）推导，因此本表不会与代码上报的版本发生漂移。</p>
 
 
 
@@ -3044,7 +3113,7 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.95a1", "pre_is_available": true, "pre_label": "0.95a1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

@@ -6,10 +6,10 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the Cullinan Tornado-based IoC/DI framework with type-safe parameters, pluggable model handlers, and Pydantic integration">
+        <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content="Cullinan">
+        <meta name="author" content="plumeink">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/quick_start_extensions/">
@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.95a1"
-      data-stable-version="0.94"
+      data-current-version="0.96a1"
+      data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.95a1"
+      data-pre-version="0.96a1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2453,7 +2453,7 @@
 <blockquote>
 <p><strong>Version</strong>: v0.90<br />
 <strong>Feature</strong>: Unified Extension Registration and Discovery Pattern<br />
-<strong>Author</strong>: Cullinan</p>
+<strong>Author</strong>: plumeink</p>
 <p><strong>Advanced topic:</strong> use this page when you are explicitly building extensions or
 middleware registration flows.</p>
 </blockquote>
@@ -2465,14 +2465,14 @@ middleware registration flows.</p>
 
 <span class="nd">@middleware</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">LoggingMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Logging middleware - records all requests&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Logging middleware - records all requests"""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;→ Request: </span><span class="si">{</span><span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">uri</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"→ Request: </span><span class="si">{</span><span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">uri</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">handler</span>  <span class="c1"># Return handler to continue processing</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">process_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;← Response: </span><span class="si">{</span><span class="n">response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"← Response: </span><span class="si">{</span><span class="n">response</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">response</span>
 </code></pre></div>
 <h3 id="2-priority-control">2. Priority Control<a class="headerlink" href="#2-priority-control" title="Permanent link">&para;</a></h3>
@@ -2501,12 +2501,12 @@ middleware registration flows.</p>
 <span class="n">all_points</span> <span class="o">=</span> <span class="n">list_extension_points</span><span class="p">()</span>
 
 <span class="c1"># Query extension points by category</span>
-<span class="n">middleware_points</span> <span class="o">=</span> <span class="n">list_extension_points</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s1">&#39;middleware&#39;</span><span class="p">)</span>
-<span class="n">lifecycle_points</span> <span class="o">=</span> <span class="n">list_extension_points</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s1">&#39;lifecycle&#39;</span><span class="p">)</span>
+<span class="n">middleware_points</span> <span class="o">=</span> <span class="n">list_extension_points</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s1">'middleware'</span><span class="p">)</span>
+<span class="n">lifecycle_points</span> <span class="o">=</span> <span class="n">list_extension_points</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s1">'lifecycle'</span><span class="p">)</span>
 
 <span class="c1"># Display extension point info</span>
 <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">middleware_points</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">'description'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <p>Example output:
 <div class="highlight"><pre><span></span><code>Middleware.process_request: Intercept and process requests before they reach handlers
@@ -2519,7 +2519,7 @@ Middleware.process_response: Intercept and process responses before they are sen
 <span class="n">registered</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get_registered_middleware</span><span class="p">()</span>
 
 <span class="k">for</span> <span class="n">mw</span> <span class="ow">in</span> <span class="n">registered</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mw</span><span class="p">[</span><span class="s1">&#39;priority&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">3d</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mw</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mw</span><span class="p">[</span><span class="s1">'priority'</span><span class="p">]</span><span class="si">:</span><span class="s2">3d</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mw</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <p>Example output:
 <div class="highlight"><pre><span></span><code> 10: CorsMiddleware
@@ -2539,29 +2539,29 @@ Middleware.process_response: Intercept and process responses before they are sen
 
 <span class="nd">@middleware</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CorsMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;CORS middleware - executes first&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""CORS middleware - executes first"""</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">process_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
-        <span class="n">handler</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="s1">&#39;Access-Control-Allow-Origin&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="s1">'Access-Control-Allow-Origin'</span><span class="p">,</span> <span class="s1">'*'</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">response</span>
 
 
 <span class="nd">@middleware</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AuthMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Auth middleware - executes after CORS&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Auth middleware - executes after CORS"""</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
-        <span class="n">token</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">token</span> <span class="ow">and</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;/api/&#39;</span><span class="p">):</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'Authorization'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">token</span> <span class="ow">and</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'/api/'</span><span class="p">):</span>
             <span class="n">handler</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
-            <span class="n">handler</span><span class="o">.</span><span class="n">finish</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Unauthorized&quot;</span><span class="p">})</span>
+            <span class="n">handler</span><span class="o">.</span><span class="n">finish</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Unauthorized"</span><span class="p">})</span>
             <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># Short-circuit, stop processing</span>
         <span class="k">return</span> <span class="n">handler</span>
 
 
 <span class="nd">@middleware</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">LoggingMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Logging middleware - executes last&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Logging middleware - executes last"""</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">handler</span>
 
 
@@ -2570,23 +2570,23 @@ Middleware.process_response: Intercept and process responses before they are sen
 <span class="nd">@service</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserService</span><span class="p">(</span><span class="n">Service</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">user_id</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Alice&quot;</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="n">user_id</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"Alice"</span><span class="p">}</span>
 
 
 <span class="c1"># 3. Define controllers</span>
 
-<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/api/users&#39;</span><span class="p">)</span>
+<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/api/users'</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserController</span><span class="p">:</span>
     <span class="n">user_service</span><span class="p">:</span> <span class="n">UserService</span>  <span class="c1"># ← Construction injection</span>
 
-    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/</span><span class="si">{user_id}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/</span><span class="si">{user_id}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Path</span><span class="p">()):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_service</span><span class="o">.</span><span class="n">get_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
 
 
 <span class="c1"># 4. Start application</span>
 
-<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;__main__&quot;</span><span class="p">],</span> <span class="n">server_port</span><span class="o">=</span><span class="mi">8080</span><span class="p">)</span>
+<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"__main__"</span><span class="p">],</span> <span class="n">server_port</span><span class="o">=</span><span class="mi">8080</span><span class="p">)</span>
 <span class="nd">@application</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
 </code></pre></div>
@@ -2663,7 +2663,7 @@ Response sent
 <li>
 <p><strong>Handler</strong></p>
 </li>
-<li>Custom Tornado Handler</li>
+<li>Custom Route Handler</li>
 </ol>
 <hr />
 <h2 id="faq">FAQ<a class="headerlink" href="#faq" title="Permanent link">&para;</a></h2>
@@ -2672,7 +2672,7 @@ Response sent
 <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">not_authorized</span><span class="p">:</span>
         <span class="n">handler</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
-        <span class="n">handler</span><span class="o">.</span><span class="n">finish</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Unauthorized&quot;</span><span class="p">})</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">finish</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Unauthorized"</span><span class="p">})</span>
         <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># Short-circuit, stop processing</span>
     <span class="k">return</span> <span class="n">handler</span>  <span class="c1"># Continue to next middleware</span>
 </code></pre></div>
@@ -2682,7 +2682,7 @@ Response sent
 
 <span class="n">registry</span> <span class="o">=</span> <span class="n">get_middleware_registry</span><span class="p">()</span>
 <span class="k">for</span> <span class="n">mw</span> <span class="ow">in</span> <span class="n">registry</span><span class="o">.</span><span class="n">get_registered_middleware</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mw</span><span class="p">[</span><span class="s1">&#39;priority&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mw</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mw</span><span class="p">[</span><span class="s1">'priority'</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mw</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="q3-can-middleware-be-registered-dynamically">Q3: Can middleware be registered dynamically?<a class="headerlink" href="#q3-can-middleware-be-registered-dynamically" title="Permanent link">&para;</a></h3>
 <p>A: Yes, but it's recommended to complete registration before application startup:</p>
@@ -2772,7 +2772,7 @@ Response sent
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.95a1", "pre_is_available": true, "pre_label": "0.95a1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

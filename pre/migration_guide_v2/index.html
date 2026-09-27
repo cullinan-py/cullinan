@@ -6,10 +6,10 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the Cullinan Tornado-based IoC/DI framework with type-safe parameters, pluggable model handlers, and Pydantic integration">
+        <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content="Cullinan">
+        <meta name="author" content="plumeink">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/migration_guide_v2/">
@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.95a1"
-      data-stable-version="0.94"
+      data-current-version="0.96a1"
+      data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.95a1"
+      data-pre-version="0.96a1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2083,6 +2083,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v096a1-legacy-middleware-join-the-declarative-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.96a1: Legacy middleware join the declarative order
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2534,6 +2545,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v096a1-legacy-middleware-join-the-declarative-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.96a1: Legacy middleware join the declarative order
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2770,8 +2792,10 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inject</span>
 
 <span class="c1"># v0.93 — new semantic imports available</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">WebRequest</span><span class="p">,</span> <span class="n">WebResponse</span><span class="p">,</span>          <span class="c1"># Unified request/response</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebRequest</span><span class="p">,</span> <span class="n">WebResponse</span>   <span class="c1"># Unified request/response</span>
+
+<span class="c1"># Gateway layer: routing, dispatch, middleware pipeline and OpenAPI spec</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Router</span><span class="p">,</span> <span class="n">Dispatcher</span><span class="p">,</span>               <span class="c1"># Gateway layer</span>
     <span class="n">GatewayMiddleware</span><span class="p">,</span> <span class="n">CORSMiddleware</span><span class="p">,</span><span class="c1"># Middleware pipeline</span>
     <span class="n">OpenAPIGenerator</span><span class="p">,</span>                 <span class="c1"># OpenAPI spec</span>
@@ -2783,11 +2807,11 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <h3 id="2-controller-changes">2. Controller Changes<a class="headerlink" href="#2-controller-changes" title="Permanent link">&para;</a></h3>
 <h4 id="v09x-controller-methods-used-tornado-selfwrite">v0.9x: Controller methods used Tornado <code>self.write()</code><a class="headerlink" href="#v09x-controller-methods-used-tornado-selfwrite" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><span class="c1"># v0.9x — handler operates on tornado internals</span>
-<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/api/users&#39;</span><span class="p">)</span>
+<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/api/users'</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserController</span><span class="p">:</span>
-    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/</span><span class="si">{id}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/</span><span class="si">{id}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">user_id</span> <span class="o">=</span> <span class="n">url_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)</span>
+        <span class="n">user_id</span> <span class="o">=</span> <span class="n">url_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'id'</span><span class="p">)</span>
         <span class="c1"># ... business logic ...</span>
         <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="n">user_data</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
 </code></pre></div>
@@ -2795,15 +2819,15 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <div class="highlight"><pre><span></span><code><span class="c1"># v0.93 — transport-agnostic, returns WebResponse</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebResponse</span>
 
-<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/api/users&#39;</span><span class="p">)</span>
+<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/api/users'</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserController</span><span class="p">:</span>
     <span class="n">user_service</span><span class="p">:</span> <span class="n">UserService</span> <span class="o">=</span> <span class="n">Inject</span><span class="p">()</span>
 
-    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/</span><span class="si">{id}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/</span><span class="si">{id}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
         <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_service</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="mi">404</span><span class="p">,</span> <span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="mi">404</span><span class="p">,</span> <span class="s2">"User not found"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
 </code></pre></div>
 <p><strong>Backward compatibility</strong>: The old <code>HttpResponse</code> return type still works — the <code>Dispatcher</code> auto-converts it.</p>
@@ -2846,7 +2870,7 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <h4 id="v094a1-prefer-an-entry-method-then-choose-explicit-runtime-helpers-only-when-needed">v0.94a1: Prefer an entry method, then choose explicit runtime helpers only when needed<a class="headerlink" href="#v094a1-prefer-an-entry-method-then-choose-explicit-runtime-helpers-only-when-needed" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
 
-<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;myapp&quot;</span><span class="p">])</span>
+<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"myapp"</span><span class="p">])</span>
 <span class="nd">@application</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
 
@@ -2861,10 +2885,10 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span>
 
 <span class="n">configure</span><span class="p">(</span>
-    <span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;myapp&#39;</span><span class="p">],</span>
+    <span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s1">'myapp'</span><span class="p">],</span>
     <span class="c1"># New v0.93 options:</span>
-    <span class="c1"># server_engine=&#39;auto&#39;,           # &#39;auto&#39;, &#39;tornado&#39;, or &#39;asgi&#39;</span>
-    <span class="c1"># asgi_server=&#39;uvicorn&#39;,          # &#39;uvicorn&#39; or &#39;hypercorn&#39;</span>
+    <span class="c1"># server_engine='auto',           # 'auto', 'tornado', or 'asgi'</span>
+    <span class="c1"># asgi_server='uvicorn',          # 'uvicorn' or 'hypercorn'</span>
     <span class="c1"># route_trailing_slash=False,</span>
     <span class="c1"># route_case_sensitive=True,</span>
     <span class="c1"># debug=False,</span>
@@ -2881,28 +2905,103 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
         <span class="k">pass</span>
 </code></pre></div>
 <h4 id="v093-middleware-in-the-onion-pipeline">v0.93: Middleware in the onion pipeline<a class="headerlink" href="#v093-middleware-in-the-onion-pipeline" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayMiddleware</span><span class="p">,</span> <span class="n">get_pipeline</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayMiddleware</span><span class="p">,</span> <span class="n">get_pipeline</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">AuthMiddleware</span><span class="p">(</span><span class="n">GatewayMiddleware</span><span class="p">):</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">call_next</span><span class="p">):</span>
-        <span class="n">token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_header</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">)</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_header</span><span class="p">(</span><span class="s1">'Authorization'</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">token</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="mi">401</span><span class="p">,</span> <span class="s2">&quot;Unauthorized&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="mi">401</span><span class="p">,</span> <span class="s2">"Unauthorized"</span><span class="p">)</span>
         <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">response</span>
 
 <span class="c1"># Register</span>
 <span class="n">get_pipeline</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">AuthMiddleware</span><span class="p">())</span>
 </code></pre></div>
-<p><strong>Backward compatibility</strong>: Old <code>@middleware</code> classes are auto-bridged via <code>LegacyMiddlewareBridge</code>.</p>
+<p><strong>Backward compatibility</strong>: Old <code>@middleware</code> classes are still auto-bridged into the gateway pipeline — one layer per legacy middleware.</p>
+<h4 id="v096a1-legacy-middleware-join-the-declarative-order">v0.96a1: Legacy middleware join the declarative order<a class="headerlink" href="#v096a1-legacy-middleware-join-the-declarative-order" title="Permanent link">&para;</a></h4>
+<p>Legacy <code>@middleware</code> classes used to be collapsed into a single bridge layer
+that always sat <em>inside</em> the built-in access-log layer, so a legacy <code>priority</code>
+could not move it — the priority only ranked middleware within the legacy chain
+and never crossed the bridge boundary. Each legacy middleware is now bridged as
+its own pipeline layer and ordered by the same declarative <code>priority</code> key as the
+declared and built-in layers, so a low legacy <code>priority</code> can now place a legacy
+middleware outside the built-in layer.</p>
+<p><strong>Who is affected.</strong> Only applications that use the legacy middleware protocol
+(<code>@middleware(priority=...)</code> / <code>cullinan.web.middleware</code>) are affected, and the
+change is visible only when a legacy middleware declares a priority other than
+the default <code>100</code>, or when a legacy layer interacts with a declared
+<code>configure(middlewares=[...])</code> entry that declares its own priority.</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Before (outer → inner)</th>
+<th>After (outer → inner)</th>
+<th>Visible change?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>no priority declared (default <code>100</code>)</td>
+<td>built-in access log, legacy</td>
+<td>built-in access log, legacy</td>
+<td>no</td>
+</tr>
+<tr>
+<td>legacy <code>priority</code> below <code>100</code> (e.g. <code>50</code>)</td>
+<td>built-in access log, legacy</td>
+<td>legacy, built-in access log</td>
+<td><strong>yes</strong> — the legacy layer now wraps the built-in layer</td>
+</tr>
+<tr>
+<td>legacy <code>priority</code> above <code>100</code> (e.g. <code>150</code>)</td>
+<td>built-in access log, legacy</td>
+<td>built-in access log, legacy (still inside)</td>
+<td>no</td>
+</tr>
+<tr>
+<td>two legacy peers with the <em>same</em> priority (e.g. both default <code>100</code>)</td>
+<td>built-in access log, then the peers in declaration order</td>
+<td>built-in access log, then the peers in declaration order</td>
+<td>no — the tie keeps the declaration order</td>
+</tr>
+</tbody>
+</table>
+<p>The relative order <em>between</em> legacy middleware is unchanged, and so is the
+request/response unwinding order. Only the placement of a legacy layer that
+declares a priority below the built-in layer's <code>100</code> changes: it now wraps the
+built-in layer instead of sitting inside it.</p>
+<p><strong>Where the <code>priority</code> order is decided.</strong> The <code>priority</code> key fixes the relative
+order of two legacy middleware only when their priorities <strong>differ</strong>; in that
+case the order is determined by the declared priority values, and it does not
+depend on which of them was registered first. When two legacy middleware declare
+the <strong>same</strong> priority they are peers, and the order among those peers is broken
+by their <strong>declaration order</strong> — the order in which they are registered through
+<code>@middleware</code> / imported. Within a module that is the source order, so the
+resolved order is deterministic: the same declarations always produce the same
+order. To make the order independent of the declaration order, give
+same-priority peers distinct explicit priorities.</p>
+<p><strong>What to check.</strong> Most applications need no change — with the default priority
+the resolved order is identical. Only if you relied on the whole legacy chain
+always sitting inside the built-in layer, and assumed a legacy <code>priority</code> could
+never cross the bridge boundary, review the <code>priority</code> values you declared and
+confirm the new placement matches your intent.</p>
+<p><strong>Introspection.</strong> <code>cullinan.web.gateway.get_pipeline().list_middleware()</code>
+reports one entry per legacy middleware — the entry count goes from a single
+bridge entry to one entry per registered middleware — and each entry is named
+after the real middleware instead of after the bridge, so the resolved order is
+directly readable.</p>
+<p>The built-in layer is declarative too: <code>configure(builtin_middleware=[...])</code>
+replaces it, and <code>configure(builtin_middleware=[])</code> switches it off.</p>
 <h3 id="7-openapi-integration">7. OpenAPI Integration<a class="headerlink" href="#7-openapi-integration" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAPIGenerator</span><span class="p">,</span> <span class="n">get_router</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAPIGenerator</span><span class="p">,</span> <span class="n">get_router</span>
 
 <span class="c1"># Auto-generate spec from all registered routes</span>
 <span class="n">gen</span> <span class="o">=</span> <span class="n">OpenAPIGenerator</span><span class="p">(</span>
-    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;My API&#39;</span><span class="p">,</span>
-    <span class="n">version</span><span class="o">=</span><span class="s1">&#39;1.0.0&#39;</span><span class="p">,</span>
-    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;My awesome API&#39;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s1">'My API'</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s1">'1.0.0'</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">'My awesome API'</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Register /openapi.json and /openapi.yaml endpoints</span>
@@ -2914,12 +3013,12 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 </code></pre></div>
 <h3 id="8-websocket-changes">8. WebSocket Changes<a class="headerlink" href="#8-websocket-changes" title="Permanent link">&para;</a></h3>
 <h4 id="v09x-tornado-websocket-only">v0.9x: Tornado WebSocket only<a class="headerlink" href="#v09x-tornado-websocket-only" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="nd">@websocket_handler</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/ws/chat&#39;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="nd">@websocket_handler</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/ws/chat'</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ChatHandler</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write_message</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;echo: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_message</span><span class="p">(</span><span class="sa">f</span><span class="s2">"echo: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
 </code></pre></div>
@@ -2955,30 +3054,33 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <tr>
 <td><code>Handler</code> class</td>
 <td>Deprecated (warning)</td>
-<td>v3.0</td>
+<td>End of the deprecation window</td>
 </tr>
 <tr>
 <td><code>HttpResponse</code></td>
 <td>Deprecated (auto-bridged)</td>
-<td>v3.0</td>
+<td>End of the deprecation window</td>
 </tr>
 <tr>
 <td><code>EncapsulationHandler.add_url()</code></td>
 <td>Internal only</td>
-<td>v3.0</td>
+<td>End of the deprecation window</td>
 </tr>
 <tr>
 <td><code>self.write()</code> in controllers</td>
 <td>Deprecated</td>
-<td>v3.0</td>
+<td>End of the deprecation window</td>
 </tr>
 <tr>
 <td>Old middleware (<code>Middleware</code> base)</td>
 <td>Auto-bridged</td>
-<td>v3.0</td>
+<td>End of the deprecation window</td>
 </tr>
 </tbody>
 </table>
+<p>Removal versions are not hand-written. They are derived from the framework
+version and a fixed deprecation window (<code>current minor + N</code>), so this table
+cannot drift from the version the code reports.</p>
 
 
 
@@ -3044,7 +3146,7 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.95a1", "pre_is_available": true, "pre_label": "0.95a1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

@@ -6,10 +6,10 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the Cullinan Tornado-based IoC/DI framework with type-safe parameters, pluggable model handlers, and Pydantic integration">
+        <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content="Cullinan">
+        <meta name="author" content="plumeink">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/extension_development_guide/">
@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.95a1"
-      data-stable-version="0.94"
+      data-current-version="0.96a1"
+      data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.95a1"
+      data-pre-version="0.96a1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1235,10 +1235,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#custom-scope" class="md-nav__link">
+  <a href="#scopes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Scope
+        Scopes
       
     </span>
   </a>
@@ -1374,10 +1374,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#custom-tornado-handler" class="md-nav__link">
+  <a href="#custom-routes-with-controllers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Tornado Handler
+        Custom Routes with Controllers
       
     </span>
   </a>
@@ -1385,10 +1385,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#mixed-use-with-controller" class="md-nav__link">
+  <a href="#mixing-custom-routes-with-other-controllers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mixed Use with Controller
+        Mixing Custom Routes with Other Controllers
       
     </span>
   </a>
@@ -2756,10 +2756,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#custom-scope" class="md-nav__link">
+  <a href="#scopes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Scope
+        Scopes
       
     </span>
   </a>
@@ -2895,10 +2895,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#custom-tornado-handler" class="md-nav__link">
+  <a href="#custom-routes-with-controllers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Tornado Handler
+        Custom Routes with Controllers
       
     </span>
   </a>
@@ -2906,10 +2906,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#mixed-use-with-controller" class="md-nav__link">
+  <a href="#mixing-custom-routes-with-other-controllers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mixed Use with Controller
+        Mixing Custom Routes with Other Controllers
       
     </span>
   </a>
@@ -3117,9 +3117,9 @@
 
 <h1 id="cullinan-extension-development-guide">Cullinan Extension Development Guide<a class="headerlink" href="#cullinan-extension-development-guide" title="Permanent link">&para;</a></h1>
 <blockquote>
-<p><strong>Version</strong>: 0.94a1
-<strong>Author</strong>: Cullinan<br />
-<strong>Last Updated</strong>: 2026-02-19</p>
+<p><strong>Version</strong>: 0.96a1
+<strong>Author</strong>: plumeink<br />
+<strong>Last Updated</strong>: 2026-09-28</p>
 <p><strong>Advanced topic:</strong> this guide is for framework extension work, not the default
 application learning path.</p>
 </blockquote>
@@ -3151,11 +3151,11 @@ application learning path.</p>
 <span class="c1"># Query all extension points</span>
 <span class="n">all_points</span> <span class="o">=</span> <span class="n">list_extension_points</span><span class="p">()</span>
 <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">all_points</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">'category'</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">point</span><span class="p">[</span><span class="s1">'description'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <span class="c1"># Query specific category</span>
-<span class="n">middleware_points</span> <span class="o">=</span> <span class="n">list_extension_points</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s1">&#39;middleware&#39;</span><span class="p">)</span>
+<span class="n">middleware_points</span> <span class="o">=</span> <span class="n">list_extension_points</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s1">'middleware'</span><span class="p">)</span>
 </code></pre></div>
 <hr />
 <h2 id="extension-categories">Extension Categories<a class="headerlink" href="#extension-categories" title="Permanent link">&para;</a></h2>
@@ -3182,12 +3182,12 @@ application learning path.</p>
 <tr>
 <td><strong>Injection</strong></td>
 <td>Dependency Injection</td>
-<td>Custom Scope, Provider</td>
+<td>Scopes, Provider</td>
 </tr>
 <tr>
 <td><strong>Routing</strong></td>
 <td>Route handling</td>
-<td>Custom Handler</td>
+<td>Custom Controller</td>
 </tr>
 <tr>
 <td><strong>Configuration</strong></td>
@@ -3214,16 +3214,16 @@ application learning path.</p>
 
 <span class="nd">@middleware</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">LoggingMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Logging Middleware&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Logging Middleware"""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
         <span class="c1"># Request preprocessing</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Request: </span><span class="si">{</span><span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">uri</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Request: </span><span class="si">{</span><span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">uri</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">handler</span>  <span class="c1"># Return handler to continue processing</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">process_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
         <span class="c1"># Response post-processing</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Response: </span><span class="si">{</span><span class="n">response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Response: </span><span class="si">{</span><span class="n">response</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">response</span>
 </code></pre></div>
 <h4 id="method-2-manual-registration">Method 2: Manual Registration<a class="headerlink" href="#method-2-manual-registration" title="Permanent link">&para;</a></h4>
@@ -3249,11 +3249,11 @@ application learning path.</p>
 <div class="highlight"><pre><span></span><code><span class="nd">@middleware</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatabaseMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute during application startup&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Execute during application startup"""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">create_connection_pool</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">on_shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute during application shutdown&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Execute during application shutdown"""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
@@ -3263,7 +3263,7 @@ application learning path.</p>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">process_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
         <span class="c1"># Return connection</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="s1">&#39;db&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="s1">'db'</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">return_connection</span><span class="p">(</span><span class="n">handler</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">response</span>
 </code></pre></div>
@@ -3272,11 +3272,11 @@ application learning path.</p>
 <div class="highlight"><pre><span></span><code><span class="nd">@middleware</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AuthMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
-        <span class="n">token</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">)</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'Authorization'</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">token</span><span class="p">:</span>
             <span class="c1"># Authentication failed, short-circuit</span>
             <span class="n">handler</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
-            <span class="n">handler</span><span class="o">.</span><span class="n">finish</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Unauthorized&#39;</span><span class="p">})</span>
+            <span class="n">handler</span><span class="o">.</span><span class="n">finish</span><span class="p">({</span><span class="s1">'error'</span><span class="p">:</span> <span class="s1">'Unauthorized'</span><span class="p">})</span>
             <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># Stop processing</span>
 
         <span class="c1"># Authentication successful, continue</span>
@@ -3287,55 +3287,26 @@ application learning path.</p>
 <p>Reference: <code>examples/middleware_and_module/</code> — see the current middleware example that uses the modern <code>@middleware</code> decorator API.</p>
 <hr />
 <h2 id="dependency-injection-extensions">Dependency Injection Extensions<a class="headerlink" href="#dependency-injection-extensions" title="Permanent link">&para;</a></h2>
-<h3 id="custom-scope">Custom Scope<a class="headerlink" href="#custom-scope" title="Permanent link">&para;</a></h3>
-<p>Scope defines the lifecycle of dependencies (singleton, request-level, session-level, etc.).</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core.scope</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scope</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<h3 id="scopes">Scopes<a class="headerlink" href="#scopes" title="Permanent link">&para;</a></h3>
+<p>A scope defines the lifecycle of a dependency. Cullinan ships three built-in
+scopes, selected with <code>ScopeType</code>; each dependency is bound to one of them when
+it is registered:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScopeType</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">SessionScope</span><span class="p">(</span><span class="n">Scope</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Session-level scope&quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;session&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># {session_id: {key: instance}}</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get instance&quot;&quot;&quot;</span>
-        <span class="n">session_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_session_id</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">session_id</span> <span class="ow">and</span> <span class="n">session_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">session_id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set instance&quot;&quot;&quot;</span>
-        <span class="n">session_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_session_id</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">session_id</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">session_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">session_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">session_id</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear current session&quot;&quot;&quot;</span>
-        <span class="n">session_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_session_id</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">session_id</span> <span class="ow">and</span> <span class="n">session_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">:</span>
-            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">session_id</span><span class="p">]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_current_session_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get session ID from request context&quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_current_context</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">context</span> <span class="o">=</span> <span class="n">get_current_context</span><span class="p">()</span>
-            <span class="k">return</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;session_id&#39;</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
+<span class="n">ScopeType</span><span class="o">.</span><span class="n">SINGLETON</span>   <span class="c1"># one instance for the whole application context</span>
+<span class="n">ScopeType</span><span class="o">.</span><span class="n">PROTOTYPE</span>   <span class="c1"># a new instance on every resolution</span>
+<span class="n">ScopeType</span><span class="o">.</span><span class="n">REQUEST</span>     <span class="c1"># one instance per request scope</span>
 </code></pre></div>
+<p>Use the request scope for per-request lifetimes. Registering an additional scope
+type is not part of the public extension surface, so extensions should compose
+the built-in scopes above instead of subclassing a scope class.</p>
 <h3 id="custom-provider">Custom Provider<a class="headerlink" href="#custom-provider" title="Permanent link">&para;</a></h3>
 <p>Provider is responsible for creating and managing dependency instances.</p>
 <h4 id="factory-pattern-provider">Factory Pattern Provider<a class="headerlink" href="#factory-pattern-provider" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core.provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provider</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provider</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">FactoryProvider</span><span class="p">(</span><span class="n">Provider</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create new instance every time&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Create new instance every time"""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">factory</span> <span class="o">=</span> <span class="n">factory</span>
@@ -3349,7 +3320,7 @@ application learning path.</p>
 </code></pre></div>
 <h4 id="lazy-initialization-provider">Lazy Initialization Provider<a class="headerlink" href="#lazy-initialization-provider" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LazyProvider</span><span class="p">(</span><span class="n">Provider</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize only on first access&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Initialize only on first access"""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">factory</span> <span class="o">=</span> <span class="n">factory</span>
@@ -3373,17 +3344,17 @@ application learning path.</p>
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">ApplicationContext</span><span class="p">()</span>
 
 <span class="n">ctx</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Definition</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;MyClass&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"MyClass"</span><span class="p">,</span>
     <span class="n">factory</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">MyClass</span><span class="p">(),</span>
     <span class="n">scope</span><span class="o">=</span><span class="n">ScopeType</span><span class="o">.</span><span class="n">SINGLETON</span><span class="p">,</span>
-    <span class="n">source</span><span class="o">=</span><span class="s2">&quot;extension:MyClass&quot;</span><span class="p">,</span>
+    <span class="n">source</span><span class="o">=</span><span class="s2">"extension:MyClass"</span><span class="p">,</span>
 <span class="p">))</span>
 
 <span class="n">ctx</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Definition</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HeavyClass&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"HeavyClass"</span><span class="p">,</span>
     <span class="n">factory</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">HeavyClass</span><span class="p">(),</span>
     <span class="n">scope</span><span class="o">=</span><span class="n">ScopeType</span><span class="o">.</span><span class="n">SINGLETON</span><span class="p">,</span>
-    <span class="n">source</span><span class="o">=</span><span class="s2">&quot;extension:HeavyClass&quot;</span><span class="p">,</span>
+    <span class="n">source</span><span class="o">=</span><span class="s2">"extension:HeavyClass"</span><span class="p">,</span>
 <span class="p">))</span>
 </code></pre></div>
 <p>For new extensions, prefer registering <code>Definition</code> objects or explicit factories through <code>ApplicationContext</code> instead of mutating the legacy injection registry directly.</p>
@@ -3397,33 +3368,33 @@ application learning path.</p>
 <span class="nd">@service</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatabaseService</span><span class="p">(</span><span class="n">Service</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_post_construct</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize resources (after dependency injection)&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Initialize resources (after dependency injection)"""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">connect_to_database</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Database connected&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Database connected"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">on_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute during application startup&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT 1&quot;</span><span class="p">)</span>  <span class="c1"># Health check</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Database ready&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""Execute during application startup"""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SELECT 1"</span><span class="p">)</span>  <span class="c1"># Health check</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Database ready"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">on_shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute during application shutdown&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Execute during application shutdown"""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Database disconnected&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Database disconnected"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">on_pre_destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute before destruction&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Execute before destruction"""</span>
         <span class="k">pass</span>
 </code></pre></div>
 <h3 id="async-hooks">Async Hooks<a class="headerlink" href="#async-hooks" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="nd">@service</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AsyncService</span><span class="p">(</span><span class="n">Service</span><span class="p">):</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_startup_async</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Support async initialization&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Support async initialization"""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="k">await</span> <span class="n">create_async_client</span><span class="p">()</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_shutdown_async</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Support async cleanup&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Support async cleanup"""</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </code></pre></div>
 <h3 id="hook-execution-order">Hook Execution Order<a class="headerlink" href="#hook-execution-order" title="Permanent link">&para;</a></h3>
@@ -3435,57 +3406,73 @@ application learning path.</p>
 </ol>
 <hr />
 <h2 id="routing-extensions">Routing Extensions<a class="headerlink" href="#routing-extensions" title="Permanent link">&para;</a></h2>
-<h3 id="custom-tornado-handler">Custom Tornado Handler<a class="headerlink" href="#custom-tornado-handler" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">tornado.web</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
+<p>Custom routes are declared through Cullinan's engine-neutral controller layer.
+The same business code is dispatched through the shared gateway on both the
+Tornado and ASGI backends, so controller classes are the recommended extension
+point rather than engine-native handlers.</p>
+<h3 id="custom-routes-with-controllers">Custom Routes with Controllers<a class="headerlink" href="#custom-routes-with-controllers" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">controller</span><span class="p">,</span> <span class="n">get_api</span><span class="p">,</span> <span class="n">post_api</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">CustomHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom request handler&quot;&quot;&quot;</span>
+<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/custom'</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomController</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Custom route collection"""</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Custom handler&quot;</span><span class="p">})</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/'</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"message"</span><span class="p">:</span> <span class="s2">"Custom handler"</span><span class="p">}</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_json_argument</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s2">&quot;received&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">})</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/(?P&lt;item_id&gt;[0-9]+)'</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"message"</span><span class="p">:</span> <span class="s2">"Custom handler"</span><span class="p">,</span> <span class="s2">"item_id"</span><span class="p">:</span> <span class="n">item_id</span><span class="p">}</span>
+
+    <span class="nd">@post_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/'</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"received"</span><span class="p">:</span> <span class="n">payload</span><span class="p">}</span>
 
 
-<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;__main__&quot;</span><span class="p">])</span>
+<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"__main__"</span><span class="p">])</span>
 <span class="nd">@application</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">application</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
-        <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/custom&#39;</span><span class="p">,</span> <span class="n">CustomHandler</span><span class="p">),</span>
-        <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/custom/(?P&lt;id&gt;[0-9]+)&#39;</span><span class="p">,</span> <span class="n">CustomHandler</span><span class="p">),</span>
-    <span class="p">])</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="c1"># Controller routes are discovered and registered automatically.</span>
+    <span class="n">application</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
 </code></pre></div>
-<h3 id="mixed-use-with-controller">Mixed Use with Controller<a class="headerlink" href="#mixed-use-with-controller" title="Permanent link">&para;</a></h3>
+<h3 id="mixing-custom-routes-with-other-controllers">Mixing Custom Routes with Other Controllers<a class="headerlink" href="#mixing-custom-routes-with-other-controllers" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">controller</span><span class="p">,</span> <span class="n">get_api</span>
 
 
-<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/api/users&#39;</span><span class="p">)</span>
+<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/api/users'</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserController</span><span class="p">:</span>
-    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">list_users</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;users&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"users"</span><span class="p">:</span> <span class="p">[]}</span>
 
 
-<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;__main__&quot;</span><span class="p">])</span>
+<span class="nd">@controller</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/health'</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HealthController</span><span class="p">:</span>
+    <span class="nd">@get_api</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">'/'</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"ok"</span><span class="p">}</span>
+
+
+<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"__main__"</span><span class="p">])</span>
 <span class="nd">@application</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
 
-<span class="c1"># CustomHandler and UserController can coexist</span>
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">application</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-        <span class="n">main</span><span class="p">,</span>
-        <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
-            <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;/health&#39;</span><span class="p">,</span> <span class="n">HealthCheckHandler</span><span class="p">),</span>  <span class="c1"># Custom</span>
-        <span class="p">]</span>
-    <span class="p">)</span>  <span class="c1"># UserController will be automatically registered</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+    <span class="c1"># CustomController and UserController can coexist; both are registered.</span>
+    <span class="n">application</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
 </code></pre></div>
+<blockquote>
+<p>[!NOTE]
+Engine-native handlers bypass the shared gateway and therefore behave
+differently on the ASGI backend. They are not a recommended extension point;
+declare routes with controllers instead so behaviour stays engine-neutral.</p>
+</blockquote>
 <hr />
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 <h3 id="1-middleware-design-principles">1. Middleware Design Principles<a class="headerlink" href="#1-middleware-design-principles" title="Permanent link">&para;</a></h3>
@@ -3540,7 +3527,7 @@ application learning path.</p>
 <p>✅ <strong>Use name-based injection for special cases</strong>
 <div class="highlight"><pre><span></span><code><span class="nd">@service</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserService</span><span class="p">(</span><span class="n">Service</span><span class="p">):</span>
-    <span class="n">email_service</span> <span class="o">=</span> <span class="n">InjectByName</span><span class="p">(</span><span class="s1">&#39;EmailService&#39;</span><span class="p">)</span>  <span class="c1"># Avoid circular imports</span>
+    <span class="n">email_service</span> <span class="o">=</span> <span class="n">InjectByName</span><span class="p">(</span><span class="s1">'EmailService'</span><span class="p">)</span>  <span class="c1"># Avoid circular imports</span>
 </code></pre></div></p>
 <h3 id="4-lifecycle-management">4. Lifecycle Management<a class="headerlink" href="#4-lifecycle-management" title="Permanent link">&para;</a></h3>
 <ul>
@@ -3577,15 +3564,15 @@ application learning path.</p>
         <span class="k">except</span> <span class="n">TokenExpiredError</span><span class="p">:</span>
             <span class="n">handler</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
             <span class="n">handler</span><span class="o">.</span><span class="n">finish</span><span class="p">({</span>
-                <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;TokenExpired&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Your token has expired. Please login again.&#39;</span>
+                <span class="s1">'error'</span><span class="p">:</span> <span class="s1">'TokenExpired'</span><span class="p">,</span>
+                <span class="s1">'message'</span><span class="p">:</span> <span class="s1">'Your token has expired. Please login again.'</span>
             <span class="p">})</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="n">InvalidTokenError</span><span class="p">:</span>
             <span class="n">handler</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
             <span class="n">handler</span><span class="o">.</span><span class="n">finish</span><span class="p">({</span>
-                <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;InvalidToken&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid authentication token.&#39;</span>
+                <span class="s1">'error'</span><span class="p">:</span> <span class="s1">'InvalidToken'</span><span class="p">,</span>
+                <span class="s1">'message'</span><span class="p">:</span> <span class="s1">'Invalid authentication token.'</span>
             <span class="p">})</span>
             <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div></p>
@@ -3603,11 +3590,11 @@ application learning path.</p>
 <span class="k">class</span><span class="w"> </span><span class="nc">LoggingMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;Request started&quot;</span><span class="p">,</span>
+            <span class="s2">"Request started"</span><span class="p">,</span>
             <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
-                <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
-                <span class="s1">&#39;remote_ip&#39;</span><span class="p">:</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">remote_ip</span><span class="p">,</span>
+                <span class="s1">'method'</span><span class="p">:</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+                <span class="s1">'path'</span><span class="p">:</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                <span class="s1">'remote_ip'</span><span class="p">:</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">remote_ip</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">handler</span>
@@ -3621,7 +3608,7 @@ application learning path.</p>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Resolve service from the active ApplicationContext</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_application_context</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">user_service</span> <span class="o">=</span> <span class="n">get_application_context</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;UserService&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_service</span> <span class="o">=</span> <span class="n">get_application_context</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'UserService'</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
         <span class="c1"># Use service</span>
@@ -3634,11 +3621,11 @@ application learning path.</p>
 <span class="k">class</span><span class="w"> </span><span class="nc">ResponseModifierMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">process_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
         <span class="c1"># Add response headers</span>
-        <span class="n">handler</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="s1">&#39;X-Custom-Header&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="s1">'X-Custom-Header'</span><span class="p">,</span> <span class="s1">'value'</span><span class="p">)</span>
 
         <span class="c1"># Modify response body (if dict)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">response</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">response</span><span class="p">[</span><span class="s1">'timestamp'</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">response</span>
 </code></pre></div>
@@ -3648,7 +3635,7 @@ application learning path.</p>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConditionalMiddleware</span><span class="p">(</span><span class="n">Middleware</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">process_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
         <span class="c1"># Only apply to /api/ paths</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;/api/&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'/api/'</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">handler</span>  <span class="c1"># Skip</span>
 
         <span class="c1"># Execute middleware logic</span>
@@ -3717,9 +3704,9 @@ Client Response
 <li><strong>API Documentation</strong>: <code>docs/api_reference.md</code></li>
 </ul>
 <hr />
-<p><strong>Version</strong>: 0.94a1
-<strong>Author</strong>: Cullinan<br />
-<strong>Last Updated</strong>: 2026-06-01</p>
+<p><strong>Version</strong>: 0.96a1
+<strong>Author</strong>: plumeink<br />
+<strong>Last Updated</strong>: 2026-09-28</p>
 
 
 
@@ -3785,7 +3772,7 @@ Client Response
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.95a1", "pre_is_available": true, "pre_label": "0.95a1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

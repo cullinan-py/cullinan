@@ -6,10 +6,10 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the Cullinan Tornado-based IoC/DI framework with type-safe parameters, pluggable model handlers, and Pydantic integration">
+        <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content=""Cullinan"">
+        <meta name="author" content=""plumeink"">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/api_reference/">
@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.95a1"
-      data-stable-version="0.94"
+      data-current-version="0.96a1"
+      data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.95a1"
+      data-pre-version="0.96a1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1249,6 +1249,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#public-api-stability-freeze-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Public API stability freeze (1.0)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#new-in-v090-parameter-system" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1332,15 +1343,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#v095a1-additions-track-a-internal-refactor" class="md-nav__link">
+  <a href="#v095-additions-track-a-internal-refactor" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v0.95a1 additions (Track A internal refactor)
+        v0.95 additions (Track A internal refactor)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="v0.95a1 additions (Track A internal refactor)">
+    <nav class="md-nav" aria-label="v0.95 additions (Track A internal refactor)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1355,10 +1366,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#deprecated-symbols-removed-in-v097" class="md-nav__link">
+  <a href="#deprecated-symbols-removed-in-a-future-release" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deprecated symbols (removed in v0.97)
+        Deprecated symbols (removed in a future release)
       
     </span>
   </a>
@@ -2263,6 +2274,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#public-api-stability-freeze-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Public API stability freeze (1.0)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#new-in-v090-parameter-system" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2346,15 +2368,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#v095a1-additions-track-a-internal-refactor" class="md-nav__link">
+  <a href="#v095-additions-track-a-internal-refactor" class="md-nav__link">
     <span class="md-ellipsis">
       
-        v0.95a1 additions (Track A internal refactor)
+        v0.95 additions (Track A internal refactor)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="v0.95a1 additions (Track A internal refactor)">
+    <nav class="md-nav" aria-label="v0.95 additions (Track A internal refactor)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2369,10 +2391,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#deprecated-symbols-removed-in-v097" class="md-nav__link">
+  <a href="#deprecated-symbols-removed-in-a-future-release" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deprecated symbols (removed in v0.97)
+        Deprecated symbols (removed in a future release)
       
     </span>
   </a>
@@ -2447,12 +2469,53 @@ low-level runtime orchestration or a concrete server adapter.</p>
 <p>For regular applications, prefer the top-level <code>cullinan</code> API. Advanced modules
 should be imported explicitly so the boundary stays visible in code review, IDE
 completion, and onboarding docs.</p>
-<p>The v0.94 Phase A freeze uses package <code>__all__</code> lists as the reviewable export contract:</p>
+<h2 id="public-api-stability-freeze-10">Public API stability freeze (1.0)<a class="headerlink" href="#public-api-stability-freeze-10" title="Permanent link">&para;</a></h2>
+<p>The <strong>1.0 public API freeze</strong> upgrades the previous, narrower export freeze
+into the stability contract for the 1.0 line. It has three parts:</p>
 <ul>
-<li><code>cullinan.__all__</code> — regular application-facing startup, declaration, and request APIs</li>
-<li><code>cullinan.application.__all__</code> — advanced application/runtime helpers, including <code>run()</code> and <code>get_asgi_app()</code></li>
-<li><code>cullinan.web.__all__</code> / <code>cullinan.core.__all__</code> — explicit business-web and container/lifecycle surfaces</li>
+<li><strong>Effective point</strong> — declared on <strong>2026-09-27</strong>. The <strong><code>1.0</code> line is not
+  yet released.</strong> This section
+  declares the stability contract that the 1.0 line will carry from this point
+  on — it is not a claim that <code>1.0</code> has shipped. From this point on, any change
+  to a symbol inside the frozen set is a post-freeze change.</li>
+<li><strong>Scope</strong> — exactly four package <code>__all__</code> lists, frozen at <em>symbol-name</em>
+  granularity (signatures, field types, and defaults are outside this
+  contract):</li>
 </ul>
+<table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Symbols</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cullinan.__all__</code> — regular application-facing startup, declaration, and request APIs</td>
+<td>44</td>
+</tr>
+<tr>
+<td><code>cullinan.application.__all__</code> — advanced application/runtime helpers, including <code>run()</code> and <code>get_asgi_app()</code></td>
+<td>26</td>
+</tr>
+<tr>
+<td><code>cullinan.web.__all__</code> — explicit business-web surface</td>
+<td>34</td>
+</tr>
+<tr>
+<td><code>cullinan.core.__all__</code> — container and lifecycle surface</td>
+<td>72</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>cullinan.web.gateway.__all__</code> facade is <strong>not</strong> part of this contract:
+  it is a layered, explicitly-imported integration surface rather than a
+  frozen stability promise.
+- <strong>Append-only</strong> — after the freeze, symbols inside the frozen set may be
+  <em>added</em>, but never renamed, semantically changed, behaviourally changed, or
+  removed. Additions are not free: a new symbol expands the public surface and
+  must be synchronised on every supported surface (the sub-package <code>__all__</code>,
+  the bilingual docs, and both engines) before it lands.</p>
 <p>Symbols that are not present in the corresponding <code>__all__</code> list should be
 treated as private implementation details. Underscore-prefixed compatibility
 exports may still exist, but they are not part of the default business-facing
@@ -2787,7 +2850,7 @@ stability promise.</p>
 <li><code>Inject</code>, <code>InjectByName</code> — Property/constructor injection markers</li>
 </ul>
 <p>A complete API reference can be populated using this structure, either via automated generation or by manual curation.</p>
-<h2 id="v095a1-additions-track-a-internal-refactor">v0.95a1 additions (Track A internal refactor)<a class="headerlink" href="#v095a1-additions-track-a-internal-refactor" title="Permanent link">&para;</a></h2>
+<h2 id="v095-additions-track-a-internal-refactor">v0.95 additions (Track A internal refactor)<a class="headerlink" href="#v095-additions-track-a-internal-refactor" title="Permanent link">&para;</a></h2>
 <h3 id="new-public-api-symbols">New public API symbols<a class="headerlink" href="#new-public-api-symbols" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2835,9 +2898,15 @@ stability promise.</p>
 <td>config</td>
 <td>Set to <code>1</code>/<code>true</code>/<code>yes</code> to globally enable <code>strict_private_injection</code> for all <code>ApplicationContext</code> instances.</td>
 </tr>
+<tr>
+<td><code>builtin_middleware</code></td>
+<td><code>configure</code></td>
+<td>kwarg</td>
+<td>Controls the built-in gateway middleware layer (the access-log middleware). <code>None</code> (default) installs the framework default, <code>[]</code> switches the built-in layer off, a list replaces it.</td>
+</tr>
 </tbody>
 </table>
-<h3 id="deprecated-symbols-removed-in-v097">Deprecated symbols (removed in v0.97)<a class="headerlink" href="#deprecated-symbols-removed-in-v097" title="Permanent link">&para;</a></h3>
+<h3 id="deprecated-symbols-removed-in-a-future-release">Deprecated symbols (removed in a future release)<a class="headerlink" href="#deprecated-symbols-removed-in-a-future-release" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2865,6 +2934,10 @@ stability promise.</p>
 <tr>
 <td><code>reset_injection_registry()</code></td>
 <td>Create a new <code>ApplicationContext</code> explicitly</td>
+</tr>
+<tr>
+<td><code>RouteGroup</code></td>
+<td><code>configure(middlewares=[...])</code> / <code>@middleware</code> (per-group middleware tags are not supported)</td>
 </tr>
 </tbody>
 </table>
@@ -2945,7 +3018,7 @@ stability promise.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.95a1", "pre_is_available": true, "pre_label": "0.95a1", "pre_url": "/cullinan/pre/", "stable_label": 0.94, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
