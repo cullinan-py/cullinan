@@ -6,35 +6,104 @@ Provides tools for marking deprecated APIs and managing backward compatibility.
 Author: Cullinan
 """
 
+import re
 import warnings
 import functools
 import logging
-from typing import Optional
+from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+# Deprecation windows, counted in minor releases. The concrete removal version
+# is derived from the framework version (the single source of truth in
+# ``cullinan._version``), so no version literal is written by hand anywhere in
+# the codebase.
+#
+# Each surface picks the window that reproduces the removal version it already
+# advertised. A window is an internal policy knob used to preserve that
+# equivalence; it is not a fresh schedule commitment, and its final value is
+# settled together with the release plan that owns the surrounding deprecations.
+DEPRECATION_WINDOW_MINORS = 2
+
+# The legacy middleware registration helpers and the decorator's implicit
+# default were announced with a removal one major step further out; this wider
+# window reproduces that announcement so the rule-based refactor never pulls
+# them forward.
+EXTENDED_DEPRECATION_WINDOW_MINORS = 5
+
+# The framework numbers minors as a two-digit step (``0.95`` ... ``0.99``) before
+# rolling into the next major (``1.0``); the removal arithmetic rolls over the
+# same way so a wide window lands on the expected version instead of ``0.100``.
+_MINORS_PER_MAJOR = 100
+
+
+def _release_pair(version: str) -> Tuple[int, int]:
+    """Return ``(major, minor)`` parsed from a version string like ``0.96a1``."""
+    match = re.match(r"\s*(\d+)\.(\d+)", version)
+    if match is None:
+        raise ValueError(f"Unrecognised version string: {version!r}")
+    return int(match.group(1)), int(match.group(2))
+
+
+def current_version() -> str:
+    """Return the framework version from its single source of truth."""
+    from cullinan._version import __version__
+
+    return __version__
+
+
+def resolve_removal_version(
+    version: Optional[str] = None,
+    window: int = DEPRECATION_WINDOW_MINORS,
+) -> str:
+    """Derive a removal version as ``current minor + window``.
+
+    The value is computed from the version in ``cullinan._version`` rather than
+    hard-coded, so adding a new deprecation cannot introduce a further,
+    inconsistent removal version. The minor field rolls over into the major
+    field the same way the framework's release numbering does (``0.99`` + one
+    minor becomes ``1.0``).
+
+    Example:
+        >>> resolve_removal_version("0.95")  # window defaults to 2
+        '0.97'
+        >>> resolve_removal_version("0.95", window=5)
+        '1.0'
+    """
+    major, minor = _release_pair(version or current_version())
+    total_minor = major * _MINORS_PER_MAJOR + minor + window
+    new_major, new_minor = divmod(total_minor, _MINORS_PER_MAJOR)
+    return f"{new_major}.{new_minor}"
 
 
 def deprecated(version: str,
                alternative: str,
-               removal_version: str = "1.0",
+               removal_version: Optional[str] = None,
                category: type = DeprecationWarning):
     """Decorator to mark a function or class as deprecated.
 
     Args:
         version: Version in which the API was deprecated
         alternative: Description of the alternative API to use
-        removal_version: Version in which the API will be removed (default: "1.0")
+        removal_version: Version in which the API will be removed. When omitted,
+            it is derived from the framework version and the compatibility
+            window (``current minor + EXTENDED_DEPRECATION_WINDOW_MINORS``)
+            instead of being hard-coded - that window keeps the removal version
+            this default already advertised.
         category: Warning category (default: DeprecationWarning)
 
     Example:
         >>> @deprecated(
         ...     version="0.8",
         ...     alternative="resolve_dependency()",
-        ...     removal_version="1.0"
         ... )
         ... def get_service_by_name(name: str):
         ...     return registry.get_instance(name)
     """
+    resolved_removal_version = removal_version or resolve_removal_version(
+        window=EXTENDED_DEPRECATION_WINDOW_MINORS
+    )
+
     def decorator(obj):
         # Handle both functions and classes
         if isinstance(obj, type):
@@ -44,7 +113,7 @@ def deprecated(version: str,
             @functools.wraps(original_init)
             def new_init(self, *args, **kwargs):
                 warnings.warn(
-                    f"{obj.__name__} is deprecated since v{version} and will be removed in v{removal_version}. "
+                    f"{obj.__name__} is deprecated since v{version} and will be removed in v{resolved_removal_version}. "
                     f"Use {alternative} instead.",
                     category=category,
                     stacklevel=2
@@ -58,7 +127,7 @@ def deprecated(version: str,
             obj.__deprecated_info__ = {
                 'version': version,
                 'alternative': alternative,
-                'removal_version': removal_version,
+                'removal_version': resolved_removal_version,
             }
 
             return obj
@@ -67,7 +136,7 @@ def deprecated(version: str,
             @functools.wraps(obj)
             def wrapper(*args, **kwargs):
                 warnings.warn(
-                    f"{obj.__name__}() is deprecated since v{version} and will be removed in v{removal_version}. "
+                    f"{obj.__name__}() is deprecated since v{version} and will be removed in v{resolved_removal_version}. "
                     f"Use {alternative} instead.",
                     category=category,
                     stacklevel=2
@@ -79,7 +148,7 @@ def deprecated(version: str,
             wrapper.__deprecated_info__ = {
                 'version': version,
                 'alternative': alternative,
-                'removal_version': removal_version,
+                'removal_version': resolved_removal_version,
             }
 
             return wrapper
