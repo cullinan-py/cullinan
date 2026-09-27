@@ -47,8 +47,10 @@ from cullinan.core.services import service, Service
 from cullinan.core import Inject
 
 # v0.93 — new semantic imports available
-from cullinan import (
-    WebRequest, WebResponse,          # Unified request/response
+from cullinan import WebRequest, WebResponse   # Unified request/response
+
+# Gateway layer: routing, dispatch, middleware pipeline and OpenAPI spec
+from cullinan.web.gateway import (
     Router, Dispatcher,               # Gateway layer
     GatewayMiddleware, CORSMiddleware,# Middleware pipeline
     OpenAPIGenerator,                 # OpenAPI spec
@@ -163,7 +165,7 @@ class AuthMiddleware(Middleware):
 #### v0.93: Middleware in the onion pipeline
 
 ```python
-from cullinan import GatewayMiddleware, get_pipeline
+from cullinan.web.gateway import GatewayMiddleware, get_pipeline
 
 class AuthMiddleware(GatewayMiddleware):
     async def __call__(self, request, call_next):
@@ -182,7 +184,7 @@ get_pipeline().add(AuthMiddleware())
 ### 7. OpenAPI Integration
 
 ```python
-from cullinan import OpenAPIGenerator, get_router
+from cullinan.web.gateway import OpenAPIGenerator, get_router
 
 # Auto-generate spec from all registered routes
 gen = OpenAPIGenerator(
@@ -248,8 +250,12 @@ Request → Adapter(Tornado/ASGI) → WebRequest → Middleware Pipeline
 
 | Item | v0.93 Status | Planned Removal |
 |------|-------------|-----------------|
-| `Handler` class | Deprecated (warning) | v3.0 |
-| `HttpResponse` | Deprecated (auto-bridged) | v3.0 |
-| `EncapsulationHandler.add_url()` | Internal only | v3.0 |
-| `self.write()` in controllers | Deprecated | v3.0 |
-| Old middleware (`Middleware` base) | Auto-bridged | v3.0 |
+| `Handler` class | Deprecated (warning) | End of the deprecation window |
+| `HttpResponse` | Deprecated (auto-bridged) | End of the deprecation window |
+| `EncapsulationHandler.add_url()` | Internal only | End of the deprecation window |
+| `self.write()` in controllers | Deprecated | End of the deprecation window |
+| Old middleware (`Middleware` base) | Auto-bridged | End of the deprecation window |
+
+Removal versions are not hand-written. They are derived from the framework
+version and a fixed deprecation window (`current minor + N`), so this table
+cannot drift from the version the code reports.

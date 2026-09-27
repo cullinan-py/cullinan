@@ -47,8 +47,10 @@ from cullinan.core.services import service, Service
 from cullinan.core import Inject
 
 # v0.93 — 新增语义导入
-from cullinan import (
-    WebRequest, WebResponse,          # 统一请求/响应
+from cullinan import WebRequest, WebResponse   # 统一请求/响应
+
+# 网关层：路由、分发、中间件管线与 OpenAPI 规范
+from cullinan.web.gateway import (
     Router, Dispatcher,               # 网关层
     GatewayMiddleware, CORSMiddleware,# 中间件管线
     OpenAPIGenerator,                 # OpenAPI 规范
@@ -163,7 +165,7 @@ class AuthMiddleware(Middleware):
 #### v0.93：中间件在洋葱管线中
 
 ```python
-from cullinan import GatewayMiddleware, get_pipeline
+from cullinan.web.gateway import GatewayMiddleware, get_pipeline
 
 class AuthMiddleware(GatewayMiddleware):
     async def __call__(self, request, call_next):
@@ -182,7 +184,7 @@ get_pipeline().add(AuthMiddleware())
 ### 7. OpenAPI 集成
 
 ```python
-from cullinan import OpenAPIGenerator, get_router
+from cullinan.web.gateway import OpenAPIGenerator, get_router
 
 # 从所有已注册路由自动生成规范
 gen = OpenAPIGenerator(
@@ -248,8 +250,10 @@ class ChatHandler:
 
 | 项目 | v0.93 状态 | 计划移除 |
 |------|----------|---------|
-| `Handler` 类 | 弃用（警告） | v3.0 |
-| `HttpResponse` | 弃用（自动桥接） | v3.0 |
-| `EncapsulationHandler.add_url()` | 仅内部使用 | v3.0 |
-| controller 中的 `self.write()` | 弃用 | v3.0 |
-| 旧中间件（`Middleware` 基类） | 自动桥接 | v3.0 |
+| `Handler` 类 | 弃用（警告） | 弃用窗口结束时 |
+| `HttpResponse` | 弃用（自动桥接） | 弃用窗口结束时 |
+| `EncapsulationHandler.add_url()` | 仅内部使用 | 弃用窗口结束时 |
+| controller 中的 `self.write()` | 弃用 | 弃用窗口结束时 |
+| 旧中间件（`Middleware` 基类） | 自动桥接 | 弃用窗口结束时 |
+
+移除版本不手工书写，而是由框架版本与固定的弃用窗口（`当前 minor + N`）推导，因此本表不会与代码上报的版本发生漂移。

@@ -400,23 +400,21 @@ class UserRepository:
 
 ### 添加中间件
 ```python
-from cullinan.web.middleware import MiddlewareBase
+from cullinan.web.middleware import Middleware, middleware
 
-class LoggingMiddleware(MiddlewareBase):
+@middleware(priority=100)
+class LoggingMiddleware(Middleware):
     def process_request(self, request):
         print(f"Request: {request.method} {request.path}")
-
-# 在应用初始化期间注册
-app.add_middleware(LoggingMiddleware())
 ```
 
 ### 配置
 ```python
-from cullinan.support.config import Config
+from cullinan.support.config import CullinanConfig
 
-config = Config()
-config.set('database.url', 'postgresql://localhost/mydb')
-config.set('server.port', 8080)
+config = CullinanConfig()
+config.server_port = 8080
+config.set_project_root(".")
 ```
 
 ## 故障排查
