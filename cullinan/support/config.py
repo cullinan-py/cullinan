@@ -115,6 +115,23 @@ class CullinanConfig:
         # router at startup and served identically under Tornado and ASGI.
         self.static_files: List[Any] = []
 
+        # Declarative gateway middleware. Each entry is either a
+        # ``cullinan.web.gateway.GatewayMiddleware`` instance, or a
+        # ``(instance, options)`` tuple. ``options`` accepts ``before`` /
+        # ``after`` anchors and/or a ``priority`` global key (lower runs on a
+        # more outer layer, default 100). Entries are consumed at the framework
+        # assembly point (same place the built-in middleware are wired), so their
+        # order never depends on registration timing.
+        self.middlewares: List[Any] = []
+
+        # The built-in gateway middleware layer. ``None`` (the default) installs
+        # the framework default (the access-log middleware). Pass an empty list
+        # to switch the built-in layer off, or a list of
+        # ``GatewayMiddleware`` instances / classes / ``(instance, options)``
+        # tuples to replace it. The built-in layer shares the declarative
+        # ordering of ``middlewares``.
+        self.builtin_middleware: Optional[List[Any]] = None
+
         # OpenAPI auto-generation
         # Set to True to auto-register /openapi.json and /openapi.yaml endpoints
         # Can also be set via env var CULLINAN_OPENAPI_ENABLED=1
@@ -182,6 +199,14 @@ class CullinanConfig:
         if 'static_files' in config:
             value = config['static_files']
             self.static_files = list(value) if value else []
+        if 'middlewares' in config:
+            value = config['middlewares']
+            self.middlewares = list(value) if value else []
+        if 'builtin_middleware' in config:
+            value = config['builtin_middleware']
+            # ``None`` means "use the framework default"; an empty list means
+            # "install no built-in middleware", so the two must not be conflated.
+            self.builtin_middleware = list(value) if value is not None else None
         return self
 
     def to_dict(self) -> dict:
@@ -200,6 +225,10 @@ class CullinanConfig:
             'server_port': self.server_port,
             'explicit_modules': self.explicit_modules,
             'static_files': list(self.static_files),
+            'middlewares': list(self.middlewares),
+            'builtin_middleware': (
+                None if self.builtin_middleware is None else list(self.builtin_middleware)
+            ),
         }
 
 
@@ -263,6 +292,9 @@ def configure(
     server_port: Optional[int] = None,
     explicit_modules: Optional[List[str]] = None,
     static_files: Optional[List[Any]] = None,
+    *,
+    middlewares: Optional[List[Any]] = None,
+    builtin_middleware: Optional[List[Any]] = None,
 ):
     """Configure the Cullinan framework.
 
@@ -285,12 +317,35 @@ def configure(
         server_port: Default bind port for the top-level ``run()`` helper.
         static_files: Optional list of ``cullinan.web.StaticFiles`` mounts
             (also accepts dicts or ``(url, directory)`` tuples).
+        middlewares: Optional list of gateway middleware to install on the
+            onion pipeline. Each entry is either a
+            ``cullinan.web.gateway.GatewayMiddleware`` instance, or a
+            ``(instance, options)`` tuple. ``options`` accepts ``before`` /
+            ``after`` anchors and/or a ``priority`` global key (a lower priority
+            runs on a more outer layer; the default is 100). Declared middleware
+            is assembled at the framework startup point, so the pipeline order
+            follows the declaration rather than registration timing.
+        builtin_middleware: Optional control for the **built-in** gateway
+            middleware layer (the access-log middleware). ``None`` (the default)
+            installs the framework default; an empty list switches the built-in
+            layer off; a list of ``GatewayMiddleware`` instances / classes /
+            ``(instance, options)`` tuples replaces it. The built-in layer is
+            assembled at the same startup point and shares the declarative
+            ordering of ``middlewares``.
 
     Example:
         >>> from cullinan import configure
         >>> @configure(user_packages=['your_app'], verbose=True)
         ... @application
         ... def main(): ...
+
+    Example (declaring middleware)::
+
+        from cullinan import configure, application
+
+        @configure(user_packages=['your_app'], middlewares=[SecurityGate()])
+        @application
+        def main(): ...
     """
     global _config
 
@@ -344,6 +399,12 @@ def configure(
         from cullinan.web.static.spec import coerce_static_files
 
         _config.static_files = list(coerce_static_files(static_files))
+
+    if middlewares is not None:
+        _config.middlewares = list(middlewares)
+
+    if builtin_middleware is not None:
+        _config.builtin_middleware = list(builtin_middleware)
 
     return _config
 

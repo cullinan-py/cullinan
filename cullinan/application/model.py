@@ -468,7 +468,7 @@ class Application:
             if previous_runtime is not None or (self.runtime is not None and WebRuntime.current() is self.runtime.web_runtime):
                 WebRuntime.bind_runtime(previous_runtime)
             if self.runtime is not None and self.context.state.value != "CLOSED":
-                self.context.shutdown()
+                self.context.shutdown(timeout=self.web_runtime.config.drain_timeout)
             raise
 
         if previous_app is not None and previous_app is not self:
@@ -525,7 +525,11 @@ class Application:
         if self.web_runtime.request_count > 0 or self.context.active_request_count > 0:
             return
         if self.context.state.value != "CLOSED":
-            self.context.shutdown()
+            # The drain bound comes from the runtime configuration rather than a
+            # hidden default: ``WebRuntimeConfig.drain_timeout`` (default 30.0,
+            # the value ``ApplicationContext.shutdown`` used to hard-code) is now
+            # the single timeout source for finalising the drain.
+            self.context.shutdown(timeout=self.web_runtime.config.drain_timeout)
         self.phase = "closed"
         self.runtime.phase = "closed"
 

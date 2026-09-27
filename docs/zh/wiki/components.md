@@ -2,7 +2,7 @@ title: "组件"
 slug: "components"
 module: ["cullinan"]
 tags: ["components", "architecture"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

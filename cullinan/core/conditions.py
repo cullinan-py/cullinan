@@ -9,7 +9,7 @@ This module provides condition-based component registration:
 The conditions are stored on the class itself using a special attribute,
 and will be collected when @Service/@Controller/@Component decorator runs.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Callable, Type, List, TYPE_CHECKING

@@ -6,7 +6,7 @@ This module provides diagnostic and exception handling:
 - Diagnostic rendering for error messages
 - Type definitions
 
-Author: Cullinan
+Author: plumeink
 """
 
 from .exceptions import (

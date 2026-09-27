@@ -5,7 +5,7 @@ Instead of creating one dynamic ``type('Servlet'+url, ...)`` per route,
 this adapter registers **one** catch-all ``RequestHandler`` that delegates
 every request to ``Dispatcher.dispatch()``.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import logging

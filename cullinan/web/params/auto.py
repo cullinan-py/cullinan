@@ -3,7 +3,7 @@
 
 Auto type inference, automatically determines type based on value content.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import json

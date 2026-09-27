@@ -2,7 +2,7 @@ title: "运行时与扩展"
 slug: "internals-and-extensions"
 module: []
 tags: ["docs", "internals", "knowledge-base"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

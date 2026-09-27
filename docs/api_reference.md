@@ -2,7 +2,7 @@ title: "API Reference"
 slug: "api-reference"
 module: []
 tags: ["api", "reference"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en
@@ -51,11 +51,35 @@ For regular applications, prefer the top-level `cullinan` API. Advanced modules
 should be imported explicitly so the boundary stays visible in code review, IDE
 completion, and onboarding docs.
 
-The v0.94 Phase A freeze uses package `__all__` lists as the reviewable export contract:
+## Public API stability freeze (1.0)
 
-- `cullinan.__all__` — regular application-facing startup, declaration, and request APIs
-- `cullinan.application.__all__` — advanced application/runtime helpers, including `run()` and `get_asgi_app()`
-- `cullinan.web.__all__` / `cullinan.core.__all__` — explicit business-web and container/lifecycle surfaces
+The **1.0 public API freeze** upgrades the previous, narrower export freeze
+into the stability contract for the 1.0 line. It has three parts:
+
+- **Effective point** — declared on **2026-09-27**. The **`1.0` line is not
+  yet released.** This section
+  declares the stability contract that the 1.0 line will carry from this point
+  on — it is not a claim that `1.0` has shipped. From this point on, any change
+  to a symbol inside the frozen set is a post-freeze change.
+- **Scope** — exactly four package `__all__` lists, frozen at *symbol-name*
+  granularity (signatures, field types, and defaults are outside this
+  contract):
+
+  | Contract | Symbols |
+  |---|---|
+  | `cullinan.__all__` — regular application-facing startup, declaration, and request APIs | 44 |
+  | `cullinan.application.__all__` — advanced application/runtime helpers, including `run()` and `get_asgi_app()` | 26 |
+  | `cullinan.web.__all__` — explicit business-web surface | 34 |
+  | `cullinan.core.__all__` — container and lifecycle surface | 72 |
+
+  The `cullinan.web.gateway.__all__` facade is **not** part of this contract:
+  it is a layered, explicitly-imported integration surface rather than a
+  frozen stability promise.
+- **Append-only** — after the freeze, symbols inside the frozen set may be
+  *added*, but never renamed, semantically changed, behaviourally changed, or
+  removed. Additions are not free: a new symbol expands the public surface and
+  must be synchronised on every supported surface (the sub-package `__all__`,
+  the bilingual docs, and both engines) before it lands.
 
 Symbols that are not present in the corresponding `__all__` list should be
 treated as private implementation details. Underscore-prefixed compatibility
@@ -158,7 +182,7 @@ For each module, the API reference is recommended to follow this structure:
 
 A complete API reference can be populated using this structure, either via automated generation or by manual curation.
 
-## v0.95a1 additions (Track A internal refactor)
+## v0.95 additions (Track A internal refactor)
 
 ### New public API symbols
 
@@ -170,8 +194,9 @@ A complete API reference can be populated using this structure, either via autom
 | `strict_lifecycle` | `ApplicationContext.__init__` | kwarg | When `True`, non-critical lifecycle hook failures (`on_startup`/`on_shutdown`) propagate as `LifecycleError`. Default `False`. |
 | `skip_private` | `get_injection_markers` | kwarg | When `True`, skips single-underscore-prefixed attributes during marker scanning. Default `False`. |
 | `CULLINAN_STRICT_PRIVATE_INJECTION` | environment variable | config | Set to `1`/`true`/`yes` to globally enable `strict_private_injection` for all `ApplicationContext` instances. |
+| `builtin_middleware` | `configure` | kwarg | Controls the built-in gateway middleware layer (the access-log middleware). `None` (default) installs the framework default, `[]` switches the built-in layer off, a list replaces it. |
 
-### Deprecated symbols (removed in v0.97)
+### Deprecated symbols (removed in a future release)
 
 | Symbol | Replacement |
 |--------|-------------|
@@ -180,6 +205,7 @@ A complete API reference can be populated using this structure, either via autom
 | `InjectionRegistry` | `ApplicationContext` / `get_application_context()` |
 | `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
 | `reset_injection_registry()` | Create a new `ApplicationContext` explicitly |
+| `RouteGroup` | `configure(middlewares=[...])` / `@middleware` (per-group middleware tags are not supported) |
 
 See [Framework Semantics](framework_semantics.md) §5-§8 for full details.
 

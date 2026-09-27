@@ -1,19 +1,19 @@
 # Cullinan 0.93 迁移指南
 
 > **版本**：v0.90  
-> **作者**：Cullinan
+> **作者**：plumeink
 
 > **仅用于升级：** 这页用于迁移既有代码，不用于学习新项目的推荐 API 路径。
 
 本指南帮助您从 Cullinan 1.x 迁移到 0.93（0.90）。
 
-## v0.95a1 迁移说明（Track A 内部重构）
+## v0.95 迁移说明（Track A 内部重构）
 
-v0.95a1 是一个非破坏性版本，新增弃用标记和可选严格开关。既有代码无需修改即可继续运行，但建议尽早迁移。
+v0.95 是一个非破坏性版本，新增弃用标记和可选严格开关。既有代码无需修改即可继续运行，但建议尽早迁移。
 
-### 自 v0.95 起弃用（v0.97 移除）
+### 自 v0.95 起弃用（将在未来版本中移除）
 
-五个遗留兼容符号现已正式弃用。每次使用都会同时发出标准 `DeprecationWarning`（工具链可识别）和既有 `CompatibilitySemanticWarning`（去重语义提醒）。
+五个遗留兼容符号现已正式弃用。每次使用都会同时发出标准 `DeprecationWarning`（工具链可识别）和既有 `CompatibilitySemanticWarning`（去重语义提醒）。此处不预先承诺具体移除版本：该值按移除时的发布线推导，各符号的 `__deprecated_info__['removal_version']` 报告当前值。
 
 | 弃用符号 | 替代方案 |
 |---------|---------|
@@ -194,21 +194,23 @@ main()
 
 ### 第 4 步：处理请求作用域
 
+请求作用域由框架绑定。传输适配器会在每次分发前后自动打开并关闭请求上下文，因此请求作用域依赖会针对当前活动请求解析，无需手动 enter/exit。请把处理器层保持为传输中立：改用具引擎中立形态的 controller，而不是服务器专属的 handler：
+
 ```python
-# 在请求处理器中
-class MyHandler(RequestHandler):
-    def get(self):
-        ctx.enter_request_context()
-        try:
-            service = ctx.get('RequestScopedService')
-            # ... 使用服务 ...
-        finally:
-            ctx.exit_request_context()
+from cullinan import controller, get_api
+
+
+@controller(url='/items')
+class ItemController:
+    @get_api(url='/{item_id}')
+    def get_item(self, item_id: str):
+        # 运行在本请求由适配器建立的请求上下文中，请求作用域的工作据此解析。
+        return {"item_id": item_id}
 ```
 
 ## 已弃用的 API
 
-以下 API 在 0.93 中已弃用，将在 3.0 中移除：
+以下 API 在 0.93 中已弃用，将在未来版本中移除：
 
 | 已弃用 API | 替代方案 |
 |------------|----------|

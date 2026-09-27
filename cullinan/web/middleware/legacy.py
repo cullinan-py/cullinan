@@ -2,29 +2,38 @@
 """Legacy middleware registration API (Backward Compatibility).
 
 This module provides backward compatibility for the old middleware
-registration API. It will be removed in v1.0.
+registration API. It will be removed once its deprecation window elapses.
 
 DEPRECATED: Use @middleware decorator instead.
 
-Author: Cullinan
+Author: plumeink
 """
 
 # ============================================================================
-# BACKWARD_COMPAT: v0.8 - The following code is for backward compatibility, planned for removal in v1.0
+# BACKWARD_COMPAT: v0.8 - The following code is for backward compatibility, planned for removal once the deprecation window elapses
 # Alternative: Use the @middleware decorator instead of manual registration
 # ============================================================================
 
 import logging
 from typing import Type, Optional
 from cullinan.support.deprecation import deprecated
+from cullinan.support.deprecation import (
+    EXTENDED_DEPRECATION_WINDOW_MINORS as _EXTENDED_WINDOW,
+)
+from cullinan.support.deprecation import resolve_removal_version as _resolve_removal_version
 
 logger = logging.getLogger(__name__)
+
+# Derived from the framework version + the compatibility window, never
+# hard-coded; the wider window keeps the removal version this legacy surface
+# already advertised.
+_REMOVAL_VERSION = _resolve_removal_version(window=_EXTENDED_WINDOW)
 
 
 @deprecated(
     version="0.8",
     alternative="@middleware decorator",
-    removal_version="1.0"
+    removal_version=_REMOVAL_VERSION
 )
 def register_middleware_manual(middleware_class: Type,
                               priority: int = 100,
@@ -61,7 +70,7 @@ def register_middleware_manual(middleware_class: Type,
 @deprecated(
     version="0.8",
     alternative="MiddlewareRegistry.get_all()",
-    removal_version="1.0"
+    removal_version=_REMOVAL_VERSION
 )
 def get_registered_middlewares():
     """Get all registered middleware (deprecated).

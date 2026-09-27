@@ -2,7 +2,7 @@ title: "应用构建"
 slug: "application-build"
 module: []
 tags: ["docs", "start", "knowledge-base"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

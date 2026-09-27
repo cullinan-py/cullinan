@@ -4,14 +4,14 @@
 
 Closes #
 
-## Four-aspect sync
+## Change checklist
 
 - [ ] Code - implementation + public API
 - [ ] Tests - covers both engines (Tornado + ASGI) + public API path
 - [ ] Examples - runnable demo updated (if user-facing)
 - [ ] Docs - `docs/` + `docs/zh/` + nav/README (if user-facing)
 
-> N/A is acceptable for pure internal refactors - explain below.
+> If an item does not apply to this change, mark it N/A and explain why.
 
 ## Checks
 

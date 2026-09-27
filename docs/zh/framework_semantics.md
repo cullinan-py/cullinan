@@ -1,7 +1,7 @@
 title: "框架语义规则"
 slug: "framework-semantics"
 tags: ["guide", "semantics", "diagnostics"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh
@@ -116,7 +116,7 @@ Cullinan 把作用域兼容性视为硬规则。尤其是 `singleton` 组件不�
 
 **传递强制检查**：作用域检查现在会递归遍历完整依赖链——包括显式 `dependencies=[...]` 声明和字段注入标记（`Inject()`、`InjectByName()`）。如果单例依赖另一个单例，而后者又传递依赖了请求作用域对象，`refresh()` 时会检测并拒绝，错误信息中会标明完整链路。
 
-**结构化作用域违规（v0.95a1）**：作用域违规现在抛出 `ScopeViolationError`（`LifecycleError` 的子类），携带三个诊断字段：
+**结构化作用域违规（v0.95）**：作用域违规现在抛出 `ScopeViolationError`（`LifecycleError` 的子类），携带三个诊断字段：
 
 - `dependency_chain`：从起源单例到违规请求作用域组件的有序组件名列表（含两端）。
 - `origin_name`：作用域被违规的根组件名。
@@ -124,13 +124,13 @@ Cullinan 把作用域兼容性视为硬规则。尤其是 `singleton` 组件不�
 
 `cullinan.core.diagnostics` 中的 `format_scope_violation_error()` 辅助函数可渲染人类可读的链路描述。由于 `ScopeViolationError` 继承 `LifecycleError`，既有 `except LifecycleError` 处理器继续有效。
 
-**性能优化（v0.95a1）**：传递作用域校验器使用跨起源记忆化（`verified_safe` 集合），每个组件子图在所有起源中最多被完整遍历一次，将最坏情况复杂度从 O(N²×M) 降为 O(N+E)。`get_injection_markers()` 扫描器也通过 `WeakKeyDictionary` 按类缓存，避免重复 `dir()` 扫描。
+**性能优化（v0.95）**：传递作用域校验器使用跨起源记忆化（`verified_safe` 集合），每个组件子图在所有起源中最多被完整遍历一次，将最坏情况复杂度从 O(N²×M) 降为 O(N+E)。`get_injection_markers()` 扫描器也通过 `WeakKeyDictionary` 按类缓存，避免重复 `dir()` 扫描。
 
-## 6. 注入可见性与私有约定（v0.95a1）
+## 6. 注入可见性与私有约定（v0.95）
 
 注入标记扫描器（`get_injection_markers`）扫描类属性以查找 `Inject`、`InjectByName`、`Lazy` 标记。自 v0.93a11（commit c888738，构造器注入功能）起，单下划线前缀属性（`_xxx`）对注入系统**可见**--只有 dunder 属性（`__xxx__`）被跳过。这是有意的设计决策：构造器注入需要扫描类级裸类型标注，过滤所有 `_` 前缀属性会漏掉 `_internal_db: DatabaseService` 这类"私有但需要构造器注入"的属性。
 
-这与 [[公共 API 暴露准则]] §3 的"下划线=私有"约定**不冲突**。规范 §3 约束的是**框架导出符号**的私有性（即用户不应 `from cullinan import _internal_helper`）。注入扫描器操作的是**用户自定义类属性**，属于不同层面。
+这与本项目公共 API 面的"下划线=私有"约定**不冲突**（该约定的公开表述见 [API 参考](api_reference.md) 的导出契约一节）。该约定约束的是**框架导出符号**的私有性（即用户不应 `from cullinan import _internal_helper`）。注入扫描器操作的是**用户自定义类属性**，属于不同层面。
 
 对于需要严格私有语义（跳过单下划线属性）的项目，`ApplicationContext` 提供 `strict_private_injection` opt-out 开关：
 
@@ -140,7 +140,7 @@ ctx = ApplicationContext(strict_private_injection=True)
 
 `CULLINAN_STRICT_PRIVATE_INJECTION=1` 环境变量提供全局 opt-in（适用于 CI / 严格项目）。默认值 `False` 保留 v0.93a11+ 行为。
 
-## 7. 生命周期异常传播（v0.95a1）
+## 7. 生命周期异常传播（v0.95）
 
 `ApplicationContext`（v0.94 主生命周期路径）区分关键和非关键生命周期钩子：
 
@@ -151,7 +151,7 @@ ctx = ApplicationContext(strict_private_injection=True)
 | `on_startup` / `on_startup_async` | **记录并吞掉** | 避免级联失败，允许部分启动 |
 | `on_shutdown` / `on_shutdown_async` | **记录并吞掉** | 尽力关闭，避免中断其他组件清理 |
 
-所有抛出的异常使用 `raise LifecycleError(...) from exc` 保留 `__cause__` 链，符合 [[错误码与异常分级规范]] §3。
+所有抛出的异常使用 `raise LifecycleError(...) from exc` 保留 `__cause__` 链，符合本项目「框架内部错误保留原始成因」的约定。
 
 对于需要所有生命周期失败都传播的项目（对齐 `LifecycleManager` 的 `force=False` 行为），`ApplicationContext` 提供 `strict_lifecycle` 开关：
 
@@ -161,11 +161,11 @@ ctx = ApplicationContext(strict_lifecycle=True)
 
 启用后，`on_startup` / `on_shutdown` 失败也会抛出 `LifecycleError`。默认值 `False` 保留 v0.94 行为。旧路径 `LifecycleManager` **不**做修改；其行为对现有直接使用者保持不变。
 
-## 8. 兼容 API 已弃用（v0.95a1）
+## 8. 兼容 API 已弃用（v0.95）
 
-像 `@injectable`、`@inject_constructor`、`InjectionRegistry`、`get_injection_registry()`、`reset_injection_registry()` 这样的旧接口仍然保留，目的是让历史代码还能导入，但它们**自 v0.95 起弃用**，将在 **v0.97 移除**。
+像 `@injectable`、`@inject_constructor`、`InjectionRegistry`、`get_injection_registry()`、`reset_injection_registry()` 这样的旧接口仍然保留，目的是让历史代码还能导入，但它们**自 v0.95 起弃用**，将在**未来版本中移除**。此处不预先承诺具体移除版本：该值按移除时的发布线推导，下文的 `removal_version` 字段始终报告当前值。
 
-自 v0.95a1 起，这些符号携带：
+自 v0.95 起，这些符号携带：
 
 - `@deprecated` 装饰器发出标准 `DeprecationWarning`（工具链可识别，如 `pytest -W error::DeprecationWarning`、linter、IDE）。
 - `__deprecated__ = True` 和 `__deprecated_info__ = {version, alternative, removal_version}` 元数据，支持程序化检测。

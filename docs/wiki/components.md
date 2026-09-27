@@ -2,7 +2,7 @@ title: "Components"
 slug: "components"
 module: ["cullinan"]
 tags: ["components", "architecture"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en

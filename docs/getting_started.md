@@ -2,7 +2,7 @@ title: "Getting Started with Cullinan"
 slug: "getting-started"
 module: ["cullinan"]
 tags: ["getting-started", "tutorial"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en
@@ -136,6 +136,7 @@ class GreetingService:
 @controller(url="/hello")
 class HelloController:
     greeting_service: GreetingService  # constructor injection
+```
 
 ```powershell
 # Save the above code as minimal_app.py
@@ -386,23 +387,21 @@ For detailed information on injection patterns, see `wiki/injection.md`.
 
 ### Adding middleware
 ```python
-from cullinan.web.middleware import MiddlewareBase
+from cullinan.web.middleware import Middleware, middleware
 
-class LoggingMiddleware(MiddlewareBase):
+@middleware(priority=100)
+class LoggingMiddleware(Middleware):
     def process_request(self, request):
         print(f"Request: {request.method} {request.path}")
-
-# Register during app initialization
-app.add_middleware(LoggingMiddleware())
 ```
 
 ### Configuration
 ```python
-from cullinan.support.config import Config
+from cullinan.support.config import CullinanConfig
 
-config = Config()
-config.set('database.url', 'postgresql://localhost/mydb')
-config.set('server.port', 8080)
+config = CullinanConfig()
+config.server_port = 8080
+config.set_project_root(".")
 ```
 
 ## Troubleshooting

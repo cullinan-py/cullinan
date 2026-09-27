@@ -2,7 +2,7 @@ title: "cullinan.core"
 slug: "modules-core"
 module: ["cullinan.core"]
 tags: ["api", "module", "core"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en

@@ -2,7 +2,7 @@
 
 > **Version**: v0.90  
 > **Feature**: Unified Extension Registration and Discovery Pattern  
-> **Author**: Cullinan
+> **Author**: plumeink
 
 > **Advanced topic:** use this page when you are explicitly building extensions or
 > middleware registration flows.
@@ -235,7 +235,7 @@ The framework provides 6 major extension point categories:
    - `config_provider`
 
 6. **Handler**
-   - Custom Tornado Handler
+   - Custom Route Handler
 
 ---
 

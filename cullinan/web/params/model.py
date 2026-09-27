@@ -3,7 +3,7 @@
 
 Dataclass model resolver, maps request data to dataclass instances.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import dataclasses

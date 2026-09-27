@@ -2,7 +2,7 @@ title: "<简短标题>"
 slug: "<短 slug>"
 module: ["<module>"]
 tags: ["<tag1>", "<tag2>"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: draft
 locale: zh

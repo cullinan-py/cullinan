@@ -5,7 +5,7 @@ Provides an event-driven mechanism for lifecycle stages, allowing
 extensions and applications to hook into critical points during
 the application lifecycle.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import logging

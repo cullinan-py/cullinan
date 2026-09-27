@@ -2,7 +2,7 @@ title: "RESTful API"
 slug: "wiki-restful-api"
 module: ["controller"]
 tags: ["wiki", "restful-api"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

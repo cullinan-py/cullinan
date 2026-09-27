@@ -2,7 +2,7 @@ title: "Cullinan Documentation"
 slug: "docs-home"
 module: []
 tags: ["docs", "home", "knowledge-base"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en
@@ -15,7 +15,7 @@ pr_links: []
 
 # Cullinan Documentation
 
-> **Current version: 0.94a1**. The shortest public startup path is
+> **Current version: 0.96a1**. The shortest public startup path is
 > `@application` + `@configure(...)` + `main()`; the semantic learning path starts from
 > top-level `cullinan` plus the business-facing `cullinan.web` / `cullinan.core`
 > vocabulary: begin with business decorators and business methods first, then

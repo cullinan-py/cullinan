@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cullinan IoC/DI 2.0 - Context Basics Tests
 
-Author: Cullinan
+Author: plumeink
 
 Minimal acceptance test set for PR-R1:
 1. singleton: two get() calls with same name return the same object

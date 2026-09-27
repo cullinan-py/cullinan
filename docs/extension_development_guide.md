@@ -1,8 +1,8 @@
 # Cullinan Extension Development Guide
 
-> **Version**: 0.94a1
-> **Author**: Cullinan  
-> **Last Updated**: 2026-02-19
+> **Version**: 0.96a1
+> **Author**: plumeink  
+> **Last Updated**: 2026-09-28
 
 > **Advanced topic:** this guide is for framework extension work, not the default
 > application learning path.
@@ -58,8 +58,8 @@ Cullinan provides 6 major categories of extension points:
 |----------|-------------|-------------------|
 | **Middleware** | Request/Response interception | Authentication, Logging, CORS |
 | **Lifecycle** | Lifecycle hooks | Initialization, Startup, Shutdown |
-| **Injection** | Dependency Injection | Custom Scope, Provider |
-| **Routing** | Route handling | Custom Handler |
+| **Injection** | Dependency Injection | Scopes, Provider |
+| **Routing** | Route handling | Custom Controller |
 | **Configuration** | Configuration management | Config source, Environment adaptation |
 | **Handler** | Request handler | Custom request processing logic |
 
@@ -171,51 +171,23 @@ Reference: `examples/middleware_and_module/` — see the current middleware exam
 
 ## Dependency Injection Extensions
 
-### Custom Scope
+### Scopes
 
-Scope defines the lifecycle of dependencies (singleton, request-level, session-level, etc.).
+A scope defines the lifecycle of a dependency. Cullinan ships three built-in
+scopes, selected with `ScopeType`; each dependency is bound to one of them when
+it is registered:
 
 ```python
-from cullinan.core.scope import Scope
-from typing import Any, Optional
+from cullinan.core import ScopeType
 
-class SessionScope(Scope):
-    """Session-level scope"""
-    
-    def __init__(self):
-        super().__init__('session')
-        self._instances = {}  # {session_id: {key: instance}}
-    
-    def get(self, key: str) -> Optional[Any]:
-        """Get instance"""
-        session_id = self._get_current_session_id()
-        if session_id and session_id in self._instances:
-            return self._instances[session_id].get(key)
-        return None
-    
-    def set(self, key: str, value: Any) -> None:
-        """Set instance"""
-        session_id = self._get_current_session_id()
-        if session_id:
-            if session_id not in self._instances:
-                self._instances[session_id] = {}
-            self._instances[session_id][key] = value
-    
-    def clear(self) -> None:
-        """Clear current session"""
-        session_id = self._get_current_session_id()
-        if session_id and session_id in self._instances:
-            del self._instances[session_id]
-    
-    def _get_current_session_id(self) -> Optional[str]:
-        """Get session ID from request context"""
-        from cullinan.core.context import get_current_context
-        try:
-            context = get_current_context()
-            return context.get('session_id')
-        except:
-            return None
+ScopeType.SINGLETON   # one instance for the whole application context
+ScopeType.PROTOTYPE   # a new instance on every resolution
+ScopeType.REQUEST     # one instance per request scope
 ```
+
+Use the request scope for per-request lifetimes. Registering an additional scope
+type is not part of the public extension surface, so extensions should compose
+the built-in scopes above instead of subclassing a scope class.
 
 ### Custom Provider
 
@@ -224,7 +196,7 @@ Provider is responsible for creating and managing dependency instances.
 #### Factory Pattern Provider
 
 ```python
-from cullinan.core.provider import Provider
+from cullinan.core import Provider
 
 class FactoryProvider(Provider):
     """Create new instance every time"""
@@ -347,22 +319,33 @@ class AsyncService(Service):
 
 ## Routing Extensions
 
-### Custom Tornado Handler
+Custom routes are declared through Cullinan's engine-neutral controller layer.
+The same business code is dispatched through the shared gateway on both the
+Tornado and ASGI backends, so controller classes are the recommended extension
+point rather than engine-native handlers.
+
+### Custom Routes with Controllers
 
 ```python
-import tornado.web
 from cullinan import application, configure
+from cullinan.web.controller import controller, get_api, post_api
 
 
-class CustomHandler(tornado.web.RequestHandler):
-    """Custom request handler"""
+@controller(url='/custom')
+class CustomController:
+    """Custom route collection"""
 
-    def get(self):
-        self.write({"message": "Custom handler"})
+    @get_api(url='/')
+    def index(self):
+        return {"message": "Custom handler"}
 
-    def post(self):
-        data = self.get_json_argument()
-        self.write({"received": data})
+    @get_api(url='/(?P<item_id>[0-9]+)')
+    def show(self, item_id: int):
+        return {"message": "Custom handler", "item_id": item_id}
+
+    @post_api(url='/')
+    def create(self, payload: dict):
+        return {"received": payload}
 
 
 @configure(user_packages=["__main__"])
@@ -370,13 +353,11 @@ class CustomHandler(tornado.web.RequestHandler):
 def main(): ...
 
 if __name__ == '__main__':
-    application.run(main, handlers=[
-        (r'/custom', CustomHandler),
-        (r'/custom/(?P<id>[0-9]+)', CustomHandler),
-    ])
+    # Controller routes are discovered and registered automatically.
+    application.run(main)
 ```
 
-### Mixed Use with Controller
+### Mixing Custom Routes with Other Controllers
 
 ```python
 from cullinan import application, configure
@@ -390,19 +371,26 @@ class UserController:
         return {"users": []}
 
 
+@controller(url='/health')
+class HealthController:
+    @get_api(url='/')
+    def status(self):
+        return {"status": "ok"}
+
+
 @configure(user_packages=["__main__"])
 @application
 def main(): ...
 
-# CustomHandler and UserController can coexist
 if __name__ == '__main__':
-    application.run(
-        main,
-        handlers=[
-            (r'/health', HealthCheckHandler),  # Custom
-        ]
-    )  # UserController will be automatically registered
+    # CustomController and UserController can coexist; both are registered.
+    application.run(main)
 ```
+
+> [!NOTE]
+> Engine-native handlers bypass the shared gateway and therefore behave
+> differently on the ASGI backend. They are not a recommended extension point;
+> declare routes with controllers instead so behaviour stays engine-neutral.
 
 ---
 
@@ -679,6 +667,6 @@ class TestMyMiddleware(ServiceTestCase):
 
 ---
 
-**Version**: 0.94a1
-**Author**: Cullinan  
-**Last Updated**: 2026-06-01
+**Version**: 0.96a1
+**Author**: plumeink  
+**Last Updated**: 2026-09-28

@@ -348,7 +348,8 @@ def test_tornado_adapter_static_not_shadowed_by_production_settings(site: Path):
     ``/static/`` prefix. That handler shadowed Cullinan's catch-all gateway
     handler, so every ``/static/*`` request returned a Tornado 404 instead of
     reaching the dispatcher. This test wires the adapter with the *real*
-    production settings to prove the shadow is gone (ADR-001 engine neutrality).
+    production settings to prove the shadow is gone (engine-neutral router
+    registration).
     """
     tornado = pytest.importorskip("tornado")
     tornado_testing = pytest.importorskip("tornado.testing")

@@ -1,25 +1,27 @@
 # Cullinan 0.93 Migration Guide
 
 > **Version**: v0.90  
-> **Author**: Cullinan
+> **Author**: plumeink
 
 > **Upgrade-only page:** use this when moving existing code, not when learning the
 > recommended API path for a new project.
 
 This guide helps you migrate from Cullinan 1.x to 0.93 (0.90).
 
-## v0.95a1 migration notes (Track A internal refactor)
+## v0.95 migration notes (Track A internal refactor)
 
-v0.95a1 is a non-breaking release that adds deprecation markers and optional
+v0.95 is a non-breaking release that adds deprecation markers and optional
 strict switches. Existing code continues to work without changes, but you are
 encouraged to migrate now.
 
-### Deprecated since v0.95 (removed in v0.97)
+### Deprecated since v0.95 (removed in a future release)
 
 The five legacy compatibility symbols are now formally deprecated. Both a
 standard `DeprecationWarning` (tool-chain visible) and the existing
 `CompatibilitySemanticWarning` (deduplicated semantic reminder) fire on each
-use.
+use. No specific removal version is promised up front: the value is derived
+from the release line in force at removal time, and each symbol's
+`__deprecated_info__['removal_version']` reports the current one.
 
 | Deprecated symbol | Replacement |
 |-------------------|-------------|
@@ -206,21 +208,28 @@ The entry method is now the recommended default entrypoint. `configure(root_modu
 
 ### Step 4: Handle Request Scope
 
+Request scope is bound for you. The transport adapter opens a request context
+around every dispatch and closes it afterwards, so request-scoped dependencies
+resolve against the active request without any manual enter/exit. Keep the
+handler layer transport-neutral by writing a controller instead of a
+server-specific handler:
+
 ```python
-# In request handler
-class MyHandler(RequestHandler):
-    def get(self):
-        ctx.enter_request_context()
-        try:
-            service = ctx.get('RequestScopedService')
-            # ... use service ...
-        finally:
-            ctx.exit_request_context()
+from cullinan import controller, get_api
+
+
+@controller(url='/items')
+class ItemController:
+    @get_api(url='/{item_id}')
+    def get_item(self, item_id: str):
+        # Runs inside the request context the adapter established for this
+        # request, so request-scoped work resolves against it.
+        return {"item_id": item_id}
 ```
 
 ## Deprecated APIs
 
-The following APIs are deprecated in 0.93 and will be removed in 3.0:
+The following APIs are deprecated in 0.93 and will be removed in a future release:
 
 | Deprecated API | Replacement |
 |----------------|-------------|

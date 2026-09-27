@@ -2,18 +2,19 @@
 """Core module for Cullinan framework.
 
 This module provides foundational components for the Cullinan framework:
-- ApplicationContext: Single entry point for IoC/DI (0.94a1)
+- ApplicationContext: Single entry point for IoC/DI
 - Decorators: @service, @controller, @component
 - Dependency Injection: Inject, InjectByName, Lazy
 - Unified lifecycle management (all components share same lifecycle)
 - Core exceptions and types
 
-Version: 0.94a1
+The runtime version comes from cullinan/_version.py (single source of truth).
 """
 
 from cullinan._version import __version__ as _package_version
 import warnings as _warnings
 from cullinan.support.deprecation import deprecated as _deprecated
+from cullinan.support.deprecation import resolve_removal_version as _resolve_removal_version
 from .registry import Registry, SimpleRegistry
 from .container_manager import ContainerManager, get_container_manager
 # Import unified lifecycle from lifecycle_enhanced (the single source of truth)
@@ -111,11 +112,15 @@ from .pending import PendingRegistry, PendingRegistration, ComponentType
 # Compatibility Aliases (for backward compatibility)
 # ============================================================================
 
+# Removal version for this legacy compatibility surface, derived from the
+# framework version and the standard deprecation window rather than hard-coded.
+_REMOVAL_VERSION = _resolve_removal_version()
+
 # injectable is now a no-op, classes are automatically injectable
 @_deprecated(
     version="0.95",
     alternative="@service / @component / @controller (classes are auto-injectable)",
-    removal_version="0.97",
+    removal_version=_REMOVAL_VERSION,
 )
 def injectable(cls):
     """Compatibility decorator - no longer needed in the v0.94 line.
@@ -126,7 +131,7 @@ def injectable(cls):
 
     .. deprecated:: 0.95
         Use :func:`service`, :func:`component`, or :func:`controller` instead.
-        This symbol will be removed in v0.97.
+        This symbol will be removed once its deprecation window elapses.
     """
     warn_semantic_once(
         key="compatibility:injectable",
@@ -141,14 +146,14 @@ def injectable(cls):
 @_deprecated(
     version="0.95",
     alternative="ApplicationContext.refresh() (handles constructor injection uniformly)",
-    removal_version="0.97",
+    removal_version=_REMOVAL_VERSION,
 )
 def inject_constructor(cls):
     """Compatibility decorator - no longer needed in the v0.94 line.
 
     .. deprecated:: 0.95
         :meth:`ApplicationContext.refresh` now handles injection uniformly.
-        This symbol will be removed in v0.97.
+        This symbol will be removed once its deprecation window elapses.
     """
     warn_semantic_once(
         key="compatibility:inject_constructor",
@@ -184,7 +189,7 @@ _dummy_registry = None
 @_deprecated(
     version="0.95",
     alternative="ApplicationContext / get_application_context()",
-    removal_version="0.97",
+    removal_version=_REMOVAL_VERSION,
 )
 def get_injection_registry():
     """Compatibility function - returns None in the v0.94 line.
@@ -193,7 +198,8 @@ def get_injection_registry():
 
     .. deprecated:: 0.95
         Use :class:`ApplicationContext` or :func:`get_application_context`
-        instead. This symbol will be removed in v0.97.
+        instead. This symbol will be removed once its deprecation window
+        elapses.
     """
     warn_semantic_once(
         key="compatibility:get_injection_registry",
@@ -208,14 +214,15 @@ def get_injection_registry():
 @_deprecated(
     version="0.95",
     alternative="Create a new ApplicationContext explicitly",
-    removal_version="0.97",
+    removal_version=_REMOVAL_VERSION,
 )
 def reset_injection_registry():
     """Compatibility function - no-op in the v0.94 line.
 
     .. deprecated:: 0.95
         Create a new :class:`ApplicationContext` explicitly when you need a
-        fresh container. This symbol will be removed in v0.97.
+        fresh container. This symbol will be removed once its deprecation
+        window elapses.
     """
     warn_semantic_once(
         key="compatibility:reset_injection_registry",
@@ -230,14 +237,14 @@ def reset_injection_registry():
 @_deprecated(
     version="0.95",
     alternative="ApplicationContext / get_application_context()",
-    removal_version="0.97",
+    removal_version=_REMOVAL_VERSION,
 )
 class InjectionRegistry:
     """Compatibility class - use ApplicationContext instead.
 
     .. deprecated:: 0.95
         Use :class:`ApplicationContext` instead. This symbol will be removed
-        in v0.97.
+        once its deprecation window elapses.
     """
     pass
 
@@ -375,7 +382,7 @@ _DEPRECATED_LEGACY_SYMBOLS = (
 _warnings.warn(
     "cullinan.core exports legacy compatibility symbols "
     f"({_DEPRECATED_LEGACY_SYMBOLS}) that are deprecated since v0.95 "
-    "and will be removed in v0.97. See each symbol's __deprecated_info__ "
+    f"and will be removed in v{_REMOVAL_VERSION}. See each symbol's __deprecated_info__ "
     "for the recommended replacement.",
     DeprecationWarning,
     stacklevel=2,

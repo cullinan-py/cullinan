@@ -7,15 +7,19 @@ This directory is the single source of runnable examples for the current Cullina
 1. `examples/minimal_app/`
 2. `examples/controller_service_inject/`
 3. `examples/middleware_and_module/`
-4. `examples/parameter_handling/`
-5. `examples/testing_flow/`
-6. `examples/static_files_and_spa/`
+4. `examples/middleware_pipeline/`
+5. `examples/middleware_control/`
+6. `examples/parameter_handling/`
+7. `examples/testing_flow/`
+8. `examples/static_files_and_spa/`
 
 ## Run examples
 
 - `python -m examples.minimal_app`
 - `python -m examples.controller_service_inject`
 - `python -m examples.middleware_and_module`
+- `python -m examples.middleware_pipeline`
+- `python -m examples.middleware_control`
 - `python -m examples.parameter_handling`
 - `python -m pytest examples/testing_flow/test_app.py -q`
 - `python -m examples.static_files_and_spa`
@@ -37,6 +41,20 @@ Historical compatibility demos live under `examples/legacy/` and are not part of
 the maintained default learning path. Only `decorator_demo_090.py` remains —
 other legacy demos were cleaned up when their referenced APIs (`cullinan.run`,
 `cullinan.core.provider`) were removed.
+
+## Middleware examples
+
+Three maintained examples cover middleware, with different teaching goals:
+
+- `examples/middleware_pipeline/` — the **recommended** onion protocol
+  (`async __call__(request, call_next)`), declared through
+  `@configure(middlewares=[...])` with explicit order controls.
+- `examples/middleware_control/` — replacing/switching off the **built-in**
+  middleware layer through `@configure(builtin_middleware=[...])`, and letting a
+  legacy `@middleware(priority=...)` class join the same declarative ordering.
+- `examples/middleware_and_module/` — the **compatibility** protocol
+  (`process_request` / `process_response`), still auto-bridged into the same
+  gateway pipeline.
 
 ## Advanced extension demos
 

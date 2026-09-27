@@ -3,7 +3,7 @@
 
 Defines exception classes for encoding/decoding operations.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Optional

@@ -3,7 +3,7 @@ title: "Cullinan Documentation Plan"
 slug: "documentation-plan"
 module: ["docs"]
 tags: ["plan", "documentation"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: draft
 locale: en
@@ -33,7 +33,7 @@ Brief acceptance checklist (before submission):
 
 ---
 
-TL;DR: Write bilingual (English/Chinese) documentation for Cullinan (a Tornado-based IoC/DI framework) with `docs/` and `docs/zh/` in 1:1 correspondence, including getting started, examples, wiki (architecture/components/lifecycle/injection/middleware/extensions), API reference, migration guide, contributing guide, testing and local build instructions. Uses a source-code-driven research strategy (ignoring comments), preserves the existing IoC/DI design, and provides role allocation, milestones, quality gates, and run/verification command examples for PowerShell and other environments.
+TL;DR: Write bilingual (English/Chinese) documentation for Cullinan (an engine-neutral Python web framework with built-in IoC/DI) with `docs/` and `docs/zh/` in 1:1 correspondence, including getting started, examples, wiki (architecture/components/lifecycle/injection/middleware/extensions), API reference, migration guide, contributing guide, testing and local build instructions. Uses a source-code-driven research strategy (ignoring comments), preserves the existing IoC/DI design, and provides role allocation, milestones, quality gates, and run/verification command examples for PowerShell and other environments.
 
 ## 1. Objectives and Audience
 
@@ -130,7 +130,7 @@ Phase F - Translation, Verification, Quality Gates (Priority: High, Duration: 6 
 - F2. Documentation internal review (structure, facts, runnable examples) (2 person-days)
 - F3. Final quality gate (run tests, example verification, submit PR) (1 person-day)
 
-Milestone F: Bilingual documentation 1:1 correspondence passes QA.
+Milestone F: Bilingual documentation 1:1 correspondence passes quality review.
 
 Overall milestone timeline (can be shortened with parallelism):
 - Week 1: Phase A complete

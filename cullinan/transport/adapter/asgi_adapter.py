@@ -11,7 +11,7 @@ Usage::
     app = adapter.create_app()
     # Then: uvicorn myapp:app
 
-Author: Cullinan
+Author: plumeink
 """
 
 import asyncio

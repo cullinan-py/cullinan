@@ -1,8 +1,13 @@
+import ast
 import asyncio
+import hashlib
 import importlib
 import json
+import re
 import sys
+import warnings
 from pathlib import Path
+from typing import NamedTuple
 
 import pytest
 
@@ -40,7 +45,301 @@ def _read_zh_doc_file(*parts: str) -> str:
     return Path("docs", "zh", *parts).read_text(encoding="utf-8")
 
 
-async def _invoke_asgi_app(app, path: str, method: str = "GET", body: bytes = b"", query_string: bytes = b""):
+# ---------------------------------------------------------------------------
+# Public-doc import resolvability gate
+#
+# Every import shown in the public guides must be resolvable. Two implementation
+# constraints follow from the upstream ruling:
+#   * the scan must be multi-line aware - a line-anchor scan silently skips
+#     ``from cullinan import (`` blocks, so blocks are parsed with ``ast``;
+#   * it must import for real - a static ``__all__`` / name-set comparison cannot
+#     see PEP 562 module-level ``__getattr__`` re-exports.
+#
+# A third constraint is that the gate must be fail-closed: if a document's code
+# fences cannot be paired reliably the scan must fail loudly (file name + fence
+# count) rather than skip the rest of the file, because a silent skip turns the
+# gate into a false guarantee.
+# ---------------------------------------------------------------------------
+
+
+class UnbalancedCodeFenceError(ValueError):
+    """Raised when a document's code fences cannot be paired reliably."""
+
+    def __init__(self, doc: str, fence_count: int, detail: str):
+        self.doc = doc
+        self.fence_count = fence_count
+        super().__init__(
+            f"{doc}: {fence_count} code-fence lines ({detail}); the fences do not "
+            "pair up, so the document cannot be scanned reliably"
+        )
+
+
+class UnparseableCodeBlockError(ValueError):
+    """Raised when a python code block cannot be parsed and is not registered.
+
+    Parsing failures used to be swallowed, which turned the gate into a false
+    guarantee for the skipped region. A block may only be skipped when it is
+    listed in ``_UNPARSEABLE_PYTHON_BLOCK_REGISTRY``; anything else fails
+    loudly with the document name and the block's start line.
+    """
+
+    def __init__(self, doc: str, line: int, detail: str):
+        self.doc = doc
+        self.line = line
+        super().__init__(
+            f"{doc}:{line}: python code block is not parseable ({detail}) and is "
+            "not registered as a known non-parseable block"
+        )
+
+
+class _CodeBlock(NamedTuple):
+    start_offset: int
+    end_offset: int
+    start_line: int
+    info: str
+    body: str
+
+
+class _DocImport(NamedTuple):
+    line: int
+    node: ast.AST
+    heading: str
+    block_digest: str
+
+
+# An opening fence is up to three leading spaces, then a run of at least three
+# backticks or tildes, then an optional info string.
+_FENCE_LINE = re.compile(r"^[ \t]{0,3}(?P<fence>`{3,}|~{3,})(?P<info>[^\n]*)$", re.M)
+_MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.*)$", re.M)
+
+# A block is allowed to keep non-resolvable imports only when its nearest
+# preceding heading marks it as deprecated / scheduled for removal, or as a
+# pre-migration "v0.9x" example.
+_STALE_BLOCK_HEADING_MARKERS = (
+    "deprecated",
+    "will be removed",
+    "弃用",
+    "移除",
+    "v0.9x",
+)
+
+# The blocks that are allowed to keep stale imports. Compared for equality so a
+# future edit cannot silently widen the exemption and absorb a real defect.
+_EXPECTED_EXEMPT_BLOCK_HEADINGS = {
+    "Legacy Imports (Deprecated)",
+    "遗留导入（已弃用）",
+    "v0.9x: Tornado only",
+    "v0.9x：仅 Tornado",
+}
+
+# Python code blocks that cannot be parsed. These are shell transcripts and
+# list-indented snippets, not runnable modules. Parsing failures are no longer
+# skipped silently: a block must appear here (keyed by document and body digest)
+# or the gate fails. The set is asserted for equality so it cannot drift.
+_UNPARSEABLE_PYTHON_BLOCK_REGISTRY = {
+    ("migration_guide.md", "ae21a01a6f41da35"): "exception transcript, not python",
+    ("migration_guide.md", "6fe4e6d66b1407b3"): "exception transcript, not python",
+    ("wiki/decorators.md", "48092db847348ed7"): "list-indented decorator snippet",
+    ("wiki/decorators.md", "7339b6c7c292229d"): "list-indented method snippet",
+    ("wiki/injection.md", "c0a8d61cc95caa59"): "list-indented class-body snippet",
+    ("zh/migration_guide.md", "f9bfad16a7018de9"): "exception transcript, not python",
+    ("zh/migration_guide.md", "6425d12359b2bd33"): "exception transcript, not python",
+    ("zh/wiki/decorators.md", "212921b13424a2b0"): "list-indented decorator snippet",
+    ("zh/wiki/decorators.md", "7339b6c7c292229d"): "list-indented method snippet",
+    ("zh/wiki/injection.md", "fc0322cfe8f06542"): "list-indented class-body snippet",
+}
+
+# Code blocks whose cullinan imports are deliberately non-resolvable: they are
+# explicitly labelled "before / old style" migration examples that demonstrate a
+# path which has since been removed. This is the same situation the
+# deprecated-block exemption covers for the legacy import walkthrough, so these
+# blocks are exempt too. They are registered one by one (document + body digest)
+# instead of being released by a heuristic such as "the file name contains
+# migration"; the set is asserted for equality so it cannot silently widen.
+_EXEMPT_LEGACY_IMPORT_BLOCKS = {
+    ("migration_guide.md", "8dbbadbaf22519c2"): "'Before (1.x)' example: removed grouped registry helpers",
+    ("migration_guide.md", "a69165a46a5a0ec7"): "'Old style' example: removed cullinan.app entrypoint",
+    ("migration_to_final_semantic_layout.md", "4ff57b10c924a54b"): "'Before' example: removed cullinan.public_api",
+    ("migration_to_final_semantic_layout.md", "c630f77e3d7d2c30"): "'Before' example: removed cullinan.application_model",
+    ("migration_to_final_semantic_layout.md", "b620681f8fe9905b"): "'Before' example: removed cullinan.controller / cullinan.params",
+    ("migration_to_final_semantic_layout.md", "c817df3ddebca627"): "'Before' example: removed cullinan.adapter",
+    ("zh/migration_guide.md", "8dbbadbaf22519c2"): "'Before (1.x)' example: removed grouped registry helpers",
+    ("zh/migration_guide.md", "0f481ec0a8c741b6"): "'Old style' example: removed cullinan.app entrypoint",
+    ("zh/migration_to_final_semantic_layout.md", "4ff57b10c924a54b"): "'Before' example: removed cullinan.public_api",
+    ("zh/migration_to_final_semantic_layout.md", "c630f77e3d7d2c30"): "'Before' example: removed cullinan.application_model",
+    ("zh/migration_to_final_semantic_layout.md", "b620681f8fe9905b"): "'Before' example: removed cullinan.controller / cullinan.params",
+    ("zh/migration_to_final_semantic_layout.md", "c817df3ddebca627"): "'Before' example: removed cullinan.adapter",
+}
+
+# Guides corrected by this iteration; every cullinan import in them must resolve.
+_IMPORT_GATED_DOCS = (
+    "import_migration_090.md",
+    "zh/import_migration_090.md",
+    "migration_guide_v2.md",
+    "zh/migration_guide_v2.md",
+    "getting_started.md",
+    "zh/getting_started.md",
+)
+
+
+def _block_digest(body: str) -> str:
+    """Stable short digest of a code block body, used to key the registries."""
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
+
+
+def _is_python_block(block: "_CodeBlock") -> bool:
+    return bool(block.info) and block.info.split()[0] in ("python", "py")
+
+
+def _iter_public_docs():
+    """Yield ``(relative_path, text)`` for every markdown file under ``docs``."""
+    for doc in sorted(Path("docs").rglob("*.md")):
+        yield doc.relative_to("docs").as_posix(), doc.read_text(encoding="utf-8")
+
+
+def _iter_code_blocks(text: str, doc: str = ""):
+    """Return the document's fenced code blocks as ``_CodeBlock`` records.
+
+    Fences are paired strictly: an opening fence may carry an info string, but a
+    closing fence must be made of the same fence character, be at least as long
+    as the opener, and carry no info string. A fence-like line that still
+    carries an info string (`` ```powershell ``) while a block is open is treated
+    as block content, so it can never be mistaken for the closing fence and
+    shift the pairing of every following block.
+
+    When the fences cannot be paired - an odd number of fence lines, or a block
+    that is never closed - ``UnbalancedCodeFenceError`` is raised instead of
+    silently skipping the remainder of the document.
+    """
+    matches = list(_FENCE_LINE.finditer(text))
+    if len(matches) % 2 != 0:
+        raise UnbalancedCodeFenceError(doc, len(matches), "odd number of fences")
+    blocks = []
+    index = 0
+    while index < len(matches):
+        opener = matches[index]
+        open_char = opener.group("fence")[0]
+        open_len = len(opener.group("fence"))
+        closer = None
+        scan = index + 1
+        while scan < len(matches):
+            candidate = matches[scan]
+            fence = candidate.group("fence")
+            if (
+                fence[0] == open_char
+                and len(fence) >= open_len
+                and candidate.group("info").strip() == ""
+            ):
+                closer = candidate
+                break
+            scan += 1
+        if closer is None:
+            raise UnbalancedCodeFenceError(doc, len(matches), "a block is never closed")
+        blocks.append(
+            _CodeBlock(
+                start_offset=opener.start(),
+                end_offset=closer.end(),
+                start_line=text[: opener.start()].count("\n") + 1,
+                info=opener.group("info").strip(),
+                body=text[opener.end() + 1 : closer.start()],
+            )
+        )
+        index = scan + 1
+    return blocks
+
+
+def _mask_code_fences(text: str, blocks) -> str:
+    """Blank out fenced code so heading detection ignores ``#`` inside code."""
+    chars = list(text)
+    for block in blocks:
+        for index in range(block.start_offset, block.end_offset):
+            if chars[index] != "\n":
+                chars[index] = " "
+    return "".join(chars)
+
+
+def _nearest_heading(masked: str, position: int) -> str:
+    heading = ""
+    for match in _MARKDOWN_HEADING.finditer(masked[:position]):
+        heading = match.group(2).strip()
+    return heading
+
+
+def _iter_doc_imports(text: str, module_prefix: str = "", doc: str = ""):
+    """Yield ``_DocImport`` records for imports inside python code blocks.
+
+    Only fences whose info string marks them as python (``python`` / ``py``) are
+    parsed; shell, ini and prose fences cannot carry python imports and are not
+    scanned. ``UnbalancedCodeFenceError`` propagates when the document's fences
+    cannot be paired reliably, so the caller can turn it into an explicit
+    failure. A python block that cannot be parsed is reported as
+    ``UnparseableCodeBlockError`` unless the block is registered in
+    ``_UNPARSEABLE_PYTHON_BLOCK_REGISTRY``; nothing is skipped silently.
+    """
+    blocks = _iter_code_blocks(text, doc)
+    masked = _mask_code_fences(text, blocks)
+    for block in blocks:
+        if not _is_python_block(block):
+            continue
+        digest = _block_digest(block.body)
+        try:
+            tree = ast.parse(block.body)
+        except SyntaxError as error:
+            if (doc, digest) in _UNPARSEABLE_PYTHON_BLOCK_REGISTRY:
+                continue
+            detail = str(error).splitlines()[0] if str(error) else "syntax error"
+            raise UnparseableCodeBlockError(doc, block.start_line, detail) from error
+        heading = _nearest_heading(masked, block.start_offset)
+        base_line = block.start_line + 1
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                module = node.module or ""
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.Import):
+                module = ""
+                names = [alias.name for alias in node.names]
+            else:
+                continue
+            if module_prefix and not (
+                module.startswith(module_prefix)
+                or any(name.startswith(module_prefix) for name in names)
+            ):
+                continue
+            yield _DocImport(
+                line=base_line + node.lineno - 1,
+                node=node,
+                heading=heading,
+                block_digest=digest,
+            )
+
+
+def _execute_import(node) -> None:
+    """Import for real; raise if the module or any imported name is missing."""
+    if isinstance(node, ast.ImportFrom):
+        if node.module is None:
+            return
+        module = importlib.import_module(node.module)
+        for alias in node.names:
+            if alias.name == "*":
+                continue
+            getattr(module, alias.name)
+    else:
+        for alias in node.names:
+            importlib.import_module(alias.name)
+
+
+def _describe_import(node) -> str:
+    return ast.unparse(node).splitlines()[0]
+
+
+async def _invoke_asgi_app(
+    app,
+    path: str,
+    method: str = "GET",
+    body: bytes = b"",
+    query_string: bytes = b"",
+    extra_headers=None,
+):
     messages = []
     delivered = False
 
@@ -66,6 +365,10 @@ async def _invoke_asgi_app(app, path: str, method: str = "GET", body: bytes = b"
         "headers": [
             (b"host", b"example.test"),
             (b"content-type", b"application/json"),
+            *[
+                (key.encode("latin-1"), value.encode("latin-1"))
+                for key, value in (extra_headers or {}).items()
+            ],
         ],
         "client": ("127.0.0.1", 12345),
         "server": ("example.test", 80),
@@ -188,6 +491,40 @@ def test_middleware_and_module_example_marks_module_boundary():
     assert headers["x-module-boundary"] == "examples.middleware_and_module"
 
 
+def test_middleware_pipeline_example_reflects_declared_order():
+    main = _load_entry_method("examples.middleware_pipeline.root")
+    app = main.get_asgi_app()
+
+    # The declared gate sits on the outermost layer, so an unauthenticated
+    # request is rejected before the endpoint body ever runs.
+    status, _, payload = asyncio.run(_invoke_asgi_app(app, "/pipeline"))
+    assert status == 403
+    assert payload == {"error": "missing demo key"}
+
+    # With the demo key, both declared middleware take effect and the installed
+    # order matches the declaration (priority=0 gate stays outermost).
+    status, headers, payload = asyncio.run(
+        _invoke_asgi_app(
+            app,
+            "/pipeline",
+            extra_headers={"x-demo-key": "let-me-in"},
+        )
+    )
+    assert status == 200
+    assert headers["x-demo-gate"] == "passed"
+    assert headers["x-demo-marker"] == "middleware-pipeline"
+    assert payload["order"][:2] == [
+        "ApiKeyGateMiddleware",
+        "RequestMarkerMiddleware",
+    ]
+    # The framework's built-in layer is still present in the same pipeline.
+    assert "AccessLogMiddleware" in payload["order"]
+
+    # The protected endpoint is equally gated.
+    guarded_status, _, _ = asyncio.run(_invoke_asgi_app(app, "/pipeline/echo"))
+    assert guarded_status == 403
+
+
 def test_parameter_handling_example_maps_path_query_and_body():
     main = _load_entry_method("examples.parameter_handling.root")
     app = main.get_asgi_app()
@@ -271,6 +608,7 @@ def test_example_entrypoints_use_top_level_public_api():
         ("minimal_app", "root.py"),
         ("controller_service_inject", "root.py"),
         ("middleware_and_module", "root.py"),
+        ("middleware_pipeline", "root.py"),
         ("parameter_handling", "root.py"),
         ("testing_flow", "app.py"),
         ("static_files_and_spa", "root.py"),
@@ -327,7 +665,10 @@ def test_root_readme_keeps_default_path_on_top_level_api():
     assert "create_app()" not in readme
     assert "- `cullinan.application` - application definition, configuration, and startup" not in readme
     assert "top-level `cullinan` API" in readme
-    assert "**v0.95a1**" in readme
+    # Pin the *current* release line the README's "Current series" section
+    # advertises; asserting the previous line would stay green forever once the
+    # README keeps it as historical context, making the guard vacuous.
+    assert "**v0.96a1**" in readme
 
 
 def test_getting_started_stays_on_business_first_onboarding_path():
@@ -405,6 +746,264 @@ def test_tornado_decoupling_docs_keep_top_level_startup_and_backend_neutral_term
     assert "@application" in zh_migration_v2
 
 
+def _is_cullinan_import(node) -> bool:
+    """True for ``from cullinan[...] import ...`` / ``import cullinan[...]``."""
+    if isinstance(node, ast.ImportFrom):
+        module = node.module or ""
+        return module == "cullinan" or module.startswith("cullinan.")
+    if isinstance(node, ast.Import):
+        return any(
+            alias.name == "cullinan" or alias.name.startswith("cullinan.")
+            for alias in node.names
+        )
+    return False
+
+
+def _block_is_exempt(relative: str, item: "_DocImport") -> bool:
+    """A block is exempt when its heading or an explicit registration marks it so."""
+    if (relative, item.block_digest) in _EXEMPT_LEGACY_IMPORT_BLOCKS:
+        return True
+    return any(marker in item.heading.lower() for marker in _STALE_BLOCK_HEADING_MARKERS)
+
+
+def test_public_guide_cullinan_imports_are_resolvable():
+    """Every cullinan import shown in the public guides resolves.
+
+    The gate covers both the top-level ``from cullinan import ...`` form and the
+    submodule form (``from cullinan.<module> import ...`` and ``import
+    cullinan.<module>``). Multi-line import blocks are parsed with ``ast`` (a
+    line-anchor scan would skip them) and resolved by importing for real (a
+    static ``__all__`` comparison would misjudge PEP 562 module-level
+    ``__getattr__`` exports).
+
+    Two situations keep a block out of the gate, and both are explicit and
+    enumerable: a block under a heading that marks it deprecated / scheduled for
+    removal, and the registered set of explicitly labelled "before / old style"
+    migration examples. Nothing is released by a file-name heuristic. A document
+    whose fences cannot be paired - or that holds a python block which cannot be
+    parsed and is not registered - fails the gate explicitly.
+    """
+    failures = []
+    scanned = 0
+    for relative, text in _iter_public_docs():
+        try:
+            imports = list(_iter_doc_imports(text, doc=relative))
+        except (UnbalancedCodeFenceError, UnparseableCodeBlockError) as error:
+            failures.append(str(error))
+            continue
+        for item in imports:
+            if not _is_cullinan_import(item.node):
+                continue
+            scanned += 1
+            try:
+                _execute_import(item.node)
+            except Exception as error:
+                if _block_is_exempt(relative, item):
+                    continue
+                failures.append(
+                    f"{relative}:{item.line}: {_describe_import(item.node)} -> {error}"
+                )
+
+    assert scanned > 0, "the public-doc import gate matched no cullinan import statement"
+    assert not failures, (
+        "unresolvable or unscannable cullinan import content in the public docs:\n"
+        + "\n".join(failures)
+    )
+
+
+def test_public_guide_exempt_legacy_blocks_are_enumerated():
+    """Legacy blocks that keep non-resolvable imports are listed one by one.
+
+    The gate never releases a non-resolvable block implicitly: whatever it lets
+    through must equal ``_EXEMPT_LEGACY_IMPORT_BLOCKS`` (minus the heading-marked
+    deprecated blocks). The equality assertion means a future edit cannot widen
+    the exemption, and a stale entry cannot linger.
+    """
+    found = set()
+    for relative, text in _iter_public_docs():
+        try:
+            imports = list(_iter_doc_imports(text, doc=relative))
+        except (UnbalancedCodeFenceError, UnparseableCodeBlockError):
+            continue
+        for item in imports:
+            if not _is_cullinan_import(item.node):
+                continue
+            try:
+                _execute_import(item.node)
+            except Exception:
+                if any(
+                    marker in item.heading.lower()
+                    for marker in _STALE_BLOCK_HEADING_MARKERS
+                ):
+                    continue
+                found.add((relative, item.block_digest))
+
+    assert found == set(_EXEMPT_LEGACY_IMPORT_BLOCKS), (
+        "the set of non-resolvable import blocks exempted from the gate changed; "
+        f"expected {sorted(_EXEMPT_LEGACY_IMPORT_BLOCKS)}, got {sorted(found)}"
+    )
+
+
+def test_unparseable_python_blocks_are_enumerated():
+    """Non-parseable python blocks are registered one by one, never skipped.
+
+    Parsing failures used to be swallowed silently. The gate now reports them,
+    so the only tolerated ones are those listed in
+    ``_UNPARSEABLE_PYTHON_BLOCK_REGISTRY``; the equality assertion keeps that
+    list exact in both directions.
+    """
+    found = set()
+    for relative, text in _iter_public_docs():
+        try:
+            blocks = _iter_code_blocks(text, relative)
+        except UnbalancedCodeFenceError:
+            continue
+        for block in blocks:
+            if not _is_python_block(block):
+                continue
+            try:
+                ast.parse(block.body)
+            except SyntaxError:
+                found.add((relative, _block_digest(block.body)))
+
+    assert found == set(_UNPARSEABLE_PYTHON_BLOCK_REGISTRY), (
+        "the set of non-parseable python blocks changed; expected "
+        f"{sorted(_UNPARSEABLE_PYTHON_BLOCK_REGISTRY)}, got {sorted(found)}"
+    )
+
+
+def test_unparseable_python_block_is_not_silently_skipped():
+    """A python block that cannot be parsed raises instead of being skipped."""
+    text = "Intro\n\n" "```python\n" "from cullinan import (\n" "```\n"
+    with pytest.raises(UnparseableCodeBlockError) as excinfo:
+        list(_iter_doc_imports(text, doc="sample.md"))
+    message = str(excinfo.value)
+    assert "sample.md" in message
+
+
+def test_unregistered_unresolvable_submodule_import_fails_the_gate():
+    """An injected, unresolvable submodule import is reported (falsifiable)."""
+    text = (
+        "Intro\n\n"
+        "```python\n"
+        "from cullinan.web.does_not_exist import thing\n"
+        "```\n"
+    )
+    imports = [item for item in _iter_doc_imports(text, doc="sample.md")]
+    matched = [item for item in imports if _is_cullinan_import(item.node)]
+    assert len(matched) == 1, "the injected submodule import must be scannable"
+    with pytest.raises(Exception):
+        _execute_import(matched[0].node)
+    assert not _block_is_exempt("sample.md", matched[0])
+    assert ("sample.md", matched[0].block_digest) not in _EXEMPT_LEGACY_IMPORT_BLOCKS
+
+
+def test_import_gated_public_docs_keep_resolvable_cullinan_imports():
+    """The guides corrected this iteration keep resolvable imports.
+
+    ``(a)`` the corrected statements must execute; ``(b)`` the remaining
+    statements must execute too, unless their block is explicitly marked
+    deprecated / scheduled for removal - or is a pre-migration ``v0.9x`` example.
+    A gated document whose fences cannot be paired fails the gate explicitly
+    (file name + fence count) instead of being partially skipped.
+    """
+    failures = []
+    exempt_headings = set()
+    for relative in _IMPORT_GATED_DOCS:
+        text = Path("docs", relative).read_text(encoding="utf-8")
+        try:
+            imports = list(_iter_doc_imports(text, module_prefix="cullinan", doc=relative))
+        except (UnbalancedCodeFenceError, UnparseableCodeBlockError) as error:
+            failures.append(str(error))
+            continue
+        for item in imports:
+            try:
+                _execute_import(item.node)
+                continue
+            except Exception as error:
+                if any(
+                    marker in item.heading.lower()
+                    for marker in _STALE_BLOCK_HEADING_MARKERS
+                ):
+                    exempt_headings.add(item.heading)
+                    continue
+                failures.append(
+                    f"{relative}:{item.line}: {_describe_import(item.node)} -> {error}"
+                )
+
+    assert not failures, (
+        "unresolvable or unscannable cullinan imports in the import-gated guides:\n"
+        + "\n".join(failures)
+    )
+    assert exempt_headings == _EXPECTED_EXEMPT_BLOCK_HEADINGS, (
+        "the set of blocks whose imports are exempted from the gate changed; expected "
+        f"{sorted(_EXPECTED_EXEMPT_BLOCK_HEADINGS)}, got {sorted(exempt_headings)}"
+    )
+
+
+def test_code_fence_scanner_fails_closed_on_unbalanced_fences():
+    """An unbalanced document raises instead of being scanned silently."""
+    malformed = (
+        "Intro\n\n"
+        "```python\n"
+        "from cullinan import application\n"
+        "\n"
+        "```powershell\n"
+        "python demo.py\n"
+        "```\n"
+    )
+    with pytest.raises(UnbalancedCodeFenceError) as excinfo:
+        _iter_code_blocks(malformed, "sample.md")
+    message = str(excinfo.value)
+    assert "sample.md" in message
+    assert "3" in message
+
+
+def test_code_fence_scanner_ignores_info_string_fences_inside_a_block():
+    """```lang lines inside an open block are content, not a closing fence."""
+    text = (
+        "```python\n"
+        "from cullinan import application\n"
+        "```\n"
+        "\n"
+        "```powershell\n"
+        "python demo.py\n"
+        "```\n"
+    )
+    blocks = _iter_code_blocks(text, "sample.md")
+    assert [block.info for block in blocks] == ["python", "powershell"]
+    assert "from cullinan import application" in blocks[0].body
+    assert "from cullinan import application" not in blocks[1].body
+
+
+def test_migration_v2_available_import_block_is_not_exempt_from_the_gate():
+    """The block that advertises new available imports is still scanned.
+
+    That block self-claims the imports work, so it must not be silently absorbed
+    by the deprecated-block exemption; every top-level ``from cullinan import``
+    statement in the guide must resolve and must not sit under an exempt
+    heading. (Submodule imports are covered by the general public-doc gate,
+    which exempts legacy blocks per block rather than per heading.)
+    """
+    for relative in ("migration_guide_v2.md", "zh/migration_guide_v2.md"):
+        text = Path("docs", relative).read_text(encoding="utf-8")
+        scanned = 0
+        for item in _iter_doc_imports(text, doc=relative):
+            if not (
+                isinstance(item.node, ast.ImportFrom)
+                and item.node.module == "cullinan"
+            ):
+                continue
+            assert not any(
+                marker in item.heading.lower() for marker in _STALE_BLOCK_HEADING_MARKERS
+            ), f"{relative}:{item.line} is under the exempt heading {item.heading!r}"
+            _execute_import(item.node)
+            scanned += 1
+        assert scanned > 0, (
+            f"{relative}: expected at least one top-level `from cullinan import` block"
+        )
+
+
 def test_current_version_markers_follow_v094a1_release_line():
     docs_home = _read_doc_file("README.md")
     zh_docs_home = _read_zh_doc_file("README.md")
@@ -429,8 +1028,8 @@ def test_current_version_markers_follow_v094a1_release_line():
         extension_guide,
         zh_extension_guide,
     ):
-        assert "0.94a1" in content
-        assert "0.93a13" not in content
+        assert "0.96a1" in content
+        assert "0.94a1" not in content
 
 
 def test_application_module_docs_prefer_entry_method_helpers_over_top_level_runtime_helpers():

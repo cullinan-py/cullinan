@@ -3,7 +3,7 @@
 
 Type converter, converts request parameters to target types.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import json

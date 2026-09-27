@@ -5,7 +5,7 @@ Optional Pydantic model handler.
 
 Pydantic is an optional dependency; this module only works when Pydantic is available.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Any, Dict, Type

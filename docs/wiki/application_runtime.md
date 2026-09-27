@@ -2,7 +2,7 @@ title: "Application Runtime Model"
 slug: "wiki-application-runtime"
 module: ["cullinan.application"]
 tags: ["wiki", "application", "runtime", "module"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en

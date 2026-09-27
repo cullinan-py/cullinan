@@ -26,10 +26,10 @@ python -m pytest tests -q    # full test suite - must stay green
 python -m build && twine check dist/*   # packaging health
 ```
 
-## Four-aspect sync (mandatory)
+## A complete change (mandatory)
 
-Any feature, behavior change, or rename MUST advance four aspects **together**
-in the same PR:
+Any feature, behavior change, or rename MUST update **all of the parts below
+together**, in the same PR:
 
 1. **Code** - implementation under `cullinan/`, exposed through the
    relevant `__init__` public API.
@@ -40,7 +40,9 @@ in the same PR:
 4. **Docs** - bilingual `docs/<feature>_guide.md` + `docs/zh/...`, and
    update `mkdocs.yml` nav + `README.MD`.
 
-A change is not "done" until all four align.
+A change is not "done" until the code, tests, examples, and docs all agree.
+
+If an item does not apply to this change, mark it N/A and explain why.
 
 ## Engine neutrality
 
@@ -57,16 +59,21 @@ backend-specific behavior that diverges between engines.
 
 - Use a clear type prefix: `feat:`, `fix:`, `docs:`, `ci:`, `build:`,
   `refactor:`, `test:`.
-- Describe the root cause and which of the four aspects you touched.
-- Keep the trailer when applicable:
-  `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`.
+- Describe the root cause and which parts of the change you touched (code, tests, examples, docs).
+- Attribute the project to `plumeink` and only to `plumeink`. Do not add AI
+  co-author trailers or any other attribution: every public-facing name in this
+  repository is `plumeink`, and the product name `Cullinan` is the project name
+  rather than an author.
 
 ## Versioning
 
-Follows PEP 440. `0.93aN` for feature iterations, `0.93aN.postM` for
-patch/defect fixes (no new public API). The canonical package version now lives
-in `cullinan/_version.py`; `pyproject.toml`, `cullinan/__init__.py`, and
-`cullinan/core/__init__.py` must stay aligned to that single source.
+Follows PEP 440. An `aN` suffix marks a feature iteration, which may add to the
+public API; a `.postM` suffix marks a patch/defect fix that adds no new public
+API. Because the release line advances over time, this section deliberately
+describes the suffixes by meaning instead of pinning them to a specific major
+or minor version. The canonical package version lives in `cullinan/_version.py`;
+`pyproject.toml`, `cullinan/__init__.py`, and `cullinan/core/__init__.py` must
+stay aligned to that single source.
 
 ## Reporting issues
 

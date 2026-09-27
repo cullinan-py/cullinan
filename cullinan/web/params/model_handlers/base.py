@@ -3,7 +3,7 @@
 
 Model handler base class, defines the pluggable model resolution interface.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from abc import ABC, abstractmethod

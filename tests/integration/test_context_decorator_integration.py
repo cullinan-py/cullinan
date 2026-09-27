@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for ApplicationContext integration with decorators.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import pytest

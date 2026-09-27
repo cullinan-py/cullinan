@@ -105,7 +105,7 @@
 
       if (preEntry && typeof preEntry.version === "string" && preEntry.version) {
         preVersion = preEntry.version;
-        // ARCH constraint 2: force preAvailable true when versions.json
+        // channel-mapping constraint 2: force preAvailable true when versions.json
         // declares a pre version, overriding the build-time value (which may
         // be "false" if stable was built before any pre existed).
         preAvailable = true;

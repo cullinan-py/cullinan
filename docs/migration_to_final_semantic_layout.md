@@ -2,7 +2,7 @@ title: "Final Structure Migration"
 slug: "final-structure-migration"
 module: []
 tags: ["migration", "final-structure", "semantics"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en

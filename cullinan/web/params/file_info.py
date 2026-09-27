@@ -3,7 +3,7 @@
 
 File info container for handling uploaded files.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import os

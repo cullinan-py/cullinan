@@ -3,7 +3,7 @@
 
 Form-encoded request body decoder implementation.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from urllib.parse import parse_qs, urlencode

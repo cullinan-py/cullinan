@@ -4,10 +4,10 @@
 Provides centralized middleware registration and management with
 decorator-based registration similar to @service and @controller.
 
-Author: Cullinan
+Author: plumeink
 """
 
-from typing import List, Optional, Dict, Type, Callable
+from typing import List, Optional, Dict, Type, Callable, Tuple
 import logging
 from .base import Middleware, MiddlewareChain
 
@@ -63,20 +63,17 @@ class MiddlewareRegistry:
             f"with priority {priority}"
         )
 
-    def get_middleware_chain(self) -> MiddlewareChain:
-        """Create a middleware chain with all registered middleware.
+    def iter_ordered_middleware(self) -> List[Tuple[int, Middleware]]:
+        """Return the registered middleware as ``(priority, instance)`` pairs.
 
-        Middleware are sorted by priority (lower values run first).
-
-        Returns:
-            Configured MiddlewareChain instance
+        Middleware are ordered by priority (lower runs first) and instantiated
+        on demand. This ordered, per-instance view is what lets the gateway
+        bridge turn each legacy middleware into its own pipeline layer instead
+        of one opaque wrapper, so a legacy middleware keeps the priority it
+        declared through ``@middleware(priority=...)``.
         """
-        chain = MiddlewareChain()
-
-        # Sort by priority (lower runs first)
-        sorted_middleware = sorted(self._middleware, key=lambda x: x[0])
-
-        for priority, middleware_class, instance in sorted_middleware:
+        ordered: List[Tuple[int, Middleware]] = []
+        for priority, middleware_class, instance in sorted(self._middleware, key=lambda x: x[0]):
             if instance is None:
                 # Instantiate the middleware
                 try:
@@ -90,7 +87,20 @@ class MiddlewareRegistry:
                         exc_info=True
                     )
                     raise
+            ordered.append((priority, instance))
+        return ordered
 
+    def get_middleware_chain(self) -> MiddlewareChain:
+        """Create a middleware chain with all registered middleware.
+
+        Middleware are sorted by priority (lower values run first).
+
+        Returns:
+            Configured MiddlewareChain instance
+        """
+        chain = MiddlewareChain()
+
+        for _priority, instance in self.iter_ordered_middleware():
             chain.add(instance)
 
         return chain

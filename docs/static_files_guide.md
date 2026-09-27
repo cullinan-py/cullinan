@@ -2,7 +2,7 @@ title: "Static Files and SPA Guide"
 slug: "static-files-guide"
 module: ["cullinan.web.static"]
 tags: ["web", "static", "spa", "caching"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: en

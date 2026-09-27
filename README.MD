@@ -175,8 +175,9 @@ If you are new to Cullinan, use this order:
 1. [`examples/minimal_app/`](examples/minimal_app) - shortest public entrypoint
 2. [`examples/controller_service_inject/`](examples/controller_service_inject) - service/controller layering with `Inject()`
 3. [`examples/middleware_and_module/`](examples/middleware_and_module) - `@module` boundaries and middleware semantics
-4. [`examples/parameter_handling/`](examples/parameter_handling) - method-level `Path`, `Query`, and `Body`
-5. [`examples/testing_flow/`](examples/testing_flow) - public-API testing with `get_asgi_app()`
+4. [`examples/middleware_control/`](examples/middleware_control) - turn the built-in middleware layer off or replace it, and unify legacy `@middleware` ordering with `@configure(...)`
+5. [`examples/parameter_handling/`](examples/parameter_handling) - method-level `Path`, `Query`, and `Body`
+6. [`examples/testing_flow/`](examples/testing_flow) - public-API testing with `get_asgi_app()`
 
 Then move into the documentation knowledge base:
 
@@ -218,9 +219,24 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
-**v0.95a1** is the Phase A convergence cut for the 1.0 roadmap, continuing the
-v0.94 opt iteration. This release line locks down the public surface and
-packaging baseline around:
+**v0.96a1** is the first alpha of the 0.96 line. It closes the capability gaps
+found in the 0.95 middleware surface and declares the public API stability
+freeze ahead of the 1.0 milestone:
+
+- a single ordering key for the gateway middleware pipeline, so a middleware
+  declared on the application and one added to the pipeline can be ordered
+  against each other
+- `configure(builtin_middleware=...)` to switch the built-in access-log layer
+  off or replace it
+- `drain_timeout` wired to the real shutdown-timeout source, with the default
+  behaviour unchanged
+- `RouteGroup.middleware_tags` deprecated
+- the 1.0 public API stability freeze declared in the API reference
+- engine-neutral wording across the guides, examples and public docstrings
+
+**v0.95** remains the current stable line. It is the Phase A convergence cut for
+the 1.0 roadmap, continuing the v0.94 opt iteration, and locks down the public
+surface and packaging baseline around:
 
 - `@application` + `@configure(...)` + `main()` as the startup flow
 - decorator-first discovery through Python imports
@@ -241,6 +257,24 @@ scope validation, and restructures the docs build channel mapping so
 
 Version-specific details and migration notes live in the documentation knowledge base rather
 than in the homepage narrative.
+
+---
+
+## Project status
+
+Cullinan is the project name, and `cullinan` is the package name published on PyPI:
+
+```bash
+pip install cullinan
+```
+
+Verify the install with a one-line smoke check:
+
+```bash
+python -c "from cullinan import application, configure; import cullinan; print(cullinan.__version__)"
+```
+
+Maintainer: **`plumeink`**.
 
 ---
 

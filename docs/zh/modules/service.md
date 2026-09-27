@@ -2,7 +2,7 @@ title: "cullinan.core.services"
 slug: "modules-service"
 module: ["cullinan.core.services"]
 tags: ["api", "module", "service"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh

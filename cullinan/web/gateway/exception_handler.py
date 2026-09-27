@@ -4,7 +4,7 @@
 Catches exceptions during request dispatching and converts them
 into structured ``WebResponse`` objects.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import logging

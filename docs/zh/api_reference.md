@@ -2,7 +2,7 @@ title: "API 参考"
 slug: "api-reference"
 module: []
 tags: ["api", "reference"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh
@@ -44,11 +44,22 @@ pr_links: []
 
 对于常规应用，请优先使用顶层 `cullinan` API。高级模块应显式从对应子模块导入，这样在代码评审、IDE 补全和 onboarding 文档中都能更清楚地看到边界。
 
-v0.94 Phase A 的冻结口径使用各包的 `__all__` 作为可审阅导出契约：
+## 公开 API 稳定冻结（1.0）
 
-- `cullinan.__all__` —— 常规应用应使用的启动、声明与请求处理 API
-- `cullinan.application.__all__` —— 高级 application/runtime 辅助入口，包括 `run()` 与 `get_asgi_app()`
-- `cullinan.web.__all__` / `cullinan.core.__all__` —— 显式业务 Web 面与容器/生命周期面
+**1.0 公开 API 冻结**把此前较窄的导出冻结升级为 1.0 线的稳定契约。它包含三部分：
+
+- **生效时点** —— 宣告于 **2026-09-27**。**`1.0` 线尚未发布。** 本节宣告的是 1.0 线自此刻起将承载的稳定契约，并非「`1.0` 已发布」的声明。自此之后，对冻结集合内符号的任何改动均属冻结后变更。
+- **范围** —— 恰为四个包的 `__all__` 列表，冻结粒度为**符号名**（签名、字段类型与默认值不在此契约内）：
+
+  | 契约 | 符号数 |
+  |---|---|
+  | `cullinan.__all__` —— 常规应用应使用的启动、声明与请求处理 API | 44 |
+  | `cullinan.application.__all__` —— 高级 application/runtime 辅助入口，包括 `run()` 与 `get_asgi_app()` | 26 |
+  | `cullinan.web.__all__` —— 显式业务 Web 面 | 34 |
+  | `cullinan.core.__all__` —— 容器与生命周期面 | 72 |
+
+  `cullinan.web.gateway.__all__` 门面**不在此契约内**：它是分层、需显式导入的集成面，而非冻结的稳定性承诺。
+- **只增不改** —— 冻结后，冻结集合内符号可以**新增**，但不得改名、不得改变语义、不得改变行为、不得删除。新增并非零成本：新符号属公共面扩张，落地前须在所有受支持面（子包 `__all__`、双语文档、双引擎）同步。
 
 未出现在对应 `__all__` 列表中的符号应视为私有实现细节。带 `_` 前缀的兼容性导出可以继续存在，但不属于默认业务公开稳定承诺。
 
@@ -148,7 +159,7 @@ v0.94 Phase A 的冻结口径使用各包的 `__all__` 作为可审阅导出契�
 
 完整 API 参考可以通过自动生成脚本或手工整理的方式填充上述结构。
 
-## v0.95a1 新增（Track A 内部重构）
+## v0.95 新增（Track A 内部重构）
 
 ### 新增公共 API 符号
 
@@ -160,8 +171,9 @@ v0.94 Phase A 的冻结口径使用各包的 `__all__` 作为可审阅导出契�
 | `strict_lifecycle` | `ApplicationContext.__init__` | 关键字参数 | 为 `True` 时，非关键生命周期钩子失败（`on_startup`/`on_shutdown`）以 `LifecycleError` 抛出。默认 `False`。 |
 | `skip_private` | `get_injection_markers` | 关键字参数 | 为 `True` 时，扫描标记时跳过单下划线前缀属性。默认 `False`。 |
 | `CULLINAN_STRICT_PRIVATE_INJECTION` | 环境变量 | 配置 | 设为 `1`/`true`/`yes` 可对所有 `ApplicationContext` 实例全局启用 `strict_private_injection`。 |
+| `builtin_middleware` | `configure` | 关键字参数 | 控制内置 gateway 中间件层（access log 中间件）。`None`（默认）安装框架默认，`[]` 关闭内置层，列表则替换它。 |
 
-### 弃用符号（v0.97 移除）
+### 弃用符号（将在未来版本中移除）
 
 | 符号 | 替代方案 |
 |------|---------|
@@ -170,6 +182,7 @@ v0.94 Phase A 的冻结口径使用各包的 `__all__` 作为可审阅导出契�
 | `InjectionRegistry` | `ApplicationContext` / `get_application_context()` |
 | `get_injection_registry()` | `ApplicationContext` / `get_application_context()` |
 | `reset_injection_registry()` | 显式创建新的 `ApplicationContext` |
+| `RouteGroup` | `configure(middlewares=[...])` / `@middleware`（不支持按组匹配的中间件标签） |
 
 详见 [框架语义](framework_semantics.md) §5-§8。
 

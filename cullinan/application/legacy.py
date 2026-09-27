@@ -558,26 +558,111 @@ def _init_framework():
     return ctx, pending_count
 
 
+def _add_middleware_entries(pipeline, entries) -> int:
+    """Add declarative middleware entries to ``pipeline``; return the count.
+
+    Each entry is a ``GatewayMiddleware`` instance, a ``GatewayMiddleware``
+    class, or an ``(instance, options)`` tuple whose ``options`` carries the
+    ``before`` / ``after`` / ``priority`` ordering hints. Entries are validated
+    here so a wrong type or a malformed options tuple fails loudly instead of
+    being silently skipped.
+    """
+    from cullinan.web.gateway import GatewayMiddleware
+
+    count = 0
+    for item in entries:
+        if isinstance(item, tuple):
+            if len(item) != 2 or not isinstance(item[1], dict):
+                raise ValueError(
+                    "Each declarative middleware entry must be a GatewayMiddleware "
+                    "instance or a (instance, options) tuple."
+                )
+            middleware, options = item
+        else:
+            middleware, options = item, {}
+
+        if isinstance(middleware, type):
+            middleware = middleware()
+        if not isinstance(middleware, GatewayMiddleware):
+            raise TypeError(
+                "Declarative middleware must be a GatewayMiddleware instance or class, "
+                f"got {type(middleware).__name__!r}."
+            )
+        pipeline.add(middleware, **options)
+        count += 1
+    return count
+
+
+def _register_declared_middleware(pipeline, config) -> None:
+    """Install middleware declared through ``@configure(middlewares=[...])``.
+
+    Each entry is either a ``GatewayMiddleware`` instance, a class, or a
+    ``(instance, options)`` tuple, where ``options`` carries the
+    ``before`` / ``after`` / ``priority`` ordering hints.
+    """
+    declared = getattr(config, "middlewares", None)
+    if not declared:
+        return
+
+    _add_middleware_entries(pipeline, declared)
+
+    # Force resolution so a bad anchor, an ambiguous anchor or a cycle fails at
+    # startup rather than on the first request.
+    pipeline.list_middleware()
+
+    logger.info(
+        "└---registered %d declared middleware from configure(middlewares=...)",
+        len(declared),
+    )
+
+
 def _setup_middleware_pipeline():
-    """Wire legacy @middleware-registered middleware into the gateway pipeline."""
+    """Wire declared + built-in + legacy @middleware-registered middleware.
+
+    Declared middleware, the built-in layer and every legacy ``@middleware``
+    middleware are consumed here — the same fixed assembly point — so ordering
+    follows the declaration, not the moment a middleware happened to be
+    registered. Declaration problems (bad anchor, cycle, ambiguous anchor, wrong
+    type) surface here instead of being swallowed.
+    """
+    from cullinan.support.config import get_config
+    from cullinan.web.gateway import get_pipeline
+
+    config = get_config()
+    _register_declared_middleware(get_pipeline(), config)
+
+    pipeline = get_pipeline()
+
+    # Built-in layer: on by default; ``configure(builtin_middleware=...)`` can
+    # switch it off (``[]``) or replace it with an equivalent implementation.
+    # A user-declared built-in layer is validated loudly (like the declared
+    # layer); only the framework default is tolerated as best-effort.
+    declared_builtin = getattr(config, "builtin_middleware", None)
+    if declared_builtin is not None:
+        _add_middleware_entries(pipeline, declared_builtin)
+    else:
+        try:
+            from cullinan.web.gateway import AccessLogMiddleware
+
+            pipeline.add(AccessLogMiddleware())
+        except Exception as exc:
+            logger.debug("Built-in middleware setup skipped: %s", exc)
+
+    # Bridge each legacy middleware as its own entry so legacy middleware share
+    # the single declarative ordering (``priority``) with the layers above,
+    # rather than collapsing into one opaque wrapper.
     try:
-        from cullinan.web.gateway import get_pipeline, AccessLogMiddleware, LegacyMiddlewareBridge
+        from cullinan.web.gateway.pipeline import _LegacyMiddlewareAdapter
         from cullinan.web.middleware import get_middleware_registry
 
-        pipeline = get_pipeline()
-
-        # Add built-in access log middleware
-        pipeline.add(AccessLogMiddleware())
-
-        # Bridge legacy middleware
         mw_registry = get_middleware_registry()
         registered = mw_registry.get_registered_middleware()
         if registered:
-            chain = mw_registry.get_middleware_chain()
-            pipeline.add(LegacyMiddlewareBridge(chain))
+            for priority, legacy in mw_registry.iter_ordered_middleware():
+                pipeline.add(_LegacyMiddlewareAdapter(legacy), priority=priority)
             logger.info("└---bridged %d legacy middleware into gateway pipeline", len(registered))
     except Exception as exc:
-        logger.debug("Middleware pipeline setup skipped: %s", exc)
+        logger.debug("Legacy middleware bridge skipped: %s", exc)
 
 
 def _setup_openapi():
@@ -704,8 +789,8 @@ def _build_tornado_settings():
     the ``/static`` prefix — requests hit Tornado's native handler (pointing at
     ``cwd/static``) and return a Tornado 404 instead of reaching the dispatcher.
 
-    Static files are an engine-neutral, router-registered capability per
-    ADR-001 (declarative ``StaticFiles`` -> ``Router`` -> ``Dispatcher``), so the
+    Static files are an engine-neutral, router-registered capability
+    (declarative ``StaticFiles`` -> ``Router`` -> ``Dispatcher``), so the
     Tornado-native static handler must stay disabled to keep behaviour identical
     across the Tornado and ASGI backends. ``template_path`` registers no handler
     and is left in place for Tornado templating in custom handlers.

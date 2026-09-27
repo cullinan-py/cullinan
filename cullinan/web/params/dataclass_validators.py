@@ -3,7 +3,7 @@
 
 Provides field-level validation decorators for dataclasses.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Any, Callable, Dict, List, Type

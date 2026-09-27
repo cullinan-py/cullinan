@@ -2,11 +2,18 @@ name: Docs validate
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+      # Same reason as ci.yml: a release branch has to be validated before the
+      # release event publishes it. One pattern covers every release branch.
+      - "release/**"
   pull_request:
     paths:
       - 'docs/**'
       - '.github/**'
+      - 'mkdocs.yml'
+      - 'examples/**'
 
 jobs:
   validate-docs:
@@ -17,20 +24,23 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Install dependencies
+      - name: Install docs toolchain
         run: |
           python -m venv .venv
           . .venv/bin/activate
           pip install -U pip
-      - name: Run docs validation
+          pip install mkdocs==1.6.1 mkdocs-material==9.7.0 mkdocs-static-i18n packaging
+      # Real gate -- no probe/skip. The old file-existence probe for
+      # docs/work/validate_docs.py never ran (docs/work/ is absent and
+      # git-ignored), so a fresh checkout was structurally always-green. A real
+      # build now runs and exits non-zero on broken nav entries, missing pages,
+      # invalid relative links, or any warning promoted to error by --strict.
+      # Falsifiable: removing or renaming any page referenced by `nav:` in
+      # mkdocs.yml makes `mkdocs build --strict` fail.
+      - name: Build docs (strict)
         run: |
           . .venv/bin/activate
-          # Only run validation script if it exists (docs/work is optional)
-          if [ -f docs/work/validate_docs.py ]; then
-            python docs/work/validate_docs.py
-          else
-            echo "docs/work/validate_docs.py not found; skipping docs validation step"
-          fi
+          python -m mkdocs build --strict
 
   core-examples:
     runs-on: ubuntu-latest
@@ -46,14 +56,15 @@ jobs:
           python -m venv .venv
           . .venv/bin/activate
           pip install -U pip
-          pip install -e .
-          pip install tornado
-      - name: Run core examples smoke test
+          pip install -e ".[full]"
+          pip install pytest
+      # Real gate -- no probe/skip. Replaces the never-executed
+      # docs/work/core_examples.py probe with the repository's own example/guide
+      # integration test, which exercises the runnable examples under examples/
+      # and asserts they stay in sync with the public docs. Falsifiable: removing
+      # the test module (or the examples it covers) makes pytest exit non-zero,
+      # so the job cannot silently pass.
+      - name: Run examples / guides integration test
         run: |
           . .venv/bin/activate
-          # Only run core examples script if it exists (docs/work is optional)
-          if [ -f docs/work/core_examples.py ]; then
-            python docs/work/core_examples.py
-          else
-            echo "docs/work/core_examples.py not found; skipping core examples smoke test"
-          fi
+          python -m pytest tests/integration/test_examples_public_guides.py -q

@@ -3,7 +3,7 @@
 
 Dynamic body class, supports attribute-style access.
 
-Author: Cullinan
+Author: plumeink
 """
 
 from typing import Any, Dict, Iterator, KeysView, ValuesView, ItemsView, List

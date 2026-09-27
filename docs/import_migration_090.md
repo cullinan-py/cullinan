@@ -13,7 +13,7 @@ Cullinan 0.90 introduces a reorganized `core/` module with clear separation of c
 - **`diagnostics/`** - Exceptions and error rendering
 - **`lifecycle/`** - Lifecycle management
 - **`request/`** - Request context
-- **`legacy/`** - Deprecated components (will be removed in 1.0)
+- **`legacy/`** - Deprecated components (will be removed in a future release)
 
 ---
 
@@ -83,10 +83,10 @@ Cullinan 0.90 introduces a reorganized `core/` module with clear separation of c
 
 ## Legacy Imports (Deprecated)
 
-The following imports are deprecated and will be removed in 1.0:
+The following imports are deprecated and will be removed in a future release:
 
 ```python
-# Deprecated - will be removed in 1.0
+# Deprecated - will be removed in a future release
 from cullinan.core.injection import Inject, InjectByName, injectable
 from cullinan.core.provider import Provider, ProviderRegistry
 from cullinan.core.facade import IoCFacade, get_ioc_facade
@@ -167,31 +167,44 @@ sed -i 's/from cullinan\.core\.context import/from cullinan.core.request import/
 
 ## Unchanged Imports
 
-The following imports remain unchanged and work as before:
+The following imports all work. Names that belong to the top-level entry
+surface are still imported from `cullinan`; names that live in a dedicated
+module are imported from that module:
 
 ```python
 # These still work the same way
 from cullinan import (
     # Configuration
     configure, get_config, CullinanConfig,
-    
+
     # Service layer
-    Service, ServiceRegistry, service, get_service_registry,
-    
+    service,
+
     # Controller
-    ControllerRegistry, get_controller_registry,
     get_api, post_api, patch_api, delete_api, put_api,
-    Handler, response,
-    
+    response,
+
     # Middleware
-    Middleware, MiddlewareChain, middleware,
-    
+    Middleware, middleware,
+
     # WebSocket
-    WebSocketRegistry, websocket_handler,
-    
-    # Testing
-    ServiceTestCase, MockService, TestRegistry,
+    websocket_handler,
 )
+
+# Service layer classes and registries
+from cullinan.core.services import Service, ServiceRegistry, get_service_registry
+
+# Controller registry and request handler base
+from cullinan.web.controller import ControllerRegistry, get_controller_registry, Handler
+
+# Middleware chain
+from cullinan.web.middleware import MiddlewareChain
+
+# WebSocket registry
+from cullinan.web.websocket_registry import WebSocketRegistry
+
+# Test helpers
+from cullinan.testing import ServiceTestCase, MockService, TestRegistry
 ```
 
 ---

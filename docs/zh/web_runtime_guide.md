@@ -2,7 +2,7 @@ title: "Web Runtime 指南"
 slug: "web-runtime-guide"
 module: ["cullinan.web.gateway", "cullinan.transport.adapter"]
 tags: ["web", "runtime", "gateway"]
-author: "Cullinan"
+author: "plumeink"
 reviewers: []
 status: updated
 locale: zh
@@ -101,10 +101,20 @@ response.freeze()
 
 `WebRuntime` 负责追踪当前活动运行时，并支持分阶段替换与 drain。这在服务器或适配器切换运行时状态、但仍有飞行中请求时尤其有用。
 
+drain 的上限是可配置的。`WebRuntimeConfig.drain_timeout`（默认 `30.0` 秒）是收尾路径在等待 request scope 结束时交给应用上下文的超时。它随运行时配置传入：
+
+```python
+from cullinan.web.gateway import WebRuntimeConfig
+
+runtime_config = WebRuntimeConfig(drain_timeout=10.0)
+```
+
+保持该字段默认值时，行为与之前逐值一致 —— `30.0` 正是 shutdown 调用原先写死的取值。
+
 ## 中间件与异常流
 
 - `MiddlewarePipeline` 负责组合 gateway 中间件
-- `LegacyMiddlewareBridge` 可把旧式 middleware 注册桥接到 gateway pipeline
+- 旧的 `@middleware` 注册会作为独立层桥接进 gateway pipeline
 - `ExceptionHandler` 负责把未捕获异常转换成 HTTP 响应
 
 ## 迁移说明

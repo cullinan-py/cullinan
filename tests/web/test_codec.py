@@ -3,7 +3,7 @@
 
 Tests the encoding/decoding functionality of the Codec module.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import unittest

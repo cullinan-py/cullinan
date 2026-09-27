@@ -3,7 +3,7 @@
 
 Parameter resolution orchestrator, coordinates all layers to complete parameter resolution.
 
-Author: Cullinan
+Author: plumeink
 """
 
 import inspect
@@ -263,7 +263,7 @@ class ParamResolver:
 
         Args:
             func: Controller method
-            request: Tornado request object
+            request: Engine-neutral request object
             url_params: URL path parameters
             query_params: Query parameters
             body_data: Request body data (decoded)
