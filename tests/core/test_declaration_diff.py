@@ -10,8 +10,10 @@ Covers the red-green pair:
   warning disappears.
 
 Also covers the query surface (``Application.get_declaration_diff()``), the
-default-visibility requirement (WARNING level, no debug switch), the preserved
-``component-top-level`` guard, and engine neutrality (Tornado + ASGI).
+default-visibility requirement (the diagnostic is visible through the default
+``warnings`` filter action -- no debug switch and no logging configuration
+required), the preserved ``component-top-level`` guard, and engine neutrality
+(Tornado + ASGI).
 """
 
 import importlib
@@ -189,9 +191,23 @@ def test_component_inside_user_packages_produces_no_warning(tmp_path, monkeypatc
 
 
 # ---------------------------------------------------------------------------
-# AC-5: default visibility -- WARNING level without any debug switch
+# AC-5: default visibility -- through the default ``warnings`` channel,
+# without any debug switch or logging configuration
 # ---------------------------------------------------------------------------
-def test_declaration_diff_warning_is_default_visible(tmp_path, monkeypatch, caplog):
+def test_declaration_diff_warning_is_default_visible(tmp_path, monkeypatch):
+    """The diagnostic is visible through the default ``warnings`` channel.
+
+    ``ComponentDiscoveryWarning`` subclasses ``UserWarning``; no stdlib warning
+    filter matches ``UserWarning``, so the default filter action (``default``)
+    applies and the diagnostic reaches the caller with no logging
+    configuration, no handler and no level change. The assertion therefore
+    reads the ``warnings`` channel directly.
+
+    It deliberately does *not* use ``caplog``: a ``caplog`` assertion is
+    satisfied by a handler the test harness attaches, so it would pass even
+    when the framework's own logging stays silent. The configured-logging
+    channel has its own, honestly named test below.
+    """
     package_name = "decl_diff_visible"
     outside_name = "decl_diff_outside_b"
     _write_tree(
@@ -223,13 +239,75 @@ def test_declaration_diff_warning_is_default_visible(tmp_path, monkeypatch, capl
 
     entry = importlib.import_module(f"{package_name}.app.root").main
 
+    # The reason the default action applies: the diagnostic is a UserWarning.
+    assert issubclass(ComponentDiscoveryWarning, UserWarning)
+
+    with warnings.catch_warnings(record=True) as caught:
+        # pytest wraps every test item in ``simplefilter("always")``; restore
+        # the stdlib default action so this asserts genuine default visibility
+        # instead of an always-on capture.
+        warnings.simplefilter("default")
+        app = _build_app(entry)
+
+    try:
+        rule_messages = [str(item.message) for item in _rule_warnings(caught)]
+        assert rule_messages, [str(item.message) for item in caught]
+        assert any("not assembled" in message for message in rule_messages)
+        assert any(f"{outside_name}.svc.LooseService" in message for message in rule_messages)
+    finally:
+        app.uninstall()
+        _clear_modules(package_name, outside_name)
+
+
+def test_declaration_diff_warning_is_visible_when_logging_is_configured(
+    tmp_path, monkeypatch, caplog
+):
+    """With application-side logging configured, the framework's record shows.
+
+    This covers the *configured* channel, not the default one: the assertion
+    relies on a handler attached by the test harness (``caplog``), modelling an
+    application that has set up logging. The framework itself only attaches a
+    ``NullHandler``, so nothing is observable until the consumer configures
+    logging. Default visibility is covered by
+    ``test_declaration_diff_warning_is_default_visible``.
+    """
+    package_name = "decl_diff_visible_configured"
+    outside_name = "decl_diff_outside_b2"
+    _write_tree(
+        tmp_path,
+        {
+            f"{package_name}/__init__.py": "",
+            f"{package_name}/app/__init__.py": "",
+            f"{package_name}/app/root.py": f"""
+                from cullinan import application, configure
+
+                import {outside_name}.svc
+
+                @configure(user_packages=["{package_name}.app"])
+                @application
+                def main(): ...
+            """,
+            f"{outside_name}/__init__.py": "",
+            f"{outside_name}/svc.py": """
+                from cullinan import service
+
+                @service
+                class ConfiguredService:
+                    pass
+            """,
+        },
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    _clear_modules(package_name, outside_name)
+
+    entry = importlib.import_module(f"{package_name}.app.root").main
+
     with caplog.at_level(logging.WARNING):
         app = _build_app(entry)
 
     try:
-        warning_records = [r for r in caplog.records if r.levelno >= logging.WARNING]
-        assert warning_records, "expected at least one WARNING-level log record"
-        assert any("not assembled" in r.getMessage() for r in warning_records)
+        messages = [record.getMessage() for record in caplog.records]
+        assert any("not assembled" in message for message in messages), messages
     finally:
         app.uninstall()
         _clear_modules(package_name, outside_name)
