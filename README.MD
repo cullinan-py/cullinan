@@ -247,12 +247,6 @@ than in the homepage narrative.
 
 ## Project status
 
-This repository is a **fork** ([`plumeink/cullinan`](https://github.com/plumeink/cullinan))
-maintained by [`plumeink`](https://github.com/plumeink). It is **not** the upstream Cullinan
-repository itself: the upstream project belongs to the GitHub organization
-[`cullinan-py`](https://github.com/cullinan-py), and ongoing iteration on this fork is
-proposed through pull requests opened from fork branches.
-
 Cullinan is the project name, and `cullinan` is the package name published on PyPI:
 
 ```bash
