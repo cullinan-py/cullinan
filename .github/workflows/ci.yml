@@ -2,7 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+      # Every release branch shares the release/ prefix, so a single pattern
+      # covers all of them. The publisher workflow fires on the GitHub Release
+      # event and uploads the tagged commit to PyPI, so that commit has to have
+      # run the test matrix, lint and build checks first.
+      - "release/**"
   pull_request:
 
 permissions:

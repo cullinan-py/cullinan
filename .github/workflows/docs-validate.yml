@@ -2,7 +2,12 @@ name: Docs validate
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+      # Same reason as ci.yml: a release branch has to be validated before the
+      # release event publishes it. One pattern covers every release branch.
+      - "release/**"
   pull_request:
     paths:
       - 'docs/**'
