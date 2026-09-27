@@ -32,9 +32,14 @@ def inspect_boundary():
     """Build the app, then return ``(diff, warning_messages, log_messages)``."""
     capture = _WarningLogCapture()
     root_logger = logging.getLogger()
-    # The framework attaches its console handler to the ``cullinan`` package
-    # logger and may set ``propagate = False`` on it, so a record does not always
-    # reach the root logger. Attach to both to be sure the WARNING is observed.
+    # Pollution defence (not a visibility requirement): when this demo runs
+    # inside a larger test session, an earlier test may have left
+    # ``propagate = False`` on the ``cullinan`` logger — the framework sets that
+    # when it auto-enables console logging — and may have cleared the root
+    # handlers. Attaching the capture handler to both loggers keeps the
+    # illustrative log line stable regardless of that leftover state. Visibility
+    # of the diagnostic itself does not depend on this handler: it is guaranteed
+    # by the standard ``warnings`` channel captured below.
     target_loggers = [root_logger, logging.getLogger("cullinan")]
     for logger in target_loggers:
         logger.addHandler(capture)
@@ -56,7 +61,7 @@ def inspect_boundary():
 
 def run_example_assertions() -> None:
     """Assertions used by the example's integration test."""
-    diff, caught, logs = inspect_boundary()
+    diff, caught, _logs = inspect_boundary()
 
     assert diff.dropped_count == len(diff.dropped)
     assert any(
@@ -65,8 +70,22 @@ def run_example_assertions() -> None:
     assert any(
         name.endswith("app.services.AssembledService") for name in diff.assembled
     ), diff.assembled
-    assert any(_RULE_KEY in message for message in caught), caught
-    assert any("not assembled" in message for message in logs), logs
+
+    # The diagnostic is guaranteed to be visible through the standard
+    # ``warnings`` channel: ``ComponentDiscoveryWarning`` subclasses
+    # ``UserWarning``, whose default filter action is ``default`` (printed once,
+    # no switch required). Assert on that channel — not on a log record, which
+    # the framework's own logger does not surface by default.
+    rule_messages = [message for message in caught if _RULE_KEY in message]
+    assert rule_messages, caught
+    assert any(
+        f"{diff.dropped_count} component(s)" in message for message in rule_messages
+    ), rule_messages
+    assert any(
+        dropped in message
+        for dropped in diff.dropped
+        for message in rule_messages
+    ), (diff.dropped, rule_messages)
 
 
 def main() -> None:

@@ -222,8 +222,23 @@ Cullinan no longer drops it silently:
 - `Application.get_declaration_diff()` returns the reconciliation as
   `declared` / `assembled` / `dropped` (plus `dropped_count`).
 - When `dropped` is non-empty, a **`component-declared-not-assembled`**
-  diagnostic is emitted at **WARNING** level — no debug switch is required — and
-  a matching WARNING record is logged. Startup is **not** blocked.
+  diagnostic is emitted at **WARNING** level — no debug switch is required. It is
+  delivered through Python's standard `warnings` mechanism as a
+  `ComponentDiscoveryWarning` (a `UserWarning` subclass). Because the default
+  filter action for `UserWarning` is `default`, the diagnostic is **visible by
+  default**: it is printed once per location and reports both the count and the
+  affected component names. Startup is **not** blocked.
+
+  > Cullinan keeps its own logging namespace quiet. On import the `cullinan`
+  > logger gets a `NullHandler`, so the framework's own `logger.warning(...)`
+  > records are created but swallowed — they never reach the root logger's
+  > handlers, and the logger is **not** a default-visible channel. (When the
+  > framework auto-enables its own console logging — a directly started process,
+  > or `CULLINAN_FORCE_CONSOLE` — it attaches a console handler, so a record
+  > *is* shown; the `propagate = False` it then sets merely prevents the same
+  > record from being emitted twice.) Do not wait for a log line to learn that
+  > the diagnostic fired — watch the `warnings` channel instead (for example,
+  > `warnings.catch_warnings(record=True)`).
 
 The two usual causes and their fixes:
 
