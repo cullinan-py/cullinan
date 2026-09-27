@@ -83,21 +83,38 @@ class ExtensionRegistry:
     def _register_builtin_extension_points(self):
         """Register all built-in extension points."""
         from cullinan.web.middleware import Middleware
+        from cullinan.web.gateway import GatewayMiddleware
         from cullinan.core.services import Service
 
-        # Middleware extension points
+        # Middleware extension points.
+        #
+        # Two protocols coexist:
+        #   * the legacy ``Middleware.process_request`` / ``process_response``
+        #     pair, kept for backward compatibility (auto-bridged), and
+        #   * the onion-model ``GatewayMiddleware.__call__`` protocol, which is
+        #     the one the gateway pipeline actually runs and is the recommended
+        #     protocol for new code.
         self._extension_points.extend([
             ExtensionPoint(
                 category=ExtensionCategory.MIDDLEWARE,
                 name='Middleware.process_request',
-                description='Intercept and process requests before they reach handlers',
+                description='Legacy protocol: intercept and process requests before they reach handlers',
                 interface=Middleware,
             ),
             ExtensionPoint(
                 category=ExtensionCategory.MIDDLEWARE,
                 name='Middleware.process_response',
-                description='Intercept and process responses before they are sent',
+                description='Legacy protocol: intercept and process responses before they are sent',
                 interface=Middleware,
+            ),
+            ExtensionPoint(
+                category=ExtensionCategory.MIDDLEWARE,
+                name='GatewayMiddleware.__call__',
+                description=(
+                    'Recommended protocol: onion-model middleware entry point '
+                    'async def __call__(self, request, call_next)'
+                ),
+                interface=GatewayMiddleware,
             ),
         ])
 
