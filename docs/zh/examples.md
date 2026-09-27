@@ -8,7 +8,7 @@ status: updated
 locale: zh
 translation_pair: "docs/examples.md"
 related_tests: ["tests/integration/test_examples_public_guides.py"]
-related_examples: ["examples/minimal_app", "examples/controller_service_inject", "examples/middleware_and_module", "examples/parameter_handling", "examples/testing_flow"]
+related_examples: ["examples/minimal_app", "examples/controller_service_inject", "examples/middleware_and_module", "examples/middleware_pipeline", "examples/parameter_handling", "examples/testing_flow"]
 estimate_pd: 1.5
 last_updated: "2026-06-01T00:00:00Z"
 pr_links: []
@@ -28,8 +28,9 @@ pr_links: []
 1. `examples/minimal_app/` —— 最短公开入口
 2. `examples/controller_service_inject/` —— `@service`、`@controller` 与 `Inject()` 的业务分层
 3. `examples/middleware_and_module/` —— 什么时候值得在入口方法之上再显式引入 `@module`
-4. `examples/parameter_handling/` —— `Path`、`Query`、`Body` 的控制器方法参数绑定
-5. `examples/testing_flow/` —— 不启动真实服务进程时通过 `main.get_asgi_app()` 做测试
+4. `examples/middleware_pipeline/` —— 通过 `@configure(middlewares=[...])` 声明中间件顺序
+5. `examples/parameter_handling/` —— `Path`、`Query`、`Body` 的控制器方法参数绑定
+6. `examples/testing_flow/` —— 不启动真实服务进程时通过 `main.get_asgi_app()` 做测试
 
 ## 示例地图
 
@@ -37,7 +38,8 @@ pr_links: []
 | --- | --- | --- | --- |
 | `examples/minimal_app/` | 使用 `@application + @configure(...) + main()` 组织最小应用 | `python -m examples.minimal_app` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/minimal_app) |
 | `examples/controller_service_inject/` | `service/controller` 分层与类型驱动的 `Inject()` 注入 | `python -m examples.controller_service_inject` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/controller_service_inject) |
-| `examples/middleware_and_module/` | 模块边界归属与中间件管线扩展 | `python -m examples.middleware_and_module` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_and_module) |
+| `examples/middleware_and_module/` | 模块边界归属与兼容版中间件协议 | `python -m examples.middleware_and_module` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_and_module) |
+| `examples/middleware_pipeline/` | 通过 `@configure(middlewares=[...])` 声明中间件顺序 + 公开反射 API | `python -m examples.middleware_pipeline` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_pipeline) |
 | `examples/parameter_handling/` | 控制器方法上的 `Path`、`Query`、`Body` | `python -m examples.parameter_handling` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/parameter_handling) |
 | `examples/testing_flow/` | 基于公开 API 的 ASGI 测试流 | `python -m pytest examples/testing_flow/test_app.py -q` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/testing_flow) |
 | `examples/static_files_and_spa/` | 声明式 `StaticFiles` 挂载 + SPA 回退（引擎中立） | `python -m examples.static_files_and_spa` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/static_files_and_spa) |
@@ -59,5 +61,7 @@ Cullinan 当前想表达的概念放在最前面：
 - 根目录 `examples/README.md` 会同步这条学习链路，方便直接看仓库的开发者。
 - 也可以直接从 [`examples/`](https://github.com/cullinan-py/cullinan/tree/main/examples) 浏览已入库的示例源码。
 - `tests/integration/test_examples_public_guides.py` 会对当前维护的示例做 smoke test。
+- 中间件有两个维护中的示例：`examples/middleware_pipeline/` 使用推荐的洋葱协议，
+  而 `examples/middleware_and_module/` 使用兼容协议。详见[中间件](wiki/middleware.md)。
 - 如果你第一次接触 Cullinan，建议先完成 `examples/minimal_app/`，再进入
   `examples/controller_service_inject/`。
