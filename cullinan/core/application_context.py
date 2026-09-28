@@ -7,9 +7,11 @@ import ast
 import asyncio
 import inspect
 import logging
+import sys
 import threading
 import time
 import types
+import warnings
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
@@ -898,6 +900,26 @@ class ApplicationContext:
             category=ComponentDiscoveryWarning,
             stacklevel=3,
         )
+        self._emit_fallback_if_invisible(problem, guidance)
+
+    def _emit_fallback_if_invisible(self, problem: str, guidance: str) -> None:
+        """Last-resort channel for the declared-vs-assembled reconciliation.
+
+        The ordinary channels are a semantic warning and a log record. Both can
+        be dark at the same time: ``warnings`` is off whenever the process runs
+        with ``-W ignore`` / ``PYTHONWARNINGS=ignore`` (a common way to quiet
+        noisy dependencies in production), and the log record goes nowhere while
+        the package logger carries only a ``NullHandler`` and the application
+        has not configured logging.
+
+        Rather than silence that case, print once to stderr. It stays out of the
+        way whenever either channel is live, so the report is not duplicated.
+        """
+        if _real_logging_handler_exists():
+            return
+        if not _warnings_may_be_suppressed():
+            return
+        sys.stderr.write("cullinan: %s\n%s\n" % (problem, guidance))
 
     def _process_pending_registrations(self) -> None:
         from .pending import PendingRegistry
@@ -2212,3 +2234,31 @@ def _freeze_dependencies(instance, injected_names):
 
 
 __all__ = ["ApplicationContext", "ContainerState"]
+
+def _real_logging_handler_exists() -> bool:
+    """True when some non-NullHandler handler sits on this record's path.
+
+    Walks the ``propagate`` chain, mirroring the check the console-logging
+    bootstrap already uses, so both places agree on what counts as a real sink.
+    """
+    node = logging.getLogger(__name__)
+    while node is not None:
+        for handler in getattr(node, "handlers", []):
+            if handler is not None and not isinstance(handler, logging.NullHandler):
+                return True
+        if not getattr(node, "propagate", False):
+            break
+        node = node.parent
+    return False
+
+
+def _warnings_may_be_suppressed() -> bool:
+    """Approximate check for a global ignore of this warning category."""
+    for action, _message, category, _module, _lineno in warnings.filters:
+        if action != "ignore":
+            continue
+        if category is None:
+            return True
+        if isinstance(category, type) and issubclass(ComponentDiscoveryWarning, category):
+            return True
+    return False
