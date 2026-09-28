@@ -219,6 +219,12 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
+**v0.96a3** is the third alpha of the 0.96 line. It makes the declared-versus-assembled reconciliation survive the production settings that used to silence it, and lets an application opt in to failing at startup instead of only reporting:
+
+- the diagnostic that names components declared but never assembled can no longer be silenced by a deployment that suppresses warnings and configures no logging handler of its own
+- `configure(strict_assembly=True)` turns the same difference into a startup failure, raised after the diagnostic has been emitted rather than instead of it
+- `configure(strict_assembly_excludes=[...])` acknowledges a component that is deliberately left unassembled, changing the action without changing the facts
+
 **v0.96a2** is the second alpha of the 0.96 line. It closes the gap between
 what the framework declares and what it actually does:
 

@@ -22,7 +22,7 @@ assembles and owns an `ApplicationContext` plus a `WebRuntime`.
 
 1. **Discover modules** — `Application.run()` collects the root module graph and owned packages
 2. **Assemble runtime** — create an `ApplicationContext` and `WebRuntime` candidate
-3. **Validate and warm** — run health checks, `refresh()`, router/dispatcher wiring, and warmup hooks
+3. **Validate and warm** — run health checks, `refresh()`, router/dispatcher wiring, and warmup hooks. When `configure(strict_assembly=True)` is set, the declared-but-not-assembled difference is raised as a failure inside `refresh()`; otherwise it is only reported
 4. **Activate** — atomically switch the active runtime and begin draining the previous one
 5. **Serve requests** — request scope and middleware operate against the request-bound application snapshot
 6. **Drain and close** — once in-flight requests finish, the old context shuts down and the runtime closes

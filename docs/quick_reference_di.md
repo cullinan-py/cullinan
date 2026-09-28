@@ -1,6 +1,6 @@
 # Cullinan Dependency Injection Quick Reference
 
-> **Version**: 0.96a2
+> **Version**: 0.96a3
 > **Author**: plumeink
 
 > **Quick lookup page:** use this page as a compact DI recipe sheet; use

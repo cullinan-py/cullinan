@@ -22,7 +22,7 @@ Cullinan 的生命周期现在通常由当前活动的 `Application` 驱动；�
 
 1. **发现模块** —— `Application.run()` 收集根模块图及其声明的包归属
 2. **装配运行时** —— 创建 `ApplicationContext` 与 `WebRuntime` 候选实例
-3. **校验与预热** —— 执行健康检查、`refresh()`、router/dispatcher 绑定与 warmup hooks
+3. **校验与预热** —— 执行健康检查、`refresh()`、router/dispatcher 绑定与 warmup hooks。开启 `configure(strict_assembly=True)` 时，「已声明但未装配」的差集会在 `refresh()` 内升级为失败；否则仅作报告
 4. **激活** —— 原子切换活动运行时，并让旧运行时进入 draining
 5. **处理请求** —— request scope 与中间件围绕请求绑定的应用快照运行
 6. **Drain 与关闭** —— 待飞行中的请求完成后，旧上下文执行 shutdown，运行时关闭

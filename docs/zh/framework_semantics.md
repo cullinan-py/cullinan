@@ -218,7 +218,7 @@ configure(explicit_modules=[
 Cullinan 不再静默丢弃这种情况：
 
 - `Application.get_declaration_diff()` 返回对账结果：`declared` / `assembled` / `dropped`（以及 `dropped_count`）。
-- 当 `dropped` 非空时，会以 **WARNING** 级别发出 **`component-declared-not-assembled`** 诊断（无需任何 debug 开关）。该诊断通过 Python 标准 `warnings` 机制发出，类别为 `ComponentDiscoveryWarning`（`UserWarning` 的子类）。由于 `UserWarning` 的默认过滤动作是 `default`，该诊断**默认即可见**：会按位置打印一次，并同时给出数量与受影响的组件名单。启动**不会**被阻断。
+- 当 `dropped` 非空时，会以 **WARNING** 级别发出 **`component-declared-not-assembled`** 诊断（无需任何 debug 开关）。该诊断通过 Python 标准 `warnings` 机制发出，类别为 `ComponentDiscoveryWarning`（`UserWarning` 的子类）。由于 `UserWarning` 的默认过滤动作是 `default`，该诊断**默认即可见**：会按位置打印一次，并同时给出数量与受影响的组件名单。默认情况下启动**不会**被阻断；应用可以主动选择改为失败，见本节末尾的「要求差集为空（可选开启）」小节。
 
   > Cullinan 会保持自身日志命名空间的安静。导入时 `cullinan` logger 会被挂上 `NullHandler`。这**不会**阻断传播——该 logger 的 `propagate` 仍为 `True`，而 `NullHandler` 只是自己拒绝输出、并不拦截，因此框架自身的 `logger.warning(...)` 记录照常向上传递到 root logger。记录本身**无论是否配置 logging 都会被创建并发出**；之所以默认没有任何输出，有两个原因：`cullinan` logger 上的 `NullHandler` 本身**已算一个 handler**，所以 stdlib 的 `lastResort` 兜底**不会**接管；而传播路径上也没有任何真实的 handler（root logger 默认没有）。因此该 logger **不是**默认可见的通道，但只要传播路径上出现**任意一个** handler，它就不再安静——例如 `logging.basicConfig(level=logging.ERROR)` 就是在 root logger 上装一个（测试框架的日志捕获同样会装一个）。框架自带的 console handler（在 `CULLINAN_FORCE_CONSOLE=1` 时、或在进程以真实文件直接启动并经由旧式入口时安装）只存在于那些**旧式兼容入口**（`cullinan.application.run()` / `cullinan.application.get_asgi_app()` 与旧式的 `cullinan.runtime.scanner.run()`）上，**不会**挂载在推荐的 `@application` → `entry.run()` 路径上。不要寄望于等到一条日志来判断诊断是否触发，请改为观察 `warnings` 通道（例如 `warnings.catch_warnings(record=True)`）。
 
@@ -251,3 +251,35 @@ app.uninstall()
 ```
 
 `Application` 是高级运行时门面；常规业务代码应停留在 `@application` + `@configure(...)`，仅在诊断发现边界时才使用 `get_declaration_diff()`。
+
+### 要求差集为空（可选开启）
+
+报告是默认行为，也仍然是默认行为。如果某个应用希望「有声明没被装配时干脆不要启动」，可以显式声明：
+
+```python
+from cullinan import application, configure
+
+@configure(user_packages=["my_app"], strict_assembly=True)
+@application
+def main(): ...
+```
+
+| 配置项 | 默认值 | 含义 |
+|--------|--------|------|
+| `strict_assembly` | `False` | `False`：照旧报告差集并继续启动。`True`：要求差集为空。 |
+| `strict_assembly_excludes` | `None` | 「有意不装配」的组件清单，写法为 `package.module.Component` —— 即报告里 `dropped` 使用的同一形式。列入的组件仍会被报告，只是不再导致启动失败。`None` 与 `[]` 都表示「没有有意排除项」。 |
+
+两者都是 `configure(...)` 的仅关键字参数。当 `strict_assembly=True`，且扣掉「有意排除项」后差集仍然非空时，会依次发生两件事：
+
+1. **先**通过上文所述的既有通道发出诊断 —— 同一规则标识、同一消息形态；
+2. **随后**抛出 `ConfigurationError`（错误码 `CONFIG_ERROR`），启动终止。
+
+这两个动作不是二选一，失败不会取代报告。警告**不参与控制流**，因此即便部署方自己写的 `try`/`except` 吞掉了异常，痕迹依然存在；真正阻止启动的是异常。若跳过警告，那种部署会再次静默 —— 而这正是本节要消除的情形。
+
+失败消息会给出受影响的**每一个**组件名、**数量**、既有的 `component-declared-not-assembled` 规则标识，以及修法（把声明所在的包加入 `user_packages`、把组件移到模块顶层，或在 `strict_assembly_excludes` 中承认它）。
+
+排除清单只改变**动作**，不改变**事实**。列入 `strict_assembly_excludes` 的组件仍然出现在 `get_declaration_diff().dropped` 中；它不会被悄悄装配，对账结果依然如实。
+
+> **它与 `startup_error_policy` 不是同一件事。** `startup_error_policy='strict'` 决定的是**服务初始化失败**时怎么办，属服务生命周期策略；`strict_assembly` 决定的是**已声明的组件从未被装配**时怎么办，属声明—装配策略。两者名字相近，场景无关，且互不作用。
+
+**对账的作用范围**：差集把**模块导入期**收集到的声明与**本次启动**实际装配到的组件配对。该声明集会被进程内的**首次启动**消费，因此同一进程内的**后续启动**（例如 `Application.reload()`）面对的是空声明集，其差集为空，报告与本选项都无从生效。每个新进程都会带着自身的导入期声明重新开始。

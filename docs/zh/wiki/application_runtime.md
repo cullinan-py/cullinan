@@ -7,7 +7,7 @@ reviewers: []
 status: updated
 locale: zh
 translation_pair: "docs/wiki/application_runtime.md"
-related_tests: ["tests/core/test_application_model_refactor.py", "tests/core/test_decorators.py", "tests/integration/test_adapter_integration.py"]
+related_tests: ["tests/core/test_application_model_refactor.py", "tests/core/test_decorators.py", "tests/integration/test_adapter_integration.py", "tests/core/test_strict_assembly.py"]
 related_examples: []
 estimate_pd: 1.0
 last_updated: "2026-05-31T00:00:00Z"
@@ -83,8 +83,8 @@ app = Application.run(RootModule)
 
 1. 发现运行时边界并导入各模块声明拥有的 Python 模块
 2. 基于装饰器元数据重建待注册项
-3. 装配 `ApplicationContext` 与 `WebRuntime`
-4. 校验、`refresh()` 并完成运行时预热
+3. 装配 `ApplicationContext` 与 `WebRuntime`。导入期已声明的组件与本轮实际取到的组件之间的差集在此处对账；未开启 `configure(strict_assembly=True)` 时仅作报告。
+4. 校验、`refresh()` 并完成运行时预热。开启 `configure(strict_assembly=True)` 时，上一步对账出的差集会在**这一阶段**（诊断已发出之后）升级为启动失败。
 5. 原子地把新应用绑定为当前活动应用
 
 ## Reload 与 draining

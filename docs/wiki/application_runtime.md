@@ -7,7 +7,7 @@ reviewers: []
 status: updated
 locale: en
 translation_pair: "docs/zh/wiki/application_runtime.md"
-related_tests: ["tests/core/test_application_model_refactor.py", "tests/core/test_decorators.py", "tests/integration/test_adapter_integration.py"]
+related_tests: ["tests/core/test_application_model_refactor.py", "tests/core/test_decorators.py", "tests/integration/test_adapter_integration.py", "tests/core/test_strict_assembly.py"]
 related_examples: []
 estimate_pd: 1.0
 last_updated: "2026-05-31T00:00:00Z"
@@ -90,8 +90,13 @@ you provide `ownership_overrides`.
 
 1. Discover runtime boundaries and import owned Python modules.
 2. Rebuild pending registrations from decorator metadata.
-3. Assemble an `ApplicationContext` and `WebRuntime`.
-4. Validate, refresh, and warm the runtime.
+3. Assemble an `ApplicationContext` and `WebRuntime`. The difference between the
+   components declared at import time and the components this pass actually
+   picked up is reconciled here; without `configure(strict_assembly=True)` that
+   difference is only reported.
+4. Validate, refresh, and warm the runtime. With `configure(strict_assembly=True)`
+   the difference reconciled in the previous step is raised as a failure at this
+   point, after the diagnostic has been emitted.
 5. Atomically bind the new application as active.
 
 ## Reload and draining

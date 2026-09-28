@@ -254,6 +254,29 @@ A complete API reference can be populated using this structure, either via autom
 
 See [Framework Semantics](framework_semantics.md) §5-§8 for full details.
 
+## Additions
+
+Everything below is **new**, **backward compatible**, and **off by default**.
+
+| Symbol | Location | Type | Description |
+|--------|----------|------|-------------|
+| `strict_assembly` | `configure` | kwarg | `False` (default): a component declared at import time but never assembled is reported, and startup continues. `True`: that difference must be empty — the report is emitted first, then startup fails with `ConfigurationError` (`CONFIG_ERROR`). Keyword-only. |
+| `strict_assembly_excludes` | `configure` | kwarg | Components intentionally left unassembled, written as `package.module.Component` — the same identity the declaration report uses. Listed components are still reported as declared-but-not-assembled; they simply no longer fail the start. `None` (default) means no intentional exclusions; an empty list means the same. Keyword-only. |
+
+Both options are also fields on `CullinanConfig` and round-trip through
+`to_dict()` / `from_dict()`, so they can be declared with `@configure(...)`
+exactly like the other configuration options.
+
+The failure reuses the existing semantic rule
+(`component-declared-not-assembled`) and the existing `ConfigurationError`: no
+new exception type, no new rule identifier, and no new public symbol.
+
+> `strict_assembly` is unrelated to `startup_error_policy`. The former governs
+> *declarations that were never assembled*; the latter governs *service
+> initialisation* failures.
+
+See [Framework Semantics](framework_semantics.md) §11 for the full contract.
+
 ## Regenerating API documentation (example workflow)
 
 When adding automation later, a static analysis script can be used to generate the API index and keep this page in sync with the source. A typical workflow might be:

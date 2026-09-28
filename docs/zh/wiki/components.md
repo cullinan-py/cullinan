@@ -7,7 +7,7 @@ reviewers: []
 status: updated
 locale: zh
 translation_pair: "docs/wiki/components.md"
-related_tests: ["tests/core/test_application_model_refactor.py", "tests/web/test_web_runtime.py", "tests/integration/test_service_lifecycle_integration.py"]
+related_tests: ["tests/core/test_application_model_refactor.py", "tests/web/test_web_runtime.py", "tests/integration/test_service_lifecycle_integration.py", "tests/core/test_strict_assembly.py"]
 related_examples: []
 estimate_pd: 1.5
 last_updated: "2026-05-31T00:00:00Z"
@@ -63,6 +63,21 @@ pr_links: []
 - 职责：把 path/query/body/header/file 输入映射为处理器参数
 - 主包：`cullinan.web.params`
 - 关键 API：`Path`、`Query`、`Body`、`Header`、`File`
+
+## 已声明但未装配
+
+发现依赖导入执行，而装配只扫描 `user_packages` 中列出的包。若某组件的装饰器已经执行（**已声明**），而它所在的包**未**被列入，它就**从未被装配**。对这份差集，Cullinan 提供两档动作：
+
+| 动作 | 何时 | 会发生什么 |
+|------|------|-----------|
+| **报告**（默认） | 始终 | `Application.get_declaration_diff()` 给出 `declared` / `assembled` / `dropped`，并发出 `component-declared-not-assembled` 诊断。启动继续。 |
+| **失败**（可选开启） | `configure(strict_assembly=True)` | 先发出同一诊断，随后以 `ConfigurationError` 使启动失败。 |
+
+若某组件是有意不装配的，可以在 `configure(strict_assembly_excludes=[...])` 中列出它（写法为 `package.module.Component`）。这表示承认该意图 —— 它仍会被报告，只是不再阻断启动。
+
+`strict_assembly` 与 `startup_error_policy` 不是同一个配置：后者针对**服务初始化**失败，而不是未装配的声明。
+
+完整契约见[框架语义规则](../framework_semantics.md) §11。
 
 ## 建议阅读顺序
 

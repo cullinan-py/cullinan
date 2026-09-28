@@ -7,12 +7,14 @@ import ast
 import asyncio
 import inspect
 import logging
+import sys
 import threading
 import time
 import types
+import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 from .definition_registry import DefinitionRegistry
 from .definitions import Definition, ScopeType
@@ -56,6 +58,7 @@ from cullinan.support.diagnostics import (
     unsupported_annotation_expression,
     unsupported_annotation_type,
 )
+from cullinan.support.exceptions import ConfigurationError
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +165,8 @@ class ApplicationContext:
         "_strict_private_injection",
         "_strict_lifecycle",
         "_declared_not_assembled",
+        "_strict_assembly",
+        "_strict_assembly_excludes",
     )
 
     def __init__(self, container_id: Optional[str] = None, *,
@@ -198,6 +203,14 @@ class ApplicationContext:
         # declared-minus-assembled difference; left empty when the context is
         # used directly, so the direct-context behavior is unchanged.
         self._declared_not_assembled: Tuple[str, ...] = ()
+        # Opt-in policy for the same reconciliation, also injected by the
+        # Application assembly layer. ``_strict_assembly`` is the default and
+        # keeps the report non-blocking; when True the reconciliation raises a
+        # ``ConfigurationError`` unless every remaining name is acknowledged in
+        # ``_strict_assembly_excludes``. The direct-context defaults keep the
+        # always-on report behavior for a context used on its own.
+        self._strict_assembly: bool = False
+        self._strict_assembly_excludes: Tuple[str, ...] = ()
 
     # ========================================================================
     # Registration API
@@ -231,6 +244,19 @@ class ApplicationContext:
         API surface.
         """
         self._declared_not_assembled = tuple(dropped)
+
+    def _set_strict_assembly_policy(
+        self, strict_assembly: bool, excludes: Optional[Iterable[str]] = None
+    ) -> None:
+        """Provide the opt-in declared-vs-assembled policy.
+
+        Called by the Application assembly layer; never part of the public API
+        surface. The policy only changes the *action* taken at the report point
+        -- it never changes the reconciliation facts, so the reported difference
+        is identical with and without it.
+        """
+        self._strict_assembly = bool(strict_assembly)
+        self._strict_assembly_excludes = tuple(excludes or ())
 
     # ========================================================================
     # Lifecycle API
@@ -881,7 +907,10 @@ class ApplicationContext:
         guidance = (
             "Add the owning package to user_packages (for example "
             '@configure(user_packages=["your_package"])) so it is scanned, or move the component '
-            "to module top level. Application.get_declaration_diff() exposes the declared / "
+            "to module top level. If the component is intentionally not assembled, "
+            "@configure(strict_assembly_excludes=[...]) records that intent, so the difference "
+            "no longer fails a start made under configure(strict_assembly=True). "
+            "Application.get_declaration_diff() exposes the declared / "
             "assembled / dropped sets for inspection."
         )
         logger.warning(
@@ -898,6 +927,74 @@ class ApplicationContext:
             category=ComponentDiscoveryWarning,
             stacklevel=3,
         )
+        self._emit_fallback_if_invisible(problem, guidance)
+        self._raise_if_strict_assembly_required(dropped, problem, guidance)
+
+    def _raise_if_strict_assembly_required(
+        self, dropped: Tuple[str, ...], problem: str, guidance: str
+    ) -> None:
+        """Optionally upgrade the reconciliation just reported into a failure.
+
+        Runs at the report point and only at the report point: the diagnostic
+        has already been emitted through every ordinary channel by the time this
+        is reached, so the warning and the failure are never alternatives. The
+        failure reuses the reporting rule key and the reporting message, so there
+        is one text, not two.
+
+        Off by default (``strict_assembly=False``). When on, the difference must
+        be empty once the intentional exclusions are taken out; otherwise a
+        ``ConfigurationError`` is raised and startup stops here -- inside
+        ``refresh()``, never during assembly. Exclusions change the action only,
+        never the facts: ``dropped`` still carries every name that was reported.
+        """
+        if not self._strict_assembly:
+            return
+        excluded = set(self._strict_assembly_excludes)
+        if all(name in excluded for name in dropped):
+            return
+        raise ConfigurationError(
+            message=format_semantic_message(
+                "component-declared-not-assembled",
+                problem,
+                guidance,
+            ),
+            details={
+                "dropped": tuple(dropped),
+                "dropped_count": len(dropped),
+                "excludes": self._strict_assembly_excludes,
+            },
+        )
+
+    def _emit_fallback_if_invisible(self, problem: str, guidance: str) -> None:
+        """Last-resort channel for the declared-vs-assembled reconciliation.
+
+        The ordinary channels are a semantic warning and a log record. Both can
+        be dark at the same time: ``warnings`` is off whenever the process runs
+        with ``-W ignore`` / ``PYTHONWARNINGS=ignore`` (a common way to quiet
+        noisy dependencies in production), and the log record goes nowhere while
+        the package logger carries only a ``NullHandler`` and the application
+        has not configured logging.
+
+        Rather than silence that case, print once to stderr. It stays out of the
+        way whenever either channel is live, so the report is not duplicated.
+        """
+        if _real_logging_handler_exists():
+            return
+        if not _warnings_may_be_suppressed():
+            return
+        try:
+            sys.stderr.write("cullinan: %s\n%s\n" % (problem, guidance))
+        except Exception:
+            # A soft-boundary diagnostic must never become a hard failure.
+            # stderr itself can be unusable -- a closed descriptor, an encoding
+            # error, or a replaced stream object. Unhandled, that write error
+            # would travel back through _warn_declared_not_assembled() and
+            # refresh() and abort application startup, which is precisely what
+            # a diagnostic must not do. Losing the report is the acceptable
+            # outcome here: this is the last-resort channel, and there is
+            # deliberately no logging fallback, because "the report failed to
+            # report" would re-enter the very path that just broke.
+            pass
 
     def _process_pending_registrations(self) -> None:
         from .pending import PendingRegistry
@@ -2212,3 +2309,31 @@ def _freeze_dependencies(instance, injected_names):
 
 
 __all__ = ["ApplicationContext", "ContainerState"]
+
+def _real_logging_handler_exists() -> bool:
+    """True when some non-NullHandler handler sits on this record's path.
+
+    Walks the ``propagate`` chain, mirroring the check the console-logging
+    bootstrap already uses, so both places agree on what counts as a real sink.
+    """
+    node = logging.getLogger(__name__)
+    while node is not None:
+        for handler in getattr(node, "handlers", []):
+            if handler is not None and not isinstance(handler, logging.NullHandler):
+                return True
+        if not getattr(node, "propagate", False):
+            break
+        node = node.parent
+    return False
+
+
+def _warnings_may_be_suppressed() -> bool:
+    """Approximate check for a global ignore of this warning category."""
+    for action, _message, category, _module, _lineno in warnings.filters:
+        if action != "ignore":
+            continue
+        if category is None:
+            return True
+        if isinstance(category, type) and issubclass(ComponentDiscoveryWarning, category):
+            return True
+    return False

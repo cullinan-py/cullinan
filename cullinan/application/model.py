@@ -431,6 +431,16 @@ class Application:
             self.discover()
         context = ApplicationContext(container_id=self.id)
         context._set_declared_not_assembled(self._declaration_diff.dropped)
+        # The reconciliation policy is injected here, together with the
+        # difference itself, so the report point performs no configuration
+        # lookup of its own: it only acts on the values the assembly boundary
+        # handed it. A failure this policy can arm therefore belongs to the
+        # report point inside refresh(), never to assembly.
+        from cullinan.support.config import get_config
+
+        context._set_strict_assembly_policy(
+            get_config().strict_assembly, get_config().strict_assembly_excludes
+        )
         for hook in self._iter_health_checks():
             context.add_health_check(lambda _ctx, callback=hook: callback(self))
         runtime = Runtime(
