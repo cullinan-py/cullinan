@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a3"
+      data-current-version="0.96a4"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a3"
+      data-pre-version="0.96a4"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1731,6 +1731,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#imperative-registration-get_pipelineadd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imperative registration (get_pipeline().add)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#legacy-process_request-process_response" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2169,6 +2180,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#imperative-registration-get_pipelineadd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imperative registration (get_pipeline().add)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#legacy-process_request-process_response" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2300,6 +2322,23 @@ your own layer, and <code>builtin_middleware=[]</code> switches it off entirely.
 <p>Omitting the parameter keeps the framework default, so existing applications are
 unaffected. Whatever the built-in layer ends up being, it takes part in the same
 declarative ordering as <code>middlewares</code>.</p>
+<h3 id="imperative-registration-get_pipelineadd">Imperative registration (<code>get_pipeline().add</code>)<a class="headerlink" href="#imperative-registration-get_pipelineadd" title="Permanent link">&para;</a></h3>
+<p><code>cullinan.web.gateway.get_pipeline().add(AuditMiddleware())</code> is the imperative
+pre-boot entry point, kept for integrations that build the pipeline by hand. It
+writes into the pipeline instance that exists <em>before</em> the application is
+assembled, and the gateway globals are rebuilt at the startup boundary: entries
+added this way are therefore reset at boot and never take part in request
+handling. That reset is reported — one diagnostic naming the entries and their
+count — rather than dropping them silently. For middleware that must actually
+run, use the declarative entries above.</p>
+<p><strong>Support level.</strong> This entry point belongs to the runtime-introspection,
+advanced-use and testing level: it is supported, but it is <em>not</em> the recommended
+way for an application or a library to integrate middleware. Entries registered
+through it before startup are reset when the application boots — <code>Runtime.warmup()</code>
+rebuilds the gateway globals (pipeline, router, dispatcher and exception handler) —
+and the framework emits one diagnostic about that reset instead of dropping the
+entries silently. To have middleware take part in request handling, use the
+declarative entries: <code>configure(middlewares=[...])</code> or the <code>@middleware</code> decorator.</p>
 <h3 id="legacy-process_request-process_response">Legacy: <code>process_request</code> / <code>process_response</code><a class="headerlink" href="#legacy-process_request-process_response" title="Permanent link">&para;</a></h3>
 <p>The hook pair on <code>cullinan.web.middleware.Middleware</code> still works and is
 auto-bridged into the gateway pipeline — one layer per legacy middleware. Each
@@ -2421,7 +2460,7 @@ pipeline counterpart of <code>Router.get_all_routes()</code>.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a3", "pre_is_available": true, "pre_label": "0.96a3", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

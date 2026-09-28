@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a3"
+      data-current-version="0.96a4"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a3"
+      data-pre-version="0.96a4"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2918,6 +2918,8 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <span class="c1"># 注册</span>
 <span class="n">get_pipeline</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">AuthMiddleware</span><span class="p">())</span>
 </code></pre></div>
+<p><strong>启动会重置该入口。</strong> <code>get_pipeline().add(...)</code> 写入的是<strong>引导之前</strong>就已存在的那份管线；应用装配时会重建 gateway globals，因此经该入口注册的条目会在启动时被重置，永远不会参与请求处理。该重置不再静默 —— 框架会留下一条诊断，给出被丢弃条目的名称与数量。请改用 <code>configure(middlewares=[...])</code> 或 <code>@middleware</code> 装饰器声明中间件：这些入口由装配过程读取，因而能在启动后存活。</p>
+<p>该入口的支持级别与其行为一致：<code>get_pipeline().add(...)</code> 属于<strong>运行时自省 / 高级用途 / 测试</strong>级别的入口，而<strong>不是</strong>应用或库接入中间件的<strong>推荐</strong>路径。<code>Runtime.warmup()</code> 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此它丢弃的条目会以<strong>一条</strong>诊断的形式被通告，而不是被静默丢弃。请通过声明式入口接入中间件：<code>configure(middlewares=[...])</code> 或 <code>@middleware</code> 装饰器。</p>
 <p><strong>向后兼容</strong>：旧的 <code>@middleware</code> 类仍会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。</p>
 <h4 id="v096a1">v0.96a1：遗留中间件纳入声明式排序<a class="headerlink" href="#v096a1" title="Permanent link">&para;</a></h4>
 <p>过去，旧的 <code>@middleware</code> 类会被折叠成<strong>单个</strong>桥接层，且始终位于内置 access log 层<strong>内侧</strong>，因此遗留 <code>priority</code> 无法移动它 —— 该优先级只在遗留链<strong>内部</strong>排序，从不跨越桥接边界。现在每个遗留中间件各自成为一个管线层，并与声明层、内置层共用同一个声明式 <code>priority</code> 键排序，因此一个较低的遗留 <code>priority</code> 现在可以把遗留中间件放到内置层<strong>外侧</strong>。</p>
@@ -3113,7 +3115,7 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a3", "pre_is_available": true, "pre_label": "0.96a3", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
