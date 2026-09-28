@@ -14,7 +14,7 @@ import types
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 from .definition_registry import DefinitionRegistry
 from .definitions import Definition, ScopeType
@@ -58,6 +58,7 @@ from cullinan.support.diagnostics import (
     unsupported_annotation_expression,
     unsupported_annotation_type,
 )
+from cullinan.support.exceptions import ConfigurationError
 
 logger = logging.getLogger(__name__)
 
@@ -164,6 +165,8 @@ class ApplicationContext:
         "_strict_private_injection",
         "_strict_lifecycle",
         "_declared_not_assembled",
+        "_strict_assembly",
+        "_strict_assembly_excludes",
     )
 
     def __init__(self, container_id: Optional[str] = None, *,
@@ -200,6 +203,14 @@ class ApplicationContext:
         # declared-minus-assembled difference; left empty when the context is
         # used directly, so the direct-context behavior is unchanged.
         self._declared_not_assembled: Tuple[str, ...] = ()
+        # Opt-in policy for the same reconciliation, also injected by the
+        # Application assembly layer. ``_strict_assembly`` is the default and
+        # keeps the report non-blocking; when True the reconciliation raises a
+        # ``ConfigurationError`` unless every remaining name is acknowledged in
+        # ``_strict_assembly_excludes``. The direct-context defaults keep the
+        # always-on report behavior for a context used on its own.
+        self._strict_assembly: bool = False
+        self._strict_assembly_excludes: Tuple[str, ...] = ()
 
     # ========================================================================
     # Registration API
@@ -233,6 +244,19 @@ class ApplicationContext:
         API surface.
         """
         self._declared_not_assembled = tuple(dropped)
+
+    def _set_strict_assembly_policy(
+        self, strict_assembly: bool, excludes: Optional[Iterable[str]] = None
+    ) -> None:
+        """Provide the opt-in declared-vs-assembled policy.
+
+        Called by the Application assembly layer; never part of the public API
+        surface. The policy only changes the *action* taken at the report point
+        -- it never changes the reconciliation facts, so the reported difference
+        is identical with and without it.
+        """
+        self._strict_assembly = bool(strict_assembly)
+        self._strict_assembly_excludes = tuple(excludes or ())
 
     # ========================================================================
     # Lifecycle API
@@ -883,7 +907,10 @@ class ApplicationContext:
         guidance = (
             "Add the owning package to user_packages (for example "
             '@configure(user_packages=["your_package"])) so it is scanned, or move the component '
-            "to module top level. Application.get_declaration_diff() exposes the declared / "
+            "to module top level. If the component is intentionally not assembled, "
+            "@configure(strict_assembly_excludes=[...]) records that intent, so the difference "
+            "no longer fails a start made under configure(strict_assembly=True). "
+            "Application.get_declaration_diff() exposes the declared / "
             "assembled / dropped sets for inspection."
         )
         logger.warning(
@@ -901,6 +928,42 @@ class ApplicationContext:
             stacklevel=3,
         )
         self._emit_fallback_if_invisible(problem, guidance)
+        self._raise_if_strict_assembly_required(dropped, problem, guidance)
+
+    def _raise_if_strict_assembly_required(
+        self, dropped: Tuple[str, ...], problem: str, guidance: str
+    ) -> None:
+        """Optionally upgrade the reconciliation just reported into a failure.
+
+        Runs at the report point and only at the report point: the diagnostic
+        has already been emitted through every ordinary channel by the time this
+        is reached, so the warning and the failure are never alternatives. The
+        failure reuses the reporting rule key and the reporting message, so there
+        is one text, not two.
+
+        Off by default (``strict_assembly=False``). When on, the difference must
+        be empty once the intentional exclusions are taken out; otherwise a
+        ``ConfigurationError`` is raised and startup stops here -- inside
+        ``refresh()``, never during assembly. Exclusions change the action only,
+        never the facts: ``dropped`` still carries every name that was reported.
+        """
+        if not self._strict_assembly:
+            return
+        excluded = set(self._strict_assembly_excludes)
+        if all(name in excluded for name in dropped):
+            return
+        raise ConfigurationError(
+            message=format_semantic_message(
+                "component-declared-not-assembled",
+                problem,
+                guidance,
+            ),
+            details={
+                "dropped": tuple(dropped),
+                "dropped_count": len(dropped),
+                "excludes": self._strict_assembly_excludes,
+            },
+        )
 
     def _emit_fallback_if_invisible(self, problem: str, guidance: str) -> None:
         """Last-resort channel for the declared-vs-assembled reconciliation.
