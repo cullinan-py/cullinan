@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a1"
+      data-current-version="0.96a2"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a1"
+      data-pre-version="0.96a2"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1257,6 +1257,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Public API stability freeze (1.0)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#machine-readable-contract-artifact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine-readable contract artifact
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2282,6 +2299,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Public API stability freeze (1.0)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#machine-readable-contract-artifact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine-readable contract artifact
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2510,7 +2544,12 @@ into the stability contract for the 1.0 line. It has three parts:</p>
 </table>
 <p>The <code>cullinan.web.gateway.__all__</code> facade is <strong>not</strong> part of this contract:
   it is a layered, explicitly-imported integration surface rather than a
-  frozen stability promise.
+  frozen stability promise.</p>
+<p>The four frozen lists together are the <strong>stability commitment surface</strong>
+  (field name <code>stability_commitment</code> in the machine-readable artifact below).
+  It is narrower than the general <strong>public API surface</strong>: <code>cullinan.web.gateway</code>
+  and similar explicitly-imported facades are public, but they stay outside the
+  commitment.
 - <strong>Append-only</strong> — after the freeze, symbols inside the frozen set may be
   <em>added</em>, but never renamed, semantically changed, behaviourally changed, or
   removed. Additions are not free: a new symbol expands the public surface and
@@ -2520,6 +2559,37 @@ into the stability contract for the 1.0 line. It has three parts:</p>
 treated as private implementation details. Underscore-prefixed compatibility
 exports may still exist, but they are not part of the default business-facing
 stability promise.</p>
+<h3 id="machine-readable-contract-artifact">Machine-readable contract artifact<a class="headerlink" href="#machine-readable-contract-artifact" title="Permanent link">&para;</a></h3>
+<p>The stability commitment surface is also shipped as a <strong>machine-readable
+artifact</strong> inside the package, so it can be checked <strong>offline</strong> — without
+importing the framework, and without reading this page:</p>
+<ul>
+<li>file: <code>cullinan/_contracts.json</code> (shipped in the wheel)</li>
+<li><code>stability_commitment</code> — the symbol-name list of each of the four contract
+  modules (<code>cullinan</code>, <code>cullinan.application</code>, <code>cullinan.web</code>, <code>cullinan.core</code>)</li>
+<li><code>not_in_commitment</code> — the facades that are deliberately outside the
+  commitment, e.g. <code>cullinan.web.gateway</code></li>
+<li><code>schema_version</code> and <code>generated_from</code> — schema and provenance metadata</li>
+</ul>
+<p>Reading it offline:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">"cullinan/_contracts.json"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Param"</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">[</span><span class="s2">"stability_commitment"</span><span class="p">][</span><span class="s2">"cullinan.web"</span><span class="p">])</span>
+</code></pre></div>
+<p>Or, with the package installed:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+    <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s2">"cullinan"</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">"_contracts.json"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Param"</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">[</span><span class="s2">"stability_commitment"</span><span class="p">][</span><span class="s2">"cullinan.web"</span><span class="p">])</span>
+</code></pre></div>
+<p>The committed artifact is a <em>derived copy</em> of the live <code>__all__</code> lists.
+Regenerate it with <code>python scripts/generate_contracts.py</code>; a drift check asserts
+the artifact equals the live lists, name by name.</p>
 <h2 id="new-in-v090-parameter-system">New in v0.90+: Parameter System<a class="headerlink" href="#new-in-v090-parameter-system" title="Permanent link">&para;</a></h2>
 <p>The parameter system provides type-safe request parameter handling. See <a href="../parameter_system_guide/">Parameter System Guide</a> for details.</p>
 <h3 id="cullinanwebparams-v090a4">cullinan.web.params (v0.90a4+)<a class="headerlink" href="#cullinanwebparams-v090a4" title="Permanent link">&para;</a></h3>
@@ -3018,7 +3088,7 @@ stability promise.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a2", "pre_is_available": true, "pre_label": "0.96a2", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

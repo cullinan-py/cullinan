@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a1"
+      data-current-version="0.96a2"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a1"
+      data-pre-version="0.96a2"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2629,7 +2629,7 @@
 
 <h1 id="cullinan-dependency-injection-guide">Cullinan Dependency Injection Guide<a class="headerlink" href="#cullinan-dependency-injection-guide" title="Permanent link">&para;</a></h1>
 <blockquote>
-<p><strong>Version</strong>: 0.96a1
+<p><strong>Version</strong>: 0.96a2
 <strong>Last Updated</strong>: 2026-06-01<br />
 <strong>Status</strong>: Updated</p>
 </blockquote>
@@ -2884,8 +2884,9 @@ refactoring-friendly, type-driven wiring.</p>
 <p>Critical lifecycle phases propagate failures to prevent components from running in an inconsistent state:</p>
 <ul>
 <li><strong><code>on_post_construct</code></strong> and <strong><code>on_pre_destroy</code></strong>: exceptions are re-raised as <code>LifecycleError</code>. A failed <code>on_post_construct</code> means the component is not ready and should not be served.</li>
-<li><strong><code>on_startup</code></strong> and <strong><code>on_shutdown</code></strong>: exceptions are logged as errors but do <strong>not</strong> halt the container. This avoids a single component's startup failure from cascading to unrelated components.</li>
+<li><strong><code>on_startup</code></strong> and <strong><code>on_shutdown</code></strong>: exceptions are recorded at <strong>ERROR</strong> level on the framework's own <code>cullinan</code> logger but do <strong>not</strong> halt the container. This avoids a single component's startup failure from cascading to unrelated components.</li>
 </ul>
+<p>Cullinan keeps its own logging namespace quiet: on import the <code>cullinan</code> logger gets a <code>NullHandler</code>. This does <strong>not</strong> block propagation — the logger keeps <code>propagate=True</code>, and a <code>NullHandler</code> only declines to emit rather than intercepting, so records still travel up to the root logger as usual. Nothing is printed by default because of two conditions: the <code>NullHandler</code> attached to the package logger already counts as a handler, so the stdlib <code>lastResort</code> handler never takes over, and there is no other handler on the path that would print it. The record is created and emitted either way, and it becomes visible as soon as <strong>any</strong> handler exists along the path — for example <code>logging.basicConfig(level=logging.ERROR)</code> installs one on the root logger (a test framework's log capture installs one too). A normal <code>@application</code> startup attaches no console handler, so nothing is printed until you configure logging yourself. The framework's own console handler — installed when <code>CULLINAN_FORCE_CONSOLE=1</code> or when a directly started process runs through a legacy entry point — lives only on those legacy/compatibility entry points (<code>cullinan.application.run()</code> / <code>cullinan.application.get_asgi_app()</code> and the legacy <code>cullinan.runtime.scanner.run()</code>); it is <strong>not</strong> attached on the recommended <code>@application</code> → <code>entry.run()</code> path.</p>
 <p>Controller route registration failures are also re-raised as <code>LifecycleError</code> — a controller whose routes cannot be registered is a hard startup error.</p>
 <h2 id="scope-validation">Scope validation<a class="headerlink" href="#scope-validation" title="Permanent link">&para;</a></h2>
 <h3 id="transitive-scope-enforcement">Transitive scope enforcement<a class="headerlink" href="#transitive-scope-enforcement" title="Permanent link">&para;</a></h3>
@@ -3018,7 +3019,7 @@ refactoring-friendly, type-driven wiring.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a1", "pre_is_available": true, "pre_label": "0.96a1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a2", "pre_is_available": true, "pre_label": "0.96a2", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
