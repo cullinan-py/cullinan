@@ -1,6 +1,6 @@
 # Cullinan Dependency Injection Guide
 
-> **Version**: 0.96a2
+> **Version**: 0.96a3
 > **Last Updated**: 2026-06-01  
 > **Status**: Updated
 
