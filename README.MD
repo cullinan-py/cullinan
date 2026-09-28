@@ -219,6 +219,13 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
+**v0.96a4** is the fourth alpha of the 0.96 line. It makes the boot boundary name the gateway pipeline entries the framework resets, and discloses in the documentation the support level of the imperative entry point that registers them:
+
+- the entries a gateway reset discards at startup are now named, with their count, in a diagnostic that is visible at default warning settings and falls back to stderr when warnings are suppressed globally and no logging handler is configured
+- the imperative `get_pipeline().add(...)` entry point is documented as a runtime-introspection / advanced-use / testing entry point rather than the recommended way to integrate middleware, with the declarative entries (`configure(middlewares=[...])`, `@middleware`) named as the recommended path
+- no public API is added or removed; the four `__all__` surfaces stay at 44 / 26 / 34 / 72
+- the entries registered through that imperative entry point are still reset at startup: this release adds visibility and documentation, not a change to the reset semantics
+
 **v0.96a3** is the third alpha of the 0.96 line. It makes the declared-versus-assembled reconciliation survive the production settings that used to silence it, and lets an application opt in to failing at startup instead of only reporting:
 
 - the diagnostic that names components declared but never assembled can no longer be silenced by a deployment that suppresses warnings and configures no logging handler of its own

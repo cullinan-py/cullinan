@@ -73,7 +73,7 @@ EXPECTED_TOP_LEVEL_EXPORTS = [
     "websocket_handler",
 ]
 
-EXPECTED_PACKAGE_VERSION = "0.96a3"
+EXPECTED_PACKAGE_VERSION = "0.96a4"
 
 # ---------------------------------------------------------------------------
 # 1.0 public API freeze contract (symbol-name granularity).
