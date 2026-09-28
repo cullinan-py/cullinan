@@ -15,8 +15,10 @@
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/import_migration_090/">
       
       
-        <link rel="prev" href="../runtime_updates_v093/">
+        <link rel="prev" href="../migration/">
       
+      
+        <link rel="next" href="../migration_guide_v2/">
       
       
         
@@ -31,7 +33,7 @@
     
     
       
-        <title>Import Migration 0.90 - Cullinan Documentation</title>
+        <title>Import Migration (0.83 → 0.90) - Cullinan Documentation</title>
       
     
     
@@ -144,7 +146,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Import Migration 0.90
+              Import Migration (0.83 → 0.90)
             
           </span>
         </div>
@@ -1812,132 +1814,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../migration_guide/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Migration Guide
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../migration_guide_v2/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Migration Guide v2
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../migration_to_final_semantic_layout/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Final Structure Migration
-  
-
-    
-  </span>
-  
-  
-    
-  
-  
-    <span class="md-status md-status--updated"></span>
-  
-
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../runtime_updates_v093/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Runtime Consolidation
-  
-
-    
-  </span>
-  
-  
-    
-  
-  
-    <span class="md-status md-status--updated"></span>
-  
-
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1957,7 +1833,7 @@
   <span class="md-ellipsis">
     
   
-    Import Migration 0.90
+    Import Migration (0.83 → 0.90)
   
 
     
@@ -1975,7 +1851,7 @@
   <span class="md-ellipsis">
     
   
-    Import Migration 0.90
+    Import Migration (0.83 → 0.90)
   
 
     
@@ -2192,6 +2068,97 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration_guide_v2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide v2 (v0.9x → v0.93)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide (0.90/0.93 → 0.95)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration_to_final_semantic_layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Final Structure Migration (0.93a6 and earlier → final layout)
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+      </a>
     </li>
   
 
@@ -2440,6 +2407,8 @@
 <blockquote>
 <p><strong>Compatibility page:</strong> use this when updating existing imports; for the current
 public surface, see <a href="../reference/">API Reference</a>.</p>
+<p><strong>Note</strong>: applies to the 0.83 → 0.90 import-path change; read it when updating
+imports written against the pre-0.90 structure.</p>
 </blockquote>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
 <p>Cullinan 0.90 introduces a reorganized <code>core/</code> module with clear separation of concerns:</p>

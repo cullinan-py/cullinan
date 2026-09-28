@@ -43,13 +43,6 @@
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/contributing/"/>
     </url>
     <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/cullinan_documentation_plan/</loc>
-        <lastmod>2026-09-28</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/cullinan_documentation_plan/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/cullinan_documentation_plan/"/>
-    </url>
-    <url>
         <loc>https://cullinan-py.github.io/cullinan/pre/dependency_injection_guide/</loc>
         <lastmod>2026-09-28</lastmod>
         <changefreq>daily</changefreq>
@@ -139,13 +132,6 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/quick_start_extensions/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/quick_start_extensions/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/runtime_updates_v093/</loc>
-        <lastmod>2026-09-28</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/runtime_updates_v093/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/runtime_updates_v093/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/pre/static_files_guide/</loc>
@@ -344,13 +330,6 @@
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/contributing/"/>
     </url>
     <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/cullinan_documentation_plan/</loc>
-        <lastmod>2026-09-28</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/cullinan_documentation_plan/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/cullinan_documentation_plan/"/>
-    </url>
-    <url>
         <loc>https://cullinan-py.github.io/cullinan/pre/zh/dependency_injection_guide/</loc>
         <lastmod>2026-09-28</lastmod>
         <changefreq>daily</changefreq>
@@ -440,13 +419,6 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/quick_start_extensions/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/quick_start_extensions/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/runtime_updates_v093/</loc>
-        <lastmod>2026-09-28</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/runtime_updates_v093/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/runtime_updates_v093/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/pre/zh/static_files_guide/</loc>

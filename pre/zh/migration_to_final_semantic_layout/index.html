@@ -15,10 +15,8 @@
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_to_final_semantic_layout/">
       
       
-        <link rel="prev" href="../migration_guide_v2/">
+        <link rel="prev" href="../migration_guide/">
       
-      
-        <link rel="next" href="../runtime_updates_v093/">
       
       
         
@@ -1817,14 +1815,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../migration_guide/" class="md-nav__link">
+      <a href="../import_migration_090/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    迁移指南
+    导入迁移（0.83 → 0.90）
   
 
     
@@ -1852,7 +1850,35 @@
   <span class="md-ellipsis">
     
   
-    迁移指南 v2
+    迁移指南 v2（v0.9x → v0.93）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    迁移指南（0.90/0.93 → 0.95）
   
 
     
@@ -1889,7 +1915,7 @@
   <span class="md-ellipsis">
     
   
-    最终结构迁移
+    最终结构迁移（0.93a6 及更早 → 最终布局）
   
 
     
@@ -1914,7 +1940,7 @@
   <span class="md-ellipsis">
     
   
-    最终结构迁移
+    最终结构迁移（0.93a6 及更早 → 最终布局）
   
 
     
@@ -2055,69 +2081,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../runtime_updates_v093/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    运行时整合
-  
-
-    
-  </span>
-  
-  
-    
-  
-  
-    <span class="md-status md-status--updated"></span>
-  
-
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../import_migration_090/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    0.90 导入迁移
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -2279,6 +2242,9 @@
 
 
 <h1 id="_1">最终结构迁移说明<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>说明</strong>：适用于把为 0.93a6 及更早版本编写的代码迁移到最终语义布局；当你要把代码从 0.93a6 之前的混合布局迁出时，阅读本页。</p>
+</blockquote>
 <p>本文说明如何把 <code>0.93a6</code> 及更早版本里基于混合布局的代码迁移到当前 pre 分支采用的最终语义结构。</p>
 <h2 id="_2">发生了什么变化<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>Cullinan 不再保留以下历史根层 wrapper：</p>

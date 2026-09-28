@@ -15,8 +15,10 @@
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/zh/import_migration_090/">
       
       
-        <link rel="prev" href="../runtime_updates_v093/">
+        <link rel="prev" href="../migration/">
       
+      
+        <link rel="next" href="../migration_guide_v2/">
       
       
         
@@ -31,7 +33,7 @@
     
     
       
-        <title>0.90 导入迁移 - Cullinan Documentation</title>
+        <title>导入迁移（0.83 → 0.90） - Cullinan Documentation</title>
       
     
     
@@ -144,7 +146,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.90 导入迁移
+              导入迁移（0.83 → 0.90）
             
           </span>
         </div>
@@ -1812,132 +1814,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../migration_guide/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    迁移指南
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../migration_guide_v2/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    迁移指南 v2
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../migration_to_final_semantic_layout/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    最终结构迁移
-  
-
-    
-  </span>
-  
-  
-    
-  
-  
-    <span class="md-status md-status--updated"></span>
-  
-
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../runtime_updates_v093/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    运行时整合
-  
-
-    
-  </span>
-  
-  
-    
-  
-  
-    <span class="md-status md-status--updated"></span>
-  
-
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1957,7 +1833,7 @@
   <span class="md-ellipsis">
     
   
-    0.90 导入迁移
+    导入迁移（0.83 → 0.90）
   
 
     
@@ -1975,7 +1851,7 @@
   <span class="md-ellipsis">
     
   
-    0.90 导入迁移
+    导入迁移（0.83 → 0.90）
   
 
     
@@ -2270,6 +2146,97 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration_guide_v2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    迁移指南 v2（v0.9x → v0.93）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    迁移指南（0.90/0.93 → 0.95）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration_to_final_semantic_layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    最终结构迁移（0.93a6 及更早 → 最终布局）
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+      </a>
     </li>
   
 
@@ -2595,6 +2562,7 @@
 <p>本手册帮助您将导入语句从旧结构迁移到新的 0.90 结构。</p>
 <blockquote>
 <p><strong>兼容页：</strong> 这页用于更新既有导入；当前公开 API 表面请结合 <a href="../reference/">API 参考</a> 阅读。</p>
+<p><strong>说明</strong>：适用于 0.83 → 0.90 的导入路径变更；当你要更新针对 0.90 之前结构编写的导入时，阅读本页。</p>
 </blockquote>
 <h2 id="_1">概述<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>Cullinan 0.90 重新组织了 <code>core/</code> 模块，实现了清晰的职责分离：</p>
