@@ -1,7 +1,8 @@
 # Cullinan 0.93 Migration Guide
 
 > **Version**: v0.90  
-> **Author**: plumeink
+> **Author**: plumeink  
+> **Note**: this page describes the v0.90 behavior of the framework.
 
 > **Upgrade-only page:** use this when moving existing code, not when learning the
 > recommended API path for a new project.
