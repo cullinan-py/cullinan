@@ -23,10 +23,24 @@ import os
 import subprocess
 import sys
 import textwrap
+import threading
+import time
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MARKER = "cullinan: [component-declared-not-assembled]"  # last-resort channel
-TIMEOUT_S = 12
+# Upper bound on how long a child is drained when nothing settles it earlier.
+# The report is written about a second after start, so this is a wide margin;
+# it replaces a flat 12s that every child used to burn in full.
+SETTLE_TIMEOUT_S = 5.0
+# Slack allowed for the child to actually die after it is asked to stop.
+STOP_TIMEOUT_S = 5.0
+# The example app serves through uvicorn, and its "server is up" line is written
+# only after assembly finished -- so once it appears the framework cannot have
+# anything left to report, and reading can stop. This is purely a latency
+# optimisation: should the line never show up (port taken, different launcher,
+# renamed message) the wait simply degrades to SETTLE_TIMEOUT_S and the
+# assertions are unaffected.
+SERVER_UP_HINT = "Uvicorn running on "
 
 # NOTE: built with .replace() rather than %-formatting, because the logging
 # format string itself contains %(levelname)s and would be eaten as a placeholder.
@@ -48,6 +62,15 @@ _RUNNER = textwrap.dedent(
 
 
 def _run(configure_logging: bool, warnings_ignored: bool) -> str:
+    """Everything the child printed, up to the point its report had gone out.
+
+    The child starts a server, so it never exits on its own. Draining both pipes
+    while it runs and stopping it as soon as the interesting output has landed
+    keeps each case down to about a second instead of a fixed timeout. Nothing
+    written is lost by doing so: the pipe keeps buffering, and the readers are
+    joined after the child is gone, which drains every remaining byte to EOF
+    before the result is assembled.
+    """
     env = dict(os.environ)
     env.pop("PYTHONWARNINGS", None)
     if warnings_ignored:
@@ -61,12 +84,45 @@ def _run(configure_logging: bool, warnings_ignored: bool) -> str:
         cwd=REPO_ROOT,
         env=env,
     )
-    try:
-        out, err = proc.communicate(timeout=TIMEOUT_S)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        out, err = proc.communicate()
-    return out + err
+
+    chunks: list[str] = []
+    lock = threading.Lock()
+    settled = threading.Event()
+
+    def drain(stream) -> None:
+        for line in stream:
+            with lock:
+                chunks.append(line)
+            if MARKER in line or SERVER_UP_HINT in line:
+                settled.set()
+
+    readers = [
+        threading.Thread(target=drain, args=(stream,), daemon=True)
+        for stream in (proc.stdout, proc.stderr)
+    ]
+    for reader in readers:
+        reader.start()
+
+    deadline = time.monotonic() + SETTLE_TIMEOUT_S
+    while not settled.is_set() and proc.poll() is None:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        settled.wait(min(remaining, 0.05))
+
+    if proc.poll() is None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=STOP_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=STOP_TIMEOUT_S)
+    for reader in readers:
+        reader.join(timeout=STOP_TIMEOUT_S)
+    proc.stdout.close()
+    proc.stderr.close()
+    with lock:
+        return "".join(chunks)
 
 
 # --- property 1: at least one channel always speaks ----------------------------
