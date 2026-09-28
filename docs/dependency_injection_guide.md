@@ -303,6 +303,5 @@ Those names are kept so older code paths fail less abruptly, but new code should
 ## Related documents
 
 - [Architecture](architecture.md)
-- [Runtime consolidation overview](runtime_updates_v093.md)
 - [IoC & DI wiki](wiki/injection.md)
 - [Application Lifecycle](wiki/lifecycle.md)

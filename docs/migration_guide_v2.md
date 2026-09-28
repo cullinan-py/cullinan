@@ -4,6 +4,9 @@
 
 > **Upgrade-only page:** keep this page for version transition work, not for first-time onboarding.
 
+> **Note**: applies to the v0.9x → v0.93 range, with notes through v0.96a1; read it
+> when upgrading a v0.9x codebase to v0.93.
+
 ## Overview of Changes
 
 Cullinan v0.93 is a major architectural rewrite introducing:

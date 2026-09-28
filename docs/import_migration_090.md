@@ -5,6 +5,9 @@ This guide helps you migrate your imports from the old structure to the new 0.90
 > **Compatibility page:** use this when updating existing imports; for the current
 > public surface, see [API Reference](reference/index.md).
 
+> **Note**: applies to the 0.83 → 0.90 import-path change; read it when updating
+> imports written against the pre-0.90 structure.
+
 ## Overview
 
 Cullinan 0.90 introduces a reorganized `core/` module with clear separation of concerns:

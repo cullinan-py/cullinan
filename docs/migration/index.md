@@ -23,7 +23,6 @@ upgrading or when diagnosing version-specific behavior.
 ## Migration pages
 
 - [Final Structure Migration](../migration_to_final_semantic_layout.md)
-- [Runtime Consolidation](../runtime_updates_v093.md)
 - [Migration Guide](../migration_guide.md)
 - [Migration Guide v2](../migration_guide_v2.md)
 - [Import Migration 0.90](../import_migration_090.md)

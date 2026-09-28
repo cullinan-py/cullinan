@@ -300,6 +300,5 @@ Cullinan 仍导出部分旧名称，但不应再作为主要编程模型：
 ## 相关文档
 
 - [架构设计](architecture.md)
-- [运行时整合概览](runtime_updates_v093.md)
 - [IoC 与 DI wiki](wiki/injection.md)
 - [应用生命周期](wiki/lifecycle.md)

@@ -154,7 +154,6 @@ ctx.shutdown()
 
 ## 相关文档
 
-- [运行时整合概览](runtime_updates_v093.md)
 - [依赖注入指南](dependency_injection_guide.md)
 - [Web Runtime 指南](web_runtime_guide.md)
 - [测试与验证](testing.md)

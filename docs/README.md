@@ -81,7 +81,6 @@ Use this section only when you intentionally need advanced runtime or extension 
 
 Use this section when upgrading or reconciling old code with newer semantics.
 
-- [Runtime Consolidation](runtime_updates_v093.md)
 - [Migration Guide](migration_guide.md)
 - [Migration Guide v2](migration_guide_v2.md)
 - [Import Migration 0.90](import_migration_090.md)

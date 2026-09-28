@@ -1,6 +1,5 @@
 # Cullinan Extension Registration Quick Start
 
-> **Version**: v0.90  
 > **Feature**: Unified Extension Registration and Discovery Pattern  
 > **Author**: plumeink
 
