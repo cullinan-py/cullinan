@@ -21,7 +21,7 @@ covered.
 The authorization file is JSON:
 
     {
-      "authorization_id": "A-00",
+      "authorization_id": "example-id",
       "granted_by": "user",
       "allowed_refs": ["refs/heads/release/0.0a0"],
       "allowed_uses": 1
