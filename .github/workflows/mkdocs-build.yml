@@ -17,16 +17,11 @@ on:
       - 'cullinan/core/__init__.py'
     tags-ignore:
       - '**'
-  pull_request:
-    paths:
-      - 'docs/**'
-      - 'overrides/**'
-      - '.github/workflows/**'
-      - 'mkdocs.yml'
-      - 'pyproject.toml'
-      - 'cullinan/_version.py'
-      - 'cullinan/__init__.py'
-      - 'cullinan/core/__init__.py'
+  # No pull_request trigger on purpose. As a pull_request the deploy step is
+  # skipped, so the trigger only produced a second run per pull request that
+  # was named "Build and Publish Docs" without publishing anything. Pull
+  # requests are already built, with --strict, by docs-validate.yml; this
+  # workflow publishes, and therefore runs once, on the push that follows.
   workflow_dispatch:
     inputs:
       force_channel:
