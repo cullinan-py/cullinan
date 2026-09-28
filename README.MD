@@ -113,6 +113,12 @@ pip install cullinan
 After installation, start from the minimal example in [`examples/minimal_app/`](examples/minimal_app)
 or the repository guide in [`docs/examples.md`](docs/examples.md).
 
+A one-line smoke check confirms which version you are running:
+
+```bash
+python -c "from cullinan import application, configure; import cullinan; print(cullinan.__version__)"
+```
+
 ---
 
 ## Quick Start
@@ -226,19 +232,15 @@ The release history for earlier versions is recorded in [CHANGELOG.md](CHANGELOG
 
 ## Project status
 
-Cullinan is the project name, and `cullinan` is the package name published on PyPI:
+Cullinan — the project carries the name `Cullinan`, the package on PyPI is
+`cullinan` — is under active development, working through the `0.96` alpha
+line towards `1.0`. Alphas are published to PyPI as they land, so
+`pip install cullinan` follows the alpha line, while `v0.95` stays the stable
+one.
 
-```bash
-pip install cullinan
-```
-
-Verify the install with a one-line smoke check:
-
-```bash
-python -c "from cullinan import application, configure; import cullinan; print(cullinan.__version__)"
-```
-
-Maintainer: **`plumeink`**.
+Development is driven by `plumeink`, who reads and answers issues and pull
+requests as time allows — usually within a week, though real life occasionally
+stretches that.
 
 ---
 
