@@ -103,7 +103,6 @@ Representative files:
 
 ## Related documents
 
-- [Runtime consolidation overview](runtime_updates_v093.md)
 - [Application Runtime Model](wiki/application_runtime.md)
 - [Architecture](architecture.md)
 - [Web Runtime Guide](web_runtime_guide.md)

@@ -103,7 +103,6 @@ addopts = -ra
 
 ## 相关文档
 
-- [运行时整合概览](runtime_updates_v093.md)
 - [应用运行时模型](wiki/application_runtime.md)
 - [架构设计](architecture.md)
 - [Web Runtime 指南](web_runtime_guide.md)

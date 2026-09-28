@@ -133,4 +133,3 @@ See also:
 
 - [RESTful API wiki](wiki/restful_api.md)
 - [Architecture](architecture.md)
-- [Runtime consolidation overview](runtime_updates_v093.md)

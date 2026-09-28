@@ -129,4 +129,3 @@ runtime_config = WebRuntimeConfig(drain_timeout=10.0)
 
 - [RESTful API wiki](wiki/restful_api.md)
 - [架构设计](architecture.md)
-- [运行时整合概览](runtime_updates_v093.md)

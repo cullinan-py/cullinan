@@ -154,7 +154,6 @@ See [Testing & Verification](testing.md) for the current workflow.
 
 ## Related documents
 
-- [Runtime consolidation overview](runtime_updates_v093.md)
 - [Dependency Injection Guide](dependency_injection_guide.md)
 - [Web Runtime Guide](web_runtime_guide.md)
 - [Testing & Verification](testing.md)

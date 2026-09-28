@@ -51,12 +51,10 @@ nav:
     - Migration Guide: migration_guide.md
     - Migration Guide v2: migration_guide_v2.md
     - Final Structure Migration: migration_to_final_semantic_layout.md
-    - Runtime Consolidation: runtime_updates_v093.md
     - Import Migration 0.90: import_migration_090.md
 
 # Exclude internal documentation files from nav warnings
 not_in_nav: |
-  /cullinan_documentation_plan.md
   /REFACTORING_VERIFICATION_REPORT.md
   /bugfix_controller_di.md
   /template/**
@@ -64,7 +62,6 @@ not_in_nav: |
   /work/**
   /superpowers/**
   /examples/*.py
-  /zh/cullinan_documentation_plan.md
   /zh/bugfix_controller_di.md
   /zh/templates/**
   /zh/work/**
