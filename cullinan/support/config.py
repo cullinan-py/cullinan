@@ -132,6 +132,32 @@ class CullinanConfig:
         # ordering of ``middlewares``.
         self.builtin_middleware: Optional[List[Any]] = None
 
+        # Declared-but-not-assembled policy.
+        #
+        # ``False`` (the default) keeps the always-on report: the difference
+        # between the components declared at import time and the components the
+        # assembly pass actually picked up is announced through the semantic
+        # warning channel and startup continues.
+        #
+        # ``True`` requires that difference to be empty. The report is still
+        # emitted -- the warning and the failure are not alternatives -- and
+        # startup then fails with a ``ConfigurationError``.
+        #
+        # This is *not* ``startup_error_policy``: that one decides what happens
+        # when a service cannot be initialised, while this one decides what
+        # happens when a declared component was never assembled. The two names
+        # resemble each other; the situations do not.
+        self.strict_assembly: bool = False
+
+        # Components that are intentionally left unassembled, written in the
+        # same ``package.module.Component`` form the declaration report uses
+        # (``Application.get_declaration_diff()``). A listed component is still
+        # reported as declared-but-not-assembled; it simply no longer makes
+        # ``strict_assembly`` fail, so intent is recorded instead of suppressed.
+        # ``None`` (the default) means "no intentional exclusions"; an empty
+        # list means the same thing and is accepted for symmetry.
+        self.strict_assembly_excludes: Optional[List[str]] = None
+
         # OpenAPI auto-generation
         # Set to True to auto-register /openapi.json and /openapi.yaml endpoints
         # Can also be set via env var CULLINAN_OPENAPI_ENABLED=1
@@ -207,6 +233,14 @@ class CullinanConfig:
             # ``None`` means "use the framework default"; an empty list means
             # "install no built-in middleware", so the two must not be conflated.
             self.builtin_middleware = list(value) if value is not None else None
+        if 'strict_assembly' in config:
+            self.strict_assembly = bool(config['strict_assembly'])
+        if 'strict_assembly_excludes' in config:
+            value = config['strict_assembly_excludes']
+            # ``None`` and ``[]`` both mean "no intentional exclusions"; keep
+            # whichever shape was supplied so ``to_dict``/``from_dict`` round
+            # trips without silently rewriting the value.
+            self.strict_assembly_excludes = list(value) if value is not None else None
         return self
 
     def to_dict(self) -> dict:
@@ -228,6 +262,12 @@ class CullinanConfig:
             'middlewares': list(self.middlewares),
             'builtin_middleware': (
                 None if self.builtin_middleware is None else list(self.builtin_middleware)
+            ),
+            'strict_assembly': self.strict_assembly,
+            'strict_assembly_excludes': (
+                None
+                if self.strict_assembly_excludes is None
+                else list(self.strict_assembly_excludes)
             ),
         }
 
@@ -295,6 +335,8 @@ def configure(
     *,
     middlewares: Optional[List[Any]] = None,
     builtin_middleware: Optional[List[Any]] = None,
+    strict_assembly: bool = False,
+    strict_assembly_excludes: Optional[List[str]] = None,
 ):
     """Configure the Cullinan framework.
 
@@ -332,6 +374,22 @@ def configure(
             ``(instance, options)`` tuples replaces it. The built-in layer is
             assembled at the same startup point and shares the declarative
             ordering of ``middlewares``.
+        strict_assembly: Declared-but-not-assembled policy. Components whose
+            decorator ran during import but which the assembly pass never picked
+            up (for example because their package is missing from
+            ``user_packages``) are always reported. ``False`` (the default) keeps
+            that report non-blocking -- behaviour is unchanged. ``True`` requires
+            the difference to be empty: the report is emitted first, and startup
+            then fails with a ``ConfigurationError``. Not to be confused with
+            ``startup_error_policy``, which governs service *initialisation*
+            failures rather than unassembled declarations.
+        strict_assembly_excludes: Components that are intentionally left
+            unassembled, written as ``package.module.Component`` -- the same form
+            used by the declaration report (``Application.get_declaration_diff()``).
+            Listed components are still reported as declared-but-not-assembled,
+            but they no longer make ``strict_assembly`` fail. ``None`` (the
+            default) means no intentional exclusions; pass an empty list for the
+            same meaning explicitly.
 
     Example:
         >>> from cullinan import configure
@@ -344,6 +402,19 @@ def configure(
         from cullinan import configure, application
 
         @configure(user_packages=['your_app'], middlewares=[SecurityGate()])
+        @application
+        def main(): ...
+
+    Example (requiring every declaration to be assembled)::
+
+        from cullinan import configure, application
+
+        @configure(
+            user_packages=['your_app'],
+            strict_assembly=True,
+            # This one is deliberately not assembled.
+            strict_assembly_excludes=['your_app.legacy.OptionalService'],
+        )
         @application
         def main(): ...
     """
@@ -405,6 +476,15 @@ def configure(
 
     if builtin_middleware is not None:
         _config.builtin_middleware = list(builtin_middleware)
+
+    # ``strict_assembly`` has a real default (``False``), so it is assigned
+    # unconditionally -- like ``verbose`` / ``auto_scan`` -- which keeps repeated
+    # ``configure(...)`` calls predictable. The exclusion list keeps the
+    # ``None``-means-unchanged convention shared by the other list options; pass
+    # an empty list to clear it.
+    _config.strict_assembly = bool(strict_assembly)
+    if strict_assembly_excludes is not None:
+        _config.strict_assembly_excludes = list(strict_assembly_excludes)
 
     return _config
 
