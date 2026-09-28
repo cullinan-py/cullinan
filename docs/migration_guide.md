@@ -7,6 +7,9 @@
 > **Upgrade-only page:** use this when moving existing code, not when learning the
 > recommended API path for a new project.
 
+> **Note**: applies to the 0.90/0.93 → 0.95 range; read it when moving existing code
+> forward from the 0.93 (0.90) layout.
+
 This guide helps you migrate from Cullinan 1.x to 0.93 (0.90).
 
 ## v0.95 migration notes (Track A internal refactor)

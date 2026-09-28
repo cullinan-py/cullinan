@@ -48,10 +48,10 @@ nav:
     - RESTful API: wiki/restful_api.md
   - Migration:
     - Overview: migration/index.md
-    - Migration Guide: migration_guide.md
-    - Migration Guide v2: migration_guide_v2.md
-    - Final Structure Migration: migration_to_final_semantic_layout.md
-    - Import Migration 0.90: import_migration_090.md
+    - Import Migration (0.83 → 0.90): import_migration_090.md
+    - Migration Guide v2 (v0.9x → v0.93): migration_guide_v2.md
+    - Migration Guide (0.90/0.93 → 0.95): migration_guide.md
+    - Final Structure Migration (0.93a6 and earlier → final layout): migration_to_final_semantic_layout.md
 
 # Exclude internal documentation files from nav warnings
 not_in_nav: |
@@ -106,7 +106,7 @@ plugins:
             API Reference Overview: API 参考总览
             Architecture: 架构设计
             Runtime Consolidation: 运行时整合
-            Final Structure Migration: 最终结构迁移
+            Final Structure Migration (0.93a6 and earlier → final layout): 最终结构迁移（0.93a6 及更早 → 最终布局）
             Components: 组件
             Decorators: 装饰器
             Injection: 注入
@@ -123,9 +123,9 @@ plugins:
             service: 服务
             Examples: 示例
             Runtime Consolidation Overview: 运行时整合概览
-            Migration Guide: 迁移指南
-            Migration Guide v2: 迁移指南 v2
-            Import Migration 0.90: 0.90 导入迁移
+            Migration Guide (0.90/0.93 → 0.95): 迁移指南（0.90/0.93 → 0.95）
+            Migration Guide v2 (v0.9x → v0.93): 迁移指南 v2（v0.9x → v0.93）
+            Import Migration (0.83 → 0.90): 导入迁移（0.83 → 0.90）
             Dependency Injection: 依赖注入
             Framework Semantics: 框架语义
             Web Runtime: Web Runtime

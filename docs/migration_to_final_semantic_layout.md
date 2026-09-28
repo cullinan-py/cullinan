@@ -15,6 +15,9 @@ pr_links: []
 
 # Final Structure Migration
 
+> **Note**: applies to migrating code written for 0.93a6 and earlier to the final
+> semantic layout; read it when moving code off the pre-0.93a6 mixed layout.
+
 This page explains how to move code written for `0.93a6` and earlier mixed layouts to the
 final semantic structure introduced on the current pre branch.
 
