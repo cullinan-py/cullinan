@@ -187,6 +187,14 @@ naming the dropped entries and how many there were. Declare middleware through
 `configure(middlewares=[...])` or the `@middleware` decorator instead: those are
 read by the assembly and survive it.
 
+The support level is the same as its behaviour: `get_pipeline().add(...)` is a
+runtime-introspection, advanced-use and testing entry point, *not* the recommended
+way for an application or a library to integrate middleware. `Runtime.warmup()`
+rebuilds the gateway globals — pipeline, router, dispatcher and exception handler —
+so the entries it discards are announced in one diagnostic rather than dropped
+silently. Integrate middleware through the declarative entries:
+`configure(middlewares=[...])` or the `@middleware` decorator.
+
 **Backward compatibility**: Old `@middleware` classes are still auto-bridged into the gateway pipeline — one layer per legacy middleware.
 
 #### v0.96a1: Legacy middleware join the declarative order

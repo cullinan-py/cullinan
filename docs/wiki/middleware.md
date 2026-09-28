@@ -113,6 +113,15 @@ handling. That reset is reported — one diagnostic naming the entries and their
 count — rather than dropping them silently. For middleware that must actually
 run, use the declarative entries above.
 
+**Support level.** This entry point belongs to the runtime-introspection,
+advanced-use and testing level: it is supported, but it is *not* the recommended
+way for an application or a library to integrate middleware. Entries registered
+through it before startup are reset when the application boots — `Runtime.warmup()`
+rebuilds the gateway globals (pipeline, router, dispatcher and exception handler) —
+and the framework emits one diagnostic about that reset instead of dropping the
+entries silently. To have middleware take part in request handling, use the
+declarative entries: `configure(middlewares=[...])` or the `@middleware` decorator.
+
 ### Legacy: `process_request` / `process_response`
 
 The hook pair on `cullinan.web.middleware.Middleware` still works and is

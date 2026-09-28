@@ -181,6 +181,8 @@ get_pipeline().add(AuthMiddleware())
 
 **启动会重置该入口。** `get_pipeline().add(...)` 写入的是**引导之前**就已存在的那份管线；应用装配时会重建 gateway globals，因此经该入口注册的条目会在启动时被重置，永远不会参与请求处理。该重置不再静默 —— 框架会留下一条诊断，给出被丢弃条目的名称与数量。请改用 `configure(middlewares=[...])` 或 `@middleware` 装饰器声明中间件：这些入口由装配过程读取，因而能在启动后存活。
 
+该入口的支持级别与其行为一致：`get_pipeline().add(...)` 属于**运行时自省 / 高级用途 / 测试**级别的入口，而**不是**应用或库接入中间件的**推荐**路径。`Runtime.warmup()` 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此它丢弃的条目会以**一条**诊断的形式被通告，而不是被静默丢弃。请通过声明式入口接入中间件：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
+
 **向后兼容**：旧的 `@middleware` 类仍会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。
 
 #### v0.96a1：遗留中间件纳入声明式排序
