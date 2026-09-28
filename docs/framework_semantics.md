@@ -227,7 +227,9 @@ Cullinan no longer drops it silently:
   `ComponentDiscoveryWarning` (a `UserWarning` subclass). Because the default
   filter action for `UserWarning` is `default`, the diagnostic is **visible by
   default**: it is printed once per location and reports both the count and the
-  affected component names. Startup is **not** blocked.
+  affected component names. By default startup is **not** blocked; an
+  application may opt in to failing instead — see **Requiring the difference to
+  be empty (opt-in)** at the end of this section.
 
   > Cullinan keeps its own logging namespace quiet. On import the `cullinan`
   > logger gets a `NullHandler`. This does **not** block propagation — the logger
@@ -281,3 +283,61 @@ app.uninstall()
 `Application` is the advanced runtime facade; regular business code should stay
 on `@application` + `@configure(...)` and only reach for
 `get_declaration_diff()` when diagnosing discovery boundaries.
+
+### Requiring the difference to be empty (opt-in)
+
+Reporting is the default and it stays the default. An application that would
+rather not start at all when a declaration never reaches the container can say
+so:
+
+```python
+from cullinan import application, configure
+
+@configure(user_packages=["my_app"], strict_assembly=True)
+@application
+def main(): ...
+```
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `strict_assembly` | `False` | `False`: the difference is reported and startup continues, exactly as before. `True`: the difference must be empty. |
+| `strict_assembly_excludes` | `None` | Components intentionally left unassembled, written as `package.module.Component` — the form the report itself uses for `dropped`. A listed component is still reported; it just no longer fails the start. `None` and `[]` mean "no intentional exclusions". |
+
+Both are keyword-only arguments of `configure(...)`. When `strict_assembly=True`
+and the difference is still non-empty once the intentional exclusions are taken
+out, two things happen, in this order:
+
+1. the diagnostic is emitted first, through the ordinary channels described
+   above — the same rule key, the same message shape;
+2. a `ConfigurationError` (error code `CONFIG_ERROR`) is then raised, and startup
+   stops.
+
+The two actions are not alternatives, and the failure does not replace the
+report. The warning does not participate in control flow, so its trace survives
+a deployment whose own `try`/`except` swallows the exception; the exception is
+what actually stops the start. Skipping the warning would make that deployment
+silent again — the very situation this whole section exists to prevent.
+
+The failure message names every affected component, gives the count, repeats the
+`component-declared-not-assembled` rule identifier and says how to fix it (add
+the declaring package to `user_packages`, move the component to module top
+level, or acknowledge it in `strict_assembly_excludes`).
+
+Exclusions change the action only, never the facts. A component listed in
+`strict_assembly_excludes` still appears in `get_declaration_diff().dropped`; it
+is not assembled behind your back, and the reconciliation stays honest.
+
+> **Not the same as `startup_error_policy`.** `startup_error_policy='strict'`
+> decides what happens when a **service fails to initialise**; it is a
+> service-lifecycle policy. `strict_assembly` decides what happens when a
+> **declared component was never assembled**; it is a declaration-assembly
+> policy. The names are similar, the situations are unrelated, and the two
+> settings do not interact.
+
+**Scope of the reconciliation**: The difference pairs the declarations collected
+at import time with the components this start actually assembles. That declaration
+set is consumed by the first start in a process, so a later start in the same
+process — `Application.reload()`, for instance — reconciles against an empty
+declaration set, its difference is empty, and neither the report nor this option
+has anything to act on. Each new process begins with its own import-time
+declarations.

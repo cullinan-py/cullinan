@@ -221,6 +221,26 @@ print("Param" in payload["stability_commitment"]["cullinan.web"])
 
 详见 [框架语义](framework_semantics.md) §5-§8。
 
+## 新增
+
+以下均为**新增**、**向后兼容**、且**默认关闭**。
+
+| 符号 | 位置 | 类型 | 说明 |
+|------|------|------|------|
+| `strict_assembly` | `configure` | 关键字参数 | `False`（默认）：导入期已声明但从未装配的组件会被报告，启动继续。`True`：要求该差集为空 —— 先发出报告，随后以 `ConfigurationError`（`CONFIG_ERROR`）使启动失败。仅关键字参数。 |
+| `strict_assembly_excludes` | `configure` | 关键字参数 | 「有意不装配」的组件清单，写法为 `package.module.Component` —— 即声明对账报告使用的同一标识。列入的组件仍会被报告为「已声明未装配」，只是不再导致启动失败。`None`（默认）表示没有有意排除项；空列表含义相同。仅关键字参数。 |
+
+两个配置项同时是 `CullinanConfig` 的字段，并可通过 `to_dict()` / `from_dict()`
+往返，因此与其它配置项一样可以用 `@configure(...)` 声明。
+
+失败时复用既有语义规则（`component-declared-not-assembled`）与既有
+`ConfigurationError`：不新增异常类型、不新增规则标识、不新增公共符号。
+
+> `strict_assembly` 与 `startup_error_policy` 无关：前者针对**从未被装配的声明**，
+> 后者针对**服务初始化**失败。
+
+完整契约见 [框架语义](framework_semantics.md) §11。
+
 ## 重新生成 API 文档（步骤示例）
 
 在后续实现自动化时，可以选择使用静态分析脚本生成 API 索引并更新本页面。典型流程示例：

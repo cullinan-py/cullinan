@@ -7,7 +7,7 @@ reviewers: []
 status: updated
 locale: en
 translation_pair: "docs/zh/wiki/components.md"
-related_tests: ["tests/core/test_application_model_refactor.py", "tests/web/test_web_runtime.py", "tests/integration/test_service_lifecycle_integration.py"]
+related_tests: ["tests/core/test_application_model_refactor.py", "tests/web/test_web_runtime.py", "tests/integration/test_service_lifecycle_integration.py", "tests/core/test_strict_assembly.py"]
 related_examples: []
 estimate_pd: 1.5
 last_updated: "2026-05-31T00:00:00Z"
@@ -63,6 +63,28 @@ For the contract behind automatic discovery and registration, read [Framework Se
 - Responsibility: map path/query/body/header/file inputs into handler arguments
 - Main package: `cullinan.web.params`
 - Key APIs: `Path`, `Query`, `Body`, `Header`, `File`
+
+## Declared but not assembled
+
+Discovery is import-executed, assembly scans the packages listed in
+`user_packages`. A component whose decorator ran while its package was **not**
+listed is therefore *declared* but never *assembled*, and Cullinan acts on that
+difference in one of two strengths:
+
+| Action | When | What happens |
+|--------|------|--------------|
+| **Report** (default) | always | `Application.get_declaration_diff()` exposes `declared` / `assembled` / `dropped`, and a `component-declared-not-assembled` diagnostic is emitted. Startup continues. |
+| **Fail** (opt-in) | `configure(strict_assembly=True)` | The same diagnostic is emitted, and startup then fails with a `ConfigurationError`. |
+
+Components that are intentionally left unassembled can be named in
+`configure(strict_assembly_excludes=[...])`, written as
+`package.module.Component`. That acknowledges the intent — the component is
+still reported, but it no longer stops startup.
+
+`strict_assembly` is a different setting from `startup_error_policy`, which
+governs service *initialisation* failures rather than unassembled declarations.
+
+See [Framework Semantics](../framework_semantics.md) §11 for the full contract.
 
 ## Suggested reading order
 
