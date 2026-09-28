@@ -179,6 +179,14 @@ class AuthMiddleware(GatewayMiddleware):
 get_pipeline().add(AuthMiddleware())
 ```
 
+**Startup resets this entry point.** `get_pipeline().add(...)` writes into the
+pipeline that exists *before* boot; the gateway globals are rebuilt when the
+application is assembled, so anything registered this way is reset at startup and
+never handles a request. The reset is no longer silent — it leaves one diagnostic
+naming the dropped entries and how many there were. Declare middleware through
+`configure(middlewares=[...])` or the `@middleware` decorator instead: those are
+read by the assembly and survive it.
+
 **Backward compatibility**: Old `@middleware` classes are still auto-bridged into the gateway pipeline — one layer per legacy middleware.
 
 #### v0.96a1: Legacy middleware join the declarative order

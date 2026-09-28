@@ -55,6 +55,17 @@ def get_pipeline() -> MiddlewarePipeline:
     return _global_pipeline
 
 
+def _peek_pipeline() -> Optional[MiddlewarePipeline]:
+    """Return the global pipeline as it currently stands, without creating it.
+
+    ``get_pipeline()`` is lazy, so *calling* it is not a read: it materializes a
+    pipeline as a side effect.  Observers that must not perturb what they look
+    at -- diagnostics, and the boot boundary that is about to reset the gateway
+    -- read the module-level global through here instead.
+    """
+    return _global_pipeline
+
+
 def get_exception_handler() -> ExceptionHandler:
     """Get the global ExceptionHandler instance (created lazily)."""
     global _global_exception_handler

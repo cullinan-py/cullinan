@@ -179,6 +179,8 @@ class AuthMiddleware(GatewayMiddleware):
 get_pipeline().add(AuthMiddleware())
 ```
 
+**启动会重置该入口。** `get_pipeline().add(...)` 写入的是**引导之前**就已存在的那份管线；应用装配时会重建 gateway globals，因此经该入口注册的条目会在启动时被重置，永远不会参与请求处理。该重置不再静默 —— 框架会留下一条诊断，给出被丢弃条目的名称与数量。请改用 `configure(middlewares=[...])` 或 `@middleware` 装饰器声明中间件：这些入口由装配过程读取，因而能在启动后存活。
+
 **向后兼容**：旧的 `@middleware` 类仍会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。
 
 #### v0.96a1：遗留中间件纳入声明式排序

@@ -978,23 +978,7 @@ class ApplicationContext:
         Rather than silence that case, print once to stderr. It stays out of the
         way whenever either channel is live, so the report is not duplicated.
         """
-        if _real_logging_handler_exists():
-            return
-        if not _warnings_may_be_suppressed():
-            return
-        try:
-            sys.stderr.write("cullinan: %s\n%s\n" % (problem, guidance))
-        except Exception:
-            # A soft-boundary diagnostic must never become a hard failure.
-            # stderr itself can be unusable -- a closed descriptor, an encoding
-            # error, or a replaced stream object. Unhandled, that write error
-            # would travel back through _warn_declared_not_assembled() and
-            # refresh() and abort application startup, which is precisely what
-            # a diagnostic must not do. Losing the report is the acceptable
-            # outcome here: this is the last-resort channel, and there is
-            # deliberately no logging fallback, because "the report failed to
-            # report" would re-enter the very path that just broke.
-            pass
+        _emit_report_fallback(problem, guidance)
 
     def _process_pending_registrations(self) -> None:
         from .pending import PendingRegistry
@@ -2337,3 +2321,28 @@ def _warnings_may_be_suppressed() -> bool:
         if isinstance(category, type) and issubclass(ComponentDiscoveryWarning, category):
             return True
     return False
+
+
+def _emit_report_fallback(problem: str, guidance: str) -> None:
+    """Write a soft-boundary report to stderr when no ordinary channel is live.
+
+    Shared by every diagnostic that announces a run through the three channels
+    (a semantic warning, a log record, and this last resort), so the fallback
+    fires under exactly one rule wherever it is reached from.
+    """
+    if _real_logging_handler_exists():
+        return
+    if not _warnings_may_be_suppressed():
+        return
+    try:
+        sys.stderr.write("cullinan: %s\n%s\n" % (problem, guidance))
+    except Exception:
+        # A soft-boundary diagnostic must never become a hard failure.
+        # stderr itself can be unusable -- a closed descriptor, an encoding
+        # error, or a replaced stream object. Unhandled, that write error
+        # would travel back through the caller and abort application startup,
+        # which is precisely what a diagnostic must not do. Losing the report
+        # is the acceptable outcome here: this is the last-resort channel, and
+        # there is deliberately no logging fallback, because "the report failed
+        # to report" would re-enter the very path that just broke.
+        pass

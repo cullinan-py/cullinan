@@ -87,6 +87,10 @@ configure(user_packages=["your_app"], builtin_middleware=[])
 
 省略该参数则保持框架默认，既有应用不受影响。无论内置层最终是什么，它都与 `middlewares` 参与同一套声明式排序。
 
+### 命令式注册（`get_pipeline().add`）
+
+`cullinan.web.gateway.get_pipeline().add(AuditMiddleware())` 是**启动前**的命令式入口，供手工构建管线的集成使用。它写入的是应用装配**之前**就已存在的那份管线实例，而 gateway globals 会在启动边界被整体重建：因此经该入口加入的条目会在引导时被重置，永远不会参与请求处理。该重置**会留痕** —— 框架输出一条诊断，给出被重置条目的名称与数量 —— 而不是静默丢弃。需要真正生效的中间件，请使用上面的声明式入口。
+
 ### 遗留：`process_request` / `process_response`
 
 `cullinan.web.middleware.Middleware` 上的钩子对仍然可用，并会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。每个桥接层与内置层、声明层共用同一个声明式 `priority` 键排序，因此 `@middleware(priority=10)` 的遗留中间件会落在内置 access log（默认 `100`）更外层。仅用于既有集成：

@@ -102,6 +102,17 @@ Omitting the parameter keeps the framework default, so existing applications are
 unaffected. Whatever the built-in layer ends up being, it takes part in the same
 declarative ordering as `middlewares`.
 
+### Imperative registration (`get_pipeline().add`)
+
+`cullinan.web.gateway.get_pipeline().add(AuditMiddleware())` is the imperative
+pre-boot entry point, kept for integrations that build the pipeline by hand. It
+writes into the pipeline instance that exists *before* the application is
+assembled, and the gateway globals are rebuilt at the startup boundary: entries
+added this way are therefore reset at boot and never take part in request
+handling. That reset is reported — one diagnostic naming the entries and their
+count — rather than dropping them silently. For middleware that must actually
+run, use the declarative entries above.
+
 ### Legacy: `process_request` / `process_response`
 
 The hook pair on `cullinan.web.middleware.Middleware` still works and is

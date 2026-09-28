@@ -61,6 +61,10 @@ SEMANTIC_RULES: Dict[str, str] = {
         "Regular applications should prefer Cullinan's top-level public APIs. "
         "runtime, adapter, and core paths are advanced or internal entrypoints."
     ),
+    "gateway-pipeline-reset": (
+        "The gateway globals are rebuilt at the startup boundary. Middleware registered on the "
+        "pre-boot pipeline is reset there, and that reset is reported instead of staying silent."
+    ),
 }
 
 _warned_keys = set()

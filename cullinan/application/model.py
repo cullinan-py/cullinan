@@ -12,7 +12,7 @@ import threading
 import uuid
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type
 
-from cullinan.core.application_context import ApplicationContext
+from cullinan.core.application_context import ApplicationContext, _emit_report_fallback
 from cullinan.core.container_manager import get_container_manager
 from cullinan.core.context import create_context, destroy_context, get_current_context
 from cullinan.core.decorators import get_component_registration_metadata
@@ -27,6 +27,7 @@ from cullinan.web.gateway import (
     get_router,
     reset_gateway,
 )
+from cullinan.web.gateway.globals import _peek_pipeline
 from cullinan.web.gateway.runtime import WebRuntime, WebRuntimeConfig
 from cullinan.runtime.module_scanner import list_submodules
 
@@ -110,7 +111,12 @@ class Runtime:
 
     def warmup(self) -> None:
         self.phase = "warming"
+        # Read the pre-boot registrations *before* the reset, so the report names
+        # exactly the entries the reset discards. The read must not create the
+        # pipeline it is about to see wiped.
+        discarded_entries = _registered_pipeline_entry_names()
         reset_gateway()
+        _warn_pipeline_registrations_reset(discarded_entries)
         self.context.refresh()
         self.web_runtime.router = get_router()
         self.web_runtime.dispatcher = get_dispatcher()
@@ -126,6 +132,68 @@ class Runtime:
         self.phase = "draining"
         self.context.begin_draining()
         self.web_runtime.begin_draining()
+
+
+def _registered_pipeline_entry_names() -> Tuple[str, ...]:
+    """Names of the gateway pipeline entries registered so far, without creating it.
+
+    ``get_pipeline()`` is lazy, so calling it here would materialize a pipeline
+    as a side effect of taking a reading -- a diagnostic must not change the
+    state it reports on, least of all at the boundary where that state is about
+    to be thrown away. The raw entry list is read instead; it is also the view
+    that does not depend on the declarative ordering resolving, which can fail
+    for declarations that were never completed.
+    """
+    pipeline = _peek_pipeline()
+    if pipeline is None:
+        return ()
+    names: List[str] = []
+    for entry in pipeline._entries:
+        middleware = entry.middleware
+        names.append(getattr(middleware, "display_name", None) or type(middleware).__name__)
+    return tuple(names)
+
+
+def _warn_pipeline_registrations_reset(names: Tuple[str, ...]) -> None:
+    """Report the pipeline entries that the boot-time gateway reset discards.
+
+    This belongs to the boot boundary only. ``reset_gateway()`` keeps its plain
+    rebuild-everything semantics and stays silent -- it is a public entry point
+    that tests call directly, so a report from inside it would be noise. What is
+    announced here is the consequence of that reset for a starting application:
+    entries registered imperatively before startup do not survive it.
+
+    With nothing registered there is nothing to say, and no channel is used.
+    """
+    if not names:
+        return
+    joined = ", ".join(names)
+    problem = (
+        "[gateway-pipeline-reset] "
+        f"{len(names)} gateway pipeline entry(ies) registered before startup were reset at "
+        f"the boot boundary and will not take part in request handling: {joined}."
+    )
+    guidance = (
+        "Declare middleware where the startup assembly reads it -- "
+        "configure(middlewares=[...]) or the @middleware decorator. "
+        "get_pipeline().add(...) is an imperative pre-boot entry point: its entries are "
+        "discarded when the gateway globals are rebuilt."
+    )
+    _logger.warning(
+        "Gateway pipeline entries registered before startup were reset: %d (%s). "
+        "Declare middleware with configure(middlewares=[...]) or @middleware instead.",
+        len(names),
+        joined,
+    )
+    warn_semantic_once(
+        key=f"gateway-pipeline-reset:{joined}",
+        rule_key="gateway-pipeline-reset",
+        problem=problem,
+        guidance=guidance,
+        category=PublicAPISemanticWarning,
+        stacklevel=3,
+    )
+    _emit_report_fallback(problem, guidance)
 
 
 def _normalize_iterable(value: Optional[Iterable[Any]]) -> Tuple[Any, ...]:
