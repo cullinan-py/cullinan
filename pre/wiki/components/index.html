@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a2"
+      data-current-version="0.96a3"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a2"
+      data-pre-version="0.96a3"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1658,6 +1658,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#declared-but-not-assembled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declared but not assembled
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#suggested-reading-order" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2251,6 +2262,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#declared-but-not-assembled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declared but not assembled
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#suggested-reading-order" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2325,6 +2347,39 @@
 <li>Main package: <code>cullinan.web.params</code></li>
 <li>Key APIs: <code>Path</code>, <code>Query</code>, <code>Body</code>, <code>Header</code>, <code>File</code></li>
 </ul>
+<h2 id="declared-but-not-assembled">Declared but not assembled<a class="headerlink" href="#declared-but-not-assembled" title="Permanent link">&para;</a></h2>
+<p>Discovery is import-executed, assembly scans the packages listed in
+<code>user_packages</code>. A component whose decorator ran while its package was <strong>not</strong>
+listed is therefore <em>declared</em> but never <em>assembled</em>, and Cullinan acts on that
+difference in one of two strengths:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>When</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Report</strong> (default)</td>
+<td>always</td>
+<td><code>Application.get_declaration_diff()</code> exposes <code>declared</code> / <code>assembled</code> / <code>dropped</code>, and a <code>component-declared-not-assembled</code> diagnostic is emitted. Startup continues.</td>
+</tr>
+<tr>
+<td><strong>Fail</strong> (opt-in)</td>
+<td><code>configure(strict_assembly=True)</code></td>
+<td>The same diagnostic is emitted, and startup then fails with a <code>ConfigurationError</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Components that are intentionally left unassembled can be named in
+<code>configure(strict_assembly_excludes=[...])</code>, written as
+<code>package.module.Component</code>. That acknowledges the intent — the component is
+still reported, but it no longer stops startup.</p>
+<p><code>strict_assembly</code> is a different setting from <code>startup_error_policy</code>, which
+governs service <em>initialisation</em> failures rather than unassembled declarations.</p>
+<p>See <a href="../../framework_semantics/">Framework Semantics</a> §11 for the full contract.</p>
 <h2 id="suggested-reading-order">Suggested reading order<a class="headerlink" href="#suggested-reading-order" title="Permanent link">&para;</a></h2>
 <ol>
 <li><a href="../../architecture/">Architecture</a></li>
@@ -2402,7 +2457,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a2", "pre_is_available": true, "pre_label": "0.96a2", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a3", "pre_is_available": true, "pre_label": "0.96a3", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

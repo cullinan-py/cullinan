@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a2"
+      data-current-version="0.96a3"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a2"
+      data-pre-version="0.96a3"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -782,6 +782,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="11. Declared components must be assembled or reported (v0.96a2)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requiring-the-difference-to-be-empty-opt-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requiring the difference to be empty (opt-in)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2313,6 +2330,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="11. Declared components must be assembled or reported (v0.96a2)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requiring-the-difference-to-be-empty-opt-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requiring the difference to be empty (opt-in)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2537,7 +2571,9 @@ package was <strong>not</strong> listed is therefore <em>declared</em> but not <
   <code>ComponentDiscoveryWarning</code> (a <code>UserWarning</code> subclass). Because the default
   filter action for <code>UserWarning</code> is <code>default</code>, the diagnostic is <strong>visible by
   default</strong>: it is printed once per location and reports both the count and the
-  affected component names. Startup is <strong>not</strong> blocked.</li>
+  affected component names. By default startup is <strong>not</strong> blocked; an
+  application may opt in to failing instead — see <strong>Requiring the difference to
+  be empty (opt-in)</strong> at the end of this section.</li>
 </ul>
 <blockquote>
 <p>Cullinan keeps its own logging namespace quiet. On import the <code>cullinan</code>
@@ -2599,6 +2635,73 @@ the diagnostic fired — watch the <code>warnings</code> channel instead (for ex
 <p><code>Application</code> is the advanced runtime facade; regular business code should stay
 on <code>@application</code> + <code>@configure(...)</code> and only reach for
 <code>get_declaration_diff()</code> when diagnosing discovery boundaries.</p>
+<h3 id="requiring-the-difference-to-be-empty-opt-in">Requiring the difference to be empty (opt-in)<a class="headerlink" href="#requiring-the-difference-to-be-empty-opt-in" title="Permanent link">&para;</a></h3>
+<p>Reporting is the default and it stays the default. An application that would
+rather not start at all when a declaration never reaches the container can say
+so:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
+
+<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"my_app"</span><span class="p">],</span> <span class="n">strict_assembly</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@application</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>strict_assembly</code></td>
+<td><code>False</code></td>
+<td><code>False</code>: the difference is reported and startup continues, exactly as before. <code>True</code>: the difference must be empty.</td>
+</tr>
+<tr>
+<td><code>strict_assembly_excludes</code></td>
+<td><code>None</code></td>
+<td>Components intentionally left unassembled, written as <code>package.module.Component</code> — the form the report itself uses for <code>dropped</code>. A listed component is still reported; it just no longer fails the start. <code>None</code> and <code>[]</code> mean "no intentional exclusions".</td>
+</tr>
+</tbody>
+</table>
+<p>Both are keyword-only arguments of <code>configure(...)</code>. When <code>strict_assembly=True</code>
+and the difference is still non-empty once the intentional exclusions are taken
+out, two things happen, in this order:</p>
+<ol>
+<li>the diagnostic is emitted first, through the ordinary channels described
+   above — the same rule key, the same message shape;</li>
+<li>a <code>ConfigurationError</code> (error code <code>CONFIG_ERROR</code>) is then raised, and startup
+   stops.</li>
+</ol>
+<p>The two actions are not alternatives, and the failure does not replace the
+report. The warning does not participate in control flow, so its trace survives
+a deployment whose own <code>try</code>/<code>except</code> swallows the exception; the exception is
+what actually stops the start. Skipping the warning would make that deployment
+silent again — the very situation this whole section exists to prevent.</p>
+<p>The failure message names every affected component, gives the count, repeats the
+<code>component-declared-not-assembled</code> rule identifier and says how to fix it (add
+the declaring package to <code>user_packages</code>, move the component to module top
+level, or acknowledge it in <code>strict_assembly_excludes</code>).</p>
+<p>Exclusions change the action only, never the facts. A component listed in
+<code>strict_assembly_excludes</code> still appears in <code>get_declaration_diff().dropped</code>; it
+is not assembled behind your back, and the reconciliation stays honest.</p>
+<blockquote>
+<p><strong>Not the same as <code>startup_error_policy</code>.</strong> <code>startup_error_policy='strict'</code>
+decides what happens when a <strong>service fails to initialise</strong>; it is a
+service-lifecycle policy. <code>strict_assembly</code> decides what happens when a
+<strong>declared component was never assembled</strong>; it is a declaration-assembly
+policy. The names are similar, the situations are unrelated, and the two
+settings do not interact.</p>
+</blockquote>
+<p><strong>Scope of the reconciliation</strong>: The difference pairs the declarations collected
+at import time with the components this start actually assembles. That declaration
+set is consumed by the first start in a process, so a later start in the same
+process — <code>Application.reload()</code>, for instance — reconciles against an empty
+declaration set, its difference is empty, and neither the report nor this option
+has anything to act on. Each new process begins with its own import-time
+declarations.</p>
 
 
 
@@ -2667,7 +2770,7 @@ on <code>@application</code> + <code>@configure(...)</code> and only reach for
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a2", "pre_is_available": true, "pre_label": "0.96a2", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a3", "pre_is_available": true, "pre_label": "0.96a3", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

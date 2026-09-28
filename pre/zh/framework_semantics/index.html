@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a2"
+      data-current-version="0.96a3"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a2"
+      data-pre-version="0.96a3"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -782,6 +782,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="11. 已声明的组件必须被装配，或被报告（v0.96a2）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        要求差集为空（可选开启）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2313,6 +2330,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="11. 已声明的组件必须被装配，或被报告（v0.96a2）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        要求差集为空（可选开启）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2528,7 +2562,7 @@
 <p>Cullinan 不再静默丢弃这种情况：</p>
 <ul>
 <li><code>Application.get_declaration_diff()</code> 返回对账结果：<code>declared</code> / <code>assembled</code> / <code>dropped</code>（以及 <code>dropped_count</code>）。</li>
-<li>当 <code>dropped</code> 非空时，会以 <strong>WARNING</strong> 级别发出 <strong><code>component-declared-not-assembled</code></strong> 诊断（无需任何 debug 开关）。该诊断通过 Python 标准 <code>warnings</code> 机制发出，类别为 <code>ComponentDiscoveryWarning</code>（<code>UserWarning</code> 的子类）。由于 <code>UserWarning</code> 的默认过滤动作是 <code>default</code>，该诊断<strong>默认即可见</strong>：会按位置打印一次，并同时给出数量与受影响的组件名单。启动<strong>不会</strong>被阻断。</li>
+<li>当 <code>dropped</code> 非空时，会以 <strong>WARNING</strong> 级别发出 <strong><code>component-declared-not-assembled</code></strong> 诊断（无需任何 debug 开关）。该诊断通过 Python 标准 <code>warnings</code> 机制发出，类别为 <code>ComponentDiscoveryWarning</code>（<code>UserWarning</code> 的子类）。由于 <code>UserWarning</code> 的默认过滤动作是 <code>default</code>，该诊断<strong>默认即可见</strong>：会按位置打印一次，并同时给出数量与受影响的组件名单。默认情况下启动<strong>不会</strong>被阻断；应用可以主动选择改为失败，见本节末尾的「要求差集为空（可选开启）」小节。</li>
 </ul>
 <blockquote>
 <p>Cullinan 会保持自身日志命名空间的安静。导入时 <code>cullinan</code> logger 会被挂上 <code>NullHandler</code>。这<strong>不会</strong>阻断传播——该 logger 的 <code>propagate</code> 仍为 <code>True</code>，而 <code>NullHandler</code> 只是自己拒绝输出、并不拦截，因此框架自身的 <code>logger.warning(...)</code> 记录照常向上传递到 root logger。记录本身<strong>无论是否配置 logging 都会被创建并发出</strong>；之所以默认没有任何输出，有两个原因：<code>cullinan</code> logger 上的 <code>NullHandler</code> 本身<strong>已算一个 handler</strong>，所以 stdlib 的 <code>lastResort</code> 兜底<strong>不会</strong>接管；而传播路径上也没有任何真实的 handler（root logger 默认没有）。因此该 logger <strong>不是</strong>默认可见的通道，但只要传播路径上出现<strong>任意一个</strong> handler，它就不再安静——例如 <code>logging.basicConfig(level=logging.ERROR)</code> 就是在 root logger 上装一个（测试框架的日志捕获同样会装一个）。框架自带的 console handler（在 <code>CULLINAN_FORCE_CONSOLE=1</code> 时、或在进程以真实文件直接启动并经由旧式入口时安装）只存在于那些<strong>旧式兼容入口</strong>（<code>cullinan.application.run()</code> / <code>cullinan.application.get_asgi_app()</code> 与旧式的 <code>cullinan.runtime.scanner.run()</code>）上，<strong>不会</strong>挂载在推荐的 <code>@application</code> → <code>entry.run()</code> 路径上。不要寄望于等到一条日志来判断诊断是否触发，请改为观察 <code>warnings</code> 通道（例如 <code>warnings.catch_warnings(record=True)</code>）。</p>
@@ -2569,6 +2603,47 @@
 <span class="n">app</span><span class="o">.</span><span class="n">uninstall</span><span class="p">()</span>
 </code></pre></div>
 <p><code>Application</code> 是高级运行时门面；常规业务代码应停留在 <code>@application</code> + <code>@configure(...)</code>，仅在诊断发现边界时才使用 <code>get_declaration_diff()</code>。</p>
+<h3 id="_3">要求差集为空（可选开启）<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>报告是默认行为，也仍然是默认行为。如果某个应用希望「有声明没被装配时干脆不要启动」，可以显式声明：</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
+
+<span class="nd">@configure</span><span class="p">(</span><span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"my_app"</span><span class="p">],</span> <span class="n">strict_assembly</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@application</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>默认值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>strict_assembly</code></td>
+<td><code>False</code></td>
+<td><code>False</code>：照旧报告差集并继续启动。<code>True</code>：要求差集为空。</td>
+</tr>
+<tr>
+<td><code>strict_assembly_excludes</code></td>
+<td><code>None</code></td>
+<td>「有意不装配」的组件清单，写法为 <code>package.module.Component</code> —— 即报告里 <code>dropped</code> 使用的同一形式。列入的组件仍会被报告，只是不再导致启动失败。<code>None</code> 与 <code>[]</code> 都表示「没有有意排除项」。</td>
+</tr>
+</tbody>
+</table>
+<p>两者都是 <code>configure(...)</code> 的仅关键字参数。当 <code>strict_assembly=True</code>，且扣掉「有意排除项」后差集仍然非空时，会依次发生两件事：</p>
+<ol>
+<li><strong>先</strong>通过上文所述的既有通道发出诊断 —— 同一规则标识、同一消息形态；</li>
+<li><strong>随后</strong>抛出 <code>ConfigurationError</code>（错误码 <code>CONFIG_ERROR</code>），启动终止。</li>
+</ol>
+<p>这两个动作不是二选一，失败不会取代报告。警告<strong>不参与控制流</strong>，因此即便部署方自己写的 <code>try</code>/<code>except</code> 吞掉了异常，痕迹依然存在；真正阻止启动的是异常。若跳过警告，那种部署会再次静默 —— 而这正是本节要消除的情形。</p>
+<p>失败消息会给出受影响的<strong>每一个</strong>组件名、<strong>数量</strong>、既有的 <code>component-declared-not-assembled</code> 规则标识，以及修法（把声明所在的包加入 <code>user_packages</code>、把组件移到模块顶层，或在 <code>strict_assembly_excludes</code> 中承认它）。</p>
+<p>排除清单只改变<strong>动作</strong>，不改变<strong>事实</strong>。列入 <code>strict_assembly_excludes</code> 的组件仍然出现在 <code>get_declaration_diff().dropped</code> 中；它不会被悄悄装配，对账结果依然如实。</p>
+<blockquote>
+<p><strong>它与 <code>startup_error_policy</code> 不是同一件事。</strong> <code>startup_error_policy='strict'</code> 决定的是<strong>服务初始化失败</strong>时怎么办，属服务生命周期策略；<code>strict_assembly</code> 决定的是<strong>已声明的组件从未被装配</strong>时怎么办，属声明—装配策略。两者名字相近，场景无关，且互不作用。</p>
+</blockquote>
+<p><strong>对账的作用范围</strong>：差集把<strong>模块导入期</strong>收集到的声明与<strong>本次启动</strong>实际装配到的组件配对。该声明集会被进程内的<strong>首次启动</strong>消费，因此同一进程内的<strong>后续启动</strong>（例如 <code>Application.reload()</code>）面对的是空声明集，其差集为空，报告与本选项都无从生效。每个新进程都会带着自身的导入期声明重新开始。</p>
 
 
 
@@ -2637,7 +2712,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a2", "pre_is_available": true, "pre_label": "0.96a2", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a3", "pre_is_available": true, "pre_label": "0.96a3", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
