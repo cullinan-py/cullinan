@@ -163,7 +163,7 @@ When enabled, `on_startup` / `on_shutdown` failures also raise `LifecycleError`.
 
 ## 8. Compatibility APIs are deprecated (v0.95)
 
-Legacy surfaces such as `@injectable`, `@inject_constructor`, `InjectionRegistry`, `get_injection_registry()`, and `reset_injection_registry()` remain available so older code can still import them, but they are **deprecated since v0.95** and will be **removed in a future release**. No specific removal version is promised up front: the value is derived from the release line in force at removal time, and the `removal_version` field below always reports the current one.
+Legacy surfaces such as `@injectable`, `@inject_constructor`, `InjectionRegistry`, `get_injection_registry()`, and `reset_injection_registry()` remain available so older code can still import them, but they are **deprecated since v0.95** and will be **removed in a future release**. No specific removal version is promised up front: it is derived from the release line the surface was deprecated on plus a fixed deprecation window, so the advertised value stays fixed instead of sliding on each release. The `removal_version` field below reports that derived value.
 
 As of v0.95, these symbols carry:
 
@@ -210,3 +210,74 @@ configure(explicit_modules=[
 This list is used as the highest-priority strategy (S0) in the unified scan pipeline, before falling back to `user_packages` (S1) and other heuristics. Each entry is recursively walked for subpackages.
 
 **Deep subpackage discovery**: `list_submodules()` now supplements `pkgutil.walk_packages` with filesystem-based recursive scanning. If a deeply nested package (e.g., `club.fnep.infrastructure.discord`) is missed by `walk_packages`, the filesystem fallback discovers it by walking `__init__.py` directories and `.py` files directly.
+
+## 11. Declared components must be assembled or reported (v0.96a2)
+
+Component discovery is import-executed (§1), but assembly only scans the
+packages listed in `user_packages`. A component whose decorator ran while its
+package was **not** listed is therefore *declared* but not *assembled*.
+
+Cullinan no longer drops it silently:
+
+- `Application.get_declaration_diff()` returns the reconciliation as
+  `declared` / `assembled` / `dropped` (plus `dropped_count`).
+- When `dropped` is non-empty, a **`component-declared-not-assembled`**
+  diagnostic is emitted at **WARNING** level — no debug switch is required. It is
+  delivered through Python's standard `warnings` mechanism as a
+  `ComponentDiscoveryWarning` (a `UserWarning` subclass). Because the default
+  filter action for `UserWarning` is `default`, the diagnostic is **visible by
+  default**: it is printed once per location and reports both the count and the
+  affected component names. Startup is **not** blocked.
+
+  > Cullinan keeps its own logging namespace quiet. On import the `cullinan`
+  > logger gets a `NullHandler`. This does **not** block propagation — the logger
+  > keeps `propagate=True`, and a `NullHandler` only declines to emit rather than
+  > intercepting, so the framework's own `logger.warning(...)` records still
+  > travel up to the root logger as usual. Such a record is created and emitted
+  > either way, yet nothing is printed by default, for two reasons: the
+  > `NullHandler` on the `cullinan` logger already counts as a handler, so the
+  > stdlib `lastResort` fallback never takes over; and there is no real handler
+  > along the path (the root logger has none by default). The logger is therefore
+  > **not** a default-visible channel, but it stops being quiet as soon as **any**
+  > handler exists along the path — for example
+  > `logging.basicConfig(level=logging.ERROR)` installs one on the root logger (a
+  > test framework's log capture installs one too). The framework attaches its own
+  > console handler only on legacy/compatibility entry points
+  > (`cullinan.application.run()` / `cullinan.application.get_asgi_app()` and the
+  > legacy `cullinan.runtime.scanner.run()`), gated by `CULLINAN_FORCE_CONSOLE=1`
+  > or a directly started process; it is **not** attached on the recommended
+  > `@application` → `entry.run()` path. Do not wait for a log line to learn that
+  > the diagnostic fired — watch the `warnings` channel instead (for example,
+  > `warnings.catch_warnings(record=True)`).
+
+The two usual causes and their fixes:
+
+| Cause | Fix |
+|-------|-----|
+| The declaring package is missing from `user_packages` | Add it: `@configure(user_packages=["my_package"])` |
+| The component is not defined at module top level | Move it to module top level |
+
+```python
+from cullinan import application, configure
+
+@configure(user_packages=["my_app"])
+@application
+def main(): ...
+```
+
+Inspect the reconciliation directly:
+
+```python
+from cullinan.application import Application
+
+app = Application(main)
+app.build()
+diff = app.get_declaration_diff()
+print(diff.dropped)        # declared but never assembled
+print(diff.dropped_count)  # len(diff.dropped)
+app.uninstall()
+```
+
+`Application` is the advanced runtime facade; regular business code should stay
+on `@application` + `@configure(...)` and only reach for
+`get_declaration_diff()` when diagnosing discovery boundaries.

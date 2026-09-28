@@ -10,7 +10,7 @@ import inspect
 import logging
 import threading
 import uuid
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type
 
 from cullinan.core.application_context import ApplicationContext
 from cullinan.core.container_manager import get_container_manager
@@ -70,6 +70,29 @@ class ModuleGraph:
     modules: Tuple[ModuleSpec, ...]
     python_modules: Tuple[str, ...]
     component_owners: Dict[str, Type[Any]]
+
+
+@dataclass(frozen=True)
+class _DeclarationDiff:
+    """Reconciliation between the declared and the assembled component sets.
+
+    ``declared`` is the import-time declaration snapshot taken *before*
+    ``PendingRegistry.reset()``; ``assembled`` is the set of components that
+    actually made it into ``ModuleGraph.component_owners``; ``dropped`` is the
+    difference (declared but not assembled).
+
+    Module-private on purpose: this is a diagnostic view hanging off the
+    existing ``Application`` object and must never enter any ``__all__`` (it is
+    not a new top-level symbol).
+    """
+
+    declared: Tuple[str, ...] = ()
+    assembled: Tuple[str, ...] = ()
+    dropped: Tuple[str, ...] = ()
+
+    @property
+    def dropped_count(self) -> int:
+        return len(self.dropped)
 
 
 class Runtime:
@@ -321,6 +344,7 @@ class Application:
         self.graph: Optional[ModuleGraph] = None
         self.runtime: Optional[Runtime] = None
         self.phase = "created"
+        self._declaration_diff = _DeclarationDiff()
 
     @property
     def context(self) -> ApplicationContext:
@@ -390,7 +414,7 @@ class Application:
             if root_path is not None:
                 uninstall_annotations_hook()
 
-        registrations = _rebuild_pending_registry(python_modules)
+        registrations, declared_snapshot = _rebuild_pending_registry(python_modules)
         component_owners = _resolve_component_owners(specs, registrations)
         self.graph = ModuleGraph(
             root_module=self.root_module,
@@ -398,6 +422,7 @@ class Application:
             python_modules=tuple(python_modules),
             component_owners=component_owners,
         )
+        self._declaration_diff = _build_declaration_diff(declared_snapshot, component_owners)
         self.phase = "discovered"
         return self
 
@@ -405,6 +430,7 @@ class Application:
         if self.graph is None:
             self.discover()
         context = ApplicationContext(container_id=self.id)
+        context._set_declared_not_assembled(self._declaration_diff.dropped)
         for hook in self._iter_health_checks():
             context.add_health_check(lambda _ctx, callback=hook: callback(self))
         runtime = Runtime(
@@ -496,6 +522,25 @@ class Application:
             return None
         key = f"{component.__module__}.{component.__name__}"
         return self.graph.component_owners.get(key)
+
+    def get_declaration_diff(self) -> _DeclarationDiff:
+        """Return the declared-vs-assembled reconciliation for this application.
+
+        The declaration set is the import-time ``PendingRegistry`` snapshot
+        taken just before assembly rebuilds it; the assembled set is
+        ``ModuleGraph.component_owners``. ``dropped`` lists the components that
+        were declared but never assembled (for example components living in a
+        package that is missing from ``user_packages``, or components defined
+        outside module top level).
+
+        If the application has not been discovered yet, discovery is triggered
+        first so the reconciliation is available. The return value is a
+        module-private frozen dataclass and is not part of the public API
+        surface.
+        """
+        if self.graph is None:
+            self.discover()
+        return self._declaration_diff
 
     def _iter_warmup_hooks(self) -> Iterable[Callable[["Application"], None]]:
         if self.graph is None:
@@ -604,7 +649,34 @@ def _discover_python_modules(specs: Sequence[ModuleSpec]) -> List[str]:
     return discovered
 
 
-def _rebuild_pending_registry(python_modules: Sequence[str]) -> List[PendingRegistration]:
+def _component_identity(registration: PendingRegistration) -> str:
+    source_module = registration.source_module or registration.cls.__module__
+    return f"{source_module}.{registration.cls.__name__}"
+
+
+def _build_declaration_diff(
+    declared: Sequence[PendingRegistration],
+    component_owners: Mapping[str, Type[Any]],
+) -> _DeclarationDiff:
+    declared_names = tuple(sorted({_component_identity(registration) for registration in declared}))
+    assembled_names = tuple(sorted(component_owners.keys()))
+    assembled_set = set(assembled_names)
+    dropped = tuple(name for name in declared_names if name not in assembled_set)
+    return _DeclarationDiff(
+        declared=declared_names,
+        assembled=assembled_names,
+        dropped=dropped,
+    )
+
+
+def _rebuild_pending_registry(
+    python_modules: Sequence[str],
+) -> Tuple[List[PendingRegistration], List[PendingRegistration]]:
+    # Snapshot the import-time declaration set *before* reset(). Without this,
+    # the records of declarations that fall outside the discovered packages are
+    # erased by reset() and the declared-vs-assembled difference can never be
+    # reconciled afterwards (see Application.get_declaration_diff()).
+    declared_snapshot = list(PendingRegistry.get_instance().get_all())
     PendingRegistry.reset()
     registry = PendingRegistry.get_instance()
     registrations: List[PendingRegistration] = []
@@ -638,7 +710,7 @@ def _rebuild_pending_registry(python_modules: Sequence[str]) -> List[PendingRegi
             registrations.append(registration)
             seen.add(key)
 
-    return registrations
+    return registrations, declared_snapshot
 
 
 def _resolve_component_owners(

@@ -19,9 +19,10 @@ encouraged to migrate now.
 The five legacy compatibility symbols are now formally deprecated. Both a
 standard `DeprecationWarning` (tool-chain visible) and the existing
 `CompatibilitySemanticWarning` (deduplicated semantic reminder) fire on each
-use. No specific removal version is promised up front: the value is derived
-from the release line in force at removal time, and each symbol's
-`__deprecated_info__['removal_version']` reports the current one.
+use. No specific removal version is promised up front: it is derived from the
+release line the surface was deprecated on plus a fixed deprecation window, so
+the advertised value stays fixed instead of sliding on each release. Each
+symbol's `__deprecated_info__['removal_version']` reports that derived value.
 
 | Deprecated symbol | Replacement |
 |-------------------|-------------|

@@ -28,11 +28,15 @@ class BodyDecoderMiddleware(Middleware):
 
     Example:
         from cullinan.web.middleware import get_middleware_registry
-        from cullinan.web.middleware.body_decoder import BodyDecoderMiddleware
+        from cullinan.web.middleware.body_decoder import (
+            BodyDecoderMiddleware,
+            get_decoded_body,
+        )
 
-        # Register middleware
+        # Register the middleware class itself - the registry takes a class,
+        # not an instance.
         registry = get_middleware_registry()
-        registry.register(BodyDecoderMiddleware())
+        registry.register(BodyDecoderMiddleware)
 
         # Get decoded request body in controller
         decoded_body = get_decoded_body(self.request)

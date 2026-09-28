@@ -39,7 +39,7 @@ full = ["tornado", "uvicorn", "pyyaml"]
 exclude = ["tests*", "examples*", "docs*", "docs_archive*", "scripts*", "build*", "dist*", "site*"]
 
 [tool.setuptools.package-data]
-cullinan = ["py.typed"]
+cullinan = ["py.typed", "_contracts.json"]
 
 [tool.setuptools.dynamic]
 version = { attr = "cullinan._version.__version__" }

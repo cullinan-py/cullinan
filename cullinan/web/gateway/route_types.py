@@ -15,10 +15,13 @@ from cullinan.support.deprecation import (
     resolve_removal_version as _resolve_removal_version,
 )
 
-# Removal version for the deprecated ``RouteGroup`` grouping type, derived from
-# the framework version and the deprecation window rather than hard-coded, so
-# this surface cannot introduce a second, hand-written removal version.
-_REMOVAL_VERSION = _resolve_removal_version()
+# Removal version for the deprecated ``RouteGroup`` grouping type. The anchor is
+# the release line this surface was deprecated on (the ``version="0.95"``
+# literal below), not whatever version happens to be current, so the advertised
+# value stays fixed instead of drifting one minor per release; it stays derived
+# rather than hand-written, so this surface cannot introduce a second,
+# inconsistent removal version.
+_REMOVAL_VERSION = _resolve_removal_version("0.95")
 
 
 @dataclass(frozen=True)

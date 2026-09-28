@@ -75,6 +75,12 @@ into the stability contract for the 1.0 line. It has three parts:
   The `cullinan.web.gateway.__all__` facade is **not** part of this contract:
   it is a layered, explicitly-imported integration surface rather than a
   frozen stability promise.
+
+  The four frozen lists together are the **stability commitment surface**
+  (field name `stability_commitment` in the machine-readable artifact below).
+  It is narrower than the general **public API surface**: `cullinan.web.gateway`
+  and similar explicitly-imported facades are public, but they stay outside the
+  commitment.
 - **Append-only** — after the freeze, symbols inside the frozen set may be
   *added*, but never renamed, semantically changed, behaviourally changed, or
   removed. Additions are not free: a new symbol expands the public surface and
@@ -85,6 +91,45 @@ Symbols that are not present in the corresponding `__all__` list should be
 treated as private implementation details. Underscore-prefixed compatibility
 exports may still exist, but they are not part of the default business-facing
 stability promise.
+
+### Machine-readable contract artifact
+
+The stability commitment surface is also shipped as a **machine-readable
+artifact** inside the package, so it can be checked **offline** — without
+importing the framework, and without reading this page:
+
+- file: `cullinan/_contracts.json` (shipped in the wheel)
+- `stability_commitment` — the symbol-name list of each of the four contract
+  modules (`cullinan`, `cullinan.application`, `cullinan.web`, `cullinan.core`)
+- `not_in_commitment` — the facades that are deliberately outside the
+  commitment, e.g. `cullinan.web.gateway`
+- `schema_version` and `generated_from` — schema and provenance metadata
+
+Reading it offline:
+
+```python
+import json
+from pathlib import Path
+
+payload = json.loads(Path("cullinan/_contracts.json").read_text(encoding="utf-8"))
+print("Param" in payload["stability_commitment"]["cullinan.web"])
+```
+
+Or, with the package installed:
+
+```python
+import json
+from importlib import resources
+
+payload = json.loads(
+    resources.files("cullinan").joinpath("_contracts.json").read_text(encoding="utf-8")
+)
+print("Param" in payload["stability_commitment"]["cullinan.web"])
+```
+
+The committed artifact is a *derived copy* of the live `__all__` lists.
+Regenerate it with `python scripts/generate_contracts.py`; a drift check asserts
+the artifact equals the live lists, name by name.
 
 ## New in v0.90+: Parameter System
 

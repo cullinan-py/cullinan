@@ -1,5 +1,5 @@
 """
-Pre-tag manual gate verification (v0.95a1 tightened, v0.95 delivered).
+Pre-tag manual gate verification.
 
 git has no native pre-tag hook, so this script mechanizes the pre-tag
 confirmations:
@@ -10,9 +10,19 @@ confirmations:
       - release notes present (RELEASE-v{version}.md at the repo root)
       - README "Current series" points at the current version
       - working tree clean (a tag must point at a committed state)
+  (d) declaration backstop (locally verifiable part):
+      - the commit(s) being released carry a well-formed Meta-Sync trailer when
+        they touch a release-process / configuration path
+        (see scripts/check_sync_declaration.py). This is a backstop only --
+        primary enforcement runs on every PR/push in CI.
 
 Usage:
-  python scripts/check_tag_gate.py --sign-off-token <TOKEN> --review-token <TOKEN> --sync-token <TOKEN> [--version 0.95]
+  python scripts/check_tag_gate.py --sign-off-token <TOKEN> --review-token <TOKEN> --sync-token <TOKEN> [--version <VERSION>] [--meta-sync-range <base>..<head>]
+
+``--version`` is optional and defaults to the version read from
+``cullinan/_version.py`` (the single source of truth), so this usage line
+never pins a release number: pass it only to assert an expected version
+explicitly.
 
 Exit code: 0 = PASS (git tag may proceed), 1 = FAIL (blocked).
 """
@@ -44,6 +54,9 @@ def main():
                         help="an opaque sync credential issued by the maintainer")
     parser.add_argument("--version", default=None,
                         help="Expected version (default: read from cullinan/_version.py)")
+    parser.add_argument("--meta-sync-range", default=None,
+                        help="commit range (base..head) for the declaration backstop "
+                             "(default: the commit being tagged)")
     args = parser.parse_args()
 
     fails = []
@@ -96,6 +109,27 @@ def main():
         capture_output=True, text=True, check=True,
     ).stdout.strip()
     check("Working tree clean", status == "", status or "clean")
+
+    # (d) declaration backstop (see scripts/check_sync_declaration.py).
+    # Backstop only: the primary enforcement runs on every PR/push in CI. Kept
+    # narrow by default (the commit being tagged) so that pre-existing history
+    # is not re-flagged; widen with --meta-sync-range for a whole batch.
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import check_sync_declaration as declaration_gate
+
+        if args.meta_sync_range:
+            base, _, head = args.meta_sync_range.partition("..")
+            results = declaration_gate.evaluate_range(str(ROOT), base, head)
+        else:
+            results = [declaration_gate.evaluate_commit(str(ROOT), "HEAD")]
+        reds = [item for item in results if item[0] == "RED"]
+        detail = "all clear" if not reds else "; ".join(
+            f"{label} -- {text}" for _, label, text in reds
+        )
+        check("(d) declaration present on governed changes", not reds, detail)
+    except Exception as exc:  # noqa: BLE001 - gate must fail, not crash
+        check("(d) declaration present on governed changes", False, repr(exc))
 
     print()
     if fails:

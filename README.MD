@@ -219,7 +219,27 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
-**v0.96a1** is the first alpha of the 0.96 line. It closes the capability gaps
+**v0.96a2** is the second alpha of the 0.96 line. It closes the gap between
+what the framework declares and what it actually does:
+
+- component declarations outside the discovery scope are reported at default
+  settings instead of being dropped silently, and the guard meant to catch them
+  can finally fire
+- the package ships a machine-readable description of its stability commitment,
+  so whether an import surface is covered can be answered offline, in advance
+  and as a plain yes or no
+- deprecation removal windows are anchored to the version a deprecation was
+  announced in, so announced removals arrive instead of sliding forward with
+  every release
+- `cullinan.core.extensions` no longer carries a divergent copy of the support
+  implementation and a second registry with it
+- commits touching governed paths must carry a change declaration
+- the guides state how lifecycle error records are actually surfaced, and how
+  component-discovery diagnostics are actually delivered
+- runnable API examples in docstrings are gated, and the local scratch
+  directory can no longer be committed unnoticed
+
+**v0.96a1** was the first alpha of the 0.96 line. It closed the capability gaps
 found in the 0.95 middleware surface and declares the public API stability
 freeze ahead of the 1.0 milestone:
 

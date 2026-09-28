@@ -67,3 +67,43 @@ jobs:
         run: python -m build --sdist --wheel --outdir dist/
       - name: Twine check
         run: twine check dist/*
+
+  meta-sync:
+    # Every commit that touches a release-process / configuration path must
+    # carry a well-formed `Meta-Sync:` trailer in its message. This job is the
+    # primary enforcement point; it runs on every pull request and on every
+    # push the workflow already covers. It is deliberately lightweight and does
+    # not repeat the test matrix above.
+    name: meta-sync declaration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Resolve commit range
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "mode=range" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            before="${{ github.event.before }}"
+            after="${{ github.event.after }}"
+            if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+              echo "mode=commit" >> "$GITHUB_OUTPUT"
+              echo "ref=${after}" >> "$GITHUB_OUTPUT"
+            else
+              echo "mode=range" >> "$GITHUB_OUTPUT"
+              echo "ref=${before}..${after}" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+      - name: Check Meta-Sync declaration
+        run: |
+          if [ "${{ steps.target.outputs.mode }}" = "range" ]; then
+            python scripts/check_sync_declaration.py --repo . --range "${{ steps.target.outputs.ref }}"
+          else
+            python scripts/check_sync_declaration.py --repo . --commit "${{ steps.target.outputs.ref }}"
+          fi

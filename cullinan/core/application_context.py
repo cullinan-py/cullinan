@@ -161,6 +161,7 @@ class ApplicationContext:
         "_health_checks",
         "_strict_private_injection",
         "_strict_lifecycle",
+        "_declared_not_assembled",
     )
 
     def __init__(self, container_id: Optional[str] = None, *,
@@ -192,6 +193,11 @@ class ApplicationContext:
         # preserves the existing ApplicationContext behavior where only
         # critical lifecycle methods propagate.
         self._strict_lifecycle = strict_lifecycle
+        # Reconciliation input for the "declared but not assembled" semantic
+        # rule. Populated by the Application assembly layer with the
+        # declared-minus-assembled difference; left empty when the context is
+        # used directly, so the direct-context behavior is unchanged.
+        self._declared_not_assembled: Tuple[str, ...] = ()
 
     # ========================================================================
     # Registration API
@@ -217,6 +223,14 @@ class ApplicationContext:
 
     def add_health_check(self, callback) -> None:
         self._health_checks.append(callback)
+
+    def _set_declared_not_assembled(self, dropped: Tuple[str, ...]) -> None:
+        """Provide the declared-minus-assembled difference for diagnostics.
+
+        Called by the Application assembly layer; never part of the public
+        API surface.
+        """
+        self._declared_not_assembled = tuple(dropped)
 
     # ========================================================================
     # Lifecycle API
@@ -853,11 +867,44 @@ class ApplicationContext:
             visit(name)
         return ordered
 
+    def _warn_declared_not_assembled(self) -> None:
+        dropped = self._declared_not_assembled
+        if not dropped:
+            return
+        names = ", ".join(dropped)
+        problem = (
+            "[component-declared-not-assembled] "
+            f"{len(dropped)} component(s) declared at import time were not assembled: {names}. "
+            "The usual causes are a declaring package that is missing from user_packages, "
+            "or a component that is not defined at module top level."
+        )
+        guidance = (
+            "Add the owning package to user_packages (for example "
+            '@configure(user_packages=["your_package"])) so it is scanned, or move the component '
+            "to module top level. Application.get_declaration_diff() exposes the declared / "
+            "assembled / dropped sets for inspection."
+        )
+        logger.warning(
+            "Components declared but not assembled: %d (%s). Add the owning package to "
+            "user_packages or move the component to module top level.",
+            len(dropped),
+            names,
+        )
+        warn_semantic_once(
+            key=f"component-declared-not-assembled:{names}",
+            rule_key="component-declared-not-assembled",
+            problem=problem,
+            guidance=guidance,
+            category=ComponentDiscoveryWarning,
+            stacklevel=3,
+        )
+
     def _process_pending_registrations(self) -> None:
         from .pending import PendingRegistry
 
         pending = PendingRegistry.get_instance()
         registrations = pending.drain()
+        self._warn_declared_not_assembled()
         if not registrations:
             pending.freeze()
             return

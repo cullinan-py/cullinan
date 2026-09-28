@@ -59,9 +59,44 @@ pr_links: []
   | `cullinan.core.__all__` —— 容器与生命周期面 | 72 |
 
   `cullinan.web.gateway.__all__` 门面**不在此契约内**：它是分层、需显式导入的集成面，而非冻结的稳定性承诺。
+
+  四条冻结列表合起来即**稳定性承诺面**（stability commitment surface；机器可读产物中的字段名为 `stability_commitment`）。它比泛指的**公共面**（public API surface）更窄：`cullinan.web.gateway` 等需显式导入的门面属于公共面，但不在承诺面之内。
 - **只增不改** —— 冻结后，冻结集合内符号可以**新增**，但不得改名、不得改变语义、不得改变行为、不得删除。新增并非零成本：新符号属公共面扩张，落地前须在所有受支持面（子包 `__all__`、双语文档、双引擎）同步。
 
 未出现在对应 `__all__` 列表中的符号应视为私有实现细节。带 `_` 前缀的兼容性导出可以继续存在，但不属于默认业务公开稳定承诺。
+
+### 机器可读的契约产物
+
+稳定性承诺面还会以**机器可读产物**随包发布，因此可以**离线**核对——既不需要导入框架，也不需要阅读本页：
+
+- 文件：`cullinan/_contracts.json`（随 wheel 一起发布）
+- `stability_commitment` —— 四个契约模块（`cullinan`、`cullinan.application`、`cullinan.web`、`cullinan.core`）各自的符号名清单
+- `not_in_commitment` —— 明确排除在承诺面之外的门面，例如 `cullinan.web.gateway`
+- `schema_version` 与 `generated_from` —— schema 版本与生成溯源信息
+
+离线读取：
+
+```python
+import json
+from pathlib import Path
+
+payload = json.loads(Path("cullinan/_contracts.json").read_text(encoding="utf-8"))
+print("Param" in payload["stability_commitment"]["cullinan.web"])
+```
+
+或者在已安装包的情况下：
+
+```python
+import json
+from importlib import resources
+
+payload = json.loads(
+    resources.files("cullinan").joinpath("_contracts.json").read_text(encoding="utf-8")
+)
+print("Param" in payload["stability_commitment"]["cullinan.web"])
+```
+
+该产物是实测 `__all__` 的**派生副本**。用 `python scripts/generate_contracts.py` 重新生成；有一项漂移校验会逐名断言产物与实测列表一致。
 
 ## v0.90+ 新增：参数系统
 

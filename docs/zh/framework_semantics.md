@@ -163,7 +163,7 @@ ctx = ApplicationContext(strict_lifecycle=True)
 
 ## 8. 兼容 API 已弃用（v0.95）
 
-像 `@injectable`、`@inject_constructor`、`InjectionRegistry`、`get_injection_registry()`、`reset_injection_registry()` 这样的旧接口仍然保留，目的是让历史代码还能导入，但它们**自 v0.95 起弃用**，将在**未来版本中移除**。此处不预先承诺具体移除版本：该值按移除时的发布线推导，下文的 `removal_version` 字段始终报告当前值。
+像 `@injectable`、`@inject_constructor`、`InjectionRegistry`、`get_injection_registry()`、`reset_injection_registry()` 这样的旧接口仍然保留，目的是让历史代码还能导入，但它们**自 v0.95 起弃用**，将在**未来版本中移除**。此处不预先承诺具体移除版本：该值由该接口**弃用时的发布线**加上**固定的弃用窗口**推导得出，因此对外报出的值保持固定，不会随每次发布后滑。下文的 `removal_version` 字段报告的就是这个推导值。
 
 自 v0.95 起，这些符号携带：
 
@@ -210,3 +210,44 @@ configure(explicit_modules=[
 该列表作为统一扫描管道中的最高优先级策略（S0），在回退到 `user_packages`（S1）等启发式方法之前使用。每个条目会被递归遍历以发现子包。
 
 **深层子包发现**：`list_submodules()` 现在会在 `pkgutil.walk_packages` 基础上增加基于文件系统的递归扫描回退。如果深层嵌套包（如 `club.fnep.infrastructure.discord`）被 `walk_packages` 遗漏，文件系统回退会通过直接遍历 `__init__.py` 目录和 `.py` 文件来发现它们。
+
+## 11. 已声明的组件必须被装配，或被报告（v0.96a2）
+
+组件发现依赖导入执行（见 §1），但装配只会扫描 `user_packages` 中列出的包。若某组件的装饰器已经执行（即**已声明**），而它所在的包**未**列入 `user_packages`，它就会「已声明但未装配」。
+
+Cullinan 不再静默丢弃这种情况：
+
+- `Application.get_declaration_diff()` 返回对账结果：`declared` / `assembled` / `dropped`（以及 `dropped_count`）。
+- 当 `dropped` 非空时，会以 **WARNING** 级别发出 **`component-declared-not-assembled`** 诊断（无需任何 debug 开关）。该诊断通过 Python 标准 `warnings` 机制发出，类别为 `ComponentDiscoveryWarning`（`UserWarning` 的子类）。由于 `UserWarning` 的默认过滤动作是 `default`，该诊断**默认即可见**：会按位置打印一次，并同时给出数量与受影响的组件名单。启动**不会**被阻断。
+
+  > Cullinan 会保持自身日志命名空间的安静。导入时 `cullinan` logger 会被挂上 `NullHandler`。这**不会**阻断传播——该 logger 的 `propagate` 仍为 `True`，而 `NullHandler` 只是自己拒绝输出、并不拦截，因此框架自身的 `logger.warning(...)` 记录照常向上传递到 root logger。记录本身**无论是否配置 logging 都会被创建并发出**；之所以默认没有任何输出，有两个原因：`cullinan` logger 上的 `NullHandler` 本身**已算一个 handler**，所以 stdlib 的 `lastResort` 兜底**不会**接管；而传播路径上也没有任何真实的 handler（root logger 默认没有）。因此该 logger **不是**默认可见的通道，但只要传播路径上出现**任意一个** handler，它就不再安静——例如 `logging.basicConfig(level=logging.ERROR)` 就是在 root logger 上装一个（测试框架的日志捕获同样会装一个）。框架自带的 console handler（在 `CULLINAN_FORCE_CONSOLE=1` 时、或在进程以真实文件直接启动并经由旧式入口时安装）只存在于那些**旧式兼容入口**（`cullinan.application.run()` / `cullinan.application.get_asgi_app()` 与旧式的 `cullinan.runtime.scanner.run()`）上，**不会**挂载在推荐的 `@application` → `entry.run()` 路径上。不要寄望于等到一条日志来判断诊断是否触发，请改为观察 `warnings` 通道（例如 `warnings.catch_warnings(record=True)`）。
+
+两种常见原因与对应修法：
+
+| 原因 | 修法 |
+|------|------|
+| 声明该组件的包未列入 `user_packages` | 加入即可：`@configure(user_packages=["my_package"])` |
+| 组件不在模块顶层定义 | 将其移到模块顶层 |
+
+```python
+from cullinan import application, configure
+
+@configure(user_packages=["my_app"])
+@application
+def main(): ...
+```
+
+也可直接查看对账结果：
+
+```python
+from cullinan.application import Application
+
+app = Application(main)
+app.build()
+diff = app.get_declaration_diff()
+print(diff.dropped)        # 已声明但从未装配
+print(diff.dropped_count)  # len(diff.dropped)
+app.uninstall()
+```
+
+`Application` 是高级运行时门面；常规业务代码应停留在 `@application` + `@configure(...)`，仅在诊断发现边界时才使用 `get_declaration_diff()`。
