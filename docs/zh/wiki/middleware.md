@@ -123,6 +123,8 @@ class ApiKeyGate(GatewayMiddleware):
         return await call_next(request)
 ```
 
+**所有权。** 通过 `@middleware` 声明的中间件由框架容器创建，与通过 `configure(middlewares=[...])` 声明的类写法一致。你写的声明不变：`@middleware(priority=...)` 保持其语法与默认值 `100`。
+
 ## 两种声明写法与对象所有权
 
 `configure(middlewares=[...])` 接受两种写法，二者的区别在于**实例归谁所有**：

@@ -9,9 +9,20 @@ Author: plumeink
 
 from typing import List, Optional, Dict, Type, Callable, Tuple
 import logging
+from cullinan.support.deprecation import resolve_removal_version
 from .base import Middleware, MiddlewareChain
 
 logger = logging.getLogger(__name__)
+
+# A legacy ``@middleware`` class is now owned by the application container: the
+# instance installed on the pipeline is the one the container creates and
+# injects, instead of a second one built privately here. The declaration does not
+# change -- ``@middleware(priority=...)`` keeps its syntax and its default. The
+# removal version for the transition is derived from the release line it landed
+# on plus the standard deprecation window, never written as a literal, so it
+# cannot drift into a second, inconsistent value.
+_LEGACY_OWNERSHIP_ANCHOR = "0.96"
+_LEGACY_OWNERSHIP_REMOVAL_VERSION = resolve_removal_version(_LEGACY_OWNERSHIP_ANCHOR)
 
 
 class MiddlewareRegistry:
@@ -71,15 +82,22 @@ class MiddlewareRegistry:
         bridge turn each legacy middleware into its own pipeline layer instead
         of one opaque wrapper, so a legacy middleware keeps the priority it
         declared through ``@middleware(priority=...)``.
+
+        The instance is created by the application container (see
+        ``_create_instance``), so a legacy middleware that declares dependencies
+        gets them injected, the same way a declarative class entry does.
         """
         ordered: List[Tuple[int, Middleware]] = []
         for priority, middleware_class, instance in sorted(self._middleware, key=lambda x: x[0]):
             if instance is None:
-                # Instantiate the middleware
+                # Instantiate the middleware through the container
                 try:
-                    instance = middleware_class()
+                    instance = self._create_instance(middleware_class)
                     logger.debug(
-                        f"Instantiated middleware: {middleware_class.__name__}"
+                        "Instantiated middleware: %s (container-owned; the "
+                        "ownership transition window ends at v%s)",
+                        middleware_class.__name__,
+                        _LEGACY_OWNERSHIP_REMOVAL_VERSION,
                     )
                 except Exception as e:
                     logger.error(
@@ -89,6 +107,29 @@ class MiddlewareRegistry:
                     raise
             ordered.append((priority, instance))
         return ordered
+
+    @staticmethod
+    def _create_instance(middleware_class: Type[Middleware]) -> Middleware:
+        """Create a middleware through the application container, with DI.
+
+        A legacy ``@middleware`` class used to be constructed with a bare
+        ``middleware_class()`` call owned by no one, so a middleware that
+        declared dependencies received none. The container creates it instead,
+        so the instance installed on the pipeline is a container participant:
+        its declared dependencies are injected, and an unresolvable dependency
+        fails while the application is assembled rather than on the first
+        request.
+
+        The registry also works stand-alone -- ``get_middleware_chain()`` is
+        called outside an assembled application -- so with no refreshed
+        container available the plain construction is kept.
+        """
+        from cullinan.core import get_application_context
+
+        context = get_application_context()
+        if context is not None and context.is_refreshed:
+            return context._create_class_instance(middleware_class)
+        return middleware_class()
 
     def get_middleware_chain(self) -> MiddlewareChain:
         """Create a middleware chain with all registered middleware.

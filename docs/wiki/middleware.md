@@ -168,6 +168,11 @@ class ApiKeyGate(GatewayMiddleware):
         return await call_next(request)
 ```
 
+**Ownership.** A middleware declared through `@middleware` is created by the
+framework container, the same way a class declared through
+`configure(middlewares=[...])` is. The declaration you write does not change:
+`@middleware(priority=...)` keeps its syntax and its default `100`.
+
 ## Two declaration forms and object ownership
 
 `configure(middlewares=[...])` accepts two forms, and they differ in **who owns
