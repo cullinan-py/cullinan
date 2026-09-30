@@ -125,7 +125,7 @@ decorator.
 
 ### Legacy: `process_request` / `process_response`
 
-The hook pair on `cullinan.web.middleware.Middleware` still works and is
+The hook pair on `Middleware` (imported from `cullinan.web.middleware`) still works and is
 auto-bridged into the gateway pipeline — one layer per legacy middleware. Each
 bridged layer is ordered by the same declarative `priority` key as the built-in
 and declared layers, so a legacy `@middleware(priority=10)` lands on a more

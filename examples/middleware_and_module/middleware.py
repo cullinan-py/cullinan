@@ -1,4 +1,4 @@
-from cullinan.web import Middleware, middleware
+from cullinan import Middleware, middleware
 
 
 @middleware(priority=50)

@@ -4,7 +4,7 @@
 
 > **Upgrade-only page:** keep this page for version transition work, not for first-time onboarding.
 
-> **Note**: applies to the v0.9x → v0.93 range, with notes through v0.96a1; read it
+> **Note**: applies to the v0.9x → v0.93 range, with notes through v0.96a5; read it
 > when upgrading a v0.9x codebase to v0.93.
 
 ## Overview of Changes
@@ -254,6 +254,30 @@ directly readable.
 
 The built-in layer is declarative too: `configure(builtin_middleware=[...])`
 replaces it, and `configure(builtin_middleware=[])` switches it off.
+
+#### v0.96a5: the middleware decorator moves to the top-level import
+
+`from cullinan.web import middleware` used to give you the `@middleware`
+decorator. `cullinan.web.middleware` is now the middleware submodule, so that
+name resolves to the submodule instead. The decorator itself is unchanged and is
+still available at the top level.
+
+| Import | Before | After |
+|---|---|---|
+| `from cullinan.web import middleware` | the decorator | the `cullinan.web.middleware` submodule |
+| `from cullinan import middleware` | the decorator | the decorator (unchanged) |
+| `from cullinan.web.middleware import middleware` | the decorator | the decorator (unchanged) |
+
+**Who is affected.** Only code that imports `middleware` *from* `cullinan.web`.
+Anything importing it from the top level, or from `cullinan.web.middleware`,
+needs no change.
+
+**Migration.** Move the import to the top level:
+
+    from cullinan import middleware
+
+The full path `from cullinan.web.middleware import middleware` keeps working
+both before and after the change; nothing is removed, and no symbol is renamed.
 
 ### 7. OpenAPI Integration
 

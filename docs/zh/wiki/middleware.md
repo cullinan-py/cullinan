@@ -95,7 +95,7 @@ configure(user_packages=["your_app"], builtin_middleware=[])
 
 ### 遗留：`process_request` / `process_response`
 
-`cullinan.web.middleware.Middleware` 上的钩子对仍然可用，并会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。每个桥接层与内置层、声明层共用同一个声明式 `priority` 键排序，因此 `@middleware(priority=10)` 的遗留中间件会落在内置 access log（默认 `100`）更外层。仅用于既有集成：
+`Middleware`（从 `cullinan.web.middleware` 导入）上的钩子对仍然可用，并会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。每个桥接层与内置层、声明层共用同一个声明式 `priority` 键排序，因此 `@middleware(priority=10)` 的遗留中间件会落在内置 access log（默认 `100`）更外层。仅用于既有集成：
 
 ```python
 from cullinan.web.middleware import Middleware, middleware

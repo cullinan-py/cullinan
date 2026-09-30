@@ -38,7 +38,6 @@ from cullinan.web import (
     get_api,
     get_decoded_body,
     get_missing_header_handler,
-    middleware,
     patch_api,
     post_api,
     put_api,
@@ -47,6 +46,10 @@ from cullinan.web import (
     set_missing_header_handler,
     websocket_handler,
 )
+# ``cullinan.web.middleware`` is now the middleware submodule, so the top-level
+# alias is rebound to the decorator from the submodule member path. The decorator
+# keeps its top-level promise: ``from cullinan import middleware`` is unchanged.
+from cullinan.web.middleware import middleware
 
 
 _REAL_APPLICATION_MODULE_NAME = "cullinan.application"
