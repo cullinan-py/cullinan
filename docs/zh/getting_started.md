@@ -400,13 +400,16 @@ class UserRepository:
 
 ### 添加中间件
 ```python
-from cullinan.web.middleware import Middleware, middleware
+from cullinan.web.gateway import GatewayMiddleware
 
-@middleware(priority=100)
-class LoggingMiddleware(Middleware):
-    def process_request(self, request):
+
+class LoggingMiddleware(GatewayMiddleware):
+    async def __call__(self, request, call_next):
         print(f"Request: {request.method} {request.path}")
+        return await call_next(request)
 ```
+用 `configure(middlewares=[LoggingMiddleware])` 声明它，或传入你自己持有的实例。
+两种声明写法及其对象归属见[中间件](wiki/middleware.md)。
 
 ### 配置
 ```python

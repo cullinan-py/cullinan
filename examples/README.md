@@ -9,10 +9,11 @@ This directory is the single source of runnable examples for the current Cullina
 3. `examples/middleware_and_module/`
 4. `examples/middleware_pipeline/`
 5. `examples/middleware_control/`
-6. `examples/parameter_handling/`
-7. `examples/testing_flow/`
-8. `examples/static_files_and_spa/`
-9. `examples/component_discovery_boundary/`
+6. `examples/middleware_ownership/`
+7. `examples/parameter_handling/`
+8. `examples/testing_flow/`
+9. `examples/static_files_and_spa/`
+10. `examples/component_discovery_boundary/`
 
 ## Run examples
 
@@ -21,6 +22,7 @@ This directory is the single source of runnable examples for the current Cullina
 - `python -m examples.middleware_and_module`
 - `python -m examples.middleware_pipeline`
 - `python -m examples.middleware_control`
+- `python -m examples.middleware_ownership`
 - `python -m examples.parameter_handling`
 - `python -m pytest examples/testing_flow/test_app.py -q`
 - `python -m examples.static_files_and_spa`
@@ -46,7 +48,7 @@ other legacy demos were cleaned up when their referenced APIs (`cullinan.run`,
 
 ## Middleware examples
 
-Three maintained examples cover middleware, with different teaching goals:
+Four maintained examples cover middleware, with different teaching goals:
 
 - `examples/middleware_pipeline/` — the **recommended** onion protocol
   (`async __call__(request, call_next)`), declared through
@@ -54,6 +56,9 @@ Three maintained examples cover middleware, with different teaching goals:
 - `examples/middleware_control/` — replacing/switching off the **built-in**
   middleware layer through `@configure(builtin_middleware=[...])`, and letting a
   legacy `@middleware(priority=...)` class join the same declarative ordering.
+- `examples/middleware_ownership/` — the two declaration forms side by side:
+  a `@component` class entry (container-managed, dependencies injected) and an
+  instance entry (externally-owned).
 - `examples/middleware_and_module/` — the **compatibility** protocol
   (`process_request` / `process_response`), still auto-bridged into the same
   gateway pipeline.

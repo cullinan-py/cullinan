@@ -123,6 +123,44 @@ class ApiKeyGate(GatewayMiddleware):
         return await call_next(request)
 ```
 
+## 两种声明写法与对象所有权
+
+`configure(middlewares=[...])` 接受两种写法，二者的区别在于**实例归谁所有**：
+
+- **实例** —— `configure(middlewares=[AuditMiddleware()])`。由应用创建对象并保留其所有权，框架原样装入该实例。这是**外部持有**（externally-owned）的中间件。
+- **用 `@component` 声明的类** —— `configure(middlewares=[AuditMiddleware])`。由框架容器创建对象、注入其声明的依赖并持有它，管线运行的正是这一个实例。这是**容器托管**（container-managed）的中间件。
+
+类写法让中间件成为一等容器参与者：像其他组件一样声明依赖，交给容器完成装配。
+
+```python
+from cullinan import component
+from cullinan.web.gateway import GatewayMiddleware
+
+
+@component
+class AuditLog:
+    def record(self, path): ...
+
+
+@component
+class AuditMiddleware(GatewayMiddleware):
+    log: AuditLog  # 由容器注入
+
+    async def __call__(self, request, call_next):
+        self.log.record(request.path)
+        return await call_next(request)
+```
+
+```python
+configure(middlewares=[AuditMiddleware])    # 容器托管
+configure(middlewares=[AuditMiddleware()])  # 外部持有
+```
+
+以类形式传入时，该类**必须**用 `@component` 声明。未加该声明的
+`GatewayMiddleware` 类会在启动期被拒绝，抛出 `ConfigurationError`
+（`error_code = "MIDDLEWARE_DECLARATION_ERROR"`）——框架从不猜测容器所有权：要么补上
+`@component`，要么传入你自己持有的实例。容器托管的中间件在启动期解析依赖，因此依赖不可解析会在启动期失败，而不会推迟到首个请求。`builtin_middleware=[...]` 遵循同一规则。
+
 ## 自省
 
 `cullinan.web.gateway.get_pipeline().list_middleware()` 按执行顺序列出已安装的中间件，其中索引 `0` 为最外层。它是 `Router.get_all_routes()` 在管线侧的对应物。

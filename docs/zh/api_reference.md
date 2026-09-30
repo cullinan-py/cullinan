@@ -207,6 +207,7 @@ print("Param" in payload["stability_commitment"]["cullinan.web"])
 | `skip_private` | `get_injection_markers` | 关键字参数 | 为 `True` 时，扫描标记时跳过单下划线前缀属性。默认 `False`。 |
 | `CULLINAN_STRICT_PRIVATE_INJECTION` | 环境变量 | 配置 | 设为 `1`/`true`/`yes` 可对所有 `ApplicationContext` 实例全局启用 `strict_private_injection`。 |
 | `builtin_middleware` | `configure` | 关键字参数 | 控制内置 gateway 中间件层（access log 中间件）。`None`（默认）安装框架默认，`[]` 关闭内置层，列表则替换它。 |
+| `middlewares` | `configure` | 关键字参数 | 声明式 gateway 中间件条目。条目为 `GatewayMiddleware` 实例（外部持有，原样装入）、用 `@component` 声明的 `GatewayMiddleware` 类（由容器创建、注入依赖，管线运行的正是该实例），或携带 `before`/`after`/`priority` 排序提示的 `(条目, {...})` 元组。未加 `@component` 的 `GatewayMiddleware` 类会在启动期被拒绝。 |
 
 ### 弃用符号（将在未来版本中移除）
 

@@ -387,13 +387,17 @@ For detailed information on injection patterns, see `wiki/injection.md`.
 
 ### Adding middleware
 ```python
-from cullinan.web.middleware import Middleware, middleware
+from cullinan.web.gateway import GatewayMiddleware
 
-@middleware(priority=100)
-class LoggingMiddleware(Middleware):
-    def process_request(self, request):
+
+class LoggingMiddleware(GatewayMiddleware):
+    async def __call__(self, request, call_next):
         print(f"Request: {request.method} {request.path}")
+        return await call_next(request)
 ```
+Declare it with `configure(middlewares=[LoggingMiddleware])`, or pass an instance
+you own. See [Middleware](wiki/middleware.md) for the two declaration forms and
+their object ownership.
 
 ### Configuration
 ```python

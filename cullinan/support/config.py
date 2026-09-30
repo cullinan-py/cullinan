@@ -361,19 +361,29 @@ def configure(
             (also accepts dicts or ``(url, directory)`` tuples).
         middlewares: Optional list of gateway middleware to install on the
             onion pipeline. Each entry is either a
-            ``cullinan.web.gateway.GatewayMiddleware`` instance, or a
+            ``cullinan.web.gateway.GatewayMiddleware`` instance, a
+            ``GatewayMiddleware`` class declared with ``@component``, or a
             ``(instance, options)`` tuple. ``options`` accepts ``before`` /
             ``after`` anchors and/or a ``priority`` global key (a lower priority
             runs on a more outer layer; the default is 100). Declared middleware
             is assembled at the framework startup point, so the pipeline order
             follows the declaration rather than registration timing.
+
+            A **class** entry is container-owned: the framework container
+            creates it, injects its dependencies and installs that same
+            instance, so the pipeline and the container share one object. The
+            class must be declared with ``@component``; a class without that
+            declaration is refused at startup. An **instance** entry stays owned
+            by the caller and is installed as-is.
         builtin_middleware: Optional control for the **built-in** gateway
             middleware layer (the access-log middleware). ``None`` (the default)
             installs the framework default; an empty list switches the built-in
             layer off; a list of ``GatewayMiddleware`` instances / classes /
-            ``(instance, options)`` tuples replaces it. The built-in layer is
-            assembled at the same startup point and shares the declarative
-            ordering of ``middlewares``.
+            ``(instance, options)`` tuples replaces it. Class entries follow the
+            same rule as ``middlewares``: they must be declared with
+            ``@component`` and are installed as the container-owned instance.
+            The built-in layer is assembled at the same startup point and shares
+            the declarative ordering of ``middlewares``.
         strict_assembly: Declared-but-not-assembled policy. Components whose
             decorator ran during import but which the assembly pass never picked
             up (for example because their package is missing from

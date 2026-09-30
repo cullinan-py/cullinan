@@ -240,6 +240,7 @@ A complete API reference can be populated using this structure, either via autom
 | `skip_private` | `get_injection_markers` | kwarg | When `True`, skips single-underscore-prefixed attributes during marker scanning. Default `False`. |
 | `CULLINAN_STRICT_PRIVATE_INJECTION` | environment variable | config | Set to `1`/`true`/`yes` to globally enable `strict_private_injection` for all `ApplicationContext` instances. |
 | `builtin_middleware` | `configure` | kwarg | Controls the built-in gateway middleware layer (the access-log middleware). `None` (default) installs the framework default, `[]` switches the built-in layer off, a list replaces it. |
+| `middlewares` | `configure` | kwarg | Declarative gateway middleware entries. An entry is a `GatewayMiddleware` instance (externally-owned, installed as-is), a `GatewayMiddleware` class declared with `@component` (the container creates it, injects its dependencies, and the pipeline runs that same instance), or an `(entry, {"before"/"after"/"priority": ...})` tuple carrying ordering hints. A `GatewayMiddleware` class without `@component` is refused at startup. |
 
 ### Deprecated symbols (removed in a future release)
 

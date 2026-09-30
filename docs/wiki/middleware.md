@@ -167,6 +167,55 @@ class ApiKeyGate(GatewayMiddleware):
         return await call_next(request)
 ```
 
+## Two declaration forms and object ownership
+
+`configure(middlewares=[...])` accepts two forms, and they differ in **who owns
+the instance**:
+
+- **An instance** — `configure(middlewares=[AuditMiddleware()])`. The
+  application creates the object and keeps ownership of it, and the framework
+  installs that instance as-is. This is an **externally-owned** middleware.
+- **A class declared with `@component`** —
+  `configure(middlewares=[AuditMiddleware])`. The framework container creates
+  the object, injects its declared dependencies and holds it, and the pipeline
+  runs that same instance. This is a **container-managed** middleware.
+
+The class form is what makes a middleware a first-class container participant:
+declare its dependencies like any other component and let the container wire
+them.
+
+```python
+from cullinan import component
+from cullinan.web.gateway import GatewayMiddleware
+
+
+@component
+class AuditLog:
+    def record(self, path): ...
+
+
+@component
+class AuditMiddleware(GatewayMiddleware):
+    log: AuditLog  # injected by the container
+
+    async def __call__(self, request, call_next):
+        self.log.record(request.path)
+        return await call_next(request)
+```
+
+```python
+configure(middlewares=[AuditMiddleware])    # container-managed
+configure(middlewares=[AuditMiddleware()])  # externally-owned
+```
+
+A class passed this way **must** be declared with `@component`. A
+`GatewayMiddleware` class without that declaration is refused at startup with a
+`ConfigurationError` (`error_code = "MIDDLEWARE_DECLARATION_ERROR"`), because the
+framework never guesses container ownership: either add `@component`, or pass an
+instance you own. A container-managed middleware resolves its dependencies at
+startup, so an unresolvable dependency fails there rather than on the first
+request. `builtin_middleware=[...]` follows the same rule.
+
 ## Introspection
 
 `cullinan.web.gateway.get_pipeline().list_middleware()` lists the installed

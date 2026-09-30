@@ -529,6 +529,22 @@ def test_middleware_pipeline_example_reflects_declared_order():
     assert guarded_status == 403
 
 
+def test_middleware_ownership_example_marks_the_two_forms():
+    main = _load_entry_method("examples.middleware_ownership.root")
+    app = main.get_asgi_app()
+
+    status, headers, payload = asyncio.run(_invoke_asgi_app(app, "/ownership"))
+
+    assert status == 200
+    assert payload["order"][:2] == ["AuditMiddleware", "MarkerMiddleware"]
+    assert payload["container_managed"] == "AuditMiddleware"
+    assert payload["externally_owned"] == "MarkerMiddleware"
+    # The container-owned middleware recorded into its injected dependency.
+    assert payload["audit_log_entries"] == ["/ownership"]
+    assert headers["x-audit-entries"] == "1"
+    assert headers["x-marker"] == "externally-owned"
+
+
 def test_parameter_handling_example_maps_path_query_and_body():
     main = _load_entry_method("examples.parameter_handling.root")
     app = main.get_asgi_app()
@@ -619,6 +635,7 @@ def test_example_entrypoints_use_top_level_public_api():
         ("controller_service_inject", "root.py"),
         ("middleware_and_module", "root.py"),
         ("middleware_pipeline", "root.py"),
+        ("middleware_ownership", "root.py"),
         ("parameter_handling", "root.py"),
         ("testing_flow", "app.py"),
         ("static_files_and_spa", "root.py"),

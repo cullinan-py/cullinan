@@ -262,11 +262,11 @@ def test_assembly_point_surfaces_declaration_errors_instead_of_swallowing_them()
 # ---------------------------------------------------------------------------
 
 
-def test_reader_accepts_classes_and_instances():
+def test_reader_accepts_instances():
     pipeline = MiddlewarePipeline()
     _register_declared_middleware(
         pipeline,
-        _FakeConfig([_AlphaMiddleware, _BetaMiddleware()]),
+        _FakeConfig([_AlphaMiddleware(), _BetaMiddleware()]),
     )
 
     assert _names(pipeline) == ["_AlphaMiddleware", "_BetaMiddleware"]
