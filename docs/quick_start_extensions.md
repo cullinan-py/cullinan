@@ -10,7 +10,9 @@
 
 ## Quick Start
 
-### 1. Middleware Registration (Recommended)
+### 1. Middleware Registration
+
+New code should use the onion protocol declared through `configure(middlewares=[...])` — see the "Middleware" page, section "Recommended: onion protocol" — while the decorator below registers the compatibility hook protocol kept for existing integrations.
 
 Use the `@middleware` decorator to automatically register middleware:
 

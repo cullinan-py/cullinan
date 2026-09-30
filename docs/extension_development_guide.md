@@ -76,7 +76,9 @@ Middleware are interceptors in the request processing pipeline that can:
 
 ### Creating Middleware
 
-#### Method 1: Decorator Registration (Recommended)
+#### Method 1: Decorator Registration
+
+New code should use the onion protocol declared through `configure(middlewares=[...])` — see the "Middleware" page, section "Recommended: onion protocol" — while the decorator below registers the compatibility hook protocol kept for existing integrations.
 
 ```python
 from cullinan.web.middleware import middleware, Middleware
