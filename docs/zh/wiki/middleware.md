@@ -89,9 +89,9 @@ configure(user_packages=["your_app"], builtin_middleware=[])
 
 ### 命令式注册（`get_pipeline().add`）
 
-`cullinan.web.gateway.get_pipeline().add(AuditMiddleware())` 是**启动前**的命令式入口，供手工构建管线的集成使用。它写入的是应用装配**之前**就已存在的那份管线实例，而 gateway globals 会在启动边界被整体重建：因此经该入口加入的条目会在引导时被重置，永远不会参与请求处理。该重置**会留痕** —— 框架输出一条诊断，给出被重置条目的名称与数量 —— 而不是静默丢弃。需要真正生效的中间件，请使用上面的声明式入口。
+`cullinan.web.gateway.get_pipeline().add(AuditMiddleware())` 是**启动前**的命令式入口，供手工构建管线的集成使用。它写入的是应用装配**之前**就已存在的那份管线实例，而 gateway globals 会在启动边界被整体重建（`Runtime.warmup()` 会重建 pipeline、router、dispatcher、exception handler）：因此经该入口加入的条目会在**引导边界被拒绝** —— 应用不会启动。框架会**先**报告它丢弃的条目（一条诊断，给出名称与数量），**再**抛出，因此在调用方捕获异常之后，报告仍已被看到。
 
-**支持级别。** 该入口属于**运行时自省 / 高级用途 / 测试**级别：它受支持，但**不是**应用或库接入中间件的**推荐**路径。经它注册的条目会在应用启动时被重置 —— `Runtime.warmup()` 会重建 gateway globals（pipeline、router、dispatcher、exception handler）—— 框架会就该重置发出**一条**诊断，而不是静默丢弃这些条目。要让中间件真正参与请求处理，请使用声明式入口：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
+**支持级别。** 该命令式注册在**引导边界不受支持**：启动前的 `get_pipeline().add(...)` 会在装配期（而非首个请求）拒绝启动。`get_pipeline()` 本身保留其**运行时自省 / 高级用途 / 测试**级别的作用 —— 应用启动**之后**，`get_pipeline().list_middleware()` 会报告已安装的中间件，且不受影响。要让中间件真正参与请求处理，请使用声明式入口：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
 
 ### 遗留：`process_request` / `process_response`
 

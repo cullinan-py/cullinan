@@ -107,20 +107,21 @@ declarative ordering as `middlewares`.
 `cullinan.web.gateway.get_pipeline().add(AuditMiddleware())` is the imperative
 pre-boot entry point, kept for integrations that build the pipeline by hand. It
 writes into the pipeline instance that exists *before* the application is
-assembled, and the gateway globals are rebuilt at the startup boundary: entries
-added this way are therefore reset at boot and never take part in request
-handling. That reset is reported — one diagnostic naming the entries and their
-count — rather than dropping them silently. For middleware that must actually
-run, use the declarative entries above.
+assembled, and the gateway globals are rebuilt at the startup boundary
+(`Runtime.warmup()` rebuilds the pipeline, router, dispatcher and exception
+handler). A registration made this way is therefore **refused at the boot
+boundary**: the application does not start. The framework reports the entries it
+discards first — one diagnostic naming them and their count — and then raises, so
+a deployment that catches the error has still seen the report.
 
-**Support level.** This entry point belongs to the runtime-introspection,
-advanced-use and testing level: it is supported, but it is *not* the recommended
-way for an application or a library to integrate middleware. Entries registered
-through it before startup are reset when the application boots — `Runtime.warmup()`
-rebuilds the gateway globals (pipeline, router, dispatcher and exception handler) —
-and the framework emits one diagnostic about that reset instead of dropping the
-entries silently. To have middleware take part in request handling, use the
-declarative entries: `configure(middlewares=[...])` or the `@middleware` decorator.
+**Support level.** The imperative registration is **not supported at the boot
+boundary**: a pre-boot `get_pipeline().add(...)` refuses the start at assembly
+time, not on the first request. `get_pipeline()` itself keeps its
+runtime-introspection, advanced-use and testing role — after the application has
+started, `get_pipeline().list_middleware()` reports what is installed and is
+unaffected. For middleware that must take part in request handling, use the
+declarative entries: `configure(middlewares=[...])` or the `@middleware`
+decorator.
 
 ### Legacy: `process_request` / `process_response`
 

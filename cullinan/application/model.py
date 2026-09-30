@@ -18,8 +18,13 @@ from cullinan.core.context import create_context, destroy_context, get_current_c
 from cullinan.core.decorators import get_component_registration_metadata
 from cullinan.core.pending import PendingRegistration, PendingRegistry
 from cullinan._api_boundary import in_public_api_context
-from cullinan.core.semantic_rules import PublicAPISemanticWarning, warn_semantic_once
+from cullinan.core.semantic_rules import (
+    PublicAPISemanticWarning,
+    format_semantic_message,
+    warn_semantic_once,
+)
 from cullinan.support.diagnostics import application_not_installed
+from cullinan.support.exceptions import ConfigurationError
 from cullinan.web.gateway import (
     get_dispatcher,
     get_exception_handler,
@@ -38,6 +43,11 @@ _APPLICATION_PACKAGES_ATTR = "__cullinan_application_packages__"
 _APPLICATION_MODULES_ATTR = "__cullinan_application_modules__"
 _APP_CONTEXT_KEY = "cullinan.application"
 _RUNTIME_CONTEXT_KEY = "cullinan.runtime"
+
+# Dedicated error code for a pre-boot pipeline registration that the boot
+# boundary refuses. It is not the generic ``CONFIG_ERROR``: this failure and any
+# other misconfiguration must stay distinguishable in monitoring.
+_PREBOOT_REGISTRATION_ERROR_CODE = "PREBOOT_REGISTRATION_ERROR"
 
 
 @dataclass(frozen=True)
@@ -116,7 +126,12 @@ class Runtime:
         # pipeline it is about to see wiped.
         discarded_entries = _registered_pipeline_entry_names()
         reset_gateway()
+        # Report first, then refuse: a deployment that swallows the exception
+        # still saw the diagnostic. The refusal lands on the consequence of the
+        # reset for a starting application, not inside ``reset_gateway`` itself
+        # (which keeps its silent rebuild semantics for direct callers).
         _warn_pipeline_registrations_reset(discarded_entries)
+        _reject_preboot_pipeline_registrations(discarded_entries)
         self.context.refresh()
         self.web_runtime.router = get_router()
         self.web_runtime.dispatcher = get_dispatcher()
@@ -194,6 +209,49 @@ def _warn_pipeline_registrations_reset(names: Tuple[str, ...]) -> None:
         stacklevel=3,
     )
     _emit_report_fallback(problem, guidance)
+
+
+def _reject_preboot_pipeline_registrations(names: Tuple[str, ...]) -> None:
+    """Refuse a start when the pre-boot pipeline still held registrations.
+
+    ``reset_gateway()`` rebuilds the gateway globals and discards whatever was
+    added imperatively beforehand. Reporting that discard is not enough: the
+    declarations the application made and the pipeline it will actually run
+    would disagree, and the affected middleware would simply never run. The boot
+    boundary therefore refuses to start instead, so the mismatch fails loudly at
+    startup rather than turning into missing middleware at request time.
+
+    The report is emitted first (see ``_warn_pipeline_registrations_reset``), so
+    even a caller that catches the exception has already seen the diagnostic.
+    """
+    if not names:
+        return
+    joined = ", ".join(names)
+    problem = (
+        f"The pre-boot registrations reported above are rejected at the startup boundary: "
+        f"{len(names)} gateway pipeline entry(ies) added before startup ({joined}) would not "
+        "take part in request handling."
+    )
+    guidance = (
+        "Declare middleware where the startup assembly reads it -- "
+        "configure(middlewares=[...]) or the @middleware decorator. "
+        "get_pipeline().add(...) registers on a pipeline that is rebuilt at the boot boundary, "
+        "so pre-boot entries are refused instead of being silently discarded."
+    )
+    _logger.error(
+        "Refusing to start: %d gateway pipeline entry(ies) were registered before startup (%s). "
+        "Declare middleware with configure(middlewares=[...]) or @middleware instead.",
+        len(names),
+        joined,
+    )
+    raise ConfigurationError(
+        message=format_semantic_message(
+            "preboot-registration-rejected",
+            problem=problem,
+            guidance=guidance,
+        ),
+        error_code=_PREBOOT_REGISTRATION_ERROR_CODE,
+    )
 
 
 def _normalize_iterable(value: Optional[Iterable[Any]]) -> Tuple[Any, ...]:
