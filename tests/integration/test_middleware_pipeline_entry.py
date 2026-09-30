@@ -277,6 +277,29 @@ def test_reader_rejects_a_non_gateway_middleware():
         _register_declared_middleware(MiddlewarePipeline(), _FakeConfig([object()]))
 
 
+def test_reader_rejects_a_non_gateway_middleware_class_without_constructing_it():
+    """A rejected class must never run its constructor.
+
+    Validation happens before the class is instantiated, so a class that is not a
+    ``GatewayMiddleware`` fails as a type error with no construction side effect
+    and nothing added to the pipeline.
+    """
+    constructed = []
+
+    class _PlainNotMiddleware:
+        def __init__(self):
+            constructed.append(self)
+
+    pipeline = MiddlewarePipeline()
+    with pytest.raises(TypeError) as excinfo:
+        _register_declared_middleware(pipeline, _FakeConfig([_PlainNotMiddleware]))
+
+    assert constructed == []
+    assert pipeline.count == 0
+    # The message still names the offending type.
+    assert "_PlainNotMiddleware" in str(excinfo.value)
+
+
 def test_reader_rejects_a_malformed_options_tuple():
     with pytest.raises(ValueError):
         _register_declared_middleware(

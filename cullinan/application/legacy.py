@@ -582,6 +582,13 @@ def _add_middleware_entries(pipeline, entries) -> int:
             middleware, options = item, {}
 
         if isinstance(middleware, type):
+            # Validate the class *before* instantiating it: a rejected entry must
+            # not run its constructor, so a wrong type fails without side effects.
+            if not issubclass(middleware, GatewayMiddleware):
+                raise TypeError(
+                    "Declarative middleware must be a GatewayMiddleware instance or class, "
+                    f"got {middleware.__name__!r}."
+                )
             middleware = middleware()
         if not isinstance(middleware, GatewayMiddleware):
             raise TypeError(
