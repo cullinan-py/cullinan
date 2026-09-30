@@ -171,7 +171,7 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
-**v0.96a4** is the current release of the 0.96 line; **v0.95** remains the current stable line, centered on the top-level `cullinan` API.
+**v0.96a5** is the current release of the 0.96 line; **v0.95** remains the current stable line, centered on the top-level `cullinan` API.
 The release history for earlier versions is recorded in [CHANGELOG.md](CHANGELOG.md).
 
 ---
