@@ -101,6 +101,28 @@ def test_ashutdown_reports_a_timed_out_drain():
     assert asyncio.run(scenario()) is False
 
 
+@pytest.mark.parametrize("path", ["shutdown", "ashutdown"])
+def test_both_shutdown_paths_report_a_bool_on_the_idempotent_branch(path):
+    """An already-closed container must answer with the same type on both paths."""
+
+    async def scenario():
+        ctx = _active_context(f"ready-idempotent-{path}")
+        first = await ctx.ashutdown(timeout=0.5)
+        second = await ctx.ashutdown(timeout=0.5)
+        return first, second
+
+    def sync_scenario():
+        ctx = _active_context(f"ready-idempotent-{path}")
+        first = ctx.shutdown(timeout=0.5)
+        second = ctx.shutdown(timeout=0.5)
+        return first, second
+
+    first, second = asyncio.run(scenario()) if path == "ashutdown" else sync_scenario()
+
+    assert first is True
+    assert second is True, f"the idempotent {path}() branch must return a bool, not None"
+
+
 def test_application_exposes_the_readiness_predicate():
     from cullinan.application.model import Application
 

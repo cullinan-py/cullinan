@@ -351,7 +351,7 @@ class ApplicationContext:
         """
         with self._lock:
             if self._state == ContainerState.CLOSED:
-                return
+                return True
             self.begin_draining()
 
         drained = await self.await_drained(timeout)
