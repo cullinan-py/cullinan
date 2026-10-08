@@ -307,6 +307,52 @@ class ApplicationContext:
             self.begin_draining()
 
         self._await_request_drained(timeout)
+        self._finish_shutdown()
+
+    async def ashutdown(self, timeout: float = 30.0) -> None:
+        """Async counterpart of :meth:`shutdown` for callers already on a loop.
+
+        ``shutdown()`` waits for in-flight request scopes with a *blocking*
+        sleep.  Called from inside a running event loop -- which is exactly what
+        the ASGI lifespan ``shutdown`` handler does -- that sleep starves the
+        very tasks the drain is waiting for: the scope count never falls, the
+        wait burns the whole ``timeout`` and the in-flight requests are dropped.
+        This coroutine yields control back to the loop while it waits, so the
+        drain can actually complete.
+
+        The close itself runs on the same single timeout source
+        (``WebRuntimeConfig.drain_timeout``) as the synchronous path.
+        """
+        with self._lock:
+            if self._state == ContainerState.CLOSED:
+                return
+            self.begin_draining()
+
+        await self.await_drained(timeout)
+        self._finish_shutdown()
+
+    async def await_drained(self, timeout: float = 30.0) -> bool:
+        """Wait until no request scope is active, without blocking the loop.
+
+        Returns ``True`` when the container drained within ``timeout`` and
+        ``False`` when the deadline passed with scopes still active.  Unlike
+        the internal blocking wait used by :meth:`shutdown`, this never blocks
+        the event loop, so the in-flight tasks can run to completion.
+        """
+        deadline = time.monotonic() + max(timeout, 0.0)
+        while self.active_request_count > 0:
+            if time.monotonic() >= deadline:
+                logger.warning(
+                    "Timed out while waiting for request scopes to drain. root=%s remaining=%s",
+                    self.id,
+                    self.active_request_count,
+                )
+                return False
+            await asyncio.sleep(0.01)
+        return True
+
+    def _finish_shutdown(self) -> None:
+        """Run the synchronous close tail shared by ``shutdown``/``ashutdown``."""
         self._execute_lifecycle_shutdown()
 
         for handler in self._shutdown_handlers:
@@ -2156,6 +2202,26 @@ class ApplicationContext:
             asyncio.run(coro)
 
     def _await_request_drained(self, timeout: float) -> None:
+        # A blocking wait is only sound when no event loop is running.  Inside a
+        # running loop it starves the very request tasks this drain is waiting
+        # for, so the wait always burns the full timeout and then drops them --
+        # the opposite of a graceful shutdown.  Callers on a loop must use
+        # ``await ashutdown()`` (which delegates to ``await_drained``).  The skip
+        # is never silent: it is reported at WARNING level.
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            pass
+        else:
+            logger.warning(
+                "ApplicationContext.shutdown() was called from inside a running event "
+                "loop; skipping the blocking drain wait because it would starve the "
+                "in-flight requests. Use 'await ashutdown()' instead. root=%s remaining=%s",
+                self.id,
+                self.active_request_count,
+            )
+            return
+
         deadline = time.monotonic() + max(timeout, 0)
         while self.active_request_count > 0:
             if time.monotonic() >= deadline:
