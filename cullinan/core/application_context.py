@@ -156,6 +156,7 @@ class ApplicationContext:
         "_lock",
         "_resolving_stack",
         "_shutdown_handlers",
+        "_draining_handlers",
         "_lifecycle_instances",
         "_lifecycle_phases",
         "_startup_order",
@@ -177,6 +178,7 @@ class ApplicationContext:
         self._lock = threading.RLock()
         self._resolving_stack: List[str] = []
         self._shutdown_handlers: List[Any] = []
+        self._draining_handlers: List[Any] = []
         self._lifecycle_instances: Dict[str, Any] = {}
         self._lifecycle_phases: Dict[str, LifecyclePhase] = {}
         self._startup_order: List[str] = []
@@ -297,19 +299,43 @@ class ApplicationContext:
         with self._lock:
             if self._state == ContainerState.CLOSED:
                 return
+            entering_drain = self._state != ContainerState.DRAINING
             self._state = ContainerState.DRAINING
             self._scope_manager.begin_drain()
+        if entering_drain:
+            # Registered callbacks run once, on the transition into draining,
+            # and outside the lock so a handler may safely call back in. This is
+            # the push side of readiness: a serving layer subscribes here to
+            # flip its own flag, without the framework dictating an endpoint.
+            self._run_draining_handlers()
 
-    def shutdown(self, timeout: float = 30.0) -> None:
+    def _run_draining_handlers(self) -> None:
+        for handler in list(self._draining_handlers):
+            try:
+                result = handler()
+                if inspect.iscoroutine(result):
+                    self._run_coroutine(result)
+            except Exception as exc:  # noqa: BLE001 - draining must never be blocked
+                logger.error("Draining handler failed: %s", exc)
+
+    def shutdown(self, timeout: float = 30.0) -> bool:
+        """Shut the container down, waiting for in-flight request scopes.
+
+        Returns ``True`` when the drain completed within ``timeout``, and
+        ``False`` when the deadline passed -- or when the wait was skipped
+        because a running event loop made a blocking wait unsafe. A caller can
+        therefore tell a clean drain from a timed-out one without reading logs.
+        """
         with self._lock:
             if self._state == ContainerState.CLOSED:
-                return
+                return True
             self.begin_draining()
 
-        self._await_request_drained(timeout)
+        drained = self._await_request_drained(timeout)
         self._finish_shutdown()
+        return drained
 
-    async def ashutdown(self, timeout: float = 30.0) -> None:
+    async def ashutdown(self, timeout: float = 30.0) -> bool:
         """Async counterpart of :meth:`shutdown` for callers already on a loop.
 
         ``shutdown()`` waits for in-flight request scopes with a *blocking*
@@ -328,8 +354,9 @@ class ApplicationContext:
                 return
             self.begin_draining()
 
-        await self.await_drained(timeout)
+        drained = await self.await_drained(timeout)
         self._finish_shutdown()
+        return drained
 
     async def await_drained(self, timeout: float = 30.0) -> bool:
         """Wait until no request scope is active, without blocking the loop.
@@ -372,6 +399,17 @@ class ApplicationContext:
 
     def add_shutdown_handler(self, handler) -> None:
         self._shutdown_handlers.append(handler)
+
+    def add_draining_handler(self, handler) -> None:
+        """Register a callback fired when the container starts draining.
+
+        The Python-native counterpart of a "readiness turned off" signal: a
+        plain callable (sync or async) invoked once, on the transition into
+        draining, before in-flight requests are awaited. Subscribers typically
+        flip a flag their own probe or load balancer consults, so the framework
+        supplies the mechanism and never dictates a route or a port.
+        """
+        self._draining_handlers.append(handler)
 
     # ========================================================================
     # Resolution API
@@ -439,6 +477,17 @@ class ApplicationContext:
     @property
     def state(self) -> ContainerState:
         return self._state
+
+    @property
+    def accepts_requests(self) -> bool:
+        """Whether new request scopes are still accepted.
+
+        The Python-native readiness predicate: a cheap, thread-safe read that
+        needs no endpoint, management port or event bus. A serving layer can
+        consult it per request, or subscribe once via
+        :meth:`add_draining_handler`, and answer its own probe however it likes.
+        """
+        return self._state == ContainerState.ACTIVE
 
     @property
     def is_frozen(self) -> bool:
@@ -2201,7 +2250,7 @@ class ApplicationContext:
         except RuntimeError:
             asyncio.run(coro)
 
-    def _await_request_drained(self, timeout: float) -> None:
+    def _await_request_drained(self, timeout: float) -> bool:
         # A blocking wait is only sound when no event loop is running.  Inside a
         # running loop it starves the very request tasks this drain is waiting
         # for, so the wait always burns the full timeout and then drops them --
@@ -2220,7 +2269,7 @@ class ApplicationContext:
                 self.id,
                 self.active_request_count,
             )
-            return
+            return False
 
         deadline = time.monotonic() + max(timeout, 0)
         while self.active_request_count > 0:
@@ -2230,8 +2279,9 @@ class ApplicationContext:
                     self.id,
                     self.active_request_count,
                 )
-                break
+                return False
             time.sleep(0.01)
+        return True
 
     def _run_health_checks(self) -> None:
         for definition in self._definition_registry.values():

@@ -639,6 +639,25 @@ class Application:
     def is_active(self) -> bool:
         return self.__class__.current() is self
 
+    @property
+    def accepts_requests(self) -> bool:
+        """Whether this application still accepts new request scopes.
+
+        Readiness for a serving layer to consult: ``False`` once the application
+        has begun draining, so a probe can shed traffic before the in-flight
+        requests are awaited.
+        """
+        if self.runtime is None:
+            return False
+        return self.context.accepts_requests
+
+    def add_draining_handler(self, handler) -> None:
+        """Subscribe to the transition into draining.
+
+        Convenience delegate to :meth:`ApplicationContext.add_draining_handler`.
+        """
+        self.context.add_draining_handler(handler)
+
     @classmethod
     def current(cls, default: Optional["Application"] = None) -> Optional["Application"]:
         current = get_current_context()
