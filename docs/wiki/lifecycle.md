@@ -66,6 +66,40 @@ that are already on a loop should `await ApplicationContext.ashutdown()` (or
 requests can actually finish. Both paths share the single timeout source,
 `WebRuntimeConfig.drain_timeout`.
 
+Both `shutdown()` and `ashutdown()` return whether the drain actually completed
+within the bound, so a caller can tell a clean drain from a timed-out one
+without reading the logs.
+
+### Readiness while draining
+
+The framework deliberately ships **no** health route: routes belong to the
+application, and a built-in one would collide with your own. What it ships is
+the *mechanism*, in the same plain-callable style as the other lifecycle hooks:
+
+- `ApplicationContext.accepts_requests` — a cheap predicate, `False` from the
+  moment draining begins (`Application.accepts_requests` is the same read);
+- `ApplicationContext.add_draining_handler(callback)` — a plain (sync or async)
+  callback fired once on the transition into draining, mirroring
+  `add_shutdown_handler`.
+
+A probe is then a few lines of your own code, wired into whatever your
+deployment already uses:
+
+```python
+from cullinan.application import Application
+
+readiness = {"ready": True}
+Application.current().add_draining_handler(lambda: readiness.update(ready=False))
+
+# A predicate works just as well if you would rather not hold state:
+#     ready = Application.current().accepts_requests
+```
+
+Under Kubernetes, subscribe once and let `readinessProbe` fail, so traffic is
+shed **before** the in-flight requests are awaited — the same ordering Spring
+Boot obtains by flipping readiness at the start of `doClose()`, without taking
+on a management port or an endpoint group.
+
 ## Middleware bridge
 
 Application bootstrap can bridge older middleware registrations into the gateway pipeline so legacy modules continue to participate in request processing while new code uses the unified Web Runtime.

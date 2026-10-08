@@ -62,6 +62,35 @@ request scope 依赖绑定到当前请求上下文。适配器会在分发前把
 `await ApplicationContext.await_drained(timeout)`），它会**让出控制权**，使在飞请求
 得以真正完成。两条路径共用**同一个**超时来源 `WebRuntimeConfig.drain_timeout`。
 
+`shutdown()` 与 `ashutdown()` 都会**返回**本次排空是否在时限内完成 —— 调用方无需翻日志
+即可区分「干净排空」与「超时放弃」。
+
+### 排空期间的 readiness
+
+框架**刻意不内置**健康路由：路由属于应用自己，内置一条会与你的路由冲突。它提供的是
+**机制**，且与其他生命周期钩子保持**同一种普通可调用对象**的写法：
+
+- `ApplicationContext.accepts_requests` —— 一个开销极小的谓词，**进入排空那一刻起即为
+  `False`**（`Application.accepts_requests` 是同一个读法）；
+- `ApplicationContext.add_draining_handler(callback)` —— 普通回调（同步或异步均可），
+  在**进入排空时触发一次**，与 `add_shutdown_handler` 同构。
+
+于是探针就是你自己的几行代码，接进你现有的部署方式即可：
+
+```python
+from cullinan.application import Application
+
+readiness = {"ready": True}
+Application.current().add_draining_handler(lambda: readiness.update(ready=False))
+
+# 若不想持有状态，直接用谓词也可以：
+#     ready = Application.current().accepts_requests
+```
+
+在 Kubernetes 下，订阅一次并让 `readinessProbe` 失败，即可**在等待在飞请求之前**先摘掉
+流量 —— 与 Spring Boot 在 `doClose()` 起始翻转 readiness 得到的**顺序相同**，但**不需要**
+管理端口或端点分组。
+
 ## 中间件桥接
 
 应用启动阶段可把旧式 middleware 注册桥接进 gateway pipeline，使历史模块仍能参与请求处理，而新代码统一走 Web Runtime。
