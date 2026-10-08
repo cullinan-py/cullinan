@@ -280,9 +280,10 @@ print(diff.dropped_count)  # len(diff.dropped)
 app.uninstall()
 ```
 
-`Application` is the advanced runtime facade; regular business code should stay
+`Application` is the **advanced entry class**; regular business code should stay
 on `@application` + `@configure(...)` and only reach for
-`get_declaration_diff()` when diagnosing discovery boundaries.
+`get_declaration_diff()` when diagnosing discovery boundaries. `Application(...)`
+takes either a `@module` class or an `@application` entry method as its entry.
 
 ### Requiring the difference to be empty (opt-in)
 
@@ -377,6 +378,12 @@ print(snapshot.gateway["router"].dropped)     # the pre-boot entries it discarde
 print(snapshot.container.declared)            # declared-vs-assembled components
 app.uninstall()
 ```
+
+`Application` is the **advanced entry class**: `Application(...)` takes either a
+`@module` class or an `@application` entry method as its entry, and you reach for
+it only when you need the application *object* itself — offline inspection here,
+runtime orchestration, or runtime switching. Regular business code stays on
+`@application` + `@configure(...)` and calls the entry method directly.
 
 The snapshot is a read-only, module-private view — its type is not part of the
 public export surface. Reading it never materialises a lazy gateway global: a

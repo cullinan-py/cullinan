@@ -67,8 +67,10 @@ class RootModule:
 app = Application.run(RootModule)
 ```
 
-`RootModule` in the example is only a placeholder class name. `Application.run()`
-accepts any class you declare with `@module` as the root module.
+`RootModule` in the example is only a placeholder class name. As the advanced
+entry class, `Application.run()` accepts either a class you declare with `@module`
+or an `@application` entry method as the root. Regular applications stay on
+`@application` + `@configure(...)` + `main()`.
 
 ## Module graph and ownership
 

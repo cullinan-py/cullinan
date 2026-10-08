@@ -250,7 +250,7 @@ print(diff.dropped_count)  # len(diff.dropped)
 app.uninstall()
 ```
 
-`Application` 是高级运行时门面；常规业务代码应停留在 `@application` + `@configure(...)`，仅在诊断发现边界时才使用 `get_declaration_diff()`。
+`Application` 是**高级入口类**；常规业务代码应停留在 `@application` + `@configure(...)`，仅在诊断发现边界时才使用 `get_declaration_diff()`。`Application(...)` 的入口既可接受 `@module` 类，也可接受 `@application` 入口方法。
 
 ### 要求差集为空（可选开启）
 
@@ -312,6 +312,8 @@ print(snapshot.gateway["router"].dropped)     # 它丢弃了哪些预引导条�
 print(snapshot.container.declared)            # 组件面的声明与装配对账
 app.uninstall()
 ```
+
+`Application` 是**高级入口类**：`Application(...)` 的入口既可接受 `@module` 类，也可接受 `@application` 入口方法；只有在你确实需要应用**对象**本身（此处用于离线检视，以及显式运行时编排 / 运行时切换）时才使用它。常规业务代码应停留在 `@application` + `@configure(...)`，直接调用入口方法。
 
 快照是一个只读、模块私有的视图 —— 其类型不属于公共导出面。读取它**不会** materialize 任何惰性 gateway global：查询不得创建它所观察的对象，尤其在那些对象即将被丢弃的引导边界处。
 

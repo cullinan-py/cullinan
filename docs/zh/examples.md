@@ -33,7 +33,7 @@ pr_links: []
 6. `examples/middleware_ownership/` —— 中间件的两种声明写法，以及各自实例的归属
 7. `examples/parameter_handling/` —— `Path`、`Query`、`Body` 的控制器方法参数绑定
 8. `examples/testing_flow/` —— 不启动真实服务进程时通过 `main.get_asgi_app()` 做测试
-9. `examples/assembly_snapshot/` —— 逐面读回本次装配实际持有什么
+9. `examples/assembly_snapshot/` —— 逐面读回本次装配实际持有什么（高级 / 边界）
 
 ## 示例地图
 
@@ -48,7 +48,7 @@ pr_links: []
 | `examples/parameter_handling/` | 控制器方法上的 `Path`、`Query`、`Body` | `python -m examples.parameter_handling` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/parameter_handling) |
 | `examples/testing_flow/` | 基于公开 API 的 ASGI 测试流 | `python -m pytest examples/testing_flow/test_app.py -q` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/testing_flow) |
 | `examples/static_files_and_spa/` | 声明式 `StaticFiles` 挂载 + SPA 回退（引擎中立） | `python -m examples.static_files_and_spa` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/static_files_and_spa) |
-| `examples/assembly_snapshot/` | 装配快照：一次调用取得四个 gateway 子面 + 容器面的 `declared` / `assembled` / `dropped` | `python -m examples.assembly_snapshot` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/assembly_snapshot) |
+| `examples/assembly_snapshot/` | 装配快照：一次调用取得四个 gateway 子面 + 容器面的 `declared` / `assembled` / `dropped`（高级 / 边界） | `python -m examples.assembly_snapshot` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/assembly_snapshot) |
 
 ## 为什么要重构示例
 
@@ -65,6 +65,11 @@ Cullinan 当前想表达的概念放在最前面：
 ## 补充说明
 
 - 根目录 `examples/README.md` 会同步这条学习链路，方便直接看仓库的开发者。
+- 推荐入口形态是**方法**：`@application` + `@configure(...)` + `main()`。少数示例
+  （`examples/component_discovery_boundary/`、`examples/assembly_snapshot/`）会直接构造
+  高级入口类 `cullinan.application.Application` —— 它们需要在不启动服务器的前提下拿到
+  应用**对象** —— 这些示例在 `examples/README.md` 及其自身 README 中均标注为
+  **高级 / 边界**。推荐示例不会把 `Application` 当作默认入口来教。
 - 也可以直接从 [`examples/`](https://github.com/cullinan-py/cullinan/tree/main/examples) 浏览已入库的示例源码。
 - `tests/integration/test_examples_public_guides.py` 会对当前维护的示例做 smoke test。
 - 中间件有多个维护中的示例：`examples/middleware_pipeline/` 使用推荐的洋葱协议，
