@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a4"
+      data-current-version="0.96a5"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a4"
+      data-pre-version="0.96a5"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1714,6 +1714,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Reload and draining">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#readiness-while-draining" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Readiness while draining
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1721,6 +1738,17 @@
     <span class="md-ellipsis">
       
         Middleware bridge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assembly-holdings-and-the-boot-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assembly holdings and the boot boundary
       
     </span>
   </a>
@@ -2146,6 +2174,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Reload and draining">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#readiness-while-draining" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Readiness while draining
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2153,6 +2198,17 @@
     <span class="md-ellipsis">
       
         Middleware bridge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assembly-holdings-and-the-boot-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assembly holdings and the boot boundary
       
     </span>
   </a>
@@ -2220,8 +2276,58 @@ keeps resolving the request-bound snapshot until that request finishes.</p>
 after validation and warmup succeed. The previous runtime moves to
 <code>DRAINING</code>, keeps serving in-flight requests, and closes only after request
 counts reach zero.</p>
+<p>Shutting down from inside a running event loop is a different path. The
+synchronous <code>ApplicationContext.shutdown()</code> waits for in-flight request scopes
+with a blocking sleep, so running it on the loop would starve the very requests
+it is waiting for. It therefore detects a running loop and skips the blocking
+wait, reporting the skip at <code>WARNING</code> level instead of staying silent. Callers
+that are already on a loop should <code>await ApplicationContext.ashutdown()</code> (or
+<code>await ApplicationContext.await_drained(timeout)</code>), which yields control so the
+requests can actually finish. Both paths share the single timeout source,
+<code>WebRuntimeConfig.drain_timeout</code>.</p>
+<p>Both <code>shutdown()</code> and <code>ashutdown()</code> return whether the drain actually completed
+within the bound, so a caller can tell a clean drain from a timed-out one
+without reading the logs.</p>
+<h3 id="readiness-while-draining">Readiness while draining<a class="headerlink" href="#readiness-while-draining" title="Permanent link">&para;</a></h3>
+<p>The framework deliberately ships <strong>no</strong> health route: routes belong to the
+application, and a built-in one would collide with your own. What it ships is
+the <em>mechanism</em>, in the same plain-callable style as the other lifecycle hooks:</p>
+<ul>
+<li><code>ApplicationContext.accepts_requests</code> — a cheap predicate, <code>False</code> from the
+  moment draining begins (<code>Application.accepts_requests</code> is the same read);</li>
+<li><code>ApplicationContext.add_draining_handler(callback)</code> — a plain (sync or async)
+  callback fired once on the transition into draining, mirroring
+  <code>add_shutdown_handler</code>.</li>
+</ul>
+<p>A probe is then a few lines of your own code, wired into whatever your
+deployment already uses:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.application</span><span class="w"> </span><span class="kn">import</span> <span class="n">Application</span>
+
+<span class="n">readiness</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"ready"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+<span class="n">Application</span><span class="o">.</span><span class="n">current</span><span class="p">()</span><span class="o">.</span><span class="n">add_draining_handler</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">readiness</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ready</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+<span class="c1"># A predicate works just as well if you would rather not hold state:</span>
+<span class="c1">#     ready = Application.current().accepts_requests</span>
+</code></pre></div>
+<p>Under Kubernetes, subscribe once and let <code>readinessProbe</code> fail, so traffic is
+shed <strong>before</strong> the in-flight requests are awaited — the same ordering Spring
+Boot obtains by flipping readiness at the start of <code>doClose()</code>, without taking
+on a management port or an endpoint group.</p>
 <h2 id="middleware-bridge">Middleware bridge<a class="headerlink" href="#middleware-bridge" title="Permanent link">&para;</a></h2>
 <p>Application bootstrap can bridge older middleware registrations into the gateway pipeline so legacy modules continue to participate in request processing while new code uses the unified Web Runtime.</p>
+<h2 id="assembly-holdings-and-the-boot-boundary">Assembly holdings and the boot boundary<a class="headerlink" href="#assembly-holdings-and-the-boot-boundary" title="Permanent link">&para;</a></h2>
+<p>Warming up an application crosses a boot boundary: the gateway globals —
+pipeline, router, dispatcher and exception handler — are reset and rebuilt there.
+Anything registered on those surfaces <em>before</em> the boundary is therefore not part
+of the running application.</p>
+<p><code>Application.get_assembly_snapshot()</code> reports what the assembly actually holds
+afterwards — the four gateway surfaces plus the container, each as a
+<code>declared</code> / <code>assembled</code> / <code>dropped</code> triple — so the pre-boot entries the
+boundary discarded appear next to the assembled set instead of vanishing. It is
+the surface-level counterpart of <code>get_declaration_diff()</code>; see
+<a href="../../framework_semantics/">Framework Semantics §12</a>. The pipeline's behaviour is
+stricter — a pre-boot registration refuses the start rather than being dropped —
+and is described in <a href="../middleware/">Middleware</a>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../injection/">IoC &amp; DI</a></li>
@@ -2296,7 +2402,7 @@ counts reach zero.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a5", "pre_is_available": true, "pre_label": "0.96a5", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

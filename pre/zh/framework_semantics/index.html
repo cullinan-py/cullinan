@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a4"
+      data-current-version="0.96a5"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a4"
+      data-pre-version="0.96a5"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -791,6 +791,45 @@
     <span class="md-ellipsis">
       
         要求差集为空（可选开启）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-v096a5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 装配快照：一次启动实际持有什么（v0.96a5）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. 装配快照：一次启动实际持有什么（v0.96a5）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dropped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        逐面的 dropped 行为
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        报告与查询是同一事实的两个通道
       
     </span>
   </a>
@@ -2314,6 +2353,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#12-v096a5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 装配快照：一次启动实际持有什么（v0.96a5）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. 装配快照：一次启动实际持有什么（v0.96a5）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dropped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        逐面的 dropped 行为
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        报告与查询是同一事实的两个通道
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2567,7 +2645,7 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">diff</span><span class="o">.</span><span class="n">dropped_count</span><span class="p">)</span>  <span class="c1"># len(diff.dropped)</span>
 <span class="n">app</span><span class="o">.</span><span class="n">uninstall</span><span class="p">()</span>
 </code></pre></div>
-<p><code>Application</code> 是高级运行时门面；常规业务代码应停留在 <code>@application</code> + <code>@configure(...)</code>，仅在诊断发现边界时才使用 <code>get_declaration_diff()</code>。</p>
+<p><code>Application</code> 是<strong>高级入口类</strong>；常规业务代码应停留在 <code>@application</code> + <code>@configure(...)</code>，仅在诊断发现边界时才使用 <code>get_declaration_diff()</code>。<code>Application(...)</code> 的入口既可接受 <code>@module</code> 类，也可接受 <code>@application</code> 入口方法。</p>
 <h3 id="_3">要求差集为空（可选开启）<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <p>报告是默认行为，也仍然是默认行为。如果某个应用希望「有声明没被装配时干脆不要启动」，可以显式声明：</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
@@ -2609,6 +2687,82 @@
 <p><strong>它与 <code>startup_error_policy</code> 不是同一件事。</strong> <code>startup_error_policy='strict'</code> 决定的是<strong>服务初始化失败</strong>时怎么办，属服务生命周期策略；<code>strict_assembly</code> 决定的是<strong>已声明的组件从未被装配</strong>时怎么办，属声明—装配策略。两者名字相近，场景无关，且互不作用。</p>
 </blockquote>
 <p><strong>对账的作用范围</strong>：差集把<strong>模块导入期</strong>收集到的声明与<strong>本次启动</strong>实际装配到的组件配对。该声明集会被进程内的<strong>首次启动</strong>消费，因此同一进程内的<strong>后续启动</strong>（例如 <code>Application.reload()</code>）面对的是空声明集，其差集为空，报告与本选项都无从生效。每个新进程都会带着自身的导入期声明重新开始。</p>
+<h2 id="12-v096a5">12. 装配快照：一次启动实际持有什么（v0.96a5）<a class="headerlink" href="#12-v096a5" title="Permanent link">&para;</a></h2>
+<p>Cullinan 会在引导边界重建每一个 gateway global：<code>Runtime.warmup()</code> 先重置 pipeline、router、dispatcher 与 exception handler，随后重建它们。因此，任何在引导边界<strong>之前</strong>完成的注册，都不会进入请求处理路径。§11 对账的是<strong>组件</strong>；本节对账的是<strong>注册面</strong> —— 四个 gateway global 加上容器。</p>
+<p><code>Application.get_assembly_snapshot()</code> 一次调用即可回答「本次装配实际持有什么」：</p>
+<ul>
+<li><code>gateway</code> —— 每个 gateway 子面一条：<code>pipeline</code>、<code>router</code>、<code>dispatcher</code>、<code>exception_handler</code>；</li>
+<li><code>container</code> —— 与 §11 通过 <code>get_declaration_diff()</code> 暴露的组件对账结果一致。</li>
+</ul>
+<p>每个面都沿用组件面已经在用的同一组三态字段：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>declared</code></td>
+<td>引导边界<strong>之前</strong>该面声明的条目</td>
+</tr>
+<tr>
+<td><code>assembled</code></td>
+<td>引导边界<strong>之后</strong>该面持有的条目 —— 即本次装配实际持有什么</td>
+</tr>
+<tr>
+<td><code>dropped</code></td>
+<td><code>declared - assembled</code>：被引导边界丢弃的预引导条目</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.application</span><span class="w"> </span><span class="kn">import</span> <span class="n">Application</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+<span class="n">snapshot</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">get_assembly_snapshot</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">snapshot</span><span class="o">.</span><span class="n">gateway</span><span class="p">[</span><span class="s2">"router"</span><span class="p">]</span><span class="o">.</span><span class="n">assembled</span><span class="p">)</span>   <span class="c1"># 该 router 现在持有什么</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">snapshot</span><span class="o">.</span><span class="n">gateway</span><span class="p">[</span><span class="s2">"router"</span><span class="p">]</span><span class="o">.</span><span class="n">dropped</span><span class="p">)</span>     <span class="c1"># 它丢弃了哪些预引导条目</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">snapshot</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">declared</span><span class="p">)</span>            <span class="c1"># 组件面的声明与装配对账</span>
+<span class="n">app</span><span class="o">.</span><span class="n">uninstall</span><span class="p">()</span>
+</code></pre></div>
+<p><code>Application</code> 是<strong>高级入口类</strong>：<code>Application(...)</code> 的入口既可接受 <code>@module</code> 类，也可接受 <code>@application</code> 入口方法；只有在你确实需要应用<strong>对象</strong>本身（此处用于离线检视，以及显式运行时编排 / 运行时切换）时才使用它。常规业务代码应停留在 <code>@application</code> + <code>@configure(...)</code>，直接调用入口方法。</p>
+<p>快照是一个只读、模块私有的视图 —— 其类型不属于公共导出面。读取它<strong>不会</strong> materialize 任何惰性 gateway global：查询不得创建它所观察的对象，尤其在那些对象即将被丢弃的引导边界处。</p>
+<h3 id="dropped">逐面的 <code>dropped</code> 行为<a class="headerlink" href="#dropped" title="Permanent link">&para;</a></h3>
+<p>四个 gateway 子面的行为并不一致，快照如实地逐面呈现，而不是把它们抹平：</p>
+<table>
+<thead>
+<tr>
+<th>面</th>
+<th>成功启动时 <code>dropped</code></th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pipeline</code></td>
+<td><strong>存在且为空</strong></td>
+<td>预引导的 <code>get_pipeline().add(...)</code> 会在边界处被<strong>拒绝</strong> —— 应用不会启动 —— 因此没有任何条目残留下来被丢弃。该字段<strong>存在</strong>，是为了让「缺字段」判为失败，而不是静默略去。</td>
+</tr>
+<tr>
+<td><code>router</code> / <code>dispatcher</code> / <code>exception_handler</code></td>
+<td><strong>可为非空</strong></td>
+<td>这些面上的预引导注册会被<strong>丢弃并留痕</strong>，同时应用仍能启动。并列呈现的价值正体现在这里。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>不要</strong>把后三个面读成「会拒绝启动」：它们只做留痕。把它们升级为拒绝属于对外行为变更 —— 那是另一个独立决策，不属于本查询。</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_router</span>
+
+<span class="c1"># 在应用启动之前完成的一次注册……</span>
+<span class="n">get_router</span><span class="p">()</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="s2">"GET"</span><span class="p">,</span> <span class="s2">"/pre-boot-check"</span><span class="p">,</span> <span class="n">handler</span><span class="o">=</span><span class="n">handler</span><span class="p">)</span>
+
+<span class="n">main</span><span class="p">()</span>  <span class="c1"># ……会被引导边界丢弃，但之后仍可查询：</span>
+<span class="c1"># snapshot.gateway["router"].dropped == ("GET /pre-boot-check",)</span>
+</code></pre></div>
+<h3 id="_4">报告与查询是同一事实的两个通道<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>引导边界在拒绝启动之前，已经会以 <strong>WARNING</strong> 报告预引导的 <strong>pipeline</strong> 注册；拒绝本身则是一条 <strong>ERROR</strong> 后跟一个 <code>ConfigurationError</code>。两者都保持不变，也都不是查看全貌的地方：默认报告只给摘要，而<strong>每一个面</strong>的逐条明细都落在查询入口上。要了解一次装配实际持有什么，请观察查询，而不是等一条日志。</p>
 
 
 
@@ -2677,7 +2831,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a5", "pre_is_available": true, "pre_label": "0.96a5", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

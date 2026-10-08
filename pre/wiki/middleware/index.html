@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a4"
+      data-current-version="0.96a5"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a4"
+      data-pre-version="0.96a5"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1758,6 +1758,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#two-declaration-forms-and-object-ownership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two declaration forms and object ownership
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#introspection" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2172,6 +2183,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#two-declaration-forms-and-object-ownership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two declaration forms and object ownership
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#introspection" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2291,21 +2313,31 @@ declarative ordering as <code>middlewares</code>.</p>
 <p><code>cullinan.web.gateway.get_pipeline().add(AuditMiddleware())</code> is the imperative
 pre-boot entry point, kept for integrations that build the pipeline by hand. It
 writes into the pipeline instance that exists <em>before</em> the application is
-assembled, and the gateway globals are rebuilt at the startup boundary: entries
-added this way are therefore reset at boot and never take part in request
-handling. That reset is reported — one diagnostic naming the entries and their
-count — rather than dropping them silently. For middleware that must actually
-run, use the declarative entries above.</p>
-<p><strong>Support level.</strong> This entry point belongs to the runtime-introspection,
-advanced-use and testing level: it is supported, but it is <em>not</em> the recommended
-way for an application or a library to integrate middleware. Entries registered
-through it before startup are reset when the application boots — <code>Runtime.warmup()</code>
-rebuilds the gateway globals (pipeline, router, dispatcher and exception handler) —
-and the framework emits one diagnostic about that reset instead of dropping the
-entries silently. To have middleware take part in request handling, use the
-declarative entries: <code>configure(middlewares=[...])</code> or the <code>@middleware</code> decorator.</p>
+assembled, and the gateway globals are rebuilt at the startup boundary
+(<code>Runtime.warmup()</code> rebuilds the pipeline, router, dispatcher and exception
+handler). A registration made this way is therefore <strong>refused at the boot
+boundary</strong>: the application does not start. The framework reports the entries it
+discards first — one diagnostic naming them and their count — and then raises, so
+a deployment that catches the error has still seen the report.</p>
+<p><strong>Support level.</strong> The imperative registration is <strong>not supported at the boot
+boundary</strong>: a pre-boot <code>get_pipeline().add(...)</code> refuses the start at assembly
+time, not on the first request. <code>get_pipeline()</code> itself keeps its
+runtime-introspection, advanced-use and testing role — after the application has
+started, <code>get_pipeline().list_middleware()</code> reports what is installed and is
+unaffected. For middleware that must take part in request handling, use the
+declarative entries: <code>configure(middlewares=[...])</code> or the <code>@middleware</code>
+decorator.</p>
+<p><strong>Not a pipeline-only boundary.</strong> The boot boundary rebuilds all four gateway
+globals, not just the pipeline — and it treats them differently: a pre-boot
+registration on the pipeline refuses the start (above), while one on the router,
+dispatcher or exception handler is dropped and recorded while the application
+still starts. <code>Application.get_assembly_snapshot()</code> reports what every surface
+actually holds — <code>declared</code> / <code>assembled</code> / <code>dropped</code> for the four gateway
+surfaces plus the container — so a pre-boot entry is reconciled in one place
+instead of read off a log line. See <a href="../../framework_semantics/">Framework Semantics §12</a>
+and <a href="../lifecycle/">Application Lifecycle</a>.</p>
 <h3 id="legacy-process_request-process_response">Legacy: <code>process_request</code> / <code>process_response</code><a class="headerlink" href="#legacy-process_request-process_response" title="Permanent link">&para;</a></h3>
-<p>The hook pair on <code>cullinan.web.middleware.Middleware</code> still works and is
+<p>The hook pair on <code>Middleware</code> (imported from <code>cullinan.web.middleware</code>) still works and is
 auto-bridged into the gateway pipeline — one layer per legacy middleware. Each
 bridged layer is ordered by the same declarative <code>priority</code> key as the built-in
 and declared layers, so a legacy <code>@middleware(priority=10)</code> lands on a more
@@ -2341,10 +2373,61 @@ without calling <code>call_next</code>:</p>
             <span class="k">return</span> <span class="n">WebResponse</span><span class="o">.</span><span class="n">json</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"missing api key"</span><span class="p">},</span> <span class="n">status_code</span><span class="o">=</span><span class="mi">401</span><span class="p">)</span>
         <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
 </code></pre></div>
+<p><strong>Ownership.</strong> A middleware declared through <code>@middleware</code> is created by the
+framework container, the same way a class declared through
+<code>configure(middlewares=[...])</code> is. The declaration you write does not change:
+<code>@middleware(priority=...)</code> keeps its syntax and its default <code>100</code>.</p>
+<h2 id="two-declaration-forms-and-object-ownership">Two declaration forms and object ownership<a class="headerlink" href="#two-declaration-forms-and-object-ownership" title="Permanent link">&para;</a></h2>
+<p><code>configure(middlewares=[...])</code> accepts two forms, and they differ in <strong>who owns
+the instance</strong>:</p>
+<ul>
+<li><strong>An instance</strong> — <code>configure(middlewares=[AuditMiddleware()])</code>. The
+  application creates the object and keeps ownership of it, and the framework
+  installs that instance as-is. This is an <strong>externally-owned</strong> middleware.</li>
+<li><strong>A class declared with <code>@component</code></strong> —
+  <code>configure(middlewares=[AuditMiddleware])</code>. The framework container creates
+  the object, injects its declared dependencies and holds it, and the pipeline
+  runs that same instance. This is a <strong>container-managed</strong> middleware.</li>
+</ul>
+<p>The class form is what makes a middleware a first-class container participant:
+declare its dependencies like any other component and let the container wire
+them.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">component</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayMiddleware</span>
+
+
+<span class="nd">@component</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AuditLog</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span> <span class="o">...</span>
+
+
+<span class="nd">@component</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AuditMiddleware</span><span class="p">(</span><span class="n">GatewayMiddleware</span><span class="p">):</span>
+    <span class="n">log</span><span class="p">:</span> <span class="n">AuditLog</span>  <span class="c1"># injected by the container</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">call_next</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="n">configure</span><span class="p">(</span><span class="n">middlewares</span><span class="o">=</span><span class="p">[</span><span class="n">AuditMiddleware</span><span class="p">])</span>    <span class="c1"># container-managed</span>
+<span class="n">configure</span><span class="p">(</span><span class="n">middlewares</span><span class="o">=</span><span class="p">[</span><span class="n">AuditMiddleware</span><span class="p">()])</span>  <span class="c1"># externally-owned</span>
+</code></pre></div>
+<p>A class passed this way <strong>must</strong> be declared with <code>@component</code>. A
+<code>GatewayMiddleware</code> class without that declaration is refused at startup with a
+<code>ConfigurationError</code> (<code>error_code = "MIDDLEWARE_DECLARATION_ERROR"</code>), because the
+framework never guesses container ownership: either add <code>@component</code>, or pass an
+instance you own. A container-managed middleware resolves its dependencies at
+startup, so an unresolvable dependency fails there rather than on the first
+request. <code>builtin_middleware=[...]</code> follows the same rule.</p>
 <h2 id="introspection">Introspection<a class="headerlink" href="#introspection" title="Permanent link">&para;</a></h2>
 <p><code>cullinan.web.gateway.get_pipeline().list_middleware()</code> lists the installed
 middleware in execution order, where index <code>0</code> is the outermost layer. It is the
 pipeline counterpart of <code>Router.get_all_routes()</code>.</p>
+<p><code>list_middleware()</code> reports one surface. For the whole assembly in one call — the
+four gateway surfaces (<code>pipeline</code> / <code>router</code> / <code>dispatcher</code> / <code>exception_handler</code>)
+plus the container, each as a <code>declared</code> / <code>assembled</code> / <code>dropped</code> triple — use
+<code>Application.get_assembly_snapshot()</code>; see
+<a href="../../framework_semantics/">Framework Semantics §12</a>.</p>
 <h2 id="guidance">Guidance<a class="headerlink" href="#guidance" title="Permanent link">&para;</a></h2>
 <ul>
 <li>keep middleware thin and delegate business logic to injected services</li>
@@ -2425,7 +2508,7 @@ pipeline counterpart of <code>Router.get_all_routes()</code>.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a5", "pre_is_available": true, "pre_label": "0.96a5", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

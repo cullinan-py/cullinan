@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a4"
+      data-current-version="0.96a5"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a4"
+      data-pre-version="0.96a5"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2094,6 +2094,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v096a5-the-middleware-decorator-moves-to-the-top-level-import" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.96a5: the middleware decorator moves to the top-level import
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2521,6 +2532,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v096a5-the-middleware-decorator-moves-to-the-top-level-import" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.96a5: the middleware decorator moves to the top-level import
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2674,7 +2696,7 @@
 <blockquote>
 <p><strong>Cullinan Framework</strong> — Comprehensive migration guide for upgrading from v0.9x to v0.93.</p>
 <p><strong>Upgrade-only page:</strong> keep this page for version transition work, not for first-time onboarding.</p>
-<p><strong>Note</strong>: applies to the v0.9x → v0.93 range, with notes through v0.96a1; read it
+<p><strong>Note</strong>: applies to the v0.9x → v0.93 range, with notes through v0.96a5; read it
 when upgrading a v0.9x codebase to v0.93.</p>
 </blockquote>
 <h2 id="overview-of-changes">Overview of Changes<a class="headerlink" href="#overview-of-changes" title="Permanent link">&para;</a></h2>
@@ -2885,18 +2907,19 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <span class="c1"># Register</span>
 <span class="n">get_pipeline</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">AuthMiddleware</span><span class="p">())</span>
 </code></pre></div>
-<p><strong>Startup resets this entry point.</strong> <code>get_pipeline().add(...)</code> writes into the
+<p><strong>Startup refuses this entry point.</strong> <code>get_pipeline().add(...)</code> writes into the
 pipeline that exists <em>before</em> boot; the gateway globals are rebuilt when the
-application is assembled, so anything registered this way is reset at startup and
-never handles a request. The reset is no longer silent — it leaves one diagnostic
-naming the dropped entries and how many there were. Declare middleware through
-<code>configure(middlewares=[...])</code> or the <code>@middleware</code> decorator instead: those are
-read by the assembly and survive it.</p>
-<p>The support level is the same as its behaviour: <code>get_pipeline().add(...)</code> is a
-runtime-introspection, advanced-use and testing entry point, <em>not</em> the recommended
-way for an application or a library to integrate middleware. <code>Runtime.warmup()</code>
-rebuilds the gateway globals — pipeline, router, dispatcher and exception handler —
-so the entries it discards are announced in one diagnostic rather than dropped
+application is assembled, so a registration made this way is refused at the
+startup boundary — the application does not start. The framework reports the
+entries it discards first (one diagnostic naming them and how many there were),
+then raises, so a caller that catches the error has still seen the report. Declare
+middleware through <code>configure(middlewares=[...])</code> or the <code>@middleware</code> decorator
+instead: those are read by the assembly and survive it.</p>
+<p><code>get_pipeline()</code> itself keeps its runtime-introspection, advanced-use and testing
+role — after the application has started, <code>list_middleware()</code> reports what is
+installed — but a pre-boot <code>get_pipeline().add(...)</code> is not supported at the boot
+boundary. <code>Runtime.warmup()</code> rebuilds the gateway globals — pipeline, router,
+dispatcher and exception handler — so a pre-boot registration cannot carry over
 silently. Integrate middleware through the declarative entries:
 <code>configure(middlewares=[...])</code> or the <code>@middleware</code> decorator.</p>
 <p><strong>Backward compatibility</strong>: Old <code>@middleware</code> classes are still auto-bridged into the gateway pipeline — one layer per legacy middleware.</p>
@@ -2975,6 +2998,45 @@ after the real middleware instead of after the bridge, so the resolved order is
 directly readable.</p>
 <p>The built-in layer is declarative too: <code>configure(builtin_middleware=[...])</code>
 replaces it, and <code>configure(builtin_middleware=[])</code> switches it off.</p>
+<h4 id="v096a5-the-middleware-decorator-moves-to-the-top-level-import">v0.96a5: the middleware decorator moves to the top-level import<a class="headerlink" href="#v096a5-the-middleware-decorator-moves-to-the-top-level-import" title="Permanent link">&para;</a></h4>
+<p><code>from cullinan.web import middleware</code> used to give you the <code>@middleware</code>
+decorator. <code>cullinan.web.middleware</code> is now the middleware submodule, so that
+name resolves to the submodule instead. The decorator itself is unchanged and is
+still available at the top level.</p>
+<table>
+<thead>
+<tr>
+<th>Import</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from cullinan.web import middleware</code></td>
+<td>the decorator</td>
+<td>the <code>cullinan.web.middleware</code> submodule</td>
+</tr>
+<tr>
+<td><code>from cullinan import middleware</code></td>
+<td>the decorator</td>
+<td>the decorator (unchanged)</td>
+</tr>
+<tr>
+<td><code>from cullinan.web.middleware import middleware</code></td>
+<td>the decorator</td>
+<td>the decorator (unchanged)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Who is affected.</strong> Only code that imports <code>middleware</code> <em>from</em> <code>cullinan.web</code>.
+Anything importing it from the top level, or from <code>cullinan.web.middleware</code>,
+needs no change.</p>
+<p><strong>Migration.</strong> Move the import to the top level:</p>
+<pre><code>from cullinan import middleware
+</code></pre>
+<p>The full path <code>from cullinan.web.middleware import middleware</code> keeps working
+both before and after the change; nothing is removed, and no symbol is renamed.</p>
 <h3 id="7-openapi-integration">7. OpenAPI Integration<a class="headerlink" href="#7-openapi-integration" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAPIGenerator</span><span class="p">,</span> <span class="n">get_router</span>
 
@@ -3128,7 +3190,7 @@ release.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a5", "pre_is_available": true, "pre_label": "0.96a5", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

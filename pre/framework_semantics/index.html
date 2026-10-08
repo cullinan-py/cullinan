@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a4"
+      data-current-version="0.96a5"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a4"
+      data-pre-version="0.96a5"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -791,6 +791,45 @@
     <span class="md-ellipsis">
       
         Requiring the difference to be empty (opt-in)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-the-assembly-snapshot-what-a-start-actually-holds-v096a5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. The assembly snapshot: what a start actually holds (v0.96a5)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. The assembly snapshot: what a start actually holds (v0.96a5)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#per-surface-behaviour-of-dropped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-surface behaviour of dropped
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporting-and-the-query-are-the-same-facts-on-two-channels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting and the query are the same facts on two channels
       
     </span>
   </a>
@@ -2314,6 +2353,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#12-the-assembly-snapshot-what-a-start-actually-holds-v096a5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. The assembly snapshot: what a start actually holds (v0.96a5)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. The assembly snapshot: what a start actually holds (v0.96a5)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#per-surface-behaviour-of-dropped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-surface behaviour of dropped
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporting-and-the-query-are-the-same-facts-on-two-channels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting and the query are the same facts on two channels
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2597,9 +2675,10 @@ the diagnostic fired — watch the <code>warnings</code> channel instead (for ex
 <span class="nb">print</span><span class="p">(</span><span class="n">diff</span><span class="o">.</span><span class="n">dropped_count</span><span class="p">)</span>  <span class="c1"># len(diff.dropped)</span>
 <span class="n">app</span><span class="o">.</span><span class="n">uninstall</span><span class="p">()</span>
 </code></pre></div>
-<p><code>Application</code> is the advanced runtime facade; regular business code should stay
+<p><code>Application</code> is the <strong>advanced entry class</strong>; regular business code should stay
 on <code>@application</code> + <code>@configure(...)</code> and only reach for
-<code>get_declaration_diff()</code> when diagnosing discovery boundaries.</p>
+<code>get_declaration_diff()</code> when diagnosing discovery boundaries. <code>Application(...)</code>
+takes either a <code>@module</code> class or an <code>@application</code> entry method as its entry.</p>
 <h3 id="requiring-the-difference-to-be-empty-opt-in">Requiring the difference to be empty (opt-in)<a class="headerlink" href="#requiring-the-difference-to-be-empty-opt-in" title="Permanent link">&para;</a></h3>
 <p>Reporting is the default and it stays the default. An application that would
 rather not start at all when a declaration never reaches the container can say
@@ -2667,6 +2746,104 @@ process — <code>Application.reload()</code>, for instance — reconciles again
 declaration set, its difference is empty, and neither the report nor this option
 has anything to act on. Each new process begins with its own import-time
 declarations.</p>
+<h2 id="12-the-assembly-snapshot-what-a-start-actually-holds-v096a5">12. The assembly snapshot: what a start actually holds (v0.96a5)<a class="headerlink" href="#12-the-assembly-snapshot-what-a-start-actually-holds-v096a5" title="Permanent link">&para;</a></h2>
+<p>Cullinan rebuilds every gateway global at the boot boundary: <code>Runtime.warmup()</code>
+resets the pipeline, router, dispatcher and exception handler, then rebuilds
+them. A registration made <em>before</em> that boundary therefore never reaches request
+handling. §11 reconciles <strong>components</strong>; this section reconciles the
+<strong>registration surfaces</strong> — the four gateway globals plus the container.</p>
+<p><code>Application.get_assembly_snapshot()</code> answers, in one call, what the assembly
+actually holds:</p>
+<ul>
+<li><code>gateway</code> — one entry per gateway surface: <code>pipeline</code>, <code>router</code>, <code>dispatcher</code>,
+  <code>exception_handler</code>;</li>
+<li><code>container</code> — the same declared-vs-assembled component reconciliation §11
+  exposes through <code>get_declaration_diff()</code>.</li>
+</ul>
+<p>Each surface carries the same three fields the component face already uses:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>declared</code></td>
+<td>what the surface held <strong>before</strong> the boot boundary</td>
+</tr>
+<tr>
+<td><code>assembled</code></td>
+<td>what it holds <strong>after</strong> the boundary — what this assembly actually carries</td>
+</tr>
+<tr>
+<td><code>dropped</code></td>
+<td><code>declared - assembled</code>: the pre-boot entries the boundary discarded</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.application</span><span class="w"> </span><span class="kn">import</span> <span class="n">Application</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+<span class="n">snapshot</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">get_assembly_snapshot</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">snapshot</span><span class="o">.</span><span class="n">gateway</span><span class="p">[</span><span class="s2">"router"</span><span class="p">]</span><span class="o">.</span><span class="n">assembled</span><span class="p">)</span>   <span class="c1"># what the router carries now</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">snapshot</span><span class="o">.</span><span class="n">gateway</span><span class="p">[</span><span class="s2">"router"</span><span class="p">]</span><span class="o">.</span><span class="n">dropped</span><span class="p">)</span>     <span class="c1"># the pre-boot entries it discarded</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">snapshot</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">declared</span><span class="p">)</span>            <span class="c1"># declared-vs-assembled components</span>
+<span class="n">app</span><span class="o">.</span><span class="n">uninstall</span><span class="p">()</span>
+</code></pre></div>
+<p><code>Application</code> is the <strong>advanced entry class</strong>: <code>Application(...)</code> takes either a
+<code>@module</code> class or an <code>@application</code> entry method as its entry, and you reach for
+it only when you need the application <em>object</em> itself — offline inspection here,
+runtime orchestration, or runtime switching. Regular business code stays on
+<code>@application</code> + <code>@configure(...)</code> and calls the entry method directly.</p>
+<p>The snapshot is a read-only, module-private view — its type is not part of the
+public export surface. Reading it never materialises a lazy gateway global: a
+query must not create the objects it reports on, least of all at the boundary
+where those objects are about to be discarded.</p>
+<h3 id="per-surface-behaviour-of-dropped">Per-surface behaviour of <code>dropped</code><a class="headerlink" href="#per-surface-behaviour-of-dropped" title="Permanent link">&para;</a></h3>
+<p>The four gateway surfaces do not share one behaviour, and the snapshot reports
+each one honestly rather than flattening them:</p>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th><code>dropped</code> on a successful start</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pipeline</code></td>
+<td><strong>present and empty</strong></td>
+<td>a pre-boot <code>get_pipeline().add(...)</code> is <strong>refused</strong> at the boundary — the application does not start — so nothing survives to be dropped. The field is present so that a <em>missing</em> field is a failure, not a silent omission.</td>
+</tr>
+<tr>
+<td><code>router</code> / <code>dispatcher</code> / <code>exception_handler</code></td>
+<td><strong>may be non-empty</strong></td>
+<td>a pre-boot registration on these surfaces is <strong>dropped and recorded</strong> while the application still starts. This is where the side-by-side value shows.</td>
+</tr>
+</tbody>
+</table>
+<p>Do <strong>not</strong> read the last three surfaces as refusing the start: they only record.
+Promoting them to a refusal would be an outward behaviour change — a separate
+decision, not part of this query.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_router</span>
+
+<span class="c1"># A registration made before the application starts...</span>
+<span class="n">get_router</span><span class="p">()</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="s2">"GET"</span><span class="p">,</span> <span class="s2">"/pre-boot-check"</span><span class="p">,</span> <span class="n">handler</span><span class="o">=</span><span class="n">handler</span><span class="p">)</span>
+
+<span class="n">main</span><span class="p">()</span>  <span class="c1"># ...is dropped by the boot boundary, yet stays queryable afterwards:</span>
+<span class="c1"># snapshot.gateway["router"].dropped == ("GET /pre-boot-check",)</span>
+</code></pre></div>
+<h3 id="reporting-and-the-query-are-the-same-facts-on-two-channels">Reporting and the query are the same facts on two channels<a class="headerlink" href="#reporting-and-the-query-are-the-same-facts-on-two-channels" title="Permanent link">&para;</a></h3>
+<p>The boot boundary already reports the pre-boot <strong>pipeline</strong> registrations before
+refusing the start, at <strong>WARNING</strong>; the refusal itself is an <strong>ERROR</strong> followed by
+a <code>ConfigurationError</code>. Both are unchanged, and neither is the place to look for
+the full picture: the default report is a summary, and the per-entry detail for
+every surface lives on the query entry point. Watch the query — not a log line —
+to learn what an assembly actually holds.</p>
 
 
 
@@ -2735,7 +2912,7 @@ declarations.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a5", "pre_is_available": true, "pre_label": "0.96a5", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

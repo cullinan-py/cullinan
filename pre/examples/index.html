@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a4"
+      data-current-version="0.96a5"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a4"
+      data-pre-version="0.96a5"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2138,8 +2138,10 @@ attach startup settings with <code>@configure(...)</code>, then call <code>main(
 <li><code>examples/middleware_and_module/</code> — when an explicit <code>@module</code> boundary is worth adding on top of the entry method</li>
 <li><code>examples/middleware_pipeline/</code> — declaring middleware order through <code>@configure(middlewares=[...])</code></li>
 <li><code>examples/middleware_control/</code> — replacing/switching off the built-in middleware layer and unifying legacy middleware ordering</li>
+<li><code>examples/middleware_ownership/</code> — the two middleware declaration forms and who owns each instance</li>
 <li><code>examples/parameter_handling/</code> — controller-method parameter binding with <code>Path</code>, <code>Query</code>, and <code>Body</code></li>
 <li><code>examples/testing_flow/</code> — testing through <code>main.get_asgi_app()</code> without a real server process</li>
+<li><code>examples/assembly_snapshot/</code> — reading back what an assembly actually holds, surface by surface (advanced / boundary)</li>
 </ol>
 <h2 id="example-map">Example map<a class="headerlink" href="#example-map" title="Permanent link">&para;</a></h2>
 <table>
@@ -2183,6 +2185,12 @@ attach startup settings with <code>@configure(...)</code>, then call <code>main(
 <td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_control">View on GitHub</a></td>
 </tr>
 <tr>
+<td><code>examples/middleware_ownership/</code></td>
+<td>The two middleware declaration forms: a <code>@component</code> class entry (container-managed) and an instance entry (externally-owned)</td>
+<td><code>python -m examples.middleware_ownership</code></td>
+<td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_ownership">View on GitHub</a></td>
+</tr>
+<tr>
 <td><code>examples/parameter_handling/</code></td>
 <td><code>Path</code>, <code>Query</code>, and <code>Body</code> on controller methods</td>
 <td><code>python -m examples.parameter_handling</code></td>
@@ -2200,6 +2208,12 @@ attach startup settings with <code>@configure(...)</code>, then call <code>main(
 <td><code>python -m examples.static_files_and_spa</code></td>
 <td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/static_files_and_spa">View on GitHub</a></td>
 </tr>
+<tr>
+<td><code>examples/assembly_snapshot/</code></td>
+<td>The assembly snapshot: <code>declared</code> / <code>assembled</code> / <code>dropped</code> for the four gateway surfaces + container in one call (advanced / boundary)</td>
+<td><code>python -m examples.assembly_snapshot</code></td>
+<td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/assembly_snapshot">View on GitHub</a></td>
+</tr>
 </tbody>
 </table>
 <h2 id="why-the-examples-were-restructured">Why the examples were restructured<a class="headerlink" href="#why-the-examples-were-restructured" title="Permanent link">&para;</a></h2>
@@ -2216,10 +2230,17 @@ The current example set intentionally keeps Cullinan's own concept front and cen
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The root <code>examples/README.md</code> file mirrors this learning path for repository readers.</li>
+<li>The recommended entry form is a method: <code>@application</code> + <code>@configure(...)</code> + <code>main()</code>.
+  A few examples (<code>examples/component_discovery_boundary/</code>, <code>examples/assembly_snapshot/</code>)
+  construct the advanced entry class <code>cullinan.application.Application</code> directly — they
+  need the application <em>object</em> without starting a server — and are marked
+  <strong>advanced / boundary</strong> in <code>examples/README.md</code> and in their own READMEs. Recommended
+  examples never teach <code>Application</code> as the default entry.</li>
 <li>You can browse the tracked source set directly from <a href="https://github.com/cullinan-py/cullinan/tree/main/examples"><code>examples/</code></a>.</li>
 <li><code>tests/integration/test_examples_public_guides.py</code> smoke-tests the maintained examples.</li>
-<li>Middleware has two maintained examples: <code>examples/middleware_pipeline/</code> uses the
-  recommended onion protocol, while <code>examples/middleware_and_module/</code> uses the
+<li>Middleware has several maintained examples: <code>examples/middleware_pipeline/</code> uses the
+  recommended onion protocol, <code>examples/middleware_ownership/</code> shows the two declaration
+  forms and their object ownership, while <code>examples/middleware_and_module/</code> uses the
   compatibility protocol. See <a href="../wiki/middleware/">Middleware</a>.</li>
 <li>If you are learning Cullinan for the first time, start with <code>examples/minimal_app/</code> and then
   continue to <code>examples/controller_service_inject/</code>.</li>
@@ -2292,7 +2313,7 @@ The current example set intentionally keeps Cullinan's own concept front and cen
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a5", "pre_is_available": true, "pre_label": "0.96a5", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a4"
+      data-current-version="0.96a5"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a4"
+      data-pre-version="0.96a5"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2094,6 +2094,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v096a5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.96a5：中间件装饰器移到顶层导入
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2521,6 +2532,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v096a5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.96a5：中间件装饰器移到顶层导入
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2674,7 +2696,7 @@
 <blockquote>
 <p><strong>Cullinan 框架</strong> — 从 v0.9x 升级到 v0.93 的完整迁移指南。</p>
 <p><strong>仅用于升级：</strong> 这页只服务于版本迁移工作，不属于首次 onboarding。</p>
-<p><strong>说明</strong>：适用于 v0.9x → v0.93 范围，并含至 v0.96a1 的说明；当你要把 v0.9x 代码库升级到 v0.93 时，阅读本页。</p>
+<p><strong>说明</strong>：适用于 v0.9x → v0.93 范围，并含至 v0.96a5 的说明；当你要把 v0.9x 代码库升级到 v0.93 时，阅读本页。</p>
 </blockquote>
 <h2 id="_1">变更总览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>Cullinan v0.93 是一次重大架构重写，引入了以下变化：</p>
@@ -2884,8 +2906,8 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <span class="c1"># 注册</span>
 <span class="n">get_pipeline</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">AuthMiddleware</span><span class="p">())</span>
 </code></pre></div>
-<p><strong>启动会重置该入口。</strong> <code>get_pipeline().add(...)</code> 写入的是<strong>引导之前</strong>就已存在的那份管线；应用装配时会重建 gateway globals，因此经该入口注册的条目会在启动时被重置，永远不会参与请求处理。该重置不再静默 —— 框架会留下一条诊断，给出被丢弃条目的名称与数量。请改用 <code>configure(middlewares=[...])</code> 或 <code>@middleware</code> 装饰器声明中间件：这些入口由装配过程读取，因而能在启动后存活。</p>
-<p>该入口的支持级别与其行为一致：<code>get_pipeline().add(...)</code> 属于<strong>运行时自省 / 高级用途 / 测试</strong>级别的入口，而<strong>不是</strong>应用或库接入中间件的<strong>推荐</strong>路径。<code>Runtime.warmup()</code> 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此它丢弃的条目会以<strong>一条</strong>诊断的形式被通告，而不是被静默丢弃。请通过声明式入口接入中间件：<code>configure(middlewares=[...])</code> 或 <code>@middleware</code> 装饰器。</p>
+<p><strong>启动会拒绝该入口。</strong> <code>get_pipeline().add(...)</code> 写入的是<strong>引导之前</strong>就已存在的那份管线；应用装配时会重建 gateway globals，因此经该入口注册的条目会在<strong>启动边界</strong>被拒绝 —— 应用不会启动。框架会<strong>先</strong>报告它丢弃的条目（一条诊断，给出名称与数量），<strong>再</strong>抛出，因此在调用方捕获异常之后，报告仍已被看到。请改用 <code>configure(middlewares=[...])</code> 或 <code>@middleware</code> 装饰器声明中间件：这些入口由装配过程读取，因而能在启动后存活。</p>
+<p><code>get_pipeline()</code> 本身保留其<strong>运行时自省 / 高级用途 / 测试</strong>级别的作用 —— 应用启动<strong>之后</strong>，<code>list_middleware()</code> 会报告已安装的中间件 —— 但<strong>启动前</strong>的 <code>get_pipeline().add(...)</code> 在引导边界<strong>不受支持</strong>。<code>Runtime.warmup()</code> 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此启动前的注册无法静默沿用。请通过声明式入口接入中间件：<code>configure(middlewares=[...])</code> 或 <code>@middleware</code> 装饰器。</p>
 <p><strong>向后兼容</strong>：旧的 <code>@middleware</code> 类仍会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。</p>
 <h4 id="v096a1">v0.96a1：遗留中间件纳入声明式排序<a class="headerlink" href="#v096a1" title="Permanent link">&para;</a></h4>
 <p>过去，旧的 <code>@middleware</code> 类会被折叠成<strong>单个</strong>桥接层，且始终位于内置 access log 层<strong>内侧</strong>，因此遗留 <code>priority</code> 无法移动它 —— 该优先级只在遗留链<strong>内部</strong>排序，从不跨越桥接边界。现在每个遗留中间件各自成为一个管线层，并与声明层、内置层共用同一个声明式 <code>priority</code> 键排序，因此一个较低的遗留 <code>priority</code> 现在可以把遗留中间件放到内置层<strong>外侧</strong>。</p>
@@ -2931,6 +2953,39 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <p><strong>迁移动作。</strong> 多数应用<strong>无需改动</strong> —— 使用默认优先级时解析顺序完全一致。仅当你<strong>依赖</strong>整条遗留链始终位于内置层内侧、并<strong>曾以为</strong>遗留 <code>priority</code> 无法跨越桥接边界时，才需要复核你声明的 <code>priority</code> 取值，确认新位置符合预期。</p>
 <p><strong>自省面。</strong> <code>cullinan.web.gateway.get_pipeline().list_middleware()</code> 现在按遗留中间件<strong>逐个</strong>列出条目 —— 条目数由<strong>单个桥接条目变为每个已注册中间件各一条</strong> —— 且每条以<strong>真实中间件</strong>命名（而非桥接名），因此解析后的顺序可直接读取。</p>
 <p>内置层同样是声明式的：<code>configure(builtin_middleware=[...])</code> 可替换它，<code>configure(builtin_middleware=[])</code> 可关闭它。</p>
+<h4 id="v096a5">v0.96a5：中间件装饰器移到顶层导入<a class="headerlink" href="#v096a5" title="Permanent link">&para;</a></h4>
+<p><code>from cullinan.web import middleware</code> 过去得到的是 <code>@middleware</code> 装饰器。现在 <code>cullinan.web.middleware</code> 是中间件子模块，因此该名字解析为子模块。装饰器本身未变，仍可从顶层取得。</p>
+<table>
+<thead>
+<tr>
+<th>导入</th>
+<th>变更前</th>
+<th>变更后</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from cullinan.web import middleware</code></td>
+<td>装饰器</td>
+<td><code>cullinan.web.middleware</code> 子模块</td>
+</tr>
+<tr>
+<td><code>from cullinan import middleware</code></td>
+<td>装饰器</td>
+<td>装饰器（不变）</td>
+</tr>
+<tr>
+<td><code>from cullinan.web.middleware import middleware</code></td>
+<td>装饰器</td>
+<td>装饰器（不变）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>受影响者界定。</strong> 只有<strong>从</strong> <code>cullinan.web</code> 导入 <code>middleware</code> 的代码受影响。从顶层、或从 <code>cullinan.web.middleware</code> 导入的代码无需改动。</p>
+<p><strong>迁移动作。</strong> 把导入移到顶层：</p>
+<pre><code>from cullinan import middleware
+</code></pre>
+<p>完整路径 <code>from cullinan.web.middleware import middleware</code> 在变更前后均可用；没有任何东西被删除，也没有任何符号被改名。</p>
 <h3 id="7-openapi">7. OpenAPI 集成<a class="headerlink" href="#7-openapi" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAPIGenerator</span><span class="p">,</span> <span class="n">get_router</span>
 
@@ -3081,7 +3136,7 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a5", "pre_is_available": true, "pre_label": "0.96a5", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

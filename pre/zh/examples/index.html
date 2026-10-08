@@ -92,10 +92,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a4"
+      data-current-version="0.96a5"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a4"
+      data-pre-version="0.96a5"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2137,8 +2137,10 @@
 <li><code>examples/middleware_and_module/</code> —— 什么时候值得在入口方法之上再显式引入 <code>@module</code></li>
 <li><code>examples/middleware_pipeline/</code> —— 通过 <code>@configure(middlewares=[...])</code> 声明中间件顺序</li>
 <li><code>examples/middleware_control/</code> —— 替换/关闭内置中间件层，并统一旧式中间件的排序</li>
+<li><code>examples/middleware_ownership/</code> —— 中间件的两种声明写法，以及各自实例的归属</li>
 <li><code>examples/parameter_handling/</code> —— <code>Path</code>、<code>Query</code>、<code>Body</code> 的控制器方法参数绑定</li>
 <li><code>examples/testing_flow/</code> —— 不启动真实服务进程时通过 <code>main.get_asgi_app()</code> 做测试</li>
+<li><code>examples/assembly_snapshot/</code> —— 逐面读回本次装配实际持有什么（高级 / 边界）</li>
 </ol>
 <h2 id="_3">示例地图<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <table>
@@ -2182,6 +2184,12 @@
 <td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_control">在 GitHub 查看</a></td>
 </tr>
 <tr>
+<td><code>examples/middleware_ownership/</code></td>
+<td>中间件的两种声明写法：<code>@component</code> 类条目（容器托管）与实例条目（外部持有）</td>
+<td><code>python -m examples.middleware_ownership</code></td>
+<td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_ownership">在 GitHub 查看</a></td>
+</tr>
+<tr>
 <td><code>examples/parameter_handling/</code></td>
 <td>控制器方法上的 <code>Path</code>、<code>Query</code>、<code>Body</code></td>
 <td><code>python -m examples.parameter_handling</code></td>
@@ -2199,6 +2207,12 @@
 <td><code>python -m examples.static_files_and_spa</code></td>
 <td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/static_files_and_spa">在 GitHub 查看</a></td>
 </tr>
+<tr>
+<td><code>examples/assembly_snapshot/</code></td>
+<td>装配快照：一次调用取得四个 gateway 子面 + 容器面的 <code>declared</code> / <code>assembled</code> / <code>dropped</code>（高级 / 边界）</td>
+<td><code>python -m examples.assembly_snapshot</code></td>
+<td><a href="https://github.com/cullinan-py/cullinan/tree/main/examples/assembly_snapshot">在 GitHub 查看</a></td>
+</tr>
 </tbody>
 </table>
 <h2 id="_4">为什么要重构示例<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
@@ -2215,9 +2229,15 @@ Cullinan 当前想表达的概念放在最前面：</p>
 <h2 id="_5">补充说明<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <ul>
 <li>根目录 <code>examples/README.md</code> 会同步这条学习链路，方便直接看仓库的开发者。</li>
+<li>推荐入口形态是<strong>方法</strong>：<code>@application</code> + <code>@configure(...)</code> + <code>main()</code>。少数示例
+  （<code>examples/component_discovery_boundary/</code>、<code>examples/assembly_snapshot/</code>）会直接构造
+  高级入口类 <code>cullinan.application.Application</code> —— 它们需要在不启动服务器的前提下拿到
+  应用<strong>对象</strong> —— 这些示例在 <code>examples/README.md</code> 及其自身 README 中均标注为
+  <strong>高级 / 边界</strong>。推荐示例不会把 <code>Application</code> 当作默认入口来教。</li>
 <li>也可以直接从 <a href="https://github.com/cullinan-py/cullinan/tree/main/examples"><code>examples/</code></a> 浏览已入库的示例源码。</li>
 <li><code>tests/integration/test_examples_public_guides.py</code> 会对当前维护的示例做 smoke test。</li>
-<li>中间件有两个维护中的示例：<code>examples/middleware_pipeline/</code> 使用推荐的洋葱协议，
+<li>中间件有多个维护中的示例：<code>examples/middleware_pipeline/</code> 使用推荐的洋葱协议，
+  <code>examples/middleware_ownership/</code> 展示两种声明写法及其对象归属，
   而 <code>examples/middleware_and_module/</code> 使用兼容协议。详见<a href="../wiki/middleware/">中间件</a>。</li>
 <li>如果你第一次接触 Cullinan，建议先完成 <code>examples/minimal_app/</code>，再进入
   <code>examples/controller_service_inject/</code>。</li>
@@ -2290,7 +2310,7 @@ Cullinan 当前想表达的概念放在最前面：</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a4", "pre_is_available": true, "pre_label": "0.96a4", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a5", "pre_is_available": true, "pre_label": "0.96a5", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
