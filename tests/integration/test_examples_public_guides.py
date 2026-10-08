@@ -589,6 +589,12 @@ def test_component_discovery_boundary_example_reports_dropped_component():
     module.run_example_assertions()
 
 
+def test_assembly_snapshot_example_reports_surface_holdings():
+    _clear_example_modules("examples.assembly_snapshot")
+    module = importlib.import_module("examples.assembly_snapshot.demo")
+    module.run_example_assertions()
+
+
 def test_static_files_example_serves_assets_and_spa_fallback():
     main = _load_entry_method("examples.static_files_and_spa.root")
     app = main.get_asgi_app()
