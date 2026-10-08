@@ -595,6 +595,40 @@ def test_assembly_snapshot_example_reports_surface_holdings():
     module.run_example_assertions()
 
 
+def test_packaging_demo_example_constructs_via_entry_method():
+    """Regression guard for the packaging example (O-2).
+
+    ``examples/packaging_demo/main.py`` used to call ``Application()`` with no
+    root module, which raises ``TypeError`` because ``root_module`` is a required
+    positional argument. The example must use a constructible entry; it now
+    declares ``main`` with ``@configure(...) + @application`` and builds without a
+    server. Run in a subprocess so the example's module-level configuration does
+    not leak into the test process.
+    """
+    runner = (
+        "import examples.packaging_demo.main as demo\n"
+        "entry = demo.main\n"
+        "assert getattr(entry, 'entry_kind', None) == 'method', entry\n"
+        "app = entry.get_asgi_app()\n"
+        "assert app is not None\n"
+        "print('PACKAGING_DEMO_OK')\n"
+    )
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = os.pathsep.join(
+        [str(Path.cwd()), environment.get("PYTHONPATH", "")]
+    ).rstrip(os.pathsep)
+    completed = subprocess.run(
+        [sys.executable, "-c", runner],
+        capture_output=True,
+        text=True,
+        cwd=str(Path.cwd()),
+        env=environment,
+        timeout=180,
+    )
+    assert completed.returncode == 0, completed.stderr[-1000:]
+    assert "PACKAGING_DEMO_OK" in completed.stdout
+
+
 def test_static_files_example_serves_assets_and_spa_fallback():
     main = _load_entry_method("examples.static_files_and_spa.root")
     app = main.get_asgi_app()
@@ -656,6 +690,38 @@ def test_example_entrypoints_use_top_level_public_api():
         assert "configure_example(" not in source
         assert "from cullinan.application import configure, module, run" not in source
         assert "configure(root_module=" not in source
+
+
+def test_recommended_surface_has_no_application_class_entry():
+    """Convergence guard: the recommended surface never teaches ``Application(...)``.
+
+    ``cullinan.application.Application`` is the advanced entry class; it may only
+    appear in explicitly advanced / boundary pages and examples (see the
+    advanced-face annotations in ``docs/framework_semantics.md`` and
+    ``examples/README.md``). This guards the convergence: a recommended page or
+    the examples index that starts calling ``Application(...)`` again fails here.
+    """
+    recommended = [
+        Path("README.MD"),
+        Path("docs", "examples.md"),
+        Path("docs", "zh", "examples.md"),
+        Path("docs", "api_reference.md"),
+        Path("docs", "zh", "api_reference.md"),
+        Path("docs", "architecture.md"),
+        Path("docs", "zh", "architecture.md"),
+        Path("docs", "getting_started.md"),
+        Path("docs", "zh", "getting_started.md"),
+        Path("examples", "README.md"),
+    ]
+    offenders = [
+        str(path)
+        for path in recommended
+        if "Application(" in path.read_text(encoding="utf-8")
+    ]
+    assert not offenders, (
+        "the recommended surface must not teach Application(...); found in: "
+        + ", ".join(offenders)
+    )
 
 
 def test_examples_directory_keeps_legacy_demos_outside_default_path():

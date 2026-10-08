@@ -489,3 +489,32 @@ def _read(path: str) -> str:
     from pathlib import Path
 
     return Path(path).read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# C-4 guardrail: `MiddlewarePipeline.add_class` is a registered legacy path
+# ---------------------------------------------------------------------------
+
+
+def test_add_class_is_a_registered_legacy_bare_construction_path():
+    """``MiddlewarePipeline.add_class`` stays, and stays a bare-construction path.
+
+    ``add_class`` is the pre-R17 legacy convenience method: it constructs the
+    middleware itself, so the instance is **not** container-managed and its
+    declared dependencies are **not** injected. The container-managed path is the
+    declarative ``configure(middlewares=[Class])`` with ``@component``. The method
+    is kept because removing it changes public behaviour and must go through a
+    deprecation window; a pre-boot ``get_pipeline().add_class(...)`` is refused at
+    the boot boundary (``PREBOOT_REGISTRATION_ERROR``), so it cannot silently lose
+    a middleware.
+
+    This test pins that the method still exists and still returns the bare
+    instance it constructed, so removing it or changing its semantics must be a
+    deliberate, reviewed change rather than an accidental one.
+    """
+    pipeline = MiddlewarePipeline()
+    instance = pipeline.add_class(_AlphaMiddleware)
+
+    assert isinstance(instance, _AlphaMiddleware)
+    assert pipeline.count == 1
+    assert pipeline.list_middleware()[0]["name"] == "_AlphaMiddleware"
