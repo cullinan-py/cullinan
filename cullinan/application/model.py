@@ -588,10 +588,25 @@ class Application:
 
     def __init__(
         self,
-        root_module: Type[Any],
+        root_module: Type[Any] | Callable[..., Any],
         *,
         runtime_config: Optional[WebRuntimeConfig] = None,
     ) -> None:
+        """Create an advanced runtime facade for one application entry.
+
+        Regular business applications should prefer an ``@application`` entry
+        method plus ``@configure(...)`` and call that method directly. Reach for
+        ``Application`` only for explicit runtime orchestration, offline assembly
+        inspection, or runtime switching.
+
+        Args:
+            root_module: The application entry. Positionally it accepts either a
+                class declared with ``@module`` or an entry method declared with
+                ``@application`` (the decorator attaches module metadata to the
+                method, so both are valid entries here). The parameter name is
+                kept for backward compatibility.
+            runtime_config: Optional explicit ``WebRuntimeConfig``.
+        """
         self.root_module = root_module
         self.runtime_config = runtime_config
         self.id = f"app-{uuid.uuid4().hex[:8]}"
@@ -633,10 +648,18 @@ class Application:
     @classmethod
     def run(
         cls,
-        root_module: Type[Any],
+        root_module: Type[Any] | Callable[..., Any],
         *,
         runtime_config: Optional[WebRuntimeConfig] = None,
     ) -> "Application":
+        """Build, install and activate an application from one entry (advanced).
+
+        As with :meth:`__init__`, ``root_module`` positionally accepts either a
+        ``@module`` class or an ``@application`` entry method. Regular
+        applications should prefer an ``@application`` entry method plus
+        ``@configure(...)`` and call that method directly; use
+        ``Application.run()`` only for explicit runtime orchestration.
+        """
         if not in_public_api_context():
             warn_semantic_once(
                 key="public-api:application-model-run",
