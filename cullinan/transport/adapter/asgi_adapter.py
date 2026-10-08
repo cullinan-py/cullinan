@@ -37,6 +37,27 @@ Receive = Callable[..., Any]
 Send = Callable[..., Any]
 
 
+def _resolve_drain_timeout(default: float = 30.0) -> float:
+    """Return the drain bound from its single source (``WebRuntimeConfig``).
+
+    Keeps the ASGI shutdown path on the same timeout source as the Tornado
+    path and the rest of the framework, instead of silently falling back to a
+    hard-coded default. The lookup must never break shutdown, so any failure
+    degrades to ``default``.
+    """
+    try:
+        from cullinan.web.gateway.runtime import WebRuntime
+
+        runtime = WebRuntime.current()
+        config = getattr(runtime, 'config', None) if runtime is not None else None
+        value = getattr(config, 'drain_timeout', None)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return float(value)
+    except Exception:  # noqa: BLE001 - the drain bound must never crash shutdown
+        pass
+    return default
+
+
 class ASGIAdapter(WebAdapter):
     """ASGI 3.0 adapter for the Cullinan Dispatcher.
 
@@ -247,10 +268,17 @@ async def _handle_lifespan(scope: Scope, receive: Receive, send: Send) -> None:
             try:
                 from cullinan.core import get_application_context
                 ctx = get_application_context()
-                if ctx is not None and hasattr(ctx, 'shutdown'):
-                    result = ctx.shutdown()
-                    if asyncio.iscoroutine(result) or asyncio.isfuture(result):
-                        await result
+                if ctx is not None:
+                    timeout = _resolve_drain_timeout()
+                    # Prefer the loop-friendly path: ctx.shutdown()'s blocking
+                    # drain wait would starve this very loop and drop in-flight
+                    # requests. ctx.ashutdown() yields instead.
+                    if hasattr(ctx, 'ashutdown'):
+                        await ctx.ashutdown(timeout=timeout)
+                    elif hasattr(ctx, 'shutdown'):
+                        result = ctx.shutdown(timeout=timeout)
+                        if asyncio.iscoroutine(result) or asyncio.isfuture(result):
+                            await result
             except Exception as exc:
                 logger.error('Error during ASGI lifespan shutdown: %s', exc)
             await send({'type': 'lifespan.shutdown.complete'})
