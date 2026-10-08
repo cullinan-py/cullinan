@@ -7,6 +7,12 @@ for the deliberately out-of-scope component.
 A second section shows the opt-in upgrade: ``configure(strict_assembly=True)``
 makes that same difference stop startup, and the intentional-exclusion list
 acknowledges a component instead of failing on it.
+
+This is an **advanced / boundary** example. It uses the advanced entry class
+``cullinan.application.Application`` directly because it needs the application
+*object* to read the declaration difference without starting a server; the
+recommended entry form (``@application`` + ``@configure(...)`` + ``main()``)
+starts a server. Regular business code stays on the recommended form.
 """
 
 import importlib
@@ -60,6 +66,8 @@ def inspect_boundary():
     try:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
+            # Advanced / boundary entry: `Application` takes the `@application`
+            # entry method as its root.
             app = Application(entry)
             app.build()
             diff = app.get_declaration_diff()
@@ -116,6 +124,8 @@ def inspect_strict(excludes=None):
         diff = None
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
+            # Advanced / boundary entry: `Application` takes the `@application`
+            # entry method as its root.
             app = Application(entry)
             try:
                 app.build()

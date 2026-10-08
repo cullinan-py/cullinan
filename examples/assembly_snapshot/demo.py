@@ -16,6 +16,13 @@ It returns ``gateway`` (the four sub-surfaces ``pipeline`` / ``router`` /
 ``dispatcher`` / ``exception_handler``) plus ``container``; each surface is a
 ``declared`` / ``assembled`` / ``dropped`` triple. Building the app without
 running a server keeps the demo engine-neutral.
+
+This is an **advanced / boundary** example. It reaches for the advanced entry
+class ``cullinan.application.Application`` on purpose: reading an assembly
+snapshot needs an application *object*, and the recommended entry form
+(``@application`` + ``@configure(...)`` + ``main()``) deliberately starts a
+server. Regular business code stays on that recommended form; reach for
+``Application`` only when you need the object itself (see ``examples/README.md``).
 """
 
 from cullinan.application import Application
@@ -46,6 +53,8 @@ def _register_pre_boot_route() -> None:
 def inspect_snapshot():
     """Build the app without a server, then return its assembly snapshot."""
     _register_pre_boot_route()
+    # Advanced / boundary entry: `Application` takes the `@application` entry
+    # method as its root (the decorator attaches module metadata to the method).
     app = Application(entry)
     app.build()
     try:

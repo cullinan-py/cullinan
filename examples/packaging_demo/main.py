@@ -14,7 +14,7 @@
 #   cd examples/packaging_demo
 #   python main.py
 
-from cullinan import configure
+from cullinan import application, configure
 
 # ---------------------------------------------------------------------------
 # Packaging Configuration
@@ -25,7 +25,7 @@ from cullinan import configure
 #   Works alongside explicit_modules — the pipeline runs S0 then S1.
 # ---------------------------------------------------------------------------
 
-configure(
+@configure(
     # Primary: explicit module list (works for ALL packaging modes)
     explicit_modules=["myapp"],
 
@@ -35,16 +35,15 @@ configure(
     # Auto-scan sys.modules as additional fallback
     auto_scan=True,
 )
-
-# ---------------------------------------------------------------------------
-# Application Entry Point
-# ---------------------------------------------------------------------------
-
+@application
 def main():
-    from cullinan.application import Application
+    """Recommended entry method: call it directly (or via ``python -m``).
 
-    app = Application()
-    app.run()
+    This is the standard Cullinan entry form — ``@configure(...)`` attaches the
+    startup settings and ``@application`` marks the function as the entry
+    method. ``python main.py`` / ``python -m`` reaches it; a frozen build
+    (Nuitka / PyInstaller) starts the same way.
+    """
 
 
 if __name__ == "__main__":

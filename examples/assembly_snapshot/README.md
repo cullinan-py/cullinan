@@ -27,6 +27,14 @@ fields — the vocabulary the component face already uses:
 | `assembled` | what it holds **after** the boundary — what this assembly actually carries |
 | `dropped` | `declared - assembled`: pre-boot entries the boundary discarded |
 
+This is an **advanced / boundary** example: the recommended entry form is
+`@application` + `@configure(...)` + `main()`, which starts a server. Reading an
+assembly snapshot needs the application *object* without starting a server, so
+this example reaches for the advanced entry class
+`cullinan.application.Application` directly. `Application(...)` accepts either a
+`@module` class or an `@application` entry method (here the entry method
+`main`). Regular business code should stay on the recommended entry form.
+
 ```python
 from cullinan.application import Application
 

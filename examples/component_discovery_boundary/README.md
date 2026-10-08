@@ -32,6 +32,14 @@ It prints the `declared` / `assembled` / `dropped` sets, the warning, and the
 fix. The same information is available programmatically from an application
 instance:
 
+This is an **advanced / boundary** example: the recommended entry form
+(`@application` + `@configure(...)` + `main()`) starts a server, while reading
+the declaration difference needs the application *object* without starting one.
+That is why the example reaches for the advanced entry class
+`cullinan.application.Application` directly. `Application(...)` accepts either a
+`@module` class or an `@application` entry method (here the entry method
+`main`). Regular business code should stay on the recommended entry form.
+
 ```python
 from cullinan.application import Application
 from examples.component_discovery_boundary.app.root import main

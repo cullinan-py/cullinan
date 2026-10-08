@@ -13,8 +13,8 @@ This directory is the single source of runnable examples for the current Cullina
 7. `examples/parameter_handling/`
 8. `examples/testing_flow/`
 9. `examples/static_files_and_spa/`
-10. `examples/component_discovery_boundary/`
-11. `examples/assembly_snapshot/`
+10. `examples/component_discovery_boundary/` — advanced / boundary
+11. `examples/assembly_snapshot/` — advanced / boundary
 
 ## Run examples
 
@@ -42,6 +42,15 @@ The maintained examples also stay inside the frozen public export boundary:
 top-level `cullinan` for regular application code, and entry-method-bound helpers
 such as `main.get_asgi_app()` when a test/demo needs runtime access without
 teaching `cullinan.run` as a top-level import.
+
+The **recommended entry form is a method**: `@application` + `@configure(...)` +
+`main()` (run with `python -m examples.<name>`). Recommended examples never teach
+`cullinan.application.Application` as the default entry. A few examples
+(`component_discovery_boundary`, `assembly_snapshot`) do construct the advanced
+entry class directly, because they need the application *object* without starting
+a server; those are marked **advanced / boundary** here and in their own READMEs,
+and their construction of the advanced entry class is explicitly labelled as
+such.
 
 Historical compatibility demos live under `examples/legacy/` and are not part of
 the maintained default learning path. Only `decorator_demo_090.py` remains —
