@@ -4,7 +4,7 @@
 
 > **Upgrade-only page:** keep this page for version transition work, not for first-time onboarding.
 
-> **Note**: applies to the v0.9x → v0.93 range, with notes through v0.96a1; read it
+> **Note**: applies to the v0.9x → v0.93 range, with notes through v0.96a5; read it
 > when upgrading a v0.9x codebase to v0.93.
 
 ## Overview of Changes
@@ -182,19 +182,20 @@ class AuthMiddleware(GatewayMiddleware):
 get_pipeline().add(AuthMiddleware())
 ```
 
-**Startup resets this entry point.** `get_pipeline().add(...)` writes into the
+**Startup refuses this entry point.** `get_pipeline().add(...)` writes into the
 pipeline that exists *before* boot; the gateway globals are rebuilt when the
-application is assembled, so anything registered this way is reset at startup and
-never handles a request. The reset is no longer silent — it leaves one diagnostic
-naming the dropped entries and how many there were. Declare middleware through
-`configure(middlewares=[...])` or the `@middleware` decorator instead: those are
-read by the assembly and survive it.
+application is assembled, so a registration made this way is refused at the
+startup boundary — the application does not start. The framework reports the
+entries it discards first (one diagnostic naming them and how many there were),
+then raises, so a caller that catches the error has still seen the report. Declare
+middleware through `configure(middlewares=[...])` or the `@middleware` decorator
+instead: those are read by the assembly and survive it.
 
-The support level is the same as its behaviour: `get_pipeline().add(...)` is a
-runtime-introspection, advanced-use and testing entry point, *not* the recommended
-way for an application or a library to integrate middleware. `Runtime.warmup()`
-rebuilds the gateway globals — pipeline, router, dispatcher and exception handler —
-so the entries it discards are announced in one diagnostic rather than dropped
+`get_pipeline()` itself keeps its runtime-introspection, advanced-use and testing
+role — after the application has started, `list_middleware()` reports what is
+installed — but a pre-boot `get_pipeline().add(...)` is not supported at the boot
+boundary. `Runtime.warmup()` rebuilds the gateway globals — pipeline, router,
+dispatcher and exception handler — so a pre-boot registration cannot carry over
 silently. Integrate middleware through the declarative entries:
 `configure(middlewares=[...])` or the `@middleware` decorator.
 
@@ -253,6 +254,30 @@ directly readable.
 
 The built-in layer is declarative too: `configure(builtin_middleware=[...])`
 replaces it, and `configure(builtin_middleware=[])` switches it off.
+
+#### v0.96a5: the middleware decorator moves to the top-level import
+
+`from cullinan.web import middleware` used to give you the `@middleware`
+decorator. `cullinan.web.middleware` is now the middleware submodule, so that
+name resolves to the submodule instead. The decorator itself is unchanged and is
+still available at the top level.
+
+| Import | Before | After |
+|---|---|---|
+| `from cullinan.web import middleware` | the decorator | the `cullinan.web.middleware` submodule |
+| `from cullinan import middleware` | the decorator | the decorator (unchanged) |
+| `from cullinan.web.middleware import middleware` | the decorator | the decorator (unchanged) |
+
+**Who is affected.** Only code that imports `middleware` *from* `cullinan.web`.
+Anything importing it from the top level, or from `cullinan.web.middleware`,
+needs no change.
+
+**Migration.** Move the import to the top level:
+
+    from cullinan import middleware
+
+The full path `from cullinan.web.middleware import middleware` keeps working
+both before and after the change; nothing is removed, and no symbol is renamed.
 
 ### 7. OpenAPI Integration
 

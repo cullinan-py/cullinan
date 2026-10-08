@@ -170,7 +170,22 @@ class MiddlewarePipeline:
         logger.debug('Middleware added: %s', mw.__class__.__name__)
 
     def add_class(self, mw_cls: Type[GatewayMiddleware], **kwargs: Any) -> GatewayMiddleware:
-        """Instantiate and add a middleware class.  Returns the instance."""
+        """Instantiate and add a middleware class.  Returns the instance.
+
+        Legacy convenience path: it constructs the middleware itself, so the
+        instance is **not** container-managed and its declared dependencies are
+        **not** injected. The supported container-managed path is the declarative
+        one -- a class passed to ``configure(middlewares=[Class])`` (or
+        ``configure(builtin_middleware=[Class])``) must be declared with
+        ``@component`` and is then created and held by the application container.
+
+        Kept for backward compatibility only, and deliberately **not** removed
+        here: it has no in-tree callers, and a pre-boot
+        ``get_pipeline().add_class(...)`` is refused at the boot boundary by
+        ``Runtime.warmup()`` (``PREBOOT_REGISTRATION_ERROR``), so it cannot
+        silently lose a middleware. Removing this method changes public
+        behaviour and must go through a deprecation window.
+        """
         inst = mw_cls(**kwargs)
         self.add(inst)
         return inst

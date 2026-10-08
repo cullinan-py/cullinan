@@ -7,6 +7,16 @@ in [`README.MD`](README.MD).
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## v0.96a5
+
+**v0.96a5** is the fifth alpha of the 0.96 line. It settles middleware ownership and the boot boundary: a middleware declared as a class is created and held by the container, a class that cannot be honoured is refused before it is constructed, and a registration made on the gateway pipeline before startup is refused instead of being silently reset:
+
+- a middleware class passed to `configure(middlewares=[Class])` — or to `configure(builtin_middleware=[Class])` — is created by the application container, with its declared dependencies injected; a class without `@component` is refused at startup, and the legacy `@middleware(priority=...)` path follows the same rule
+- a refused middleware class is validated before it is constructed, so the rejection path has no side effect and nothing reaches the pipeline
+- a `get_pipeline().add(...)` registration made before startup is reported and then refused at the boot boundary with a `ConfigurationError` (`PREBOOT_REGISTRATION_ERROR`), rather than being accepted and reset
+- `cullinan.web.middleware` now names the middleware submodule instead of the `@middleware` decorator; the decorator moves to the top-level import (`from cullinan import middleware`)
+- no public API symbol is added or removed; the four `__all__` surfaces stay at 44 / 26 / 34 / 72
+
 ## v0.96a4
 
 **v0.96a4** is the fourth alpha of the 0.96 line. It makes the boot boundary name the gateway pipeline entries the framework resets, and discloses in the documentation the support level of the imperative entry point that registers them:

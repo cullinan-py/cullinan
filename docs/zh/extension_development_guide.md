@@ -1,6 +1,6 @@
 # Cullinan 扩展开发指南
 
-> **版本**：0.96a4
+> **版本**：0.96a5
 > **作者**：plumeink  
 > **最后更新**：2026-09-28
 
@@ -75,7 +75,9 @@ Cullinan 提供 6 大类扩展点：
 
 ### 创建中间件
 
-#### 方式一：装饰器注册（推荐）
+#### 方式一：装饰器注册
+
+新代码应使用洋葱协议，通过 `configure(middlewares=[...])` 声明 —— 见「中间件」页的「推荐：洋葱协议」小节；下方装饰器写法注册的是为既有集成保留的兼容钩子协议。
 
 ```python
 from cullinan.web.middleware import middleware, Middleware
@@ -661,6 +663,6 @@ class TestMyMiddleware(ServiceTestCase):
 
 ---
 
-**版本**：0.96a4
+**版本**：0.96a5
 **作者**：plumeink  
 **最后更新**：2026-09-28

@@ -11,6 +11,7 @@ on:
   pull_request:
     paths:
       - 'docs/**'
+      - 'overrides/**'
       - '.github/**'
       - 'mkdocs.yml'
       - 'examples/**'

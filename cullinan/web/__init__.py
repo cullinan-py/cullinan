@@ -14,7 +14,7 @@ from cullinan.web.controller import (
 )
 from cullinan.core import controller
 from cullinan.web.gateway import WebRequest, WebResponse
-from cullinan.web.middleware import BodyDecoderMiddleware, Middleware, get_decoded_body, middleware, set_decoded_body
+from cullinan.web.middleware import BodyDecoderMiddleware, Middleware, get_decoded_body, set_decoded_body
 from cullinan.web.params import (
     Auto,
     AutoType,
@@ -34,6 +34,18 @@ from cullinan.web.params import (
 )
 from cullinan.web.static import StaticFiles
 from cullinan.web.websocket_registry import websocket_handler
+
+# The ``middleware`` entry of this package changes referent on this release
+# line: the name now resolves to the ``cullinan.web.middleware`` submodule
+# instead of the decorator, which stays available at the top level
+# (``from cullinan import middleware``). A caller still reaching for the old
+# decorator binding fails immediately (``'module' object is not callable``)
+# rather than silently, so this transition carries no runtime warning of its own.
+#
+# ``controller`` is NOT switched in this release line: unlike ``middleware``,
+# ``from cullinan.web import controller`` is used by the maintained examples, so
+# the referent change is a breaking change that has to go through the
+# deprecation process (ADR + migration note + window) rather than ride along.
 
 __all__ = [
     "Auto",

@@ -60,10 +60,10 @@ def test_no_carrier_module_writes_a_hand_typed_removal_version():
     import importlib
     from pathlib import Path
 
-    # ``cullinan.web.middleware`` is reachable as a module through the import
-    # system, but its package attribute is bound to the ``middleware``
-    # decorator, so ``import cullinan.web.middleware.legacy as X`` fails. Resolve
-    # each carrier through ``importlib`` to read the module object itself.
+    # ``cullinan.web.middleware`` is now the middleware submodule itself, so its
+    # package attribute and the module object agree. Resolve each carrier through
+    # ``importlib`` so the module object is read directly, independent of how the
+    # attribute is bound.
     carrier_modules = {
         "cullinan/core/__init__.py": importlib.import_module("cullinan.core"),
         "cullinan/web/gateway/route_types.py": importlib.import_module(

@@ -89,13 +89,15 @@ configure(user_packages=["your_app"], builtin_middleware=[])
 
 ### 命令式注册（`get_pipeline().add`）
 
-`cullinan.web.gateway.get_pipeline().add(AuditMiddleware())` 是**启动前**的命令式入口，供手工构建管线的集成使用。它写入的是应用装配**之前**就已存在的那份管线实例，而 gateway globals 会在启动边界被整体重建：因此经该入口加入的条目会在引导时被重置，永远不会参与请求处理。该重置**会留痕** —— 框架输出一条诊断，给出被重置条目的名称与数量 —— 而不是静默丢弃。需要真正生效的中间件，请使用上面的声明式入口。
+`cullinan.web.gateway.get_pipeline().add(AuditMiddleware())` 是**启动前**的命令式入口，供手工构建管线的集成使用。它写入的是应用装配**之前**就已存在的那份管线实例，而 gateway globals 会在启动边界被整体重建（`Runtime.warmup()` 会重建 pipeline、router、dispatcher、exception handler）：因此经该入口加入的条目会在**引导边界被拒绝** —— 应用不会启动。框架会**先**报告它丢弃的条目（一条诊断，给出名称与数量），**再**抛出，因此在调用方捕获异常之后，报告仍已被看到。
 
-**支持级别。** 该入口属于**运行时自省 / 高级用途 / 测试**级别：它受支持，但**不是**应用或库接入中间件的**推荐**路径。经它注册的条目会在应用启动时被重置 —— `Runtime.warmup()` 会重建 gateway globals（pipeline、router、dispatcher、exception handler）—— 框架会就该重置发出**一条**诊断，而不是静默丢弃这些条目。要让中间件真正参与请求处理，请使用声明式入口：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
+**支持级别。** 该命令式注册在**引导边界不受支持**：启动前的 `get_pipeline().add(...)` 会在装配期（而非首个请求）拒绝启动。`get_pipeline()` 本身保留其**运行时自省 / 高级用途 / 测试**级别的作用 —— 应用启动**之后**，`get_pipeline().list_middleware()` 会报告已安装的中间件，且不受影响。要让中间件真正参与请求处理，请使用声明式入口：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
+
+**不止是 pipeline 一道边界。** 引导边界重建的是全部四个 gateway globals，而不只是 pipeline —— 且对它们区别对待：pipeline 上的预引导注册会拒绝启动（见上文），而 router、dispatcher、exception handler 上的预引导注册会被**丢弃并留痕**，应用仍能启动。`Application.get_assembly_snapshot()` 报告每个面实际持有什么 —— 四个 gateway 面加容器，各一组 `declared` / `assembled` / `dropped` —— 于是预引导条目可在一处完成对账，而无需从日志文本里读。详见[框架语义 §12](../framework_semantics.md)与[应用生命周期](lifecycle.md)。
 
 ### 遗留：`process_request` / `process_response`
 
-`cullinan.web.middleware.Middleware` 上的钩子对仍然可用，并会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。每个桥接层与内置层、声明层共用同一个声明式 `priority` 键排序，因此 `@middleware(priority=10)` 的遗留中间件会落在内置 access log（默认 `100`）更外层。仅用于既有集成：
+`Middleware`（从 `cullinan.web.middleware` 导入）上的钩子对仍然可用，并会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。每个桥接层与内置层、声明层共用同一个声明式 `priority` 键排序，因此 `@middleware(priority=10)` 的遗留中间件会落在内置 access log（默认 `100`）更外层。仅用于既有集成：
 
 ```python
 from cullinan.web.middleware import Middleware, middleware
@@ -123,9 +125,51 @@ class ApiKeyGate(GatewayMiddleware):
         return await call_next(request)
 ```
 
+**所有权。** 通过 `@middleware` 声明的中间件由框架容器创建，与通过 `configure(middlewares=[...])` 声明的类写法一致。你写的声明不变：`@middleware(priority=...)` 保持其语法与默认值 `100`。
+
+## 两种声明写法与对象所有权
+
+`configure(middlewares=[...])` 接受两种写法，二者的区别在于**实例归谁所有**：
+
+- **实例** —— `configure(middlewares=[AuditMiddleware()])`。由应用创建对象并保留其所有权，框架原样装入该实例。这是**外部持有**（externally-owned）的中间件。
+- **用 `@component` 声明的类** —— `configure(middlewares=[AuditMiddleware])`。由框架容器创建对象、注入其声明的依赖并持有它，管线运行的正是这一个实例。这是**容器托管**（container-managed）的中间件。
+
+类写法让中间件成为一等容器参与者：像其他组件一样声明依赖，交给容器完成装配。
+
+```python
+from cullinan import component
+from cullinan.web.gateway import GatewayMiddleware
+
+
+@component
+class AuditLog:
+    def record(self, path): ...
+
+
+@component
+class AuditMiddleware(GatewayMiddleware):
+    log: AuditLog  # 由容器注入
+
+    async def __call__(self, request, call_next):
+        self.log.record(request.path)
+        return await call_next(request)
+```
+
+```python
+configure(middlewares=[AuditMiddleware])    # 容器托管
+configure(middlewares=[AuditMiddleware()])  # 外部持有
+```
+
+以类形式传入时，该类**必须**用 `@component` 声明。未加该声明的
+`GatewayMiddleware` 类会在启动期被拒绝，抛出 `ConfigurationError`
+（`error_code = "MIDDLEWARE_DECLARATION_ERROR"`）——框架从不猜测容器所有权：要么补上
+`@component`，要么传入你自己持有的实例。容器托管的中间件在启动期解析依赖，因此依赖不可解析会在启动期失败，而不会推迟到首个请求。`builtin_middleware=[...]` 遵循同一规则。
+
 ## 自省
 
 `cullinan.web.gateway.get_pipeline().list_middleware()` 按执行顺序列出已安装的中间件，其中索引 `0` 为最外层。它是 `Router.get_all_routes()` 在管线侧的对应物。
+
+`list_middleware()` 只报告**一个**面。若要一次调用取得整个装配 —— 四个 gateway 面（`pipeline` / `router` / `dispatcher` / `exception_handler`）加容器，每个面一组 `declared` / `assembled` / `dropped` 三态 —— 请使用 `Application.get_assembly_snapshot()`，详见[框架语义 §12](../framework_semantics.md)。
 
 ## 使用建议
 

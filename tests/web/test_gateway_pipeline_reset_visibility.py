@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-"""Visibility of the boot-boundary gateway reset.
+"""Visibility and refusal of the boot-boundary gateway reset.
 
 ``Runtime.warmup()`` resets the gateway globals, and that reset is deliberate:
 rebuilding the gateway is what makes a start deterministic. What it also does is
 discard anything registered imperatively through ``get_pipeline().add(...)``
-before startup. The discard stays -- this suite does not ask for it to change --
-but it must not happen silently.
+before startup. A registration that would be discarded is no longer accepted:
+the boot boundary refuses to start, so the declarations the application made and
+the pipeline it would run cannot silently disagree.
 
 Four properties are pinned here:
 
 * a pre-boot registration is reported once, naming the entries and their count;
-* a start with nothing pre-registered says nothing at all;
+* the start is then refused, with a dedicated ``error_code``;
+* a start with nothing pre-registered says nothing and succeeds on both engines;
 * the report survives a process whose warnings and logging are both dark, by
-  falling back to stderr;
-* the report belongs to the boot boundary, not to ``reset_gateway()`` itself,
-  which tests call directly and which must stay quiet.
+  falling back to stderr -- and the fallback fires before the refusal.
 
 The last one only shows up in a process whose warning and logging state we
 control, so it runs in a child process: inside pytest both channels are already
@@ -36,6 +36,7 @@ from cullinan import get_config
 from cullinan.application import Application
 from cullinan.core import PendingRegistry, set_application_context
 from cullinan.core.semantic_rules import reset_semantic_warnings
+from cullinan.support.exceptions import ConfigurationError
 from cullinan.web.controller import reset_controller_registry
 from cullinan.web.gateway import (
     GatewayMiddleware,
@@ -50,6 +51,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 REPORT_LOGGER = "cullinan.application.model"
 #: The public rule key the report is filed under.
 RULE_MARKER = "gateway-pipeline-reset"
+#: The dedicated code the refusal carries (never the generic ``CONFIG_ERROR``).
+ERROR_CODE_MARKER = "PREBOOT_REGISTRATION_ERROR"
 #: What the last-resort channel writes (``stderr``, after the ordinary ones fail).
 FALLBACK_MARKER = "cullinan: [gateway-pipeline-reset]"
 #: Printed by the child once assembly is over, so the parent knows it ran to the end.
@@ -128,16 +131,19 @@ def _reports(records) -> list:
 # --- the report is emitted, and names what it discarded -----------------------
 
 
-def test_pre_boot_registration_is_reported_by_the_boot_boundary(
+def test_pre_boot_registration_is_reported_then_refused(
     tmp_path, monkeypatch, caplog
 ):
     entry_method = _boot(tmp_path, monkeypatch, "visibility_boot_positive")
     get_pipeline().add(PipelineMarkerMiddleware())
 
     with caplog.at_level(logging.WARNING, logger=REPORT_LOGGER):
-        entry_method.get_asgi_app()
+        with pytest.raises(ConfigurationError) as excinfo:
+            entry_method.get_asgi_app()
 
     try:
+        # Report first: the diagnostic is emitted before the refusal, so a
+        # caller that catches the exception has still seen it.
         reports = [
             record
             for record in caplog.records
@@ -148,13 +154,17 @@ def test_pre_boot_registration_is_reported_by_the_boot_boundary(
         assert "PipelineMarkerMiddleware" in message
         # The count is reported together with the name, not only the name.
         assert "1 (PipelineMarkerMiddleware)" in message
+
+        # Then the refusal, carrying its own dedicated code.
+        assert excinfo.value.error_code == ERROR_CODE_MARKER
+        assert "startup boundary" in str(excinfo.value)
     finally:
         current = Application.current()
         if current is not None:
             current.uninstall()
 
 
-# --- and says nothing when there is nothing to report -------------------------
+# --- and says nothing -- and starts normally -- with nothing to report --------
 
 
 def test_start_without_pre_boot_registration_is_not_reported(
@@ -180,6 +190,7 @@ _CHILD_SOURCE = textwrap.dedent(
     """
     import cullinan
     from cullinan import application, configure
+    from cullinan.support.exceptions import ConfigurationError
     from cullinan.web.gateway import GatewayMiddleware, get_pipeline
 
     print("CHILD_CULLINAN_FILE", cullinan.__file__)
@@ -199,7 +210,10 @@ _CHILD_SOURCE = textwrap.dedent(
     def main(): ...
 
 
-    main.get_asgi_app()
+    try:
+        main.get_asgi_app()
+    except ConfigurationError as exc:
+        print("CHILD_REFUSED", exc.error_code)
     print("CHILD_ASSEMBLED")
     """
 )
@@ -210,7 +224,9 @@ def test_report_reaches_stderr_when_warnings_are_ignored_and_logging_is_unconfig
 
     Both ordinary channels are dark here, which cannot be arranged inside pytest
     -- the harness configures warnings and logging for the whole process. So the
-    check runs a real child, started the way a production process could be.
+    check runs a real child, started the way a production process could be. The
+    fallback fires before the refusal, so the diagnostic outlives a caller that
+    catches the exception.
     """
     env = dict(os.environ)
     env["PYTHONWARNINGS"] = "ignore"
@@ -228,6 +244,7 @@ def test_report_reaches_stderr_when_warnings_are_ignored_and_logging_is_unconfig
 
     assert completed.returncode == 0, completed.stderr
     assert CHILD_DONE in completed.stdout, completed.stdout
+    assert f"CHILD_REFUSED {ERROR_CODE_MARKER}" in completed.stdout, completed.stdout
     # The child really read the package from this tree: the replay is a source
     # replay, and saying so is part of the result.
     assert str(REPO_ROOT) in completed.stdout, completed.stdout
@@ -246,6 +263,88 @@ def test_direct_gateway_reset_is_not_reported(caplog):
         reset_gateway()
 
     assert not _reports(caplog.records), caplog.text
+
+
+# --- the refusal is engine-neutral: it lands before any adapter is chosen -----
+
+
+class _CapturingAdapter:
+    """A stand-in adapter that records its own construction."""
+
+    def __init__(self, **kwargs):
+        self.init_kwargs = kwargs
+
+    def run(self, **kwargs):
+        self.run_kwargs = kwargs
+
+
+def _stub_tornado_adapter(monkeypatch):
+    from cullinan.application import public as public_api
+
+    built: list = []
+
+    class _Adapter(_CapturingAdapter):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            built.append(self)
+
+    monkeypatch.setattr(public_api, "_load_tornado_adapter", lambda: _Adapter)
+    return built
+
+
+def test_pre_boot_registration_refuses_start_before_the_tornado_adapter(
+    tmp_path, monkeypatch
+):
+    """The refusal comes from the boot boundary, ahead of any engine adapter.
+
+    Because assembly runs before the engine is picked, a pre-boot registration
+    fails the same way whatever engine was requested -- here, the tornado path
+    with a stand-in adapter that must never be built.
+    """
+    from cullinan.application import public as public_api
+
+    entry_method = _boot(tmp_path, monkeypatch, "visibility_boot_tornado")
+    get_pipeline().add(PipelineMarkerMiddleware())
+    built = _stub_tornado_adapter(monkeypatch)
+
+    with pytest.raises(ConfigurationError) as excinfo:
+        public_api.run(entry_method, engine="tornado")
+
+    assert excinfo.value.error_code == ERROR_CODE_MARKER
+    # Refused before the adapter was chosen, so both engines hit one boundary.
+    assert built == []
+
+
+def test_start_without_pre_boot_registration_succeeds_on_the_asgi_path(
+    tmp_path, monkeypatch
+):
+    """With nothing pre-registered the boundary passes on the ASGI entry point."""
+    asgi_entry = _boot(tmp_path, monkeypatch, "visibility_clear_asgi")
+
+    asgi_app = asgi_entry.get_asgi_app()
+
+    assert asgi_app is not None
+    current = Application.current()
+    if current is not None:
+        current.uninstall()
+
+
+def test_start_without_pre_boot_registration_reaches_the_tornado_adapter(
+    tmp_path, monkeypatch
+):
+    """With nothing pre-registered the tornado path reaches its adapter."""
+    from cullinan.application import public as public_api
+
+    tornado_entry = _boot(tmp_path, monkeypatch, "visibility_clear_tornado")
+    built = _stub_tornado_adapter(monkeypatch)
+
+    public_api.run(tornado_entry, engine="tornado")
+
+    # The boundary passed, so the tornado adapter was actually built.
+    assert built, "the tornado adapter was never built"
+    current = Application.current()
+    if current is not None:
+        current.uninstall()
 
 
 # --- reading the registrations must not create the pipeline it reads ----------

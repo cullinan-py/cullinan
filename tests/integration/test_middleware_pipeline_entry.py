@@ -262,11 +262,11 @@ def test_assembly_point_surfaces_declaration_errors_instead_of_swallowing_them()
 # ---------------------------------------------------------------------------
 
 
-def test_reader_accepts_classes_and_instances():
+def test_reader_accepts_instances():
     pipeline = MiddlewarePipeline()
     _register_declared_middleware(
         pipeline,
-        _FakeConfig([_AlphaMiddleware, _BetaMiddleware()]),
+        _FakeConfig([_AlphaMiddleware(), _BetaMiddleware()]),
     )
 
     assert _names(pipeline) == ["_AlphaMiddleware", "_BetaMiddleware"]
@@ -275,6 +275,29 @@ def test_reader_accepts_classes_and_instances():
 def test_reader_rejects_a_non_gateway_middleware():
     with pytest.raises(TypeError):
         _register_declared_middleware(MiddlewarePipeline(), _FakeConfig([object()]))
+
+
+def test_reader_rejects_a_non_gateway_middleware_class_without_constructing_it():
+    """A rejected class must never run its constructor.
+
+    Validation happens before the class is instantiated, so a class that is not a
+    ``GatewayMiddleware`` fails as a type error with no construction side effect
+    and nothing added to the pipeline.
+    """
+    constructed = []
+
+    class _PlainNotMiddleware:
+        def __init__(self):
+            constructed.append(self)
+
+    pipeline = MiddlewarePipeline()
+    with pytest.raises(TypeError) as excinfo:
+        _register_declared_middleware(pipeline, _FakeConfig([_PlainNotMiddleware]))
+
+    assert constructed == []
+    assert pipeline.count == 0
+    # The message still names the offending type.
+    assert "_PlainNotMiddleware" in str(excinfo.value)
 
 
 def test_reader_rejects_a_malformed_options_tuple():
@@ -466,3 +489,32 @@ def _read(path: str) -> str:
     from pathlib import Path
 
     return Path(path).read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# C-4 guardrail: `MiddlewarePipeline.add_class` is a registered legacy path
+# ---------------------------------------------------------------------------
+
+
+def test_add_class_is_a_registered_legacy_bare_construction_path():
+    """``MiddlewarePipeline.add_class`` stays, and stays a bare-construction path.
+
+    ``add_class`` is the pre-R17 legacy convenience method: it constructs the
+    middleware itself, so the instance is **not** container-managed and its
+    declared dependencies are **not** injected. The container-managed path is the
+    declarative ``configure(middlewares=[Class])`` with ``@component``. The method
+    is kept because removing it changes public behaviour and must go through a
+    deprecation window; a pre-boot ``get_pipeline().add_class(...)`` is refused at
+    the boot boundary (``PREBOOT_REGISTRATION_ERROR``), so it cannot silently lose
+    a middleware.
+
+    This test pins that the method still exists and still returns the bare
+    instance it constructed, so removing it or changing its semantics must be a
+    deliberate, reviewed change rather than an accidental one.
+    """
+    pipeline = MiddlewarePipeline()
+    instance = pipeline.add_class(_AlphaMiddleware)
+
+    assert isinstance(instance, _AlphaMiddleware)
+    assert pipeline.count == 1
+    assert pipeline.list_middleware()[0]["name"] == "_AlphaMiddleware"

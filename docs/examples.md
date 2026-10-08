@@ -31,8 +31,10 @@ legacy one-file demos.
 3. `examples/middleware_and_module/` — when an explicit `@module` boundary is worth adding on top of the entry method
 4. `examples/middleware_pipeline/` — declaring middleware order through `@configure(middlewares=[...])`
 5. `examples/middleware_control/` — replacing/switching off the built-in middleware layer and unifying legacy middleware ordering
-6. `examples/parameter_handling/` — controller-method parameter binding with `Path`, `Query`, and `Body`
-7. `examples/testing_flow/` — testing through `main.get_asgi_app()` without a real server process
+6. `examples/middleware_ownership/` — the two middleware declaration forms and who owns each instance
+7. `examples/parameter_handling/` — controller-method parameter binding with `Path`, `Query`, and `Body`
+8. `examples/testing_flow/` — testing through `main.get_asgi_app()` without a real server process
+9. `examples/assembly_snapshot/` — reading back what an assembly actually holds, surface by surface (advanced / boundary)
 
 ## Example map
 
@@ -43,9 +45,11 @@ legacy one-file demos.
 | `examples/middleware_and_module/` | Module boundary ownership and the compatibility middleware protocol | `python -m examples.middleware_and_module` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_and_module) |
 | `examples/middleware_pipeline/` | Declarative middleware order via `@configure(middlewares=[...])` and public introspection | `python -m examples.middleware_pipeline` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_pipeline) |
 | `examples/middleware_control/` | Controlling the built-in middleware layer (`builtin_middleware=[...]`) and unifying legacy middleware ordering | `python -m examples.middleware_control` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_control) |
+| `examples/middleware_ownership/` | The two middleware declaration forms: a `@component` class entry (container-managed) and an instance entry (externally-owned) | `python -m examples.middleware_ownership` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/middleware_ownership) |
 | `examples/parameter_handling/` | `Path`, `Query`, and `Body` on controller methods | `python -m examples.parameter_handling` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/parameter_handling) |
 | `examples/testing_flow/` | Public-API test flow with ASGI dispatch | `python -m pytest examples/testing_flow/test_app.py -q` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/testing_flow) |
 | `examples/static_files_and_spa/` | Declarative `StaticFiles` mounts + SPA fallback (engine-neutral) | `python -m examples.static_files_and_spa` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/static_files_and_spa) |
+| `examples/assembly_snapshot/` | The assembly snapshot: `declared` / `assembled` / `dropped` for the four gateway surfaces + container in one call (advanced / boundary) | `python -m examples.assembly_snapshot` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/assembly_snapshot) |
 
 ## Why the examples were restructured
 
@@ -62,10 +66,17 @@ The current example set intentionally keeps Cullinan's own concept front and cen
 ## Notes
 
 - The root `examples/README.md` file mirrors this learning path for repository readers.
+- The recommended entry form is a method: `@application` + `@configure(...)` + `main()`.
+  A few examples (`examples/component_discovery_boundary/`, `examples/assembly_snapshot/`)
+  construct the advanced entry class `cullinan.application.Application` directly — they
+  need the application *object* without starting a server — and are marked
+  **advanced / boundary** in `examples/README.md` and in their own READMEs. Recommended
+  examples never teach `Application` as the default entry.
 - You can browse the tracked source set directly from [`examples/`](https://github.com/cullinan-py/cullinan/tree/main/examples).
 - `tests/integration/test_examples_public_guides.py` smoke-tests the maintained examples.
-- Middleware has two maintained examples: `examples/middleware_pipeline/` uses the
-  recommended onion protocol, while `examples/middleware_and_module/` uses the
+- Middleware has several maintained examples: `examples/middleware_pipeline/` uses the
+  recommended onion protocol, `examples/middleware_ownership/` shows the two declaration
+  forms and their object ownership, while `examples/middleware_and_module/` uses the
   compatibility protocol. See [Middleware](wiki/middleware.md).
 - If you are learning Cullinan for the first time, start with `examples/minimal_app/` and then
   continue to `examples/controller_service_inject/`.

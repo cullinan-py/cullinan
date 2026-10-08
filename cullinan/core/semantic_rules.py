@@ -65,6 +65,15 @@ SEMANTIC_RULES: Dict[str, str] = {
         "The gateway globals are rebuilt at the startup boundary. Middleware registered on the "
         "pre-boot pipeline is reset there, and that reset is reported instead of staying silent."
     ),
+    "middleware-component-declaration": (
+        "A class passed to configure(middlewares=[...]) is created and injected by the container "
+        "only when it is declared with @component. The framework never guesses container ownership."
+    ),
+    "preboot-registration-rejected": (
+        "Middleware added to the gateway pipeline before the boot boundary is rejected there. "
+        "The declarations and the running pipeline must agree, so a pre-boot registration is an "
+        "error instead of a silently discarded entry."
+    ),
 }
 
 _warned_keys = set()

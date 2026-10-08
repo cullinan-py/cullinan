@@ -10,16 +10,26 @@ import inspect
 import logging
 import threading
 import uuid
+from types import MappingProxyType
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type
 
-from cullinan.core.application_context import ApplicationContext, _emit_report_fallback
+from cullinan.core.application_context import (
+    ApplicationContext,
+    ContainerState,
+    _emit_report_fallback,
+)
 from cullinan.core.container_manager import get_container_manager
 from cullinan.core.context import create_context, destroy_context, get_current_context
 from cullinan.core.decorators import get_component_registration_metadata
 from cullinan.core.pending import PendingRegistration, PendingRegistry
 from cullinan._api_boundary import in_public_api_context
-from cullinan.core.semantic_rules import PublicAPISemanticWarning, warn_semantic_once
+from cullinan.core.semantic_rules import (
+    PublicAPISemanticWarning,
+    format_semantic_message,
+    warn_semantic_once,
+)
 from cullinan.support.diagnostics import application_not_installed
+from cullinan.support.exceptions import ConfigurationError
 from cullinan.web.gateway import (
     get_dispatcher,
     get_exception_handler,
@@ -27,7 +37,12 @@ from cullinan.web.gateway import (
     get_router,
     reset_gateway,
 )
-from cullinan.web.gateway.globals import _peek_pipeline
+from cullinan.web.gateway.globals import (
+    _peek_dispatcher,
+    _peek_exception_handler,
+    _peek_pipeline,
+    _peek_router,
+)
 from cullinan.web.gateway.runtime import WebRuntime, WebRuntimeConfig
 from cullinan.runtime.module_scanner import list_submodules
 
@@ -38,6 +53,11 @@ _APPLICATION_PACKAGES_ATTR = "__cullinan_application_packages__"
 _APPLICATION_MODULES_ATTR = "__cullinan_application_modules__"
 _APP_CONTEXT_KEY = "cullinan.application"
 _RUNTIME_CONTEXT_KEY = "cullinan.runtime"
+
+# Dedicated error code for a pre-boot pipeline registration that the boot
+# boundary refuses. It is not the generic ``CONFIG_ERROR``: this failure and any
+# other misconfiguration must stay distinguishable in monitoring.
+_PREBOOT_REGISTRATION_ERROR_CODE = "PREBOOT_REGISTRATION_ERROR"
 
 
 @dataclass(frozen=True)
@@ -96,6 +116,55 @@ class _DeclarationDiff:
         return len(self.dropped)
 
 
+#: The four gateway globals that ``reset_gateway()`` rebuilds at the boot
+#: boundary. Their names double as the ``gateway`` mapping keys of
+#: :class:`_AssemblySnapshot`.
+_GATEWAY_SURFACE_NAMES: Tuple[str, ...] = (
+    "pipeline",
+    "router",
+    "dispatcher",
+    "exception_handler",
+)
+
+
+@dataclass(frozen=True)
+class _SurfaceHoldings:
+    """Declared / assembled / dropped holdings of one assembly surface.
+
+    ``declared`` is what the surface held *before* the boot boundary (the
+    pre-boot registration snapshot taken while warming up); ``assembled`` is what
+    it holds *after* the boundary (what this assembly actually carries); and
+    ``dropped`` is ``declared - assembled`` -- the pre-boot entries the boundary
+    discarded.
+
+    Module-private on purpose: like :class:`_DeclarationDiff` this is a
+    diagnostic view hanging off the existing ``Application`` object and must
+    never enter any ``__all__`` (it is not a new top-level symbol).
+    """
+
+    declared: Tuple[str, ...] = ()
+    assembled: Tuple[str, ...] = ()
+    dropped: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class _AssemblySnapshot:
+    """What one application assembly actually holds, surface by surface.
+
+    ``gateway`` maps each of the four gateway surfaces -- ``pipeline`` /
+    ``router`` / ``dispatcher`` / ``exception_handler`` -- to its
+    :class:`_SurfaceHoldings`; ``container`` reports the declared-vs-assembled
+    component reconciliation the container assembled. The snapshot is obtained in
+    one call through :meth:`Application.get_assembly_snapshot`.
+
+    Module-private on purpose: this is a read-only diagnostic view and must never
+    enter any ``__all__`` (it is not a new top-level symbol).
+    """
+
+    gateway: Mapping[str, _SurfaceHoldings]
+    container: _SurfaceHoldings
+
+
 class Runtime:
     """Mutable runtime record for one Application candidate."""
 
@@ -111,12 +180,23 @@ class Runtime:
 
     def warmup(self) -> None:
         self.phase = "warming"
+        # Snapshot *every* gateway surface before the reset, so the assembly
+        # snapshot can name, side by side with the assembled set, exactly the
+        # pre-boot registrations the boundary discards. Like the pipeline-only
+        # read below, this must not create the objects it is about to see wiped:
+        # every surface is read through a non-materializing ``_peek_*`` helper.
+        self.application._gateway_declared = _read_gateway_surface_holdings()
         # Read the pre-boot registrations *before* the reset, so the report names
         # exactly the entries the reset discards. The read must not create the
         # pipeline it is about to see wiped.
         discarded_entries = _registered_pipeline_entry_names()
         reset_gateway()
+        # Report first, then refuse: a deployment that swallows the exception
+        # still saw the diagnostic. The refusal lands on the consequence of the
+        # reset for a starting application, not inside ``reset_gateway`` itself
+        # (which keeps its silent rebuild semantics for direct callers).
         _warn_pipeline_registrations_reset(discarded_entries)
+        _reject_preboot_pipeline_registrations(discarded_entries)
         self.context.refresh()
         self.web_runtime.router = get_router()
         self.web_runtime.dispatcher = get_dispatcher()
@@ -134,6 +214,20 @@ class Runtime:
         self.web_runtime.begin_draining()
 
 
+def _pipeline_entry_names(pipeline: Any) -> Tuple[str, ...]:
+    """Names of a pipeline's entries, without resolving the declarative order.
+
+    The raw entry list is the view that does not depend on the declarative
+    ordering resolving, which can fail for declarations that were never
+    completed.
+    """
+    names: List[str] = []
+    for entry in pipeline._entries:
+        middleware = entry.middleware
+        names.append(getattr(middleware, "display_name", None) or type(middleware).__name__)
+    return tuple(names)
+
+
 def _registered_pipeline_entry_names() -> Tuple[str, ...]:
     """Names of the gateway pipeline entries registered so far, without creating it.
 
@@ -147,11 +241,64 @@ def _registered_pipeline_entry_names() -> Tuple[str, ...]:
     pipeline = _peek_pipeline()
     if pipeline is None:
         return ()
-    names: List[str] = []
-    for entry in pipeline._entries:
-        middleware = entry.middleware
-        names.append(getattr(middleware, "display_name", None) or type(middleware).__name__)
-    return tuple(names)
+    return _pipeline_entry_names(pipeline)
+
+
+def _read_gateway_surface_holdings() -> Dict[str, Tuple[str, ...]]:
+    """Read every gateway surface as it currently stands, without creating any.
+
+    Each read goes through the module-private ``_peek_*`` helpers rather than the
+    lazy ``get_*()`` accessors: the accessors materialize their object as a side
+    effect, and an observer must not change what it observes -- least of all the
+    boot boundary, which reads the surfaces immediately before it discards them.
+    A surface that has not been materialized yet reads as empty.
+
+    Returns one entry per :data:`_GATEWAY_SURFACE_NAMES`, each a tuple of the
+    labels that surface holds in its own read-only projection.
+    """
+    pipeline = _peek_pipeline()
+    router = _peek_router()
+    dispatcher = _peek_dispatcher()
+    exception_handler = _peek_exception_handler()
+
+    pipeline_names: Tuple[str, ...] = ()
+    if pipeline is not None:
+        pipeline_names = _pipeline_entry_names(pipeline)
+
+    router_names: Tuple[str, ...] = ()
+    if router is not None:
+        router_names = tuple(
+            f"{entry.method} {entry.path}" for entry in router.get_all_routes()
+        )
+
+    dispatcher_names: Tuple[str, ...] = ()
+    if dispatcher is not None:
+        dispatcher_names = tuple(
+            descriptor["name"] for descriptor in dispatcher.list_wired_components()
+        )
+
+    handler_names: Tuple[str, ...] = ()
+    if exception_handler is not None:
+        handler_names = tuple(
+            descriptor["name"] for descriptor in exception_handler.list_registered_handlers()
+        )
+
+    return {
+        "pipeline": pipeline_names,
+        "router": router_names,
+        "dispatcher": dispatcher_names,
+        "exception_handler": handler_names,
+    }
+
+
+def _build_surface_holdings(
+    declared: Tuple[str, ...],
+    assembled: Tuple[str, ...],
+) -> _SurfaceHoldings:
+    """Pair a pre-boot reading with the current one, deriving ``dropped``."""
+    assembled_set = set(assembled)
+    dropped = tuple(name for name in declared if name not in assembled_set)
+    return _SurfaceHoldings(declared=declared, assembled=assembled, dropped=dropped)
 
 
 def _warn_pipeline_registrations_reset(names: Tuple[str, ...]) -> None:
@@ -194,6 +341,49 @@ def _warn_pipeline_registrations_reset(names: Tuple[str, ...]) -> None:
         stacklevel=3,
     )
     _emit_report_fallback(problem, guidance)
+
+
+def _reject_preboot_pipeline_registrations(names: Tuple[str, ...]) -> None:
+    """Refuse a start when the pre-boot pipeline still held registrations.
+
+    ``reset_gateway()`` rebuilds the gateway globals and discards whatever was
+    added imperatively beforehand. Reporting that discard is not enough: the
+    declarations the application made and the pipeline it will actually run
+    would disagree, and the affected middleware would simply never run. The boot
+    boundary therefore refuses to start instead, so the mismatch fails loudly at
+    startup rather than turning into missing middleware at request time.
+
+    The report is emitted first (see ``_warn_pipeline_registrations_reset``), so
+    even a caller that catches the exception has already seen the diagnostic.
+    """
+    if not names:
+        return
+    joined = ", ".join(names)
+    problem = (
+        f"The pre-boot registrations reported above are rejected at the startup boundary: "
+        f"{len(names)} gateway pipeline entry(ies) added before startup ({joined}) would not "
+        "take part in request handling."
+    )
+    guidance = (
+        "Declare middleware where the startup assembly reads it -- "
+        "configure(middlewares=[...]) or the @middleware decorator. "
+        "get_pipeline().add(...) registers on a pipeline that is rebuilt at the boot boundary, "
+        "so pre-boot entries are refused instead of being silently discarded."
+    )
+    _logger.error(
+        "Refusing to start: %d gateway pipeline entry(ies) were registered before startup (%s). "
+        "Declare middleware with configure(middlewares=[...]) or @middleware instead.",
+        len(names),
+        joined,
+    )
+    raise ConfigurationError(
+        message=format_semantic_message(
+            "preboot-registration-rejected",
+            problem=problem,
+            guidance=guidance,
+        ),
+        error_code=_PREBOOT_REGISTRATION_ERROR_CODE,
+    )
 
 
 def _normalize_iterable(value: Optional[Iterable[Any]]) -> Tuple[Any, ...]:
@@ -402,10 +592,25 @@ class Application:
 
     def __init__(
         self,
-        root_module: Type[Any],
+        root_module: Type[Any] | Callable[..., Any],
         *,
         runtime_config: Optional[WebRuntimeConfig] = None,
     ) -> None:
+        """Create an advanced runtime facade for one application entry.
+
+        Regular business applications should prefer an ``@application`` entry
+        method plus ``@configure(...)`` and call that method directly. Reach for
+        ``Application`` only for explicit runtime orchestration, offline assembly
+        inspection, or runtime switching.
+
+        Args:
+            root_module: The application entry. Positionally it accepts either a
+                class declared with ``@module`` or an entry method declared with
+                ``@application`` (the decorator attaches module metadata to the
+                method, so both are valid entries here). The parameter name is
+                kept for backward compatibility.
+            runtime_config: Optional explicit ``WebRuntimeConfig``.
+        """
         self.root_module = root_module
         self.runtime_config = runtime_config
         self.id = f"app-{uuid.uuid4().hex[:8]}"
@@ -413,6 +618,10 @@ class Application:
         self.runtime: Optional[Runtime] = None
         self.phase = "created"
         self._declaration_diff = _DeclarationDiff()
+        # Pre-boot gateway readings, captured by ``Runtime.warmup()`` right before
+        # the boot boundary resets the gateway globals. ``None`` means no start
+        # has reached the boundary yet.
+        self._gateway_declared: Optional[Mapping[str, Tuple[str, ...]]] = None
 
     @property
     def context(self) -> ApplicationContext:
@@ -430,6 +639,25 @@ class Application:
     def is_active(self) -> bool:
         return self.__class__.current() is self
 
+    @property
+    def accepts_requests(self) -> bool:
+        """Whether this application still accepts new request scopes.
+
+        Readiness for a serving layer to consult: ``False`` once the application
+        has begun draining, so a probe can shed traffic before the in-flight
+        requests are awaited.
+        """
+        if self.runtime is None:
+            return False
+        return self.context.accepts_requests
+
+    def add_draining_handler(self, handler) -> None:
+        """Subscribe to the transition into draining.
+
+        Convenience delegate to :meth:`ApplicationContext.add_draining_handler`.
+        """
+        self.context.add_draining_handler(handler)
+
     @classmethod
     def current(cls, default: Optional["Application"] = None) -> Optional["Application"]:
         current = get_current_context()
@@ -443,10 +671,18 @@ class Application:
     @classmethod
     def run(
         cls,
-        root_module: Type[Any],
+        root_module: Type[Any] | Callable[..., Any],
         *,
         runtime_config: Optional[WebRuntimeConfig] = None,
     ) -> "Application":
+        """Build, install and activate an application from one entry (advanced).
+
+        As with :meth:`__init__`, ``root_module`` positionally accepts either a
+        ``@module`` class or an ``@application`` entry method. Regular
+        applications should prefer an ``@application`` entry method plus
+        ``@configure(...)`` and call that method directly; use
+        ``Application.run()`` only for explicit runtime orchestration.
+        """
         if not in_public_api_context():
             warn_semantic_once(
                 key="public-api:application-model-run",
@@ -571,7 +807,7 @@ class Application:
                 get_container_manager().bind(previous_context)
             if previous_runtime is not None or (self.runtime is not None and WebRuntime.current() is self.runtime.web_runtime):
                 WebRuntime.bind_runtime(previous_runtime)
-            if self.runtime is not None and self.context.state.value != "CLOSED":
+            if self.runtime is not None and self.context.state is not ContainerState.CLOSED:
                 self.context.shutdown(timeout=self.web_runtime.config.drain_timeout)
             raise
 
@@ -594,6 +830,17 @@ class Application:
                 WebRuntime.bind_runtime(None)
         self._begin_draining()
         self._finalize_drain()
+        # ``_finalize_drain`` defers (without a retry of its own) while requests
+        # are still in flight, which left the application stranded in
+        # "draining" with its lifecycle instances un-released. uninstall() is a
+        # teardown call, so drive the close to a terminal state here:
+        # shutdown() waits on the authoritative request-scope count -- and, when
+        # it is called from a live event loop, warns instead of blocking it.
+        if self.context.state is not ContainerState.CLOSED:
+            self.context.shutdown(timeout=self.web_runtime.config.drain_timeout)
+        self.phase = "closed"
+        if self.runtime is not None:
+            self.runtime.phase = "closed"
 
     def get_component_owner(self, component: Type[Any]) -> Optional[Type[Any]]:
         if self.graph is None:
@@ -620,6 +867,47 @@ class Application:
             self.discover()
         return self._declaration_diff
 
+    def get_assembly_snapshot(self) -> _AssemblySnapshot:
+        """Return what this assembly actually holds, surface by surface.
+
+        One call reports every gateway surface -- ``pipeline`` / ``router`` /
+        ``dispatcher`` / ``exception_handler`` -- plus the container, each as a
+        ``declared`` / ``assembled`` / ``dropped`` triple. ``assembled`` is what
+        the surface holds right now; ``declared`` is what it held *before* the
+        boot boundary, captured in ``Runtime.warmup()``; and ``dropped`` is the
+        pre-boot registrations the boundary discarded (``declared - assembled``),
+        reported side by side with the assembled set so the two can be
+        reconciled in one place.
+
+        Every gateway surface is read through the module-private, non-creating
+        ``_peek_*`` helpers, so querying never materializes a lazy global -- an
+        observer must not change what it observes. The ``container`` sub-surface
+        reports the same declared-vs-assembled component reconciliation that
+        ``get_declaration_diff()`` exposes.
+
+        This is the single query entry point promised by the registration-surface
+        observability rule; the full per-entry detail lives here, while the boot
+        boundary only reports a summary. The return value is a module-private
+        frozen dataclass and is not part of the public API surface.
+        """
+        live = _read_gateway_surface_holdings()
+        declared = self._gateway_declared if self._gateway_declared is not None else live
+        gateway = {
+            surface: _build_surface_holdings(
+                tuple(declared.get(surface, ())),
+                tuple(live.get(surface, ())),
+            )
+            for surface in _GATEWAY_SURFACE_NAMES
+        }
+        return _AssemblySnapshot(
+            gateway=MappingProxyType(gateway),
+            container=_SurfaceHoldings(
+                declared=self._declaration_diff.declared,
+                assembled=self._declaration_diff.assembled,
+                dropped=self._declaration_diff.dropped,
+            ),
+        )
+
     def _iter_warmup_hooks(self) -> Iterable[Callable[["Application"], None]]:
         if self.graph is None:
             return ()
@@ -645,9 +933,21 @@ class Application:
     def _finalize_drain(self) -> None:
         if self.runtime is None:
             return
-        if self.web_runtime.request_count > 0 or self.context.active_request_count > 0:
+        pending = self.web_runtime.request_count
+        scopes = self.context.active_request_count
+        if pending > 0 or scopes > 0:
+            # This close trigger fires on the transport counter alone, so it can
+            # run while request scopes are still active. Defer -- but never
+            # silently: a deferral is only safe because a later trigger (or
+            # ``uninstall``) re-enters here, and a silent one would strand the
+            # application in "draining" with its instances un-released.
+            _logger.warning(
+                "Deferring drain finalisation: transport_requests=%s request_scopes=%s",
+                pending,
+                scopes,
+            )
             return
-        if self.context.state.value != "CLOSED":
+        if self.context.state is not ContainerState.CLOSED:
             # The drain bound comes from the runtime configuration rather than a
             # hidden default: ``WebRuntimeConfig.drain_timeout`` (default 30.0,
             # the value ``ApplicationContext.shutdown`` used to hard-code) is now

@@ -529,6 +529,22 @@ def test_middleware_pipeline_example_reflects_declared_order():
     assert guarded_status == 403
 
 
+def test_middleware_ownership_example_marks_the_two_forms():
+    main = _load_entry_method("examples.middleware_ownership.root")
+    app = main.get_asgi_app()
+
+    status, headers, payload = asyncio.run(_invoke_asgi_app(app, "/ownership"))
+
+    assert status == 200
+    assert payload["order"][:2] == ["AuditMiddleware", "MarkerMiddleware"]
+    assert payload["container_managed"] == "AuditMiddleware"
+    assert payload["externally_owned"] == "MarkerMiddleware"
+    # The container-owned middleware recorded into its injected dependency.
+    assert payload["audit_log_entries"] == ["/ownership"]
+    assert headers["x-audit-entries"] == "1"
+    assert headers["x-marker"] == "externally-owned"
+
+
 def test_parameter_handling_example_maps_path_query_and_body():
     main = _load_entry_method("examples.parameter_handling.root")
     app = main.get_asgi_app()
@@ -571,6 +587,46 @@ def test_component_discovery_boundary_example_reports_dropped_component():
     _clear_example_modules("examples.component_discovery_boundary")
     module = importlib.import_module("examples.component_discovery_boundary.demo")
     module.run_example_assertions()
+
+
+def test_assembly_snapshot_example_reports_surface_holdings():
+    _clear_example_modules("examples.assembly_snapshot")
+    module = importlib.import_module("examples.assembly_snapshot.demo")
+    module.run_example_assertions()
+
+
+def test_packaging_demo_example_constructs_via_entry_method():
+    """Regression guard for the packaging example (O-2).
+
+    ``examples/packaging_demo/main.py`` used to call ``Application()`` with no
+    root module, which raises ``TypeError`` because ``root_module`` is a required
+    positional argument. The example must use a constructible entry; it now
+    declares ``main`` with ``@configure(...) + @application`` and builds without a
+    server. Run in a subprocess so the example's module-level configuration does
+    not leak into the test process.
+    """
+    runner = (
+        "import examples.packaging_demo.main as demo\n"
+        "entry = demo.main\n"
+        "assert getattr(entry, 'entry_kind', None) == 'method', entry\n"
+        "app = entry.get_asgi_app()\n"
+        "assert app is not None\n"
+        "print('PACKAGING_DEMO_OK')\n"
+    )
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = os.pathsep.join(
+        [str(Path.cwd()), environment.get("PYTHONPATH", "")]
+    ).rstrip(os.pathsep)
+    completed = subprocess.run(
+        [sys.executable, "-c", runner],
+        capture_output=True,
+        text=True,
+        cwd=str(Path.cwd()),
+        env=environment,
+        timeout=180,
+    )
+    assert completed.returncode == 0, completed.stderr[-1000:]
+    assert "PACKAGING_DEMO_OK" in completed.stdout
 
 
 def test_static_files_example_serves_assets_and_spa_fallback():
@@ -619,6 +675,7 @@ def test_example_entrypoints_use_top_level_public_api():
         ("controller_service_inject", "root.py"),
         ("middleware_and_module", "root.py"),
         ("middleware_pipeline", "root.py"),
+        ("middleware_ownership", "root.py"),
         ("parameter_handling", "root.py"),
         ("testing_flow", "app.py"),
         ("static_files_and_spa", "root.py"),
@@ -633,6 +690,38 @@ def test_example_entrypoints_use_top_level_public_api():
         assert "configure_example(" not in source
         assert "from cullinan.application import configure, module, run" not in source
         assert "configure(root_module=" not in source
+
+
+def test_recommended_surface_has_no_application_class_entry():
+    """Convergence guard: the recommended surface never teaches ``Application(...)``.
+
+    ``cullinan.application.Application`` is the advanced entry class; it may only
+    appear in explicitly advanced / boundary pages and examples (see the
+    advanced-face annotations in ``docs/framework_semantics.md`` and
+    ``examples/README.md``). This guards the convergence: a recommended page or
+    the examples index that starts calling ``Application(...)`` again fails here.
+    """
+    recommended = [
+        Path("README.MD"),
+        Path("docs", "examples.md"),
+        Path("docs", "zh", "examples.md"),
+        Path("docs", "api_reference.md"),
+        Path("docs", "zh", "api_reference.md"),
+        Path("docs", "architecture.md"),
+        Path("docs", "zh", "architecture.md"),
+        Path("docs", "getting_started.md"),
+        Path("docs", "zh", "getting_started.md"),
+        Path("examples", "README.md"),
+    ]
+    offenders = [
+        str(path)
+        for path in recommended
+        if "Application(" in path.read_text(encoding="utf-8")
+    ]
+    assert not offenders, (
+        "the recommended surface must not teach Application(...); found in: "
+        + ", ".join(offenders)
+    )
 
 
 def test_examples_directory_keeps_legacy_demos_outside_default_path():
@@ -678,7 +767,7 @@ def test_root_readme_keeps_default_path_on_top_level_api():
     # Pin the *current* release line the README's "Current series" section
     # advertises; asserting the previous line would stay green forever once the
     # README keeps it as historical context, making the guard vacuous.
-    assert "**v0.96a4**" in readme
+    assert "**v0.96a5**" in readme
 
 
 def test_getting_started_stays_on_business_first_onboarding_path():
@@ -1038,7 +1127,7 @@ def test_current_version_markers_follow_v094a1_release_line():
         extension_guide,
         zh_extension_guide,
     ):
-        assert "0.96a4" in content
+        assert "0.96a5" in content
         assert "0.94a1" not in content
 
 

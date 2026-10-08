@@ -9,7 +9,7 @@ detects the packaging mode and selects the correct strategy chain.
 ```
 packaging_demo/
 ├── __main__.py          # python -m entry point
-├── main.py              # Application setup and entry
+├── main.py              # @configure(...) + @application entry method
 ├── services.py          # @service components
 ├── controllers.py       # @controller components
 ├── nuitka_args.txt      # Nuitka argument file
@@ -25,6 +25,10 @@ python -m packaging_demo
 # or
 python main.py
 ```
+
+`main.py` uses the standard Cullinan entry form: `@configure(...)` attaches the
+packaging settings and `@application` marks `main` as the entry method, which the
+runner calls directly.
 
 ## Build & Run (4 modes)
 

@@ -20,7 +20,7 @@ Author: plumeink
 import inspect
 import json
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from .invocation import ExceptionResolver, HandlerMethod, ReturnValueHandler
 from .router import Router
@@ -58,6 +58,38 @@ class Dispatcher:
         self.return_value_handler: ReturnValueHandler = return_value_handler or ReturnValueHandler()
         self.exception_resolver: ExceptionResolver = exception_resolver or ExceptionResolver(self.exception_handler)
         self._debug: bool = debug
+
+    # ------------------------------------------------------------------
+    # Introspection
+    # ------------------------------------------------------------------
+
+    def list_wired_components(self) -> List[Dict[str, Any]]:
+        """Return the collaborators this dispatcher is wired to, in wiring order.
+
+        The dispatcher keeps no registration list of its own -- what it *holds*
+        is its wiring: the router, pipeline and exception handler it dispatches
+        through, plus the header policy, return-value handler and exception
+        resolver it was built with.  This is the read-only counterpart of
+        ``Router.get_all_routes()`` / ``MiddlewarePipeline.list_middleware()``
+        for the dispatcher, and it reads the public instance attributes rather
+        than any private state, so it never perturbs the dispatcher.
+
+        Returns:
+            A list of descriptors, each with a ``name`` (the wiring slot) and its
+            ``type`` (the class name of what is installed there).
+        """
+        slots = (
+            'router',
+            'pipeline',
+            'exception_handler',
+            'header_policy',
+            'return_value_handler',
+            'exception_resolver',
+        )
+        return [
+            {'name': slot, 'type': type(getattr(self, slot)).__name__}
+            for slot in slots
+        ]
 
     # ------------------------------------------------------------------
     # Main dispatch entry point

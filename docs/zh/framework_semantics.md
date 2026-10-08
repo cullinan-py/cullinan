@@ -250,7 +250,7 @@ print(diff.dropped_count)  # len(diff.dropped)
 app.uninstall()
 ```
 
-`Application` 是高级运行时门面；常规业务代码应停留在 `@application` + `@configure(...)`，仅在诊断发现边界时才使用 `get_declaration_diff()`。
+`Application` 是**高级入口类**；常规业务代码应停留在 `@application` + `@configure(...)`，仅在诊断发现边界时才使用 `get_declaration_diff()`。`Application(...)` 的入口既可接受 `@module` 类，也可接受 `@application` 入口方法。
 
 ### 要求差集为空（可选开启）
 
@@ -283,3 +283,61 @@ def main(): ...
 > **它与 `startup_error_policy` 不是同一件事。** `startup_error_policy='strict'` 决定的是**服务初始化失败**时怎么办，属服务生命周期策略；`strict_assembly` 决定的是**已声明的组件从未被装配**时怎么办，属声明—装配策略。两者名字相近，场景无关，且互不作用。
 
 **对账的作用范围**：差集把**模块导入期**收集到的声明与**本次启动**实际装配到的组件配对。该声明集会被进程内的**首次启动**消费，因此同一进程内的**后续启动**（例如 `Application.reload()`）面对的是空声明集，其差集为空，报告与本选项都无从生效。每个新进程都会带着自身的导入期声明重新开始。
+
+## 12. 装配快照：一次启动实际持有什么（v0.96a5）
+
+Cullinan 会在引导边界重建每一个 gateway global：`Runtime.warmup()` 先重置 pipeline、router、dispatcher 与 exception handler，随后重建它们。因此，任何在引导边界**之前**完成的注册，都不会进入请求处理路径。§11 对账的是**组件**；本节对账的是**注册面** —— 四个 gateway global 加上容器。
+
+`Application.get_assembly_snapshot()` 一次调用即可回答「本次装配实际持有什么」：
+
+- `gateway` —— 每个 gateway 子面一条：`pipeline`、`router`、`dispatcher`、`exception_handler`；
+- `container` —— 与 §11 通过 `get_declaration_diff()` 暴露的组件对账结果一致。
+
+每个面都沿用组件面已经在用的同一组三态字段：
+
+| 字段 | 含义 |
+|------|------|
+| `declared` | 引导边界**之前**该面声明的条目 |
+| `assembled` | 引导边界**之后**该面持有的条目 —— 即本次装配实际持有什么 |
+| `dropped` | `declared - assembled`：被引导边界丢弃的预引导条目 |
+
+```python
+from cullinan.application import Application
+
+app = Application(main)
+app.build()
+snapshot = app.get_assembly_snapshot()
+print(snapshot.gateway["router"].assembled)   # 该 router 现在持有什么
+print(snapshot.gateway["router"].dropped)     # 它丢弃了哪些预引导条目
+print(snapshot.container.declared)            # 组件面的声明与装配对账
+app.uninstall()
+```
+
+`Application` 是**高级入口类**：`Application(...)` 的入口既可接受 `@module` 类，也可接受 `@application` 入口方法；只有在你确实需要应用**对象**本身（此处用于离线检视，以及显式运行时编排 / 运行时切换）时才使用它。常规业务代码应停留在 `@application` + `@configure(...)`，直接调用入口方法。
+
+快照是一个只读、模块私有的视图 —— 其类型不属于公共导出面。读取它**不会** materialize 任何惰性 gateway global：查询不得创建它所观察的对象，尤其在那些对象即将被丢弃的引导边界处。
+
+### 逐面的 `dropped` 行为
+
+四个 gateway 子面的行为并不一致，快照如实地逐面呈现，而不是把它们抹平：
+
+| 面 | 成功启动时 `dropped` | 原因 |
+|----|----------------------|------|
+| `pipeline` | **存在且为空** | 预引导的 `get_pipeline().add(...)` 会在边界处被**拒绝** —— 应用不会启动 —— 因此没有任何条目残留下来被丢弃。该字段**存在**，是为了让「缺字段」判为失败，而不是静默略去。 |
+| `router` / `dispatcher` / `exception_handler` | **可为非空** | 这些面上的预引导注册会被**丢弃并留痕**，同时应用仍能启动。并列呈现的价值正体现在这里。 |
+
+**不要**把后三个面读成「会拒绝启动」：它们只做留痕。把它们升级为拒绝属于对外行为变更 —— 那是另一个独立决策，不属于本查询。
+
+```python
+from cullinan.web.gateway import get_router
+
+# 在应用启动之前完成的一次注册……
+get_router().add_route("GET", "/pre-boot-check", handler=handler)
+
+main()  # ……会被引导边界丢弃，但之后仍可查询：
+# snapshot.gateway["router"].dropped == ("GET /pre-boot-check",)
+```
+
+### 报告与查询是同一事实的两个通道
+
+引导边界在拒绝启动之前，已经会以 **WARNING** 报告预引导的 **pipeline** 注册；拒绝本身则是一条 **ERROR** 后跟一个 `ConfigurationError`。两者都保持不变，也都不是查看全貌的地方：默认报告只给摘要，而**每一个面**的逐条明细都落在查询入口上。要了解一次装配实际持有什么，请观察查询，而不是等一条日志。

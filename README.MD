@@ -18,70 +18,89 @@
 
 **A business-first Python web framework for building applications through decorators, module boundaries, and built-in IoC/DI.**
 
-Cullinan is a Python Web Framework for developers who want to organize applications around
-business services, controllers, and methods instead of manually wiring an app object.
-Its default path is decorator-first discovery plus `@application` + `@configure(...)`,
-with `@module` used as the application boundary when ownership, runtime structure, and stability
-matter. The framework-facing API stays engine-neutral:
-Cullinan internally bridges your business application into Tornado or ASGI runtimes instead of
-making a concrete server framework the primary developer mental model.
+Organize your application around business services, controllers, and methods — declare them
+with decorators and let Cullinan assemble the runtime, instead of wiring an app object by hand.
+
+---
+
+## Quick start
+
+Declare business components with decorators — there is no app object to wire by hand:
+
+```python
+from cullinan import application, configure
+from cullinan.core import service
+from cullinan.web import controller, get_api
+
+@service
+class GreetingService:
+    def greet(self):
+        return "Hello from Cullinan!"
+
+@controller(url="/hello")
+class HelloController:
+    greeting: GreetingService          # injected: no constructor wiring to write
+
+    @get_api(url="")
+    def hello(self):
+        return {"message": self.greeting.greet()}
+
+@configure(user_packages=["minimal_app"], server_port=4080)
+@application
+def main(): ...
+```
+
+Save it in a `minimal_app/` package, run `python -m minimal_app`, and open <http://localhost:4080/hello>.
+
+---
+
+## Install
+
+Cullinan is published on PyPI and currently supports **Python 3.9+**.
+
+```bash
+pip install -U pip
+pip install cullinan
+```
+
+After installation, start from the minimal example in [`examples/minimal_app/`](examples/minimal_app)
+or the repository guide in [`docs/examples.md`](docs/examples.md).
+
+A one-line smoke check confirms which version you are running:
+
+```bash
+python -c "from cullinan import application, configure; import cullinan; print(cullinan.__version__)"
+```
 
 ---
 
 ## What is Cullinan?
 
-Cullinan is designed to make the framework work around your business architecture, not the
-other way around.
+Cullinan makes the framework work around your business architecture, not the other way around:
+you declare services, controllers, and methods, and the framework assembles the runtime.
 
 - **Business-first application model** - write services, controllers, middleware, and methods first
-- **Decorator-first discovery** - let Python imports and decorator metadata assemble the runtime
-- **Structured module boundaries** - use `@module` to express ownership and runtime boundaries
+- **Decorator-first discovery** - Python imports and decorator metadata assemble the runtime
+- **Structured module boundaries** - `@module` expresses ownership and runtime boundaries
 - **Built-in IoC/DI and lifecycle** - keep application wiring inside the framework model
 - **Engine-neutral Web facade** - build against Cullinan semantics while the framework adapts to Tornado or ASGI internally
 - **Public semantic path** - build, run, test, and extend applications through stable public APIs
 
-Cullinan is not centered on treating an app object as a manual registration hub. The
-recommended development flow is to declare business components, define a root module when
-structure matters, and let the framework assemble the application runtime.
+The quick-start example shows the default path: a business service first, controller methods as
+the public web surface, and `@application` + `@configure(...)` + `main()` as the startup flow.
+`@module` is available when explicit runtime boundaries are needed, and runtime backend selection
+is delegated to Cullinan instead of driving application structure.
 
 ---
 
 ## Why Cullinan?
 
-### 1. Framework semantics before manual wiring
-
-Cullinan gives you a clear application model: declare components with decorators, let the
-framework discover them, and keep explicit runtime internals as an advanced path rather than
-the default onboarding path.
-
-### 2. Application boundaries that scale past toy examples
-
-`@module` is more than a naming convention. It is the structured boundary for owned packages,
-runtime composition, and higher-level lifecycle behavior when your application grows.
-
-### 3. Web, DI, lifecycle, and testing in one model
-
-Routing, parameter binding, dependency injection, lifecycle hooks, middleware, and test flow
-all sit inside one framework vocabulary instead of forcing developers to stitch together
-multiple unrelated patterns.
-
-### 4. A Pythonic path for business applications
-
-Cullinan is designed to keep developers focused on business architecture and business methods.
-You can stay on the public path for most application work and only move into internals when
-you intentionally need advanced extension behavior.
-
-### 5. A clearer semantic package surface
-
-Cullinan now exposes a clearer framework-shaped package surface:
-
-- `cullinan` - recommended public startup and declaration API for application code
-- `cullinan.web` - controllers, route decorators, request/response, parameters, middleware
-- `cullinan.core` - IoC/DI, lifecycle, context, and semantic rules
-- `cullinan.application` - advanced application semantics for maintainers and framework-aware integrations
-- `cullinan.testing` - test-facing helpers
-- `cullinan.runtime` / `cullinan.transport` - advanced discovery and adapter boundaries
-- `cullinan.support` - constrained support utilities, not a second public app path
+- **Semantics before manual wiring** - declare components with decorators and let the framework discover them; explicit runtime internals stay an advanced path rather than the default onboarding path.
+- **Application boundaries that scale past toy examples** - `@module` is a structured boundary for owned packages, runtime composition, and higher-level lifecycle behavior, not just a naming convention.
+- **Web, DI, lifecycle, and testing in one model** - routing, parameter binding, dependency injection, lifecycle hooks, middleware, and test flow share one framework vocabulary instead of several unrelated patterns.
+- **A Pythonic path for business applications** - stay on the public path for most application work and move into internals only when you intentionally need advanced extension behavior.
+- **A clearer semantic package surface** - `cullinan` for recommended public startup and declaration, `cullinan.web` for controllers, route decorators, request/response, parameters, and middleware, `cullinan.core` for IoC/DI, lifecycle, context, and semantic rules, `cullinan.testing` for test-facing helpers.
+- **Advanced surfaces stay explicit** - `cullinan.application` for maintainers and framework-aware integrations, `cullinan.runtime` / `cullinan.transport` for discovery and adapter boundaries, and `cullinan.support` for constrained support utilities that are not a second public app path.
 
 ---
 
@@ -98,73 +117,6 @@ Cullinan now exposes a clearer framework-shaped package surface:
 
 Cullinan's goal is not to expose every internal knob on the README homepage. The goal is to
 provide a coherent framework model that remains readable from first contact through production use.
-
----
-
-## Install
-
-Cullinan is published on PyPI and currently supports **Python 3.9+**.
-
-```bash
-pip install -U pip
-pip install cullinan
-```
-
-After installation, start from the minimal example in [`examples/minimal_app/`](examples/minimal_app)
-or the repository guide in [`docs/examples.md`](docs/examples.md).
-
----
-
-## Quick Start
-
-The recommended starting point is: define business components, decorate them,
-and declare the application entry with `@configure(...)` + `@application` + `main()`.
-
-```python
-from cullinan import application, configure
-from cullinan.core import service
-from cullinan.web import controller, get_api
-
-
-@service
-class GreetingService:
-    def greet(self) -> str:
-        return "Hello from Cullinan!"
-
-
-@controller(url="/hello")
-class HelloController:
-    greeting_service: GreetingService  # constructor injection: one line is all you need
-
-    @get_api(url="")
-    def hello(self):
-        return {"message": self.greeting_service.greet()}
-
-
-@configure(user_packages=["minimal_app"], server_port=4080)
-@application
-def main(): ...
-```
-
-Run it:
-
-```bash
-python -m minimal_app
-```
-
-Then open:
-
-```text
-http://localhost:4080/hello
-```
-
-This example shows the default Cullinan path:
-
-- business service first
-- controller methods as the public web surface
-- `@application` + `@configure(...)` + `main()` as the startup flow
-- `@module` available when explicit runtime boundaries are needed
-- runtime backend selection delegated to Cullinan instead of driving application structure
 
 ---
 
@@ -219,26 +171,22 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
-**v0.96a4** is the current release of the 0.96 line; **v0.95** remains the current stable line, centered on the top-level `cullinan` API.
+**v0.96a5** is the current release of the 0.96 line; **v0.95** remains the current stable line, centered on the top-level `cullinan` API.
 The release history for earlier versions is recorded in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
 ## Project status
 
-Cullinan is the project name, and `cullinan` is the package name published on PyPI:
+Cullinan — the project carries the name `Cullinan`, the package on PyPI is
+`cullinan` — is under active development, working through the `0.96` alpha
+line towards `1.0`. Alphas are published to PyPI as they land, so
+`pip install cullinan` follows the alpha line, while `v0.95` stays the stable
+one.
 
-```bash
-pip install cullinan
-```
-
-Verify the install with a one-line smoke check:
-
-```bash
-python -c "from cullinan import application, configure; import cullinan; print(cullinan.__version__)"
-```
-
-Maintainer: **`plumeink`**.
+Development is driven by `plumeink`, who reads and answers issues and pull
+requests as time allows — usually within a week, though real life occasionally
+stretches that.
 
 ---
 

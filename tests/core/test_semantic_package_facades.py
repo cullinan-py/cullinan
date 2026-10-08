@@ -4,7 +4,8 @@ from cullinan.core import get_injection_registry, injectable
 from cullinan.runtime import get_scan_stats_collector, list_submodules
 from cullinan.support import get_config, get_packaging_mode
 from cullinan.transport import ASGIAdapter, WebAdapter
-from cullinan.web import Body, Path, WebRequest, WebResponse, controller, get_api, middleware
+from cullinan import middleware
+from cullinan.web import Body, Path, WebRequest, WebResponse, controller, get_api
 
 
 def test_semantic_application_facade_exports():

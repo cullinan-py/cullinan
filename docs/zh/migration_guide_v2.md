@@ -4,7 +4,7 @@
 
 > **仅用于升级：** 这页只服务于版本迁移工作，不属于首次 onboarding。
 
-> **说明**：适用于 v0.9x → v0.93 范围，并含至 v0.96a1 的说明；当你要把 v0.9x 代码库升级到 v0.93 时，阅读本页。
+> **说明**：适用于 v0.9x → v0.93 范围，并含至 v0.96a5 的说明；当你要把 v0.9x 代码库升级到 v0.93 时，阅读本页。
 
 ## 变更总览
 
@@ -181,9 +181,9 @@ class AuthMiddleware(GatewayMiddleware):
 get_pipeline().add(AuthMiddleware())
 ```
 
-**启动会重置该入口。** `get_pipeline().add(...)` 写入的是**引导之前**就已存在的那份管线；应用装配时会重建 gateway globals，因此经该入口注册的条目会在启动时被重置，永远不会参与请求处理。该重置不再静默 —— 框架会留下一条诊断，给出被丢弃条目的名称与数量。请改用 `configure(middlewares=[...])` 或 `@middleware` 装饰器声明中间件：这些入口由装配过程读取，因而能在启动后存活。
+**启动会拒绝该入口。** `get_pipeline().add(...)` 写入的是**引导之前**就已存在的那份管线；应用装配时会重建 gateway globals，因此经该入口注册的条目会在**启动边界**被拒绝 —— 应用不会启动。框架会**先**报告它丢弃的条目（一条诊断，给出名称与数量），**再**抛出，因此在调用方捕获异常之后，报告仍已被看到。请改用 `configure(middlewares=[...])` 或 `@middleware` 装饰器声明中间件：这些入口由装配过程读取，因而能在启动后存活。
 
-该入口的支持级别与其行为一致：`get_pipeline().add(...)` 属于**运行时自省 / 高级用途 / 测试**级别的入口，而**不是**应用或库接入中间件的**推荐**路径。`Runtime.warmup()` 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此它丢弃的条目会以**一条**诊断的形式被通告，而不是被静默丢弃。请通过声明式入口接入中间件：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
+`get_pipeline()` 本身保留其**运行时自省 / 高级用途 / 测试**级别的作用 —— 应用启动**之后**，`list_middleware()` 会报告已安装的中间件 —— 但**启动前**的 `get_pipeline().add(...)` 在引导边界**不受支持**。`Runtime.warmup()` 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此启动前的注册无法静默沿用。请通过声明式入口接入中间件：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
 
 **向后兼容**：旧的 `@middleware` 类仍会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。
 
@@ -209,6 +209,24 @@ get_pipeline().add(AuthMiddleware())
 **自省面。** `cullinan.web.gateway.get_pipeline().list_middleware()` 现在按遗留中间件**逐个**列出条目 —— 条目数由**单个桥接条目变为每个已注册中间件各一条** —— 且每条以**真实中间件**命名（而非桥接名），因此解析后的顺序可直接读取。
 
 内置层同样是声明式的：`configure(builtin_middleware=[...])` 可替换它，`configure(builtin_middleware=[])` 可关闭它。
+
+#### v0.96a5：中间件装饰器移到顶层导入
+
+`from cullinan.web import middleware` 过去得到的是 `@middleware` 装饰器。现在 `cullinan.web.middleware` 是中间件子模块，因此该名字解析为子模块。装饰器本身未变，仍可从顶层取得。
+
+| 导入 | 变更前 | 变更后 |
+|---|---|---|
+| `from cullinan.web import middleware` | 装饰器 | `cullinan.web.middleware` 子模块 |
+| `from cullinan import middleware` | 装饰器 | 装饰器（不变） |
+| `from cullinan.web.middleware import middleware` | 装饰器 | 装饰器（不变） |
+
+**受影响者界定。** 只有**从** `cullinan.web` 导入 `middleware` 的代码受影响。从顶层、或从 `cullinan.web.middleware` 导入的代码无需改动。
+
+**迁移动作。** 把导入移到顶层：
+
+    from cullinan import middleware
+
+完整路径 `from cullinan.web.middleware import middleware` 在变更前后均可用；没有任何东西被删除，也没有任何符号被改名。
 
 ### 7. OpenAPI 集成
 

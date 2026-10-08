@@ -107,24 +107,35 @@ declarative ordering as `middlewares`.
 `cullinan.web.gateway.get_pipeline().add(AuditMiddleware())` is the imperative
 pre-boot entry point, kept for integrations that build the pipeline by hand. It
 writes into the pipeline instance that exists *before* the application is
-assembled, and the gateway globals are rebuilt at the startup boundary: entries
-added this way are therefore reset at boot and never take part in request
-handling. That reset is reported — one diagnostic naming the entries and their
-count — rather than dropping them silently. For middleware that must actually
-run, use the declarative entries above.
+assembled, and the gateway globals are rebuilt at the startup boundary
+(`Runtime.warmup()` rebuilds the pipeline, router, dispatcher and exception
+handler). A registration made this way is therefore **refused at the boot
+boundary**: the application does not start. The framework reports the entries it
+discards first — one diagnostic naming them and their count — and then raises, so
+a deployment that catches the error has still seen the report.
 
-**Support level.** This entry point belongs to the runtime-introspection,
-advanced-use and testing level: it is supported, but it is *not* the recommended
-way for an application or a library to integrate middleware. Entries registered
-through it before startup are reset when the application boots — `Runtime.warmup()`
-rebuilds the gateway globals (pipeline, router, dispatcher and exception handler) —
-and the framework emits one diagnostic about that reset instead of dropping the
-entries silently. To have middleware take part in request handling, use the
-declarative entries: `configure(middlewares=[...])` or the `@middleware` decorator.
+**Support level.** The imperative registration is **not supported at the boot
+boundary**: a pre-boot `get_pipeline().add(...)` refuses the start at assembly
+time, not on the first request. `get_pipeline()` itself keeps its
+runtime-introspection, advanced-use and testing role — after the application has
+started, `get_pipeline().list_middleware()` reports what is installed and is
+unaffected. For middleware that must take part in request handling, use the
+declarative entries: `configure(middlewares=[...])` or the `@middleware`
+decorator.
+
+**Not a pipeline-only boundary.** The boot boundary rebuilds all four gateway
+globals, not just the pipeline — and it treats them differently: a pre-boot
+registration on the pipeline refuses the start (above), while one on the router,
+dispatcher or exception handler is dropped and recorded while the application
+still starts. `Application.get_assembly_snapshot()` reports what every surface
+actually holds — `declared` / `assembled` / `dropped` for the four gateway
+surfaces plus the container — so a pre-boot entry is reconciled in one place
+instead of read off a log line. See [Framework Semantics §12](../framework_semantics.md)
+and [Application Lifecycle](lifecycle.md).
 
 ### Legacy: `process_request` / `process_response`
 
-The hook pair on `cullinan.web.middleware.Middleware` still works and is
+The hook pair on `Middleware` (imported from `cullinan.web.middleware`) still works and is
 auto-bridged into the gateway pipeline — one layer per legacy middleware. Each
 bridged layer is ordered by the same declarative `priority` key as the built-in
 and declared layers, so a legacy `@middleware(priority=10)` lands on a more
@@ -167,11 +178,71 @@ class ApiKeyGate(GatewayMiddleware):
         return await call_next(request)
 ```
 
+**Ownership.** A middleware declared through `@middleware` is created by the
+framework container, the same way a class declared through
+`configure(middlewares=[...])` is. The declaration you write does not change:
+`@middleware(priority=...)` keeps its syntax and its default `100`.
+
+## Two declaration forms and object ownership
+
+`configure(middlewares=[...])` accepts two forms, and they differ in **who owns
+the instance**:
+
+- **An instance** — `configure(middlewares=[AuditMiddleware()])`. The
+  application creates the object and keeps ownership of it, and the framework
+  installs that instance as-is. This is an **externally-owned** middleware.
+- **A class declared with `@component`** —
+  `configure(middlewares=[AuditMiddleware])`. The framework container creates
+  the object, injects its declared dependencies and holds it, and the pipeline
+  runs that same instance. This is a **container-managed** middleware.
+
+The class form is what makes a middleware a first-class container participant:
+declare its dependencies like any other component and let the container wire
+them.
+
+```python
+from cullinan import component
+from cullinan.web.gateway import GatewayMiddleware
+
+
+@component
+class AuditLog:
+    def record(self, path): ...
+
+
+@component
+class AuditMiddleware(GatewayMiddleware):
+    log: AuditLog  # injected by the container
+
+    async def __call__(self, request, call_next):
+        self.log.record(request.path)
+        return await call_next(request)
+```
+
+```python
+configure(middlewares=[AuditMiddleware])    # container-managed
+configure(middlewares=[AuditMiddleware()])  # externally-owned
+```
+
+A class passed this way **must** be declared with `@component`. A
+`GatewayMiddleware` class without that declaration is refused at startup with a
+`ConfigurationError` (`error_code = "MIDDLEWARE_DECLARATION_ERROR"`), because the
+framework never guesses container ownership: either add `@component`, or pass an
+instance you own. A container-managed middleware resolves its dependencies at
+startup, so an unresolvable dependency fails there rather than on the first
+request. `builtin_middleware=[...]` follows the same rule.
+
 ## Introspection
 
 `cullinan.web.gateway.get_pipeline().list_middleware()` lists the installed
 middleware in execution order, where index `0` is the outermost layer. It is the
 pipeline counterpart of `Router.get_all_routes()`.
+
+`list_middleware()` reports one surface. For the whole assembly in one call — the
+four gateway surfaces (`pipeline` / `router` / `dispatcher` / `exception_handler`)
+plus the container, each as a `declared` / `assembled` / `dropped` triple — use
+`Application.get_assembly_snapshot()`; see
+[Framework Semantics §12](../framework_semantics.md).
 
 ## Guidance
 

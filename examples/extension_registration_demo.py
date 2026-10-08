@@ -14,7 +14,7 @@ Author: plumeink
 """
 
 import logging
-from cullinan.web import middleware, Middleware
+from cullinan import Middleware, middleware
 from cullinan.support.extensions import list_extension_points, ExtensionCategory
 
 # Configure logging

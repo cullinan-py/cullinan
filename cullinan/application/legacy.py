@@ -27,10 +27,25 @@ from cullinan.core.semantic_rules import (
     format_semantic_message,
     warn_semantic_once,
 )
-from cullinan.support.exceptions import PackageDiscoveryError
+from cullinan.support.exceptions import ConfigurationError, PackageDiscoveryError
+from cullinan.support.deprecation import resolve_removal_version
 
 # Module-level logger
 logger = logging.getLogger(__name__)
+
+# The declarative middleware class form changes ownership on this release line:
+# a class entry is now created and injected by the container instead of being
+# constructed privately. The removal version for the transition is derived from
+# the anchor it landed on plus the standard deprecation window, never written as
+# a literal, so it cannot drift into a second, inconsistent value.
+_MIDDLEWARE_OWNERSHIP_ANCHOR = "0.96"
+_MIDDLEWARE_OWNERSHIP_REMOVAL_VERSION = resolve_removal_version(_MIDDLEWARE_OWNERSHIP_ANCHOR)
+
+# Stable, dedicated error code for a middleware class that is used in the class
+# form without a container declaration. It is not the generic ``CONFIG_ERROR``:
+# the two conditions (an undeclared class vs. any other misconfiguration) must
+# stay distinguishable in monitoring.
+_MIDDLEWARE_DECLARATION_ERROR_CODE = "MIDDLEWARE_DECLARATION_ERROR"
 
 
 @dataclass(frozen=True)
@@ -558,6 +573,64 @@ def _init_framework():
     return ctx, pending_count
 
 
+def _container_managed_middleware(middleware_cls):
+    """Return the container-owned instance for a ``@component`` middleware class.
+
+    A class entry is created, injected and held by the application context, so
+    the pipeline runs the same instance the container manages instead of a
+    second, privately constructed one. The class must be declared with
+    ``@component``; anything else is refused, because the framework never
+    guesses container ownership.
+
+    Resolving the instance here (rather than lazily on the first request) forces
+    the container to build it -- and its dependencies -- during assembly, so an
+    unresolvable dependency fails at startup.
+    """
+    from cullinan.core import get_application_context
+    from cullinan.core.decorators import get_component_registration_metadata
+
+    cls_name = middleware_cls.__name__
+    metadata = get_component_registration_metadata(middleware_cls)
+    if metadata is None:
+        raise ConfigurationError(
+            message=format_semantic_message(
+                "middleware-component-declaration",
+                problem=(
+                    f"Declarative middleware class {cls_name!r} passed to "
+                    "configure(middlewares=[...]) is not declared with @component, so it has "
+                    "no container definition and its dependencies cannot be injected."
+                ),
+                guidance=(
+                    f"Add @component to {cls_name} and keep passing the class "
+                    f"(configure(middlewares=[{cls_name}])), or pass an instance you created "
+                    f"and own (configure(middlewares=[{cls_name}()])). See the \"Middleware\" "
+                    "page in the documentation, section "
+                    "\"Two declaration forms and object ownership\"."
+                ),
+            ),
+            error_code=_MIDDLEWARE_DECLARATION_ERROR_CODE,
+        )
+
+    context = get_application_context()
+    if context is None:
+        raise ConfigurationError(
+            message=format_semantic_message(
+                "middleware-component-declaration",
+                problem=(
+                    f"Declarative middleware class {cls_name!r} declares @component, but no "
+                    "application context is available to create it."
+                ),
+                guidance=(
+                    "Declare the middleware during application assembly, or pass an instance "
+                    "you created and own (configure(middlewares=[...]))."
+                ),
+            ),
+            error_code=_MIDDLEWARE_DECLARATION_ERROR_CODE,
+        )
+
+    return context.get(metadata["name"])
+
+
 def _add_middleware_entries(pipeline, entries) -> int:
     """Add declarative middleware entries to ``pipeline``; return the count.
 
@@ -566,6 +639,12 @@ def _add_middleware_entries(pipeline, entries) -> int:
     ``before`` / ``after`` / ``priority`` ordering hints. Entries are validated
     here so a wrong type or a malformed options tuple fails loudly instead of
     being silently skipped.
+
+    A **class** entry is container-owned: it must be declared with
+    ``@component``, and the instance the container creates (with its
+    dependencies injected) is the one installed, so the pipeline and the
+    container share a single instance. An **instance** entry stays owned by the
+    caller and is installed as-is.
     """
     from cullinan.web.gateway import GatewayMiddleware
 
@@ -582,7 +661,23 @@ def _add_middleware_entries(pipeline, entries) -> int:
             middleware, options = item, {}
 
         if isinstance(middleware, type):
-            middleware = middleware()
+            # Validate the class *before* instantiating anything: a rejected
+            # entry must not run a constructor, and an undeclared class must be
+            # refused before the container is asked for an instance.
+            if not issubclass(middleware, GatewayMiddleware):
+                raise TypeError(
+                    "Declarative middleware must be a GatewayMiddleware instance or class, "
+                    f"got {middleware.__name__!r}."
+                )
+            middleware = _container_managed_middleware(middleware)
+            # The class form changes who owns the instance; the transition window
+            # is carried by the derived version constant, not a hand-typed one.
+            logger.debug(
+                "Middleware %s is container-owned (class form); the ownership "
+                "transition window ends at v%s.",
+                type(middleware).__name__,
+                _MIDDLEWARE_OWNERSHIP_REMOVAL_VERSION,
+            )
         if not isinstance(middleware, GatewayMiddleware):
             raise TypeError(
                 "Declarative middleware must be a GatewayMiddleware instance or class, "
@@ -596,9 +691,11 @@ def _add_middleware_entries(pipeline, entries) -> int:
 def _register_declared_middleware(pipeline, config) -> None:
     """Install middleware declared through ``@configure(middlewares=[...])``.
 
-    Each entry is either a ``GatewayMiddleware`` instance, a class, or a
+    Each entry is either a ``GatewayMiddleware`` instance, a
+    ``@component``-declared ``GatewayMiddleware`` class, or an
     ``(instance, options)`` tuple, where ``options`` carries the
-    ``before`` / ``after`` / ``priority`` ordering hints.
+    ``before`` / ``after`` / ``priority`` ordering hints. A class entry is
+    installed as the container-owned instance (see ``_add_middleware_entries``).
     """
     declared = getattr(config, "middlewares", None)
     if not declared:
@@ -975,44 +1072,3 @@ def get_asgi_app():
     )
     return adapter.create_app()
 
-
-async def _run_shutdown_sequence(server, loop, timeout_seconds: int):
-    """Wait for controller.active_request_count to drop to zero (or until timeout),
-    then stop the server and close any remaining connections.
-
-    This function is used by tests and by graceful shutdown logic to allow
-    inflight requests to finish before the server is stopped.
-    """
-    try:
-        import asyncio as _asyncio
-        import cullinan.web.controller as _ctrl
-
-        start = getattr(loop, 'time', _asyncio.get_event_loop().time)()
-        deadline = start + (timeout_seconds or 0)
-
-        # poll until active_request_count reaches 0 or timeout
-        while getattr(_ctrl, 'active_request_count', 0) > 0:
-            now = getattr(loop, 'time', _asyncio.get_event_loop().time)()
-            if timeout_seconds and now >= deadline:
-                break
-            await _asyncio.sleep(0.1)
-
-        # attempt to stop server and close connections
-        try:
-            if hasattr(server, 'stop') and callable(server.stop):
-                server.stop()
-        except Exception:
-            pass
-        try:
-            if hasattr(server, 'close_all_connections') and callable(server.close_all_connections):
-                server.close_all_connections()
-        except Exception:
-            pass
-    except Exception:
-        # be robust in tests or exotic environments
-        try:
-            if hasattr(server, 'stop') and callable(server.stop):
-                server.stop()
-        except Exception:
-            pass
-    return None

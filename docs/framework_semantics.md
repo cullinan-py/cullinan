@@ -280,9 +280,10 @@ print(diff.dropped_count)  # len(diff.dropped)
 app.uninstall()
 ```
 
-`Application` is the advanced runtime facade; regular business code should stay
+`Application` is the **advanced entry class**; regular business code should stay
 on `@application` + `@configure(...)` and only reach for
-`get_declaration_diff()` when diagnosing discovery boundaries.
+`get_declaration_diff()` when diagnosing discovery boundaries. `Application(...)`
+takes either a `@module` class or an `@application` entry method as its entry.
 
 ### Requiring the difference to be empty (opt-in)
 
@@ -341,3 +342,83 @@ process — `Application.reload()`, for instance — reconciles against an empty
 declaration set, its difference is empty, and neither the report nor this option
 has anything to act on. Each new process begins with its own import-time
 declarations.
+
+## 12. The assembly snapshot: what a start actually holds (v0.96a5)
+
+Cullinan rebuilds every gateway global at the boot boundary: `Runtime.warmup()`
+resets the pipeline, router, dispatcher and exception handler, then rebuilds
+them. A registration made *before* that boundary therefore never reaches request
+handling. §11 reconciles **components**; this section reconciles the
+**registration surfaces** — the four gateway globals plus the container.
+
+`Application.get_assembly_snapshot()` answers, in one call, what the assembly
+actually holds:
+
+- `gateway` — one entry per gateway surface: `pipeline`, `router`, `dispatcher`,
+  `exception_handler`;
+- `container` — the same declared-vs-assembled component reconciliation §11
+  exposes through `get_declaration_diff()`.
+
+Each surface carries the same three fields the component face already uses:
+
+| Field | Meaning |
+|-------|---------|
+| `declared` | what the surface held **before** the boot boundary |
+| `assembled` | what it holds **after** the boundary — what this assembly actually carries |
+| `dropped` | `declared - assembled`: the pre-boot entries the boundary discarded |
+
+```python
+from cullinan.application import Application
+
+app = Application(main)
+app.build()
+snapshot = app.get_assembly_snapshot()
+print(snapshot.gateway["router"].assembled)   # what the router carries now
+print(snapshot.gateway["router"].dropped)     # the pre-boot entries it discarded
+print(snapshot.container.declared)            # declared-vs-assembled components
+app.uninstall()
+```
+
+`Application` is the **advanced entry class**: `Application(...)` takes either a
+`@module` class or an `@application` entry method as its entry, and you reach for
+it only when you need the application *object* itself — offline inspection here,
+runtime orchestration, or runtime switching. Regular business code stays on
+`@application` + `@configure(...)` and calls the entry method directly.
+
+The snapshot is a read-only, module-private view — its type is not part of the
+public export surface. Reading it never materialises a lazy gateway global: a
+query must not create the objects it reports on, least of all at the boundary
+where those objects are about to be discarded.
+
+### Per-surface behaviour of `dropped`
+
+The four gateway surfaces do not share one behaviour, and the snapshot reports
+each one honestly rather than flattening them:
+
+| Surface | `dropped` on a successful start | Why |
+|---------|---------------------------------|-----|
+| `pipeline` | **present and empty** | a pre-boot `get_pipeline().add(...)` is **refused** at the boundary — the application does not start — so nothing survives to be dropped. The field is present so that a *missing* field is a failure, not a silent omission. |
+| `router` / `dispatcher` / `exception_handler` | **may be non-empty** | a pre-boot registration on these surfaces is **dropped and recorded** while the application still starts. This is where the side-by-side value shows. |
+
+Do **not** read the last three surfaces as refusing the start: they only record.
+Promoting them to a refusal would be an outward behaviour change — a separate
+decision, not part of this query.
+
+```python
+from cullinan.web.gateway import get_router
+
+# A registration made before the application starts...
+get_router().add_route("GET", "/pre-boot-check", handler=handler)
+
+main()  # ...is dropped by the boot boundary, yet stays queryable afterwards:
+# snapshot.gateway["router"].dropped == ("GET /pre-boot-check",)
+```
+
+### Reporting and the query are the same facts on two channels
+
+The boot boundary already reports the pre-boot **pipeline** registrations before
+refusing the start, at **WARNING**; the refusal itself is an **ERROR** followed by
+a `ConfigurationError`. Both are unchanged, and neither is the place to look for
+the full picture: the default report is a summary, and the per-entry detail for
+every surface lives on the query entry point. Watch the query — not a log line —
+to learn what an assembly actually holds.

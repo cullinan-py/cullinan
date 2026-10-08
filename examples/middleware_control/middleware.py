@@ -16,7 +16,7 @@ share one declarative ordering.
 ``QuietAccessLogMiddleware`` replaces the built-in access-log layer through
 ``@configure(builtin_middleware=[...])``.
 """
-from cullinan.web import Middleware, middleware
+from cullinan import Middleware, middleware
 from cullinan.web.gateway import GatewayMiddleware
 
 
