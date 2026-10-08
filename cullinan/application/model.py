@@ -13,7 +13,11 @@ import uuid
 from types import MappingProxyType
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type
 
-from cullinan.core.application_context import ApplicationContext, _emit_report_fallback
+from cullinan.core.application_context import (
+    ApplicationContext,
+    ContainerState,
+    _emit_report_fallback,
+)
 from cullinan.core.container_manager import get_container_manager
 from cullinan.core.context import create_context, destroy_context, get_current_context
 from cullinan.core.decorators import get_component_registration_metadata
@@ -784,7 +788,7 @@ class Application:
                 get_container_manager().bind(previous_context)
             if previous_runtime is not None or (self.runtime is not None and WebRuntime.current() is self.runtime.web_runtime):
                 WebRuntime.bind_runtime(previous_runtime)
-            if self.runtime is not None and self.context.state.value != "CLOSED":
+            if self.runtime is not None and self.context.state is not ContainerState.CLOSED:
                 self.context.shutdown(timeout=self.web_runtime.config.drain_timeout)
             raise
 
@@ -807,6 +811,17 @@ class Application:
                 WebRuntime.bind_runtime(None)
         self._begin_draining()
         self._finalize_drain()
+        # ``_finalize_drain`` defers (without a retry of its own) while requests
+        # are still in flight, which left the application stranded in
+        # "draining" with its lifecycle instances un-released. uninstall() is a
+        # teardown call, so drive the close to a terminal state here:
+        # shutdown() waits on the authoritative request-scope count -- and, when
+        # it is called from a live event loop, warns instead of blocking it.
+        if self.context.state is not ContainerState.CLOSED:
+            self.context.shutdown(timeout=self.web_runtime.config.drain_timeout)
+        self.phase = "closed"
+        if self.runtime is not None:
+            self.runtime.phase = "closed"
 
     def get_component_owner(self, component: Type[Any]) -> Optional[Type[Any]]:
         if self.graph is None:
@@ -899,9 +914,21 @@ class Application:
     def _finalize_drain(self) -> None:
         if self.runtime is None:
             return
-        if self.web_runtime.request_count > 0 or self.context.active_request_count > 0:
+        pending = self.web_runtime.request_count
+        scopes = self.context.active_request_count
+        if pending > 0 or scopes > 0:
+            # This close trigger fires on the transport counter alone, so it can
+            # run while request scopes are still active. Defer -- but never
+            # silently: a deferral is only safe because a later trigger (or
+            # ``uninstall``) re-enters here, and a silent one would strand the
+            # application in "draining" with its instances un-released.
+            _logger.warning(
+                "Deferring drain finalisation: transport_requests=%s request_scopes=%s",
+                pending,
+                scopes,
+            )
             return
-        if self.context.state.value != "CLOSED":
+        if self.context.state is not ContainerState.CLOSED:
             # The drain bound comes from the runtime configuration rather than a
             # hidden default: ``WebRuntimeConfig.drain_timeout`` (default 30.0,
             # the value ``ApplicationContext.shutdown`` used to hard-code) is now
