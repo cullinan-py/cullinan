@@ -54,6 +54,14 @@ request scope 依赖绑定到当前请求上下文。适配器会在分发前把
 活动运行时。旧运行时会进入 `DRAINING`，继续服务已有请求，并在请求计数归零后
 真正关闭。
 
+在**正在运行的事件循环内**关闭是另一条路径。同步的
+`ApplicationContext.shutdown()` 用阻塞式休眠等待在飞请求作用域，若在事件循环上
+执行，就会**饿死**它正在等待的那些请求。因此它会检测到运行中的事件循环并**跳过**
+阻塞等待，且以 `WARNING` 级别**如实报出**这次跳过，而不是静默处理。已经在事件循环
+上的调用方应改用 `await ApplicationContext.ashutdown()`（或
+`await ApplicationContext.await_drained(timeout)`），它会**让出控制权**，使在飞请求
+得以真正完成。两条路径共用**同一个**超时来源 `WebRuntimeConfig.drain_timeout`。
+
 ## 中间件桥接
 
 应用启动阶段可把旧式 middleware 注册桥接进 gateway pipeline，使历史模块仍能参与请求处理，而新代码统一走 Web Runtime。

@@ -56,6 +56,16 @@ after validation and warmup succeed. The previous runtime moves to
 `DRAINING`, keeps serving in-flight requests, and closes only after request
 counts reach zero.
 
+Shutting down from inside a running event loop is a different path. The
+synchronous `ApplicationContext.shutdown()` waits for in-flight request scopes
+with a blocking sleep, so running it on the loop would starve the very requests
+it is waiting for. It therefore detects a running loop and skips the blocking
+wait, reporting the skip at `WARNING` level instead of staying silent. Callers
+that are already on a loop should `await ApplicationContext.ashutdown()` (or
+`await ApplicationContext.await_drained(timeout)`), which yields control so the
+requests can actually finish. Both paths share the single timeout source,
+`WebRuntimeConfig.drain_timeout`.
+
 ## Middleware bridge
 
 Application bootstrap can bridge older middleware registrations into the gateway pipeline so legacy modules continue to participate in request processing while new code uses the unified Web Runtime.
