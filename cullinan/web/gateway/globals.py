@@ -66,6 +66,32 @@ def _peek_pipeline() -> Optional[MiddlewarePipeline]:
     return _global_pipeline
 
 
+def _peek_router() -> Optional[Router]:
+    """Return the global router as it currently stands, without creating it.
+
+    Same contract as :func:`_peek_pipeline` for the router global: an observer
+    reads the module-level global instead of the lazy ``get_router()`` accessor,
+    so taking a reading cannot bring a router into being.
+    """
+    return _global_router
+
+
+def _peek_dispatcher() -> Optional[Dispatcher]:
+    """Return the global dispatcher as it currently stands, without creating it.
+
+    Same contract as :func:`_peek_pipeline` for the dispatcher global.
+    """
+    return _global_dispatcher
+
+
+def _peek_exception_handler() -> Optional[ExceptionHandler]:
+    """Return the global exception handler as it currently stands, without creating it.
+
+    Same contract as :func:`_peek_pipeline` for the exception-handler global.
+    """
+    return _global_exception_handler
+
+
 def get_exception_handler() -> ExceptionHandler:
     """Get the global ExceptionHandler instance (created lazily)."""
     global _global_exception_handler

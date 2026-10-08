@@ -9,7 +9,7 @@ Author: plumeink
 
 import logging
 import traceback
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Dict, List, Type
 
 from .web_core import WebRequest, WebResponse
 
@@ -70,6 +70,27 @@ class ExceptionHandler:
     ) -> None:
         """Programmatic handler registration (non-decorator)."""
         self._handlers[exc_type] = handler_fn
+
+    def list_registered_handlers(self) -> List[Dict[str, Any]]:
+        """Return the exception handlers registered so far, in registration order.
+
+        The handler table is private, and until now there was no way to read it
+        back.  This is the read-only counterpart of
+        ``Router.get_all_routes()`` / ``MiddlewarePipeline.list_middleware()``
+        for the exception handler: it reports what the handler *holds* without
+        exposing the callables themselves, and never mutates the table.
+
+        Returns:
+            A list of descriptors, each with a ``name`` (the registered exception
+            type's name) and its ``order`` (registration order).
+        """
+        descriptors: List[Dict[str, Any]] = []
+        for order, exc_type in enumerate(self._handlers):
+            descriptors.append({
+                'name': getattr(exc_type, '__name__', str(exc_type)),
+                'order': order,
+            })
+        return descriptors
 
     async def handle(
         self,

@@ -10,6 +10,7 @@ import inspect
 import logging
 import threading
 import uuid
+from types import MappingProxyType
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type
 
 from cullinan.core.application_context import ApplicationContext, _emit_report_fallback
@@ -32,7 +33,12 @@ from cullinan.web.gateway import (
     get_router,
     reset_gateway,
 )
-from cullinan.web.gateway.globals import _peek_pipeline
+from cullinan.web.gateway.globals import (
+    _peek_dispatcher,
+    _peek_exception_handler,
+    _peek_pipeline,
+    _peek_router,
+)
 from cullinan.web.gateway.runtime import WebRuntime, WebRuntimeConfig
 from cullinan.runtime.module_scanner import list_submodules
 
@@ -106,6 +112,55 @@ class _DeclarationDiff:
         return len(self.dropped)
 
 
+#: The four gateway globals that ``reset_gateway()`` rebuilds at the boot
+#: boundary. Their names double as the ``gateway`` mapping keys of
+#: :class:`_AssemblySnapshot`.
+_GATEWAY_SURFACE_NAMES: Tuple[str, ...] = (
+    "pipeline",
+    "router",
+    "dispatcher",
+    "exception_handler",
+)
+
+
+@dataclass(frozen=True)
+class _SurfaceHoldings:
+    """Declared / assembled / dropped holdings of one assembly surface.
+
+    ``declared`` is what the surface held *before* the boot boundary (the
+    pre-boot registration snapshot taken while warming up); ``assembled`` is what
+    it holds *after* the boundary (what this assembly actually carries); and
+    ``dropped`` is ``declared - assembled`` -- the pre-boot entries the boundary
+    discarded.
+
+    Module-private on purpose: like :class:`_DeclarationDiff` this is a
+    diagnostic view hanging off the existing ``Application`` object and must
+    never enter any ``__all__`` (it is not a new top-level symbol).
+    """
+
+    declared: Tuple[str, ...] = ()
+    assembled: Tuple[str, ...] = ()
+    dropped: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class _AssemblySnapshot:
+    """What one application assembly actually holds, surface by surface.
+
+    ``gateway`` maps each of the four gateway surfaces -- ``pipeline`` /
+    ``router`` / ``dispatcher`` / ``exception_handler`` -- to its
+    :class:`_SurfaceHoldings`; ``container`` reports the declared-vs-assembled
+    component reconciliation the container assembled. The snapshot is obtained in
+    one call through :meth:`Application.get_assembly_snapshot`.
+
+    Module-private on purpose: this is a read-only diagnostic view and must never
+    enter any ``__all__`` (it is not a new top-level symbol).
+    """
+
+    gateway: Mapping[str, _SurfaceHoldings]
+    container: _SurfaceHoldings
+
+
 class Runtime:
     """Mutable runtime record for one Application candidate."""
 
@@ -121,6 +176,12 @@ class Runtime:
 
     def warmup(self) -> None:
         self.phase = "warming"
+        # Snapshot *every* gateway surface before the reset, so the assembly
+        # snapshot can name, side by side with the assembled set, exactly the
+        # pre-boot registrations the boundary discards. Like the pipeline-only
+        # read below, this must not create the objects it is about to see wiped:
+        # every surface is read through a non-materializing ``_peek_*`` helper.
+        self.application._gateway_declared = _read_gateway_surface_holdings()
         # Read the pre-boot registrations *before* the reset, so the report names
         # exactly the entries the reset discards. The read must not create the
         # pipeline it is about to see wiped.
@@ -149,6 +210,20 @@ class Runtime:
         self.web_runtime.begin_draining()
 
 
+def _pipeline_entry_names(pipeline: Any) -> Tuple[str, ...]:
+    """Names of a pipeline's entries, without resolving the declarative order.
+
+    The raw entry list is the view that does not depend on the declarative
+    ordering resolving, which can fail for declarations that were never
+    completed.
+    """
+    names: List[str] = []
+    for entry in pipeline._entries:
+        middleware = entry.middleware
+        names.append(getattr(middleware, "display_name", None) or type(middleware).__name__)
+    return tuple(names)
+
+
 def _registered_pipeline_entry_names() -> Tuple[str, ...]:
     """Names of the gateway pipeline entries registered so far, without creating it.
 
@@ -162,11 +237,64 @@ def _registered_pipeline_entry_names() -> Tuple[str, ...]:
     pipeline = _peek_pipeline()
     if pipeline is None:
         return ()
-    names: List[str] = []
-    for entry in pipeline._entries:
-        middleware = entry.middleware
-        names.append(getattr(middleware, "display_name", None) or type(middleware).__name__)
-    return tuple(names)
+    return _pipeline_entry_names(pipeline)
+
+
+def _read_gateway_surface_holdings() -> Dict[str, Tuple[str, ...]]:
+    """Read every gateway surface as it currently stands, without creating any.
+
+    Each read goes through the module-private ``_peek_*`` helpers rather than the
+    lazy ``get_*()`` accessors: the accessors materialize their object as a side
+    effect, and an observer must not change what it observes -- least of all the
+    boot boundary, which reads the surfaces immediately before it discards them.
+    A surface that has not been materialized yet reads as empty.
+
+    Returns one entry per :data:`_GATEWAY_SURFACE_NAMES`, each a tuple of the
+    labels that surface holds in its own read-only projection.
+    """
+    pipeline = _peek_pipeline()
+    router = _peek_router()
+    dispatcher = _peek_dispatcher()
+    exception_handler = _peek_exception_handler()
+
+    pipeline_names: Tuple[str, ...] = ()
+    if pipeline is not None:
+        pipeline_names = _pipeline_entry_names(pipeline)
+
+    router_names: Tuple[str, ...] = ()
+    if router is not None:
+        router_names = tuple(
+            f"{entry.method} {entry.path}" for entry in router.get_all_routes()
+        )
+
+    dispatcher_names: Tuple[str, ...] = ()
+    if dispatcher is not None:
+        dispatcher_names = tuple(
+            descriptor["name"] for descriptor in dispatcher.list_wired_components()
+        )
+
+    handler_names: Tuple[str, ...] = ()
+    if exception_handler is not None:
+        handler_names = tuple(
+            descriptor["name"] for descriptor in exception_handler.list_registered_handlers()
+        )
+
+    return {
+        "pipeline": pipeline_names,
+        "router": router_names,
+        "dispatcher": dispatcher_names,
+        "exception_handler": handler_names,
+    }
+
+
+def _build_surface_holdings(
+    declared: Tuple[str, ...],
+    assembled: Tuple[str, ...],
+) -> _SurfaceHoldings:
+    """Pair a pre-boot reading with the current one, deriving ``dropped``."""
+    assembled_set = set(assembled)
+    dropped = tuple(name for name in declared if name not in assembled_set)
+    return _SurfaceHoldings(declared=declared, assembled=assembled, dropped=dropped)
 
 
 def _warn_pipeline_registrations_reset(names: Tuple[str, ...]) -> None:
@@ -471,6 +599,10 @@ class Application:
         self.runtime: Optional[Runtime] = None
         self.phase = "created"
         self._declaration_diff = _DeclarationDiff()
+        # Pre-boot gateway readings, captured by ``Runtime.warmup()`` right before
+        # the boot boundary resets the gateway globals. ``None`` means no start
+        # has reached the boundary yet.
+        self._gateway_declared: Optional[Mapping[str, Tuple[str, ...]]] = None
 
     @property
     def context(self) -> ApplicationContext:
@@ -677,6 +809,47 @@ class Application:
         if self.graph is None:
             self.discover()
         return self._declaration_diff
+
+    def get_assembly_snapshot(self) -> _AssemblySnapshot:
+        """Return what this assembly actually holds, surface by surface.
+
+        One call reports every gateway surface -- ``pipeline`` / ``router`` /
+        ``dispatcher`` / ``exception_handler`` -- plus the container, each as a
+        ``declared`` / ``assembled`` / ``dropped`` triple. ``assembled`` is what
+        the surface holds right now; ``declared`` is what it held *before* the
+        boot boundary, captured in ``Runtime.warmup()``; and ``dropped`` is the
+        pre-boot registrations the boundary discarded (``declared - assembled``),
+        reported side by side with the assembled set so the two can be
+        reconciled in one place.
+
+        Every gateway surface is read through the module-private, non-creating
+        ``_peek_*`` helpers, so querying never materializes a lazy global -- an
+        observer must not change what it observes. The ``container`` sub-surface
+        reports the same declared-vs-assembled component reconciliation that
+        ``get_declaration_diff()`` exposes.
+
+        This is the single query entry point promised by the registration-surface
+        observability rule; the full per-entry detail lives here, while the boot
+        boundary only reports a summary. The return value is a module-private
+        frozen dataclass and is not part of the public API surface.
+        """
+        live = _read_gateway_surface_holdings()
+        declared = self._gateway_declared if self._gateway_declared is not None else live
+        gateway = {
+            surface: _build_surface_holdings(
+                tuple(declared.get(surface, ())),
+                tuple(live.get(surface, ())),
+            )
+            for surface in _GATEWAY_SURFACE_NAMES
+        }
+        return _AssemblySnapshot(
+            gateway=MappingProxyType(gateway),
+            container=_SurfaceHoldings(
+                declared=self._declaration_diff.declared,
+                assembled=self._declaration_diff.assembled,
+                dropped=self._declaration_diff.dropped,
+            ),
+        )
 
     def _iter_warmup_hooks(self) -> Iterable[Callable[["Application"], None]]:
         if self.graph is None:
