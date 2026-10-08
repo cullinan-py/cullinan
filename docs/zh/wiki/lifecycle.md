@@ -58,6 +58,17 @@ request scope 依赖绑定到当前请求上下文。适配器会在分发前把
 
 应用启动阶段可把旧式 middleware 注册桥接进 gateway pipeline，使历史模块仍能参与请求处理，而新代码统一走 Web Runtime。
 
+## 装配持有清单与引导边界
+
+应用预热会跨越一道引导边界：gateway globals —— pipeline、router、dispatcher 与
+exception handler —— 在此处被重置并重建。因此，任何在边界**之前**注册到这些面上的条目，都不属于正在运行的应用。
+
+`Application.get_assembly_snapshot()` 报告装配之后实际持有什么 —— 四个 gateway 面加上容器，
+每个面都是一组 `declared` / `assembled` / `dropped` 三态 —— 于是被边界丢弃的预引导条目会与生效集
+**并列**出现，而不是凭空消失。它是 `get_declaration_diff()` 的面级对应物，详见
+[框架语义 §12](../framework_semantics.md)。pipeline 面的行为更严格：预引导注册会**拒绝启动**而非被丢弃，
+详见[中间件](middleware.md)。
+
 ## 另见
 
 - [IoC 与 DI](injection.md)

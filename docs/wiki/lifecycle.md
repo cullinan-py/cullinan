@@ -60,6 +60,22 @@ counts reach zero.
 
 Application bootstrap can bridge older middleware registrations into the gateway pipeline so legacy modules continue to participate in request processing while new code uses the unified Web Runtime.
 
+## Assembly holdings and the boot boundary
+
+Warming up an application crosses a boot boundary: the gateway globals —
+pipeline, router, dispatcher and exception handler — are reset and rebuilt there.
+Anything registered on those surfaces *before* the boundary is therefore not part
+of the running application.
+
+`Application.get_assembly_snapshot()` reports what the assembly actually holds
+afterwards — the four gateway surfaces plus the container, each as a
+`declared` / `assembled` / `dropped` triple — so the pre-boot entries the
+boundary discarded appear next to the assembled set instead of vanishing. It is
+the surface-level counterpart of `get_declaration_diff()`; see
+[Framework Semantics §12](../framework_semantics.md). The pipeline's behaviour is
+stricter — a pre-boot registration refuses the start rather than being dropped —
+and is described in [Middleware](middleware.md).
+
 ## See also
 
 - [IoC & DI](injection.md)

@@ -93,6 +93,8 @@ configure(user_packages=["your_app"], builtin_middleware=[])
 
 **支持级别。** 该命令式注册在**引导边界不受支持**：启动前的 `get_pipeline().add(...)` 会在装配期（而非首个请求）拒绝启动。`get_pipeline()` 本身保留其**运行时自省 / 高级用途 / 测试**级别的作用 —— 应用启动**之后**，`get_pipeline().list_middleware()` 会报告已安装的中间件，且不受影响。要让中间件真正参与请求处理，请使用声明式入口：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
 
+**不止是 pipeline 一道边界。** 引导边界重建的是全部四个 gateway globals，而不只是 pipeline —— 且对它们区别对待：pipeline 上的预引导注册会拒绝启动（见上文），而 router、dispatcher、exception handler 上的预引导注册会被**丢弃并留痕**，应用仍能启动。`Application.get_assembly_snapshot()` 报告每个面实际持有什么 —— 四个 gateway 面加容器，各一组 `declared` / `assembled` / `dropped` —— 于是预引导条目可在一处完成对账，而无需从日志文本里读。详见[框架语义 §12](../framework_semantics.md)与[应用生命周期](lifecycle.md)。
+
 ### 遗留：`process_request` / `process_response`
 
 `Middleware`（从 `cullinan.web.middleware` 导入）上的钩子对仍然可用，并会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。每个桥接层与内置层、声明层共用同一个声明式 `priority` 键排序，因此 `@middleware(priority=10)` 的遗留中间件会落在内置 access log（默认 `100`）更外层。仅用于既有集成：
@@ -166,6 +168,8 @@ configure(middlewares=[AuditMiddleware()])  # 外部持有
 ## 自省
 
 `cullinan.web.gateway.get_pipeline().list_middleware()` 按执行顺序列出已安装的中间件，其中索引 `0` 为最外层。它是 `Router.get_all_routes()` 在管线侧的对应物。
+
+`list_middleware()` 只报告**一个**面。若要一次调用取得整个装配 —— 四个 gateway 面（`pipeline` / `router` / `dispatcher` / `exception_handler`）加容器，每个面一组 `declared` / `assembled` / `dropped` 三态 —— 请使用 `Application.get_assembly_snapshot()`，详见[框架语义 §12](../framework_semantics.md)。
 
 ## 使用建议
 

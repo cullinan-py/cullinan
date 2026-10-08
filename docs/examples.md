@@ -34,6 +34,7 @@ legacy one-file demos.
 6. `examples/middleware_ownership/` — the two middleware declaration forms and who owns each instance
 7. `examples/parameter_handling/` — controller-method parameter binding with `Path`, `Query`, and `Body`
 8. `examples/testing_flow/` — testing through `main.get_asgi_app()` without a real server process
+9. `examples/assembly_snapshot/` — reading back what an assembly actually holds, surface by surface
 
 ## Example map
 
@@ -48,6 +49,7 @@ legacy one-file demos.
 | `examples/parameter_handling/` | `Path`, `Query`, and `Body` on controller methods | `python -m examples.parameter_handling` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/parameter_handling) |
 | `examples/testing_flow/` | Public-API test flow with ASGI dispatch | `python -m pytest examples/testing_flow/test_app.py -q` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/testing_flow) |
 | `examples/static_files_and_spa/` | Declarative `StaticFiles` mounts + SPA fallback (engine-neutral) | `python -m examples.static_files_and_spa` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/static_files_and_spa) |
+| `examples/assembly_snapshot/` | The assembly snapshot: `declared` / `assembled` / `dropped` for the four gateway surfaces + container in one call | `python -m examples.assembly_snapshot` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/assembly_snapshot) |
 
 ## Why the examples were restructured
 

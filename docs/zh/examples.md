@@ -33,6 +33,7 @@ pr_links: []
 6. `examples/middleware_ownership/` —— 中间件的两种声明写法，以及各自实例的归属
 7. `examples/parameter_handling/` —— `Path`、`Query`、`Body` 的控制器方法参数绑定
 8. `examples/testing_flow/` —— 不启动真实服务进程时通过 `main.get_asgi_app()` 做测试
+9. `examples/assembly_snapshot/` —— 逐面读回本次装配实际持有什么
 
 ## 示例地图
 
@@ -47,6 +48,7 @@ pr_links: []
 | `examples/parameter_handling/` | 控制器方法上的 `Path`、`Query`、`Body` | `python -m examples.parameter_handling` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/parameter_handling) |
 | `examples/testing_flow/` | 基于公开 API 的 ASGI 测试流 | `python -m pytest examples/testing_flow/test_app.py -q` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/testing_flow) |
 | `examples/static_files_and_spa/` | 声明式 `StaticFiles` 挂载 + SPA 回退（引擎中立） | `python -m examples.static_files_and_spa` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/static_files_and_spa) |
+| `examples/assembly_snapshot/` | 装配快照：一次调用取得四个 gateway 子面 + 容器面的 `declared` / `assembled` / `dropped` | `python -m examples.assembly_snapshot` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/assembly_snapshot) |
 
 ## 为什么要重构示例
 

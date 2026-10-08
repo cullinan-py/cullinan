@@ -123,6 +123,16 @@ unaffected. For middleware that must take part in request handling, use the
 declarative entries: `configure(middlewares=[...])` or the `@middleware`
 decorator.
 
+**Not a pipeline-only boundary.** The boot boundary rebuilds all four gateway
+globals, not just the pipeline — and it treats them differently: a pre-boot
+registration on the pipeline refuses the start (above), while one on the router,
+dispatcher or exception handler is dropped and recorded while the application
+still starts. `Application.get_assembly_snapshot()` reports what every surface
+actually holds — `declared` / `assembled` / `dropped` for the four gateway
+surfaces plus the container — so a pre-boot entry is reconciled in one place
+instead of read off a log line. See [Framework Semantics §12](../framework_semantics.md)
+and [Application Lifecycle](lifecycle.md).
+
 ### Legacy: `process_request` / `process_response`
 
 The hook pair on `Middleware` (imported from `cullinan.web.middleware`) still works and is
@@ -227,6 +237,12 @@ request. `builtin_middleware=[...]` follows the same rule.
 `cullinan.web.gateway.get_pipeline().list_middleware()` lists the installed
 middleware in execution order, where index `0` is the outermost layer. It is the
 pipeline counterpart of `Router.get_all_routes()`.
+
+`list_middleware()` reports one surface. For the whole assembly in one call — the
+four gateway surfaces (`pipeline` / `router` / `dispatcher` / `exception_handler`)
+plus the container, each as a `declared` / `assembled` / `dropped` triple — use
+`Application.get_assembly_snapshot()`; see
+[Framework Semantics §12](../framework_semantics.md).
 
 ## Guidance
 
