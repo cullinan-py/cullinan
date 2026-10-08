@@ -140,6 +140,11 @@ def main():
     print(f"  (a) sign-off token  : {args.sign_off_token.strip()}")
     print(f"  (b) review token    : {args.review_token.strip()}")
     print("  (c) release readiness: SSOT aligned / release notes / README / clean tree")
+    # Every labelled check must also appear in this summary: a check that is
+    # enforced but absent from the summary reads as "no such check" to anyone
+    # going by the output, which is how a present gate can be mistaken for a
+    # missing one.
+    print("  (d) change declaration: Meta-Sync trailer present on governed changes")
     return 0
 
 
