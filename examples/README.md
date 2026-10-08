@@ -14,6 +14,7 @@ This directory is the single source of runnable examples for the current Cullina
 8. `examples/testing_flow/`
 9. `examples/static_files_and_spa/`
 10. `examples/component_discovery_boundary/`
+11. `examples/assembly_snapshot/`
 
 ## Run examples
 
@@ -27,6 +28,7 @@ This directory is the single source of runnable examples for the current Cullina
 - `python -m pytest examples/testing_flow/test_app.py -q`
 - `python -m examples.static_files_and_spa`
 - `python -m examples.component_discovery_boundary`
+- `python -m examples.assembly_snapshot`
 
 Each example keeps one teaching goal and follows the recommended Cullinan path:
 entry-method startup with `@application`, optional `@configure(...)`,
