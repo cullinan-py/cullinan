@@ -178,7 +178,10 @@ around them rather than discover them:
   accepted at all (ASGI, because uvicorn closes the listener first) — see the
   shutdown section above;
 - what a client sees when the drain bound cuts an in-flight request: `500` on
-  ASGI, a dropped connection on Tornado.
+  ASGI, a dropped connection on Tornado;
+- the status for a body over `max_request_body_bytes`: `413` on ASGI, `400` on
+  Tornado — see the request-body section above; both stop reading at the limit,
+  which is the part that matters.
 
 For normal traffic the two engines agree on status codes, bodies, `Allow` on a
 `405`, and `404` for an `OPTIONS` on an unknown path. The differences above are

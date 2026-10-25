@@ -136,3 +136,40 @@ def test_tornado_is_told_the_ceiling_so_it_can_stop_reading(monkeypatch):
         assert server_options() == {"max_body_size": 256}
     finally:
         config_module.get_config().max_request_body_bytes = previous
+
+
+def test_the_tornado_server_is_actually_told_the_ceiling(monkeypatch):
+    """Assert the call site, not just the helper.
+
+    An earlier version called ``server_options()`` in a test but passed nothing
+    at the real call site; deleting the wiring left the whole suite green, and
+    only a slow upload against a live server showed the regression. This asserts
+    the keyword actually reaches ``HTTPServer``.
+    """
+    import tornado.httpserver as http_server_module
+
+    from cullinan.support import config as config_module
+    from cullinan.transport.adapter.tornado_adapter import TornadoAdapter
+
+    captured: dict = {}
+
+    class _FakeServer:
+        def __init__(self, app, **kwargs):
+            captured['app'] = app
+            captured['kwargs'] = kwargs
+
+    monkeypatch.setattr(http_server_module, 'HTTPServer', _FakeServer)
+
+    previous = config_module.get_config().max_request_body_bytes
+    try:
+        config_module.configure(max_request_body_bytes=512)
+        adapter = TornadoAdapter.__new__(TornadoAdapter)  # skip the constructor's dependencies
+        adapter._app = object()
+        adapter._create_http_server()
+    finally:
+        config_module.get_config().max_request_body_bytes = previous
+
+    assert captured['kwargs'] == {'max_body_size': 512}, (
+        "the ceiling never reached HTTPServer; Tornado would buffer the whole body "
+        "before the adapter could reject it"
+    )

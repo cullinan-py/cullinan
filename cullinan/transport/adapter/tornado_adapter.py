@@ -271,6 +271,16 @@ class TornadoAdapter(WebAdapter):
         self._app = tornado.web.Application(handlers=handlers, **self._settings)
         return self._app
 
+    def _create_http_server(self):
+        """Build the ``HTTPServer``, passing the configured ceiling through.
+
+        Kept as a method so a test can assert the wiring without starting a
+        server: the ceiling is only real if ``max_body_size`` reaches this call,
+        and a version that omits it stays green everywhere else while the
+        protocol layer quietly goes back to buffering whole uploads.
+        """
+        return tornado.httpserver.HTTPServer(self._app, **server_options())
+
     def run(self, host: str = '0.0.0.0', port: int = 4080, **kwargs: Any) -> None:
         """Start the Tornado HTTP server (blocking)."""
         if self.runtime is not None and getattr(self.runtime, 'application', None) is not None and not in_public_api_context():
@@ -290,7 +300,7 @@ class TornadoAdapter(WebAdapter):
         # so the ceiling in the adapter could only ever reject an upload that
         # had already been accepted in full. The protocol layer has to know the
         # number, and it refuses at the point the limit is crossed.
-        self._http_server = tornado.httpserver.HTTPServer(self._app, **server_options())
+        self._http_server = self._create_http_server()
 
         if server_thread is not None:
             self._http_server.bind(port)
