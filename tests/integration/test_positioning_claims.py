@@ -71,3 +71,34 @@ def test_a_claim_without_evidence_is_rejected():
     module = _module()
     payload = {"claims": [{"id": "X", "claim": "something impressive", "evidence": [], "symbols": []}]}
     assert module.check(REPO_ROOT, payload)
+
+
+def test_evidence_must_name_something_a_caller_can_reach(tmp_path):
+    """A helper defined inside a function is not a declared symbol.
+
+    The AST walk used to collect every name in the file, including locals and
+    anything under ``if False:``, so a claim could be "supported" by code no
+    caller can reach.
+    """
+    module = _module()
+    source = tmp_path / "sample.py"
+    lines = [
+        "def public_api():",
+        "    def hidden_helper():",
+        "        return 1",
+        "    return hidden_helper()",
+        "",
+        "if False:",
+        "    class NeverDefined:",
+        "        pass",
+        "",
+        "class Surface:",
+        "    def method(self):",
+        "        return 1",
+        "",
+    ]
+    source.write_text("\n".join(lines), encoding="utf-8")
+    names = module.declared_names(source)
+    assert "public_api" in names and "Surface" in names and "method" in names
+    assert "hidden_helper" not in names, "a local function must not count as evidence"
+    assert "NeverDefined" not in names, "a name under an untaken branch is not a declaration"

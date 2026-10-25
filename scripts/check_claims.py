@@ -46,18 +46,34 @@ def extract_claims(text: str) -> dict:
 
 
 def declared_names(path: Path) -> set:
-    """Return every class, function and module-level assignment name in a file."""
+    """Names that form the file's *surface*: module members and class members.
+
+    Not every name that appears in the file. An earlier version walked the whole
+    AST, so a helper defined inside a function -- or a class defined under
+    ``if False:`` -- counted as "declared", and a claim could cite a symbol that
+    no caller can reach. Evidence that cannot be called is not evidence.
+    """
     tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
     names: set = set()
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
-            names.add(node.name)
-        elif isinstance(node, ast.Assign):
-            for target in node.targets:
-                if isinstance(target, ast.Name):
-                    names.add(target.id)
-        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
-            names.add(node.target.id)
+
+    def collect(body: list) -> None:
+        for node in body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                names.add(node.name)
+            elif isinstance(node, ast.ClassDef):
+                names.add(node.name)
+                # Methods and class attributes are part of the public surface.
+                collect(node.body)
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        names.add(target.id)
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                names.add(node.target.id)
+            # Deliberately no recursion into If/Try/With: a name that only
+            # exists under a branch nobody takes is not a declaration.
+
+    collect(tree.body)
     return names
 
 
