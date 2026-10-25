@@ -53,6 +53,29 @@ jobs:
       - name: Ruff check
         run: ruff check .
 
+  coverage:
+    # A single job rather than one per matrix entry: the floor is a property of
+    # the suite as a whole, and repeating the measurement five times would only
+    # produce five copies of the same number.
+    name: coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+      - name: Measure coverage
+        run: python -m coverage run --source=cullinan -m pytest tests -q
+      - name: Enforce the floor
+        # The floor lives in pyproject.toml, so the local run and this job use
+        # the same number; `coverage report` exits non-zero when it is missed.
+        run: python -m coverage report
+
   build:
     name: build & twine check
     runs-on: ubuntu-latest

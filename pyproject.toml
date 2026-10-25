@@ -43,3 +43,25 @@ cullinan = ["py.typed", "_contracts.json"]
 
 [tool.setuptools.dynamic]
 version = { attr = "cullinan._version.__version__" }
+
+# Coverage is measured over the package only: the tests, examples and scripts
+# are the instruments, not the subject. The floor is deliberately set just
+# below the measured value rather than at a round number above it -- a gate that
+# fails on the day it lands teaches people to bypass it. Raising the floor is
+# welcome at any time; lowering it needs an ADR saying what regressed and why
+# the code cannot be covered, because a floor that drifts down is not a gate.
+[tool.coverage.run]
+source = ["cullinan"]
+branch = false
+omit = ["cullinan/_version.py"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+fail_under = 70
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+]
