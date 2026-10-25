@@ -217,7 +217,7 @@ INFO:     Finished server process [2550]
 This is uvicorn's design, not an aborted shutdown: after the loop has drained
 and the lifespan has closed, it restores the original handlers and **re-raises
 the signal it captured**, so the shell and any supervisor see the real cause.
-Measured on Linux and macOS by the platform matrix.
+Measured on both Linux and macOS.
 
 Read the log for whether the drain completed, not the exit status. A supervisor
 that treats `143` as success is right; one that requires `0` will report a
@@ -252,9 +252,9 @@ Both stop early, which is the property that matters; the two are not the same
 status, and pretending otherwise would be a difference you discover in
 production.
 
-Set it if the deployment accepts uploads from anywhere; the audit that produced
-this option found a 1 MiB body posted to a path that does not exist being fully
-buffered before the `404`.
+Set it if the deployment accepts uploads from anywhere: without a ceiling, a
+1 MiB body posted to a path that does not exist is read in full before the
+`404`.
 
 ## Static files
 

@@ -38,7 +38,8 @@ curl -i -X POST --data-binary @<(head -c 4096 /dev/zero) http://127.0.0.1:4084/u
 A request to a path that does not exist still has its body read before the
 `404` if no ceiling is configured; with a ceiling, it is refused at the ceiling.
 Rejecting before reading would require routing before the body, which the
-framework does not do — see `docs/deployment.md` and the ADR behind it.
+framework does not do; `docs/deployment.md` states the same limit for readers
+who deploy it.
 
 ## Where this is documented
 

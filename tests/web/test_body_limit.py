@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """A ceiling on the request body, enforced before anyone looks at the route.
 
-The audit found the framework would read whatever a client sent: a 1 MiB body
-posted to a path that does not exist was fully buffered and only then answered
-404. That is an upload endpoint in everything but intent, and it needed no
-credentials.
+The framework used to read whatever a client sent: a 1 MiB body posted to a
+path that does not exist was fully buffered and only then answered 404. That is
+an upload endpoint in everything but intent, and it needed no credentials.
 
 The ceiling is opt-in (``@configure(max_request_body_bytes=...)``), because
 changing the default would break every existing upload; what is not optional is
