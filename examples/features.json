@@ -1,0 +1,126 @@
+{
+  "comment": "Every public feature this framework teaches must have a runnable example and a page that explains it. `tests/integration/test_feature_example_matrix.py` holds this file to that claim in both directions: a feature without an example fails, and an example nobody declared fails too. `evidence` lists strings that must appear in the example's own Python, so the entry cannot survive on an empty directory with a nice README.",
+  "features": [
+    {
+      "feature": "Recommended entry point",
+      "example": "minimal_app",
+      "evidence": [
+        "@application",
+        "@configure("
+      ],
+      "docs": "getting_started.md"
+    },
+    {
+      "feature": "Service injection into a controller",
+      "example": "controller_service_inject",
+      "evidence": [
+        "@service",
+        "UserDirectoryService"
+      ],
+      "docs": "dependency_injection_guide.md"
+    },
+    {
+      "feature": "Path, query and body parameters",
+      "example": "parameter_handling",
+      "evidence": [
+        "Path(",
+        "Query(",
+        "Body("
+      ],
+      "docs": "parameter_system_guide.md"
+    },
+    {
+      "feature": "Middleware declaration and ordering",
+      "example": "middleware_pipeline",
+      "evidence": [
+        "middlewares=",
+        "GatewayMiddleware"
+      ],
+      "docs": "wiki/middleware.md"
+    },
+    {
+      "feature": "Middleware lifecycle owned by the container",
+      "example": "middleware_ownership",
+      "evidence": [
+        "AuditMiddleware",
+        "middlewares="
+      ],
+      "docs": "wiki/middleware.md"
+    },
+    {
+      "feature": "Middleware control: built-in switch and tags",
+      "example": "middleware_control",
+      "evidence": [
+        "builtin_middleware"
+      ],
+      "docs": "wiki/middleware.md"
+    },
+    {
+      "feature": "Module boundary",
+      "example": "middleware_and_module",
+      "evidence": [
+        "@module",
+        "@middleware"
+      ],
+      "docs": "wiki/components.md"
+    },
+    {
+      "feature": "Static files and SPA fallback",
+      "example": "static_files_and_spa",
+      "evidence": [
+        "static_files"
+      ],
+      "docs": "static_files_guide.md"
+    },
+    {
+      "feature": "Assembly snapshot of a running application",
+      "example": "assembly_snapshot",
+      "evidence": [
+        "get_assembly_snapshot"
+      ],
+      "docs": "wiki/application_runtime.md"
+    },
+    {
+      "feature": "Component discovery boundary and assembly strictness",
+      "example": "component_discovery_boundary",
+      "evidence": [
+        "strict_assembly",
+        "@service"
+      ],
+      "docs": "wiki/components.md"
+    },
+    {
+      "feature": "Testing an application without a server",
+      "example": "testing_flow",
+      "evidence": [
+        "run_example_assertions"
+      ],
+      "docs": "testing.md"
+    },
+    {
+      "feature": "Packaging a project",
+      "example": "packaging_demo",
+      "evidence": [
+        "def main()"
+      ],
+      "docs": "packaging.md"
+    },
+    {
+      "feature": "Graceful shutdown and readiness",
+      "example": "graceful_shutdown",
+      "evidence": [
+        "accepts_requests",
+        "add_draining_handler"
+      ],
+      "docs": "deployment.md"
+    },
+    {
+      "feature": "Legacy compatibility surface",
+      "example": "legacy",
+      "evidence": [
+        "UserController"
+      ],
+      "docs": "migration_guide.md"
+    }
+  ]
+}
