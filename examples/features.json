@@ -121,6 +121,15 @@
         "UserController"
       ],
       "docs": "migration_guide.md"
+    },
+    {
+      "feature": "Request body ceiling",
+      "example": "request_body_limit",
+      "evidence": [
+        "max_request_body_bytes",
+        "@configure("
+      ],
+      "docs": "deployment.md"
     }
   ]
 }
