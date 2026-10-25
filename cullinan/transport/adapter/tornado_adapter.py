@@ -283,20 +283,83 @@ class TornadoAdapter(WebAdapter):
     def _install_signal_handlers(self) -> None:
         try:
             def _handle(signum: int, frame: Any) -> None:
-                logger.info('Signal %s received, stopping...', signum)
+                logger.info('Signal %s received, draining...', signum)
                 try:
-                    tornado.ioloop.IOLoop.current().add_callback(
-                        tornado.ioloop.IOLoop.current().stop
-                    )
-                except Exception:
+                    # ``add_callback`` from a signal handler hands the work to
+                    # the IOLoop thread. The old handler stopped the loop right
+                    # here, which is why in-flight requests were cut: stopping
+                    # the loop abandons them.
+                    tornado.ioloop.IOLoop.current().add_callback(self._shutdown_gracefully)
+                except Exception:  # noqa: BLE001 - never raise inside a signal handler
                     pass
 
-            signal.signal(signal.SIGINT, _handle)
+            for name in ('SIGINT', 'SIGTERM', 'SIGBREAK'):
+                sig = getattr(signal, name, None)
+                if sig is None:
+                    continue
+                try:
+                    signal.signal(sig, _handle)
+                except Exception:  # noqa: BLE001 - not every platform allows every signal
+                    continue
+        except Exception:  # noqa: BLE001 - signal setup must not stop the server
+            pass
+
+    def _drain_timeout(self) -> float:
+        """The drain bound, from its single source (``WebRuntimeConfig``)."""
+        try:
+            from cullinan.web.gateway.runtime import WebRuntime
+
+            runtime = WebRuntime.current()
+            config = getattr(runtime, 'config', None) if runtime is not None else None
+            value = getattr(config, 'drain_timeout', None)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return float(value)
+        except Exception:  # noqa: BLE001 - the bound must never break shutdown
+            pass
+        return 30.0
+
+    async def _shutdown_gracefully(self) -> None:
+        """Stop accepting, finish what is in flight, then stop the loop.
+
+        In that order. The previous handler did only the last step, which is
+        why a stop signal behaved like a kill.
+        """
+        app = None
+        try:
+            from cullinan.application.model import Application
+
+            app = Application.current()
+        except Exception:  # noqa: BLE001 - shutdown must work without an application
+            app = None
+
+        if app is not None:
             try:
-                signal.signal(signal.SIGTERM, _handle)
-            except Exception:
+                app._begin_draining()  # noqa: SLF001 - same package, deliberate
+            except Exception as exc:  # noqa: BLE001
+                logger.warning('Could not begin draining: %s', exc)
+
+        # Stop accepting new connections first: from here on the listener is
+        # closed, so "draining" and "still taking work" cannot both be true.
+        if self._http_server:
+            try:
+                self._http_server.stop()
+            except Exception:  # noqa: BLE001
                 pass
-        except Exception:
+
+        ctx = getattr(app, 'context', None) if app is not None else None
+        if ctx is not None:
+            try:
+                await ctx.ashutdown(timeout=self._drain_timeout())
+            except Exception as exc:  # noqa: BLE001
+                logger.warning('Drain did not complete cleanly: %s', exc)
+            try:
+                app._finalize_drain()  # noqa: SLF001 - same package, deliberate
+            except Exception as exc:  # noqa: BLE001
+                logger.warning('Could not finalise draining: %s', exc)
+
+        try:
+            tornado.ioloop.IOLoop.current().stop()
+        except Exception:  # noqa: BLE001
             pass
 
     def _cleanup(self) -> None:
