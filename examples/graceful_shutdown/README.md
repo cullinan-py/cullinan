@@ -44,9 +44,10 @@ because the probe is part of your operations story.
 
 ## The drain bound
 
-The framework waits up to `drain_timeout` (default 30s, settable on
-`@configure(...)`; **this example sets 2s** so that `/ops/slow` — which takes 5s —
-is still running when the bound expires) for in-flight requests before closing. The same value is
+The framework waits for in-flight requests for up to `drain_timeout` before
+closing, and the default is 30s. **This example sets 2s**, deliberately shorter
+than `/ops/slow`, so that the bound expires while that request is still running —
+otherwise there is nothing to watch. The same value is
 handed to the server that actually does the waiting — uvicorn's graceful
 shutdown timeout — so the number your process waits for and the number the
 framework waits for cannot drift apart. A drain that finishes inside the bound
@@ -71,7 +72,7 @@ is real rather than a formatting detail:
 | Engine | What you should see |
 |---|---|
 | Tornado | `503` with `Retry-After: 1` while `/ops/slow` is still running |
-| ASGI (uvicorn) | a refused connection or a hang: uvicorn stops listening and then drops open connections, so there is no deliberate window in which to read a status |
+| ASGI (uvicorn) | for the first ~0.1s you may still catch a `503`; after that, a refused connection or a hang — uvicorn stops listening and then drops open connections, so there is no window you can rely on |
 
 Because the bound (2s) is shorter than the request (5s), the drain expires while
 `/ops/slow` is still running: the process exits about two seconds after the
