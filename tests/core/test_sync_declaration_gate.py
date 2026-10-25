@@ -39,13 +39,33 @@ def test_governed_paths_are_detected(path):
 
 
 @pytest.mark.parametrize("path", [
-    "cullinan/core/model.py",
-    "docs/guide.md",
-    "README.MD",
-    "scripts/check_sync_declaration.py",
+    "misc/notes.txt",
+    "tools/release.sh",
+    "examples/features.json.probe",
 ])
 def test_unrelated_paths_are_ignored(path):
     assert gate.governed_reason(path) is None
+
+
+@pytest.mark.parametrize("path", [
+    "cullinan/core/model.py",
+    "cullinan/web/gateway/router.py",
+    "tests/web/test_x.py",
+    "tests/platform/test_posix_signals.py",
+    "docs/guide.md",
+    "docs/zh/deployment.md",
+    "examples/request_body_limit/root.py",
+    "README.MD",
+    "CHANGELOG.md",
+    "scripts/check_sync_declaration.py",
+])
+def test_shipped_surface_requires_a_declaration(path):
+    """A feature, a test, a page or an example is a shipped change, not plumbing.
+
+    These paths used to be listed as unrelated, which is why a feature could ship
+    with no example and every gate stayed green.
+    """
+    assert gate.governed_reason(path) is not None
 
 
 def test_pyproject_is_handled_by_the_key_predicate_not_the_file_table():
@@ -59,8 +79,11 @@ def test_leading_dot_slash_is_normalized():
 
 
 def test_governed_hits_reports_each_matched_path():
-    hits = gate.governed_hits([".github/workflows/ci.yml", "cullinan/core/model.py"])
-    assert [path for path, _ in hits] == [".github/workflows/ci.yml"]
+    hits = gate.governed_hits(
+        [".github/workflows/ci.yml", "cullinan/core/model.py", "misc/notes.txt"]
+    )
+    assert [path for path, _ in hits] == [".github/workflows/ci.yml", "cullinan/core/model.py"]
+    assert dict(hits)["cullinan/core/model.py"].endswith("framework source")
 
 
 # ---------------------------------------------------------------------------
