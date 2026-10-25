@@ -235,3 +235,14 @@ def test_no_change_does_not_trigger():
 # ---------------------------------------------------------------------------
 def test_builtin_self_test_is_green():
     assert gate.self_test() == 0
+
+
+def test_the_grandfather_baseline_cannot_drift():
+    """The baseline decides which commits escape a declaration.
+
+    Moving it forward would whitelist commits that were never declared, so the
+    value is pinned here: changing it means changing this test, in the same
+    commit, in plain sight. A baseline that can be nudged by a later commit is
+    not a baseline, it is an escape hatch.
+    """
+    assert gate.GATE_BASELINE == "3fe65f7"

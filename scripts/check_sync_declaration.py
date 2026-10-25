@@ -48,12 +48,13 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 
 TRAILER_KEY = "Meta-Sync"
 
-# Commits at or before this one were written before the gate covered the shipped
-# surface. They are grandfathered rather than retro-declared: rewriting them would
+# Commits at or before this one were written while the gate covered only release
+# plumbing. Moving this value forward would whitelist commits that were never
+# declared, so it is pinned by a test: changing it is a decision, not a tweak. They are grandfathered rather than retro-declared: rewriting them would
 # invalidate margins that were signed against their hashes, and a declaration
 # added after the fact is not a decision, it is a formality. Everything after it
 # must declare -- that is where the gate starts doing work.
-GATE_BASELINE = "3fe65f7"
+GATE_BASELINE = "3fe65f7"  # pinned by tests/core/test_sync_declaration_gate.py
 
 
 # ---------------------------------------------------------------------------
