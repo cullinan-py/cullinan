@@ -202,6 +202,27 @@ With it off — the default — the framework reads the connection. Turning it o
 when there is no proxy lets a client claim any address it likes, which is how
 per-IP rate limits and audit logs quietly stop meaning anything.
 
+## The exit status after `SIGTERM`
+
+On POSIX, a graceful shutdown ends with a **signal exit**, not with `0`:
+
+```
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2550]
+# $? is 143 (128 + 15), and Python reports the child as -15
+```
+
+This is uvicorn's design, not an aborted shutdown: after the loop has drained
+and the lifespan has closed, it restores the original handlers and **re-raises
+the signal it captured**, so the shell and any supervisor see the real cause.
+Measured on Linux and macOS by the platform matrix.
+
+Read the log for whether the drain completed, not the exit status. A supervisor
+that treats `143` as success is right; one that requires `0` will report a
+healthy shutdown as a crash.
+
 ## Request body size
 
 The framework reads the body before it knows which route will handle it, so a

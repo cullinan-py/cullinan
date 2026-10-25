@@ -60,7 +60,14 @@ def _python_sources(example_dir: Path) -> str:
 
 
 def _example_dirs() -> list[str]:
-    return sorted(path.name for path in EXAMPLES.iterdir() if path.is_dir())
+    # ``__pycache__`` shows up the moment anything imports an example, which CI
+    # does by running the examples; a runtime artifact is not an undeclared
+    # example, and treating it as one turns a green build red on a fresh clone.
+    return sorted(
+        path.name
+        for path in EXAMPLES.iterdir()
+        if path.is_dir() and not path.name.startswith("__")
+    )
 
 
 def test_the_matrix_is_present_and_well_formed():

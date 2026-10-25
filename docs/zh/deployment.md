@@ -146,6 +146,25 @@ config = WebRuntimeConfig(trust_forwarded_headers=True)
 默认关闭时，框架读**连接**。没有代理却打开它，等于让客户端随便声称自己是谁 ——
 按 IP 的限流与审计日志就是这样悄悄失效的。
 
+## `SIGTERM` 之后的退出码
+
+在 POSIX 上，优雅关闭的结尾是**被信号结束**，不是 `0`：
+
+```
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2550]
+# $? 是 143（128 + 15），Python 侧看到的子进程状态是 -15
+```
+
+这是 uvicorn 的设计，不是"关闭被打断"：事件循环排空、lifespan 关完之后，它恢复原有处理器并
+**把捕获到的信号重新发给自己**，这样 shell 与监督进程看到的是真实原因。Linux 与 macOS 上均由
+平台矩阵实测。
+
+**判断有没有排空完成，看日志，不要看退出码。** 把 `143` 当成功的监督进程是对的；要求必须是
+`0` 的那种，会把一次健康关闭报成崩溃。
+
 ## 请求体大小
 
 框架在知道"哪个路由会处理它"之前就要把 body 读完，所以上限只能在**入口处**执行：
