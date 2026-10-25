@@ -145,6 +145,23 @@ config = WebRuntimeConfig(trust_forwarded_headers=True)
 默认关闭时，框架读**连接**。没有代理却打开它，等于让客户端随便声称自己是谁 ——
 按 IP 的限流与审计日志就是这样悄悄失效的。
 
+## 请求体大小
+
+框架在知道"哪个路由会处理它"之前就要把 body 读完，所以上限只能在**入口处**执行：
+
+```python
+from cullinan import application, configure
+
+
+@configure(user_packages=["your_app"], max_request_body_bytes=1_000_000)
+@application
+def main(): ...
+```
+
+不设值 = 客户端发多少就读多少（沿用的历史行为，把它改成默认限制会打断既有上传）。设了值之后，任何超过它的请求在**客户端还在发的时候**就得到 `413`，两个引擎一致，且不会进任何 handler。
+
+部署对公网接受上传时请设它 —— 促成这个选项的审计里，一个 1 MiB 的 body 打到一个**不存在的路径**，也被完整缓冲后才回 `404`。
+
 ## 静态文件
 
 两种可行部署：

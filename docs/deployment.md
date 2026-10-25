@@ -199,6 +199,29 @@ With it off — the default — the framework reads the connection. Turning it o
 when there is no proxy lets a client claim any address it likes, which is how
 per-IP rate limits and audit logs quietly stop meaning anything.
 
+## Request body size
+
+The framework reads the body before it knows which route will handle it, so a
+ceiling has to be enforced at the edge:
+
+```python
+from cullinan import application, configure
+
+
+@configure(user_packages=["your_app"], max_request_body_bytes=1_000_000)
+@application
+def main(): ...
+```
+
+With no value set, whatever the client sends is read — the historical
+behaviour, kept as the default because turning it into a limit would break
+existing uploads. With a value, a body that crosses it is answered `413` while
+the client is still sending, on both engines, before any handler runs.
+
+Set it if the deployment accepts uploads from anywhere; the audit that produced
+this option found a 1 MiB body posted to a path that does not exist being fully
+buffered before the `404`.
+
 ## Static files
 
 Two valid deployments:

@@ -93,6 +93,12 @@ class CullinanConfig:
         # ASGI server: 'uvicorn' (default), 'hypercorn'
         self.asgi_server: str = 'uvicorn'
 
+        # Largest request body the framework will read, in bytes. ``None``
+        # (the default) keeps the historical behaviour of reading whatever the
+        # client sends; a number turns an oversized upload into 413 before the
+        # body reaches a handler.
+        self.max_request_body_bytes: Optional[int] = None
+
         # How long a graceful shutdown may wait for in-flight requests before
         # cutting them. ``None`` means "leave the runtime default alone" (30s);
         # setting it here puts the knob on the same surface as the port and the
@@ -228,6 +234,10 @@ class CullinanConfig:
             self.server_port = config['server_port']
         if 'explicit_modules' in config:
             self.explicit_modules = config['explicit_modules']
+        if 'max_request_body_bytes' in config:
+            value = config['max_request_body_bytes']
+            self.max_request_body_bytes = int(value) if value is not None else None
+
         if 'drain_timeout' in config:
             value = config['drain_timeout']
             self.drain_timeout = float(value) if value is not None else None
@@ -268,6 +278,7 @@ class CullinanConfig:
             'server_host': self.server_host,
             'server_port': self.server_port,
             'drain_timeout': self.drain_timeout,
+            'max_request_body_bytes': self.max_request_body_bytes,
             'explicit_modules': self.explicit_modules,
             'static_files': list(self.static_files),
             'middlewares': list(self.middlewares),
@@ -342,6 +353,7 @@ def configure(
     server_host: Optional[str] = None,
     server_port: Optional[int] = None,
     drain_timeout: Optional[float] = None,
+    max_request_body_bytes: Optional[int] = None,
     explicit_modules: Optional[List[str]] = None,
     static_files: Optional[List[Any]] = None,
     *,
@@ -458,6 +470,11 @@ def configure(
             sys.path.insert(0, project_root)
             if verbose:
                 print(f"Auto-added project root to sys.path: {project_root}")
+
+    if max_request_body_bytes is not None:
+        if max_request_body_bytes <= 0:
+            raise ValueError("max_request_body_bytes must be greater than zero")
+        _config.max_request_body_bytes = int(max_request_body_bytes)
 
     if drain_timeout is not None:
         if drain_timeout <= 0:

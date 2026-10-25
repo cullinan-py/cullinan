@@ -27,7 +27,7 @@ from cullinan.application.model import (
 )
 from cullinan.web.gateway.dispatcher import Dispatcher
 from cullinan.web.gateway.web_core import WebRequest, WebResponse
-from .base import WebAdapter
+from .base import WebAdapter, resolve_max_request_body_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +80,15 @@ class _CullinanTornadoHandler(tornado.web.RequestHandler):
                 runtime.begin_request()
             binding = bind_runtime_request_context(runtime)
             request = self._adapter.create_request_adapter().build_request(self)
+            limit = resolve_max_request_body_bytes()
+            if limit is not None and len(request.body or b'') > limit:
+                # Answered before routing: the point of the ceiling is not to
+                # hand a huge body to a handler that will reject it anyway.
+                self.set_status(413)
+                self.set_header('Connection', 'close')
+                self.write(b'{"error":"Payload Too Large","reason":"request body exceeded max_request_body_bytes"}')
+                self.finish()
+                return
             if runtime is not None:
                 request.attributes['runtime'] = runtime
             response = await self._dispatcher.dispatch(request)
@@ -351,6 +360,11 @@ class TornadoAdapter(WebAdapter):
         if app is not None:
             try:
                 app._begin_draining()  # noqa: SLF001 - same package, deliberate
+                logger.info(
+                    'Draining: waiting up to %ss for %s in-flight request(s); new work is refused',
+                    self._drain_timeout(),
+                    app.web_runtime.request_count,
+                )
             except Exception as exc:  # noqa: BLE001
                 logger.warning('Could not begin draining: %s', exc)
 

@@ -27,7 +27,7 @@ from cullinan.application.model import (
 )
 from cullinan.web.gateway.dispatcher import Dispatcher
 from cullinan.web.gateway.web_core import WebRequest, WebResponse
-from .base import WebAdapter
+from .base import WebAdapter, resolve_max_request_body_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +86,13 @@ def _begin_draining_for_active_application() -> None:
         return
     try:
         app._begin_draining()  # noqa: SLF001 - same package, deliberate internal call
+        # T-14: say what the process is waiting for, and for how long. A drain
+        # that logs nothing is indistinguishable from a hang.
+        logger.info(
+            'Draining: waiting up to %ss for %s in-flight request(s); new work is refused',
+            _resolve_drain_timeout(),
+            getattr(app.web_runtime, 'request_count', 0),
+        )
     except Exception as exc:  # noqa: BLE001 - never block a shutdown
         logger.warning('Could not begin draining: %s', exc)
 
@@ -277,6 +284,24 @@ async def _send_error_body(
     await send({'type': 'http.response.body', 'body': body})
 
 
+async def _read_body(receive: Receive, limit: Optional[int]) -> tuple[bytes, bool]:
+    """Read the request body, stopping once ``limit`` is exceeded.
+
+    Returns ``(body, too_large)``. The overflow is reported rather than raised
+    so the caller can answer 413 while the client is still sending: waiting for
+    the last byte of an upload you have already decided to reject is exactly the
+    cost the ceiling exists to avoid.
+    """
+    body = b''
+    while True:
+        message = await receive()
+        body += message.get('body', b'')
+        if limit is not None and len(body) > limit:
+            return body, True
+        if not message.get('more_body', False):
+            return body, False
+
+
 async def _handle_http(
     scope: Scope,
     receive: Receive,
@@ -296,13 +321,17 @@ async def _handle_http(
         if runtime is not None:
             runtime.begin_request()
         binding = bind_runtime_request_context(runtime)
-        # 1. Read full body
-        body = b''
-        while True:
-            message = await receive()
-            body += message.get('body', b'')
-            if not message.get('more_body', False):
-                break
+        # 1. Read full body (bounded, if a bound is configured)
+        limit = resolve_max_request_body_bytes()
+        body, too_large = await _read_body(receive, limit)
+        if too_large:
+            await _send_error_body(
+                send,
+                413,
+                b'{"error":"Payload Too Large","reason":"request body exceeded max_request_body_bytes"}',
+                extra_headers=[[b'connection', b'close']],
+            )
+            return
 
         # 2. Build WebRequest from ASGI scope
         request = await adapter.create_request_adapter().build_request(scope, body)
