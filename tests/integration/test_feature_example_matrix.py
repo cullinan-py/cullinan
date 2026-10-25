@@ -45,7 +45,9 @@ def _python_sources(example_dir: Path) -> str:
         lines = source.splitlines(True)
         try:
             for token in tokenize.generate_tokens(io.StringIO(source).readline):
-                if token.type != tokenize.COMMENT:
+                # Comments and string literals are both removed: a docstring
+                # describing the feature is prose about the code, not the code.
+                if token.type not in (tokenize.COMMENT, tokenize.STRING):
                     continue
                 row, start = token.start
                 _end_row, end = token.end

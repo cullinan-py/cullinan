@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 
-from cullinan.transport.adapter.asgi_adapter import _send_response
+from cullinan.transport.adapter.asgi_adapter import _send_error_body, _send_response
 from cullinan.transport.adapter.tornado_adapter import _CullinanTornadoHandler
 from cullinan.web.gateway.web_core import WebResponse
 
@@ -77,3 +77,46 @@ def test_tornado_does_not_invent_an_etag():
         "Tornado would otherwise compute an ETag on finish() and answer 304 to "
         "If-None-Match, while the same request on ASGI stays 200"
     )
+
+
+def test_tornado_etag_override_does_not_touch_headers():
+    """Calling it must leave the header map alone.
+
+    Tornado's version computes a hash from the response body; if this override
+    were ever dropped, that call would need a real handler. On a bare object it
+    would raise -- so an empty mapping afterwards proves nothing was computed.
+    """
+
+    class _Bare:
+        _headers: dict = {}
+
+    instance = _Bare()
+    _CullinanTornadoHandler.set_etag_header(instance)
+    assert instance._headers == {}
+
+
+def test_the_draining_error_body_is_a_complete_response():
+    """503 must be sendable as-is: status, body and a length that matches it."""
+    captured: list[dict] = []
+
+    async def send(message: dict) -> None:
+        captured.append(message)
+
+    body = b'{"error":"Service Unavailable"}'
+    asyncio.run(_send_error_body(send, 503, body, extra_headers=[[b'retry-after', b'1']]))
+    start = captured[0]
+    headers = {name.decode().lower(): value.decode() for name, value in start["headers"]}
+    assert start["status"] == 503
+    assert headers["content-length"] == str(len(body))
+    assert headers["retry-after"] == "1"
+    assert captured[1]["body"] == body
+
+
+def test_a_draining_rejection_maps_to_503_not_500():
+    from cullinan.core.exceptions import ContainerDrainingError
+    from cullinan.web.gateway.exception_handler import ExceptionHandler
+    from cullinan.web.gateway.web_core import WebRequest
+
+    handler = ExceptionHandler()
+    response = asyncio.run(handler.handle(WebRequest(method="GET", path="/ops/ready"), ContainerDrainingError("draining")))
+    assert response.status_code == 503

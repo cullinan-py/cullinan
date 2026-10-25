@@ -95,7 +95,7 @@ def test_the_changelog_gate_runs_in_ci_with_the_tags_it_needs():
     assert "changelog" in jobs, "the changelog check is not wired into CI at all"
     steps = jobs["changelog"].get("steps", [])
     checkouts = [step for step in steps if str(step.get("uses", "")).startswith("actions/checkout")]
-    assert checkouts and checkouts[0].get("with", {}).get("fetch-depth") == 0, (
+    assert checkouts and (checkouts[0].get("with") or {}).get("fetch-depth") == 0, (
         "a shallow checkout sees no tags, so the continuity check would pass while checking nothing"
     )
     assert any("check_changelog.py" in str(step.get("run", "")) for step in steps)
