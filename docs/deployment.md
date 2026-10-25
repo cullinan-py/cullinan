@@ -83,12 +83,14 @@ during the drain depends on the engine.**
 | Engine | A request that arrives during the drain |
 |---|---|
 | Tornado | the listener stays open, so it is accepted and answered `503` with `Retry-After: 1` |
-| ASGI (uvicorn) | uvicorn closes the listener as the *first* step of its own shutdown, so **no new connection is accepted** (a client may hang until its own timeout); a request on an **already established** connection is answered `503` with `Retry-After: 1` |
+| ASGI (uvicorn) | uvicorn closes the listener as the *first* step of its shutdown and then calls `shutdown()` on every open connection, so there is **no window in which you can reach it on purpose**: for roughly the first 0.1s after the signal a request may still be answered `503`, after that existing connections are aborted and new ones are not accepted (a client hangs or is refused). Treat it as "the instance is gone" |
 
 The framework cannot change that ordering: the bound is handed to the server,
-and the server decides when to stop listening. Plan for it — a probe that opens
-a new connection on every poll will see the instance disappear rather than see
-`503`, which is still a correct "do not send me traffic" signal.
+and the server decides when to stop listening and when to drop connections. Plan
+for it — a probe that opens a new connection on every poll will see the instance
+disappear rather than see `503`, which is still a correct "do not send me
+traffic" signal, but it is not a status code you can read. On ASGI the only
+reliable readiness signal is the one you read *before* the shutdown begins.
 
 Step 3 is bounded by one number, and that number is handed to the server that
 actually does the waiting:
@@ -114,8 +116,8 @@ takes precedence.
 Three things worth knowing about the bound:
 
 1. **It is enforced, not advisory.** With `drain_timeout=1.0` and a request that
-   needs 6s, the process is gone in about 1.2s on ASGI and about 1.6s on Tornado,
-   and the slow request is cut. What the cut looks like to the client differs:
+   needs 6s, the process is gone in about 1.1–1.4s on either engine — the bound plus
+   teardown, not a fixed per-engine figure — and the slow request is cut. What the cut looks like to the client differs:
    ASGI returns a `500` (the server cancels the task), Tornado drops the
    connection. If you need slow requests to finish, say so with a larger bound.
 2. **It must fit your platform.** It should be longer than your slowest normal
@@ -233,7 +235,7 @@ Before you call a deployment production-ready:
 - [ ] the proxy strips inbound `X-Forwarded-*` unless it sets them itself
 - [ ] you know whether statics are served by the proxy or the application, and the
       cache policy is set at that layer
-- [ ] you have watched one graceful shutdown and seen `503` (or `ready: false`) before the process exits
+- [ ] you have watched one graceful shutdown on **your** engine and seen what it actually does: on Tornado a `503` from a request that arrives mid-drain, on ASGI the instance stop answering — and you have confirmed your probe treats both as "do not send traffic"
 
 The last one is not a formality: it is the only check that proves the whole chain
 — signal, drain, probe, load balancer — is wired.
