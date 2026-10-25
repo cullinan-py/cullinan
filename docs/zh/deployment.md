@@ -153,7 +153,7 @@ config = WebRuntimeConfig(trust_forwarded_headers=True)
 | 引擎 | 干净排空后的退出码 | 实测环境 |
 |---|---|---|
 | ASGI（uvicorn） | `143` —— Python 侧看到的子进程状态是 `-15` | Linux 与 macOS |
-| Tornado | `0` | Windows（`SIGBREAK`；适配器停掉自己的循环后返回，结束进程走的是同一条返回路径） |
+| Tornado | `0` | Linux、macOS（`SIGTERM`）与 Windows（`SIGBREAK`）；适配器停掉自己的循环后返回 |
 
 uvicorn 的非零退出码是**设计**，不是"关闭被打断"：事件循环排空、lifespan 关完之后，它恢复原有处理器并
 **把捕获到的信号重新发给自己**，这样 shell 与监督进程看到的是真实原因：

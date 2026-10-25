@@ -210,7 +210,7 @@ status depends on **which engine** shut down:
 | Engine | Exit status after a clean drain | Where it was measured |
 |---|---|---|
 | ASGI (uvicorn) | `143` — Python reports the child as `-15` | Linux and macOS |
-| Tornado | `0` | Windows (`SIGBREAK`; the adapter stops its own loop and returns, so the same return path is what ends the process) |
+| Tornado | `0` | Linux, macOS (`SIGTERM`) and Windows (`SIGBREAK`); the adapter stops its own loop and returns |
 
 With uvicorn the non-zero status is by design: after the loop has drained and
 the lifespan has closed it restores the original handlers and **re-raises the
