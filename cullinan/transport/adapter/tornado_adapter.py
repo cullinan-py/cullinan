@@ -51,6 +51,20 @@ class _CullinanTornadoHandler(tornado.web.RequestHandler):
         self._adapter = adapter
         self._global_headers = global_headers or []
 
+    def set_etag_header(self) -> None:
+        """Do not let Tornado invent an ETag for framework-produced responses.
+
+        Tornado computes one from the response body on ``finish()`` and, when a
+        client sends ``If-None-Match``, turns the response into a ``304``. The
+        ASGI path does neither, so the *same* request returned ``200`` on one
+        engine and ``304`` on the other -- a difference in status code, not in
+        formatting, which a cross-engine framework cannot have.
+
+        Responses that genuinely want an ETag set the header themselves (the
+        static-file layer does, and implements its own conditional check), and
+        this override does not touch a header it did not compute.
+        """
+
     # Accept every HTTP method
     async def _handle(self) -> None:
         """Unified entry point for all HTTP methods.

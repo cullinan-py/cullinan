@@ -392,8 +392,27 @@ async def _send_response(
         for name, value in response.iter_headers(include_content_type=True):
             raw_headers.append([name.encode('latin-1'), value.encode('latin-1')])
 
-    # Content-Length
-    raw_headers.append([b'content-length', str(len(body)).encode('latin-1')])
+    # Content-Length.
+    #
+    # Three cases have to be kept apart, because getting them wrong is visible
+    # to clients and to intermediaries:
+    #
+    # * 204 and 304 carry no body by definition, so a Content-Length header is
+    #   not allowed at all (RFC 9110 §8.6). Sending ``content-length: 0`` there
+    #   is a protocol violation that some proxies reject.
+    # * The response may already carry a Content-Length -- set explicitly by a
+    #   handler, or by the static-file layer for a HEAD request, where it
+    #   announces the size of the representation that a GET would return.
+    #   Appending a second one produced ``15`` and ``0`` in the same header
+    #   list; h11 then waits for a body that never comes and the response is
+    #   never completed.
+    # * Otherwise the header is ours to add, from the body we are about to send.
+    _NO_BODY_STATUS = (204, 304)
+    has_content_length = any(
+        name.lower() == b'content-length' for name, _value in raw_headers
+    )
+    if response.status_code not in _NO_BODY_STATUS and not has_content_length:
+        raw_headers.append([b'content-length', str(len(body)).encode('latin-1')])
 
     await send({
         'type': 'http.response.start',
