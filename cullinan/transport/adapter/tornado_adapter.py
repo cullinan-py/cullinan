@@ -333,16 +333,28 @@ class TornadoAdapter(WebAdapter):
 
     def _install_signal_handlers(self) -> None:
         try:
+            # Resolve the loop now, while we know we are on it. Asking for
+            # ``IOLoop.current()`` inside a signal handler can fail on platforms
+            # where the handler runs outside the loop context, and the failure
+            # used to be swallowed -- so the signal was received, logged and
+            # then ignored, and the process kept serving until something else
+            # killed it. That is what "Tornado ignores SIGTERM on Linux" looked
+            # like from the outside.
+            try:
+                loop = tornado.ioloop.IOLoop.current()
+            except Exception:  # noqa: BLE001 - fall back to per-signal resolution
+                loop = None
+
             def _handle(signum: int, frame: Any) -> None:
                 logger.info('Signal %s received, draining...', signum)
                 try:
-                    # ``add_callback`` from a signal handler hands the work to
-                    # the IOLoop thread. The old handler stopped the loop right
-                    # here, which is why in-flight requests were cut: stopping
-                    # the loop abandons them.
-                    tornado.ioloop.IOLoop.current().add_callback(self._shutdown_gracefully)
+                    if loop is not None:
+                        # The signal-safe way to hand work to the loop.
+                        loop.add_callback_from_signal(self._shutdown_gracefully)
+                    else:
+                        tornado.ioloop.IOLoop.current().add_callback(self._shutdown_gracefully)
                 except Exception:  # noqa: BLE001 - never raise inside a signal handler
-                    pass
+                    logger.exception('signal %s could not schedule the drain', signum)
 
             for name in ('SIGINT', 'SIGTERM', 'SIGBREAK'):
                 sig = getattr(signal, name, None)
