@@ -143,9 +143,12 @@ def test_405_for_disallowed_method(site: Path):
     )
     response = _get(dispatcher, "/static/hello.txt", method="HEAD")
     assert response.status_code == 200
-    # POST is not registered as a route at all → router returns 404, not 405.
+    # The file exists, so "not found" was the wrong answer: the method is what
+    # the client got wrong, and the response now says which one to use. This
+    # assertion used to require 404 -- it was recording the defect.
     response = _get(dispatcher, "/static/hello.txt", method="POST")
-    assert response.status_code == 404
+    assert response.status_code == 405
+    assert "GET" in (response.get_header("Allow") or "")
 
 
 def test_head_request_returns_no_body_but_keeps_length(site: Path):

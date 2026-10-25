@@ -124,10 +124,30 @@ class Dispatcher:
         # 1. Route matching
         match: Optional[RouteMatch] = self.router.match(request.method, request.path)
         if match is None:
-            # Try OPTIONS for CORS pre-flight (auto-allow if any route exists for this path)
-            if request.method == 'OPTIONS':
-                return WebResponse(status_code=204)
-            return WebResponse.error(404, f'No route for {request.method} {request.path}')
+            # The path may still exist for another verb, and saying so is the
+            # difference between "you asked for something that is not here" and
+            # "that is here, but not like this".
+            allowed = self.router.allowed_methods(request.path)
+            if allowed:
+                allow_header = ', '.join(allowed)
+                if request.method == 'OPTIONS':
+                    # A pre-flight for a path that exists: answer it, and say
+                    # which verbs are available.
+                    response = WebResponse(status_code=204)
+                else:
+                    response = WebResponse.error(
+                        405, f'Method {request.method} is not allowed for {request.path}'
+                    )
+                response.set_header('Allow', allow_header)
+            elif request.method == 'OPTIONS':
+                # OPTIONS on a path nobody registered is not a valid pre-flight;
+                # answering 204 told a client the route existed.
+                response = WebResponse.error(404, f'No route for {request.method} {request.path}')
+            else:
+                response = WebResponse.error(404, f'No route for {request.method} {request.path}')
+            # Errors are responses too: a policy that only decorates 200s leaves
+            # security headers off exactly the bodies that echo user input.
+            return self.header_policy.apply(request, response)
 
         # 2. Inject path params into request
         request.path_params = match.path_params
