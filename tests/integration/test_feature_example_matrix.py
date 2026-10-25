@@ -30,10 +30,31 @@ def _matrix() -> dict:
 
 
 def _python_sources(example_dir: Path) -> str:
-    return "\n".join(
-        path.read_text(encoding="utf-8", errors="replace")
-        for path in sorted(example_dir.rglob("*.py"))
-    )
+    """Python sources with comments removed.
+
+    A substring check over raw text can be satisfied by a comment -- replacing
+    an example's whole body with ``# def main()`` kept the gate green. Strip the
+    comments and the evidence has to appear in something that executes.
+    """
+    import io
+    import tokenize
+
+    chunks: list[str] = []
+    for path in sorted(example_dir.rglob("*.py")):
+        source = path.read_text(encoding="utf-8", errors="replace")
+        lines = source.splitlines(True)
+        try:
+            for token in tokenize.generate_tokens(io.StringIO(source).readline):
+                if token.type != tokenize.COMMENT:
+                    continue
+                row, start = token.start
+                _end_row, end = token.end
+                if row == _end_row and row - 1 < len(lines):
+                    lines[row - 1] = lines[row - 1][:start] + lines[row - 1][end:]
+        except (tokenize.TokenError, IndentationError):
+            pass
+        chunks.append("".join(lines))
+    return "\n".join(chunks)
 
 
 def _example_dirs() -> list[str]:

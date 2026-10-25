@@ -51,7 +51,11 @@ def test_coverage_floor_is_configured():
     assert "[tool.coverage.run]" in pyproject, "coverage is not configured at all"
     match = re.search(r"^fail_under\s*=\s*(\d+)", pyproject, re.MULTILINE)
     assert match, "no fail_under, so coverage is measured but not enforced"
-    assert int(match.group(1)) >= 70, (
+    floor = int(match.group(1))
+    # A lower bound alone accepted 700, which would make CI permanently red --
+    # a "gate" nobody can satisfy is deleted within a week.
+    assert 0 < floor <= 100, f"fail_under={floor} is not a reachable percentage"
+    assert floor >= 70, (
         "the coverage floor was lowered below the level the suite actually reaches; "
         "that needs an ADR, not a quiet edit"
     )
@@ -81,6 +85,27 @@ def test_the_changelog_covers_the_released_versions():
     text = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
     problems = module.check(text, module.released_tags(REPO_ROOT), _version())
     assert not problems, "the changelog is not healthy: " + "; ".join(problems)
+
+
+def test_the_changelog_gate_runs_in_ci_with_the_tags_it_needs():
+    import yaml
+
+    workflow = yaml.safe_load((REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8"))
+    jobs = workflow.get("jobs", {})
+    assert "changelog" in jobs, "the changelog check is not wired into CI at all"
+    steps = jobs["changelog"].get("steps", [])
+    checkouts = [step for step in steps if str(step.get("uses", "")).startswith("actions/checkout")]
+    assert checkouts and checkouts[0].get("with", {}).get("fetch-depth") == 0, (
+        "a shallow checkout sees no tags, so the continuity check would pass while checking nothing"
+    )
+    assert any("check_changelog.py" in str(step.get("run", "")) for step in steps)
+
+
+def test_the_changelog_checker_refuses_to_pass_without_tags():
+    module = _load("scripts/check_changelog.py")
+    text = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    problems = module.check(text, [], _version())
+    assert problems and "tags" in problems[0]
 
 
 def test_the_changelog_checker_can_fail():

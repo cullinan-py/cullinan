@@ -132,6 +132,15 @@ def check(text: str, tags: Sequence[str], version: Optional[str]) -> List[str]:
     if not entries:
         return ["the changelog has no version entries at all"]
 
+    if not tags:
+        # Seen in CI: ``actions/checkout`` clones shallow, ``git tag`` returns
+        # nothing, and the continuity check silently did nothing while printing
+        # PASS. A gate that cannot see what it is checking must say so.
+        problems.append(
+            "no release tags are visible, so the entries cannot be checked for continuity "
+            "(a shallow clone hides tags; run with full history or fetch them)"
+        )
+
     # An ``Unreleased`` section is legitimate -- work that has landed on the
     # branch but not in a tag belongs somewhere, and hiding it is how a
     # changelog becomes fiction. It is simply not a claim about a release, so

@@ -53,6 +53,22 @@ jobs:
       - name: Ruff check
         run: ruff check .
 
+  changelog:
+    # Needs the tags, which a default checkout does not fetch -- comparing the
+    # entries against what was actually released is the entire job. Without
+    # full history this check ran against zero tags and passed vacuously.
+    name: changelog gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Check entries against release tags
+        run: python scripts/check_changelog.py
+
   coverage:
     # A single job rather than one per matrix entry: the floor is a property of
     # the suite as a whole, and repeating the measurement five times would only
