@@ -59,7 +59,7 @@ must be present in that file.
     },
     {
       "id": "C3",
-      "claim": "The same request path runs over a Tornado backend and an ASGI backend, chosen per deployment.",
+      "claim": "The same request path runs over a Tornado backend and an ASGI backend, chosen per deployment, and normal traffic gets the same status code and body on both.",
       "evidence": ["tests/integration/test_adapter_integration.py", "cullinan/transport/adapter"],
       "symbols": []
     },
@@ -77,7 +77,7 @@ must be present in that file.
     },
     {
       "id": "C6",
-      "claim": "Shutdown is bounded and reported: in-flight requests get a configurable window, and the drain result is returned as a boolean.",
+      "claim": "Shutdown is bounded and enforced: the bound is handed to the server that does the waiting, in-flight requests are cut when it expires, and the drain result is returned as a boolean.",
       "evidence": ["tests/core/test_graceful_drain_async.py", "docs/deployment.md"],
       "symbols": [
         "cullinan/core/application_context.py::ashutdown",
@@ -86,7 +86,7 @@ must be present in that file.
     },
     {
       "id": "C7",
-      "claim": "Readiness is framework state, not a framework endpoint: the application answers its own probe from a predicate and a transition callback.",
+      "claim": "Readiness changes while there is still traffic to shed: draining is announced when the stop signal arrives, and requests that arrive during it are answered 503.",
       "evidence": ["examples/graceful_shutdown/root.py", "examples/graceful_shutdown/README.md"],
       "symbols": ["cullinan/core/application_context.py::accepts_requests"]
     },

@@ -34,7 +34,7 @@ python -m examples.graceful_shutdown
 
 | Path | Meaning |
 |---|---|
-| `/ops/ready` | readiness — `{"ready": false}` once draining starts |
+| `/ops/ready` | readiness — a request that arrives while draining gets `503` with `the application is draining` |
 | `/ops/live` | liveness — `{"alive": true}` for as long as the process runs |
 
 Wire `/ops/ready` to your readiness probe and `/ops/live` to your liveness
@@ -54,10 +54,11 @@ rather than parsing logs.
 
 ```bash
 python -m examples.graceful_shutdown          # in one terminal
-curl http://127.0.0.1:4082/ops/ready          # {"ready": true}
-# send SIGTERM to the process, then:
-curl http://127.0.0.1:4082/ops/ready          # connection refused, or {"ready": false}
+curl -i http://127.0.0.1:4082/ops/ready       # 200 {"ready": true}
+# send a stop signal to the process, then:
+curl -i http://127.0.0.1:4082/ops/ready       # 503 while the drain is running
 ```
 
-While a long request is still running you will see the probe answer `false`
-before the process exits — that window is the whole point.
+While a long request is still running you will see `503` before the process
+exits — that window is the whole point, and it is why the drain is announced at
+the signal rather than after the wait.

@@ -66,76 +66,95 @@ choice in a container: the same image can run either backend without a rebuild.
 
 ## The shutdown sequence
 
-On `SIGTERM` the process stops accepting new work, waits for the requests already
-running, then exits. The wait is bounded by `drain_timeout`.
+On a stop signal (`SIGTERM`; `SIGINT` and, on Windows, `SIGBREAK`) the process
+does four things in this order:
 
-`drain_timeout` lives on the runtime configuration, which today is reached through
-`Application(...)` — the **advanced entry class**. Most applications never touch
-it: they declare an entry method and let the default (30s) apply. Reach for the
-class only when the number has to change:
+1. **announces the drain** — the readiness predicate turns `False` immediately,
+   so a probe or a load balancer has a window in which to stop sending work;
+2. **answers new requests with `503`** — not `500`. A request that arrives while
+   the container is draining is a timing problem, not a broken request, and the
+   two need to be distinguishable by whoever reads the status code;
+3. **waits for the requests already running**, up to `drain_timeout`;
+4. **closes** — the listener goes away, the container closes, the process exits.
+
+Step 3 is bounded by one number, and that number is handed to the server that
+actually does the waiting:
 
 ```python
-from cullinan.application import Application
+from cullinan.application.public import run
 from cullinan.web.gateway import WebRuntimeConfig
 
-app = Application(
-    MyRoot,
-    runtime_config=WebRuntimeConfig(drain_timeout=15.0),
-).install()
+run(main, runtime_config=WebRuntimeConfig(drain_timeout=15.0))
 ```
 
-Three things worth knowing about that bound:
+`Application(...)` is the **advanced entry class** and still works, but the
+public `run(entry, runtime_config=...)` shown above is the shorter route to the
+same object; `@configure(...)` does not expose this field yet.
 
-1. **It is one number.** The lifespan shutdown and the synchronous shutdown path
-   read the same configuration value, so what your process waits for and what the
-   framework waits for cannot drift apart.
-2. **Exceeding it is not an error, it is a decision.** When the bound passes, the
-   remaining work is abandoned and the process closes. That is the correct
-   behaviour for a stuck request, but it means `drain_timeout` should be longer
-   than your slowest normal request and shorter than the point at which your
-   orchestrator sends `SIGKILL`.
-3. **The result is reported.** `ApplicationContext.shutdown()` and its async
-   counterpart return `True` when the drain finished inside the bound and `False`
-   when it timed out — so a shutdown that dropped work can be detected without
-   reading logs.
+Three things worth knowing about the bound:
 
-If you are already inside an event loop, use the async form. The synchronous form
-detects a running loop and refuses to block it, because blocking the loop there
-starves the very requests it is waiting for; it logs a warning and returns rather
-than pretending to have drained.
+1. **It is enforced, not advisory.** With `drain_timeout=1.0` and a request that
+   needs 6s, the process is gone in about 1.3s on either engine and the slow
+   request is cut. If you need slow requests to finish, say so with a larger
+   bound.
+2. **It must fit your platform.** It should be longer than your slowest normal
+   request and shorter than the orchestrator's kill grace period; the framework
+   cannot know either number for you.
+3. **The result is reported.** `ApplicationContext.shutdown()` and `ashutdown()`
+   return `True` when the drain finished inside the bound and `False` when it
+   timed out. One caveat: called from a thread inside a running event loop, the
+   synchronous form refuses to block that loop, logs a warning, returns `False`,
+   **and still closes the container** — so `False` means "did not wait", not
+   "nothing happened".
 
 ## Probes: readiness and liveness are different questions
 
-The framework does not register a health or readiness route for you. That is
-deliberate: a probe is part of your operations story, and a framework-chosen path
-would be one more thing to disagree with your infrastructure.
-
-What it does give you is the state and the transition:
+The framework does not register a health or readiness route for you. It gives
+you the state and the transition:
 
 | Surface | Answers |
 |---|---|
-| `Application.accepts_requests` | is this instance still willing to take new work? `False` once draining begins |
+| `Application.accepts_requests` | is this instance still willing to take new work? `False` from the moment draining begins |
 | `Application.context.add_draining_handler(callback)` | run this the moment draining begins |
 
-A readiness probe that reads that predicate stops sending traffic at exactly the
-moment the process starts finishing its work:
+Because the drain is announced at the signal rather than after the wait, a
+readiness route that reads the predicate — or simply returns `503` while
+`accepts_requests` is `False` — changes while there is still traffic to shed:
 
 ```python
 from cullinan.application import Application
-from cullinan.web import get_api
+from cullinan.web import controller, get_api
 
 
-@get_api(url="/ready")
-def ready(self):
-    app = Application.current()
-    return {"ready": bool(app is None or app.accepts_requests)}
+@controller(url="/ops")
+class OpsController:
+    @get_api(url="/ready")
+    def ready(self):
+        app = Application.current()
+        ready = app is None or app.accepts_requests
+        return {"ready": ready}
 ```
 
 Keep liveness separate and answer it with `True`. During a graceful shutdown the
-process is healthy and is *supposed* to stop taking traffic; a liveness probe that
-reads draining state reports a healthy shutdown as a crash and invites a restart
-in the middle of a deploy. The runnable version of both probes is in
+process is healthy and is *supposed* to stop taking traffic; a liveness probe
+that reads draining state reports a healthy shutdown as a crash.
+
+The runnable version of both probes is in
 [the graceful shutdown example](examples.md).
+
+## What the two engines do not share (yet)
+
+The request path, the response bodies and the status codes for normal traffic
+are the same on both engines. These are not, and are listed so you can plan
+around them rather than discover them:
+
+- the `server` response header (`uvicorn` versus `TornadoServer`), which is set
+  by the server, not by the framework;
+- a method that no route accepts answers `404` on both engines — there is no
+  `405` with an `Allow` header yet;
+- `OPTIONS` for a path that does not exist answers `204`.
+
+The first is cosmetic. The last two are open work, recorded rather than hidden.
 
 ## Reverse proxies and forwarded headers
 
@@ -188,7 +207,7 @@ Before you call a deployment production-ready:
 - [ ] the proxy strips inbound `X-Forwarded-*` unless it sets them itself
 - [ ] you know whether statics are served by the proxy or the application, and the
       cache policy is set at that layer
-- [ ] you have watched one graceful shutdown and seen the probe change before exit
+- [ ] you have watched one graceful shutdown and seen `503` (or `ready: false`) before the process exits
 
 The last one is not a formality: it is the only check that proves the whole chain
 — signal, drain, probe, load balancer — is wired.

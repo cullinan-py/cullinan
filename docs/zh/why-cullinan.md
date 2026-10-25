@@ -50,7 +50,7 @@ Cullinan 是一个**声明式**的 Python Web 框架：你标记一个入口方�
     },
     {
       "id": "C3",
-      "claim": "同一条请求路径可运行在 Tornado 后端与 ASGI 后端之上，按部署选择。",
+      "claim": "同一条请求路径可运行在 Tornado 后端与 ASGI 后端之上，按部署选择；正常流量在两个后端上得到相同的状态码与响应体。",
       "evidence": ["tests/integration/test_adapter_integration.py", "cullinan/transport/adapter"],
       "symbols": []
     },
@@ -68,7 +68,7 @@ Cullinan 是一个**声明式**的 Python Web 框架：你标记一个入口方�
     },
     {
       "id": "C6",
-      "claim": "关闭是有界且会报告的：在飞请求获得可配置窗口，排空结果以布尔值返回。",
+      "claim": "关闭是有界且被执行的：上限交给真正等待的那一方，到期未完成即在飞请求被切断，排空结果以布尔值返回。",
       "evidence": ["tests/core/test_graceful_drain_async.py", "docs/deployment.md"],
       "symbols": [
         "cullinan/core/application_context.py::ashutdown",
@@ -77,7 +77,7 @@ Cullinan 是一个**声明式**的 Python Web 框架：你标记一个入口方�
     },
     {
       "id": "C7",
-      "claim": "就绪性是框架状态，而不是框架端点：应用用谓词与转折回调自己回答探针。",
+      "claim": "就绪性在还有流量可摘时就改变：停止信号到达即宣告排空，排空期到达的请求回 503。",
       "evidence": ["examples/graceful_shutdown/root.py", "examples/graceful_shutdown/README.md"],
       "symbols": ["cullinan/core/application_context.py::accepts_requests"]
     },

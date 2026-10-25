@@ -56,60 +56,67 @@ def main(): ...
 
 ## 关闭序列
 
-收到 `SIGTERM` 后，进程停止接受新工作、等待已在跑的请求、然后退出。等待受 `drain_timeout` 约束。
+收到停止信号（`SIGTERM`；Windows 上还有 `SIGINT` 与 `SIGBREAK`）后，进程按**这个顺序**做四件事：
 
-`drain_timeout` 挂在运行时配置上，而运行时配置目前要通过 `Application(...)` 这个**高级入口类**触达。
-多数应用无需碰它：声明入口方法、沿用默认值（30s）即可。只有必须改动这个数字时才用这个类：
+1. **宣告排空** —— 就绪谓词**立即**变为 `False`，探针或负载均衡由此获得一个"不再派活"的窗口；
+2. **对新请求回 `503`** —— 不是 `500`。排空期到达的请求是**时机**问题、不是请求本身有错，读状态码的人必须能区分这两者；
+3. **等待已在跑的请求**，最长 `drain_timeout`；
+4. **关闭** —— 监听器消失、容器关闭、进程退出。
+
+第 3 步由**一个数**兜住，而这个数是交给**真正负责等待的那一方**的：
 
 ```python
-from cullinan.application import Application
+from cullinan.application.public import run
 from cullinan.web.gateway import WebRuntimeConfig
 
-app = Application(
-    MyRoot,
-    runtime_config=WebRuntimeConfig(drain_timeout=15.0),
-).install()
+run(main, runtime_config=WebRuntimeConfig(drain_timeout=15.0))
 ```
 
-关于这个上限，有三点值得知道：
+`Application(...)` 是**高级入口类**，仍然可用；上面这个公开的 `run(entry, runtime_config=...)` 是到达同一对象的更短路径。`@configure(...)` 目前**没有**这个字段。
 
-1. **它只是一个数。** lifespan 关闭与同步关闭路径读的是**同一个**配置值，所以"你等的"和"框架等的"不可能分叉。
-2. **超时不是错误，而是决定。** 上限到期后，剩余工作被放弃、进程关闭。对卡住的请求这是正确行为，
-   但它意味着：`drain_timeout` 应当**长于你最慢的正常请求**，**短于**编排系统发 `SIGKILL` 的时刻。
-3. **结果是会报告的。** `ApplicationContext.shutdown()` 及其异步版本在时限内排空完成时返回 `True`，
-   超时返回 `False` —— 于是"这次关闭丢了工作"可以在不看日志的情况下被检出。
+关于这个上限，有两点必须说清：
 
-如果你**已经在事件循环里**，用异步形式。同步形式会检测到运行中的循环并**拒绝阻塞它**——
-在那里阻塞循环，会饿死它正在等待的那些请求；此时它**打警告并返回**，而不是假装已经排空。
+1. **它是被执行的，不是建议值。** `drain_timeout=1.0` 配一个需要 6s 的请求：两个引擎上进程都在约 1.3s 内退出，慢请求被切断。需要慢请求跑完，就把上限调大。
+2. **结果会报告。** `ApplicationContext.shutdown()` 与 `ashutdown()` 在时限内排空完成时返回 `True`，超时返回 `False`。⚠️ 一个坑：在运行中的事件循环里从线程调用同步形式，它**拒绝阻塞循环**、打警告、返回 `False`，**但容器照样被关闭** —— 所以 `False` 的含义是"没有等"，不是"什么都没发生"。
 
 ## 探针：就绪与存活是两个问题
 
-框架**不会**为你注册健康/就绪路由。这是有意的：探针属于你的运维叙事，
-框架替你选一条路径，只会多一个能和你的基础设施产生分歧的东西。
-
-它给你的是**状态**与**转折点**：
+框架不替你注册健康/就绪路由，只给你**状态**与**转折点**：
 
 | 面 | 回答什么 |
 |---|---|
-| `Application.accepts_requests` | 这个实例还愿意接新活吗？开始排空后为 `False` |
+| `Application.accepts_requests` | 这个实例还愿意接新活吗？从排空**开始那一刻**起为 `False` |
 | `Application.context.add_draining_handler(callback)` | 排空**开始的那一刻**执行它 |
 
-读这个谓词的就绪探针，会在进程开始收尾的同一刻让流量停止进来：
+因为排空是在**信号**处宣告、而不是等完之后才宣告，读这个谓词的就绪路由（或直接在 `accepts_requests` 为 `False` 时回 `503`）会在**还有流量可摘**的时候改变：
 
 ```python
 from cullinan.application import Application
-from cullinan.web import get_api
+from cullinan.web import controller, get_api
 
 
-@get_api(url="/ready")
-def ready(self):
-    app = Application.current()
-    return {"ready": bool(app is None or app.accepts_requests)}
+@controller(url="/ops")
+class OpsController:
+    @get_api(url="/ready")
+    def ready(self):
+        app = Application.current()
+        ready = app is None or app.accepts_requests
+        return {"ready": ready}
 ```
 
-**存活探针要分开，并且回答 `True`。** 优雅关闭期间进程是健康的，而且它**本来就该**停止接流量；
-一个读排空状态的存活探针，会把"健康的关闭"报告成"崩溃"，于是在发布中途招来一次重启。
+**存活探针要分开，并且回答 `True`。** 优雅关闭期间进程是健康的，而且它**本来就该**停止接流量；读排空状态的存活探针会把健康关闭报成崩溃。
+
 两个探针的可运行版本见 [示例](examples.md)。
+
+## 两个引擎目前**不共享**什么
+
+正常流量的请求路径、响应体、状态码，两个引擎一致。下面这些**不一致**，写出来是为了让你能提前规划，而不是上线后才发现：
+
+- `server` 响应头（`uvicorn` 与 `TornadoServer`），它由服务器设置，不由框架设置；
+- 没有路由接受该方法时，两个引擎都回 `404` —— 目前**没有**带 `Allow` 的 `405`；
+- 对不存在的路径发 `OPTIONS`，回 `204`。
+
+第一条是观感问题；后两条是**未闭工作**，登记而非隐藏。
 
 ## 反向代理与转发头
 
@@ -152,6 +159,6 @@ config = WebRuntimeConfig(trust_forwarded_headers=True)
 - [ ] 就绪探针读 `accepts_requests`；存活探针不读
 - [ ] 代理会剥离入站 `X-Forwarded-*`（除非是它自己设置的）
 - [ ] 你清楚静态文件由代理还是应用提供，且缓存策略设在那层
-- [ ] 你**亲眼看过一次优雅关闭**，并看到探针在进程退出前发生变化
+- [ ] 你**亲眼看过一次优雅关闭**，并看到 `503`（或 `ready: false`）出现在进程退出之前
 
 最后一条不是形式主义：它是唯一能证明"信号 → 排空 → 探针 → 负载均衡"整条链确实接通的检查。
