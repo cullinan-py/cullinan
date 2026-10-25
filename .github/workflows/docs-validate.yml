@@ -30,7 +30,11 @@ jobs:
           python -m venv .venv
           . .venv/bin/activate
           pip install -U pip
-          pip install mkdocs==1.6.1 mkdocs-material==9.7.0 mkdocs-static-i18n packaging
+          # mkdocstrings reads the API reference out of the package, so the
+          # package has to be importable for the build -- hence the editable
+          # install below, not just the documentation plugins.
+          pip install mkdocs==1.6.1 mkdocs-material==9.7.0 mkdocs-static-i18n packaging "mkdocstrings[python]"
+          pip install -e .
       # Real gate -- no probe/skip. The old file-existence probe for
       # docs/work/validate_docs.py never ran (docs/work/ is absent and
       # git-ignored), so a fresh checkout was structurally always-green. A real
