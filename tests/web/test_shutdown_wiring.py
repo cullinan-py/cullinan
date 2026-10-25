@@ -133,3 +133,27 @@ def test_tornado_shutdown_uses_the_configured_bound(monkeypatch, stub_app):
     adapter._http_server = _FakeServer()
     asyncio.run(adapter._shutdown_gracefully())
     assert stub_app.context.calls == [("ashutdown", 12.5)]
+
+
+def test_configure_drain_timeout_reaches_the_runtime_config():
+    """The bound must be settable from the same surface as the port and engine."""
+    from cullinan.application.model import _clone_runtime_config
+    from cullinan.support.config import configure, get_config
+
+    previous = get_config().drain_timeout
+    try:
+        configure(drain_timeout=7.25)
+        runtime_config = _clone_runtime_config(None)
+        assert runtime_config.drain_timeout == 7.25, (
+            "@configure(drain_timeout=...) was accepted and then ignored; only the "
+            "advanced Application entry could set the bound"
+        )
+    finally:
+        get_config().drain_timeout = previous
+
+
+def test_configure_rejects_a_useless_bound():
+    from cullinan.support.config import configure
+
+    with pytest.raises(ValueError):
+        configure(drain_timeout=0)

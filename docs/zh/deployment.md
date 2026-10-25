@@ -66,13 +66,18 @@ def main(): ...
 第 3 步由**一个数**兜住，而这个数是交给**真正负责等待的那一方**的：
 
 ```python
-from cullinan.application.public import run
-from cullinan.web.gateway import WebRuntimeConfig
+from cullinan import application, configure
 
-run(main, runtime_config=WebRuntimeConfig(drain_timeout=15.0))
+
+@configure(user_packages=["your_app"], drain_timeout=15.0)
+@application
+def main(): ...
+
+
+main()
 ```
 
-`Application(...)` 是**高级入口类**，仍然可用；上面这个公开的 `run(entry, runtime_config=...)` 是到达同一对象的更短路径。`@configure(...)` 目前**没有**这个字段。
+`drain_timeout` 就放在 `@configure(...)` 上，和 `server_port`、`server_engine` 并列 —— 一个只有高级入口才能摸到的旋钮，等于大多数应用永远找不到。`Application(...)`（**高级入口类**）配 `WebRuntimeConfig(drain_timeout=...)` 仍然可用，显式传入的运行时配置优先。
 
 关于这个上限，有两点必须说清：
 
@@ -112,11 +117,9 @@ class OpsController:
 
 正常流量的请求路径、响应体、状态码，两个引擎一致。下面这些**不一致**，写出来是为了让你能提前规划，而不是上线后才发现：
 
-- `server` 响应头（`uvicorn` 与 `TornadoServer`），它由服务器设置，不由框架设置；
-- 没有路由接受该方法时，两个引擎都回 `404` —— 目前**没有**带 `Allow` 的 `405`；
-- 对不存在的路径发 `OPTIONS`，回 `204`。
+- `server` 响应头（`uvicorn` 与 `TornadoServer`），它由服务器设置，不由框架设置。
 
-第一条是观感问题；后两条是**未闭工作**，登记而非隐藏。
+正常流量的其它一切 —— 状态码、响应体、`405` 上的 `Allow`、对未知路径发 `OPTIONS` 的 `404` —— 实验室实测两个引擎一致。这个头是观感问题，写出来是为了让你能提前规划，而不是上线后才发现。
 
 ## 反向代理与转发头
 

@@ -93,6 +93,12 @@ class CullinanConfig:
         # ASGI server: 'uvicorn' (default), 'hypercorn'
         self.asgi_server: str = 'uvicorn'
 
+        # How long a graceful shutdown may wait for in-flight requests before
+        # cutting them. ``None`` means "leave the runtime default alone" (30s);
+        # setting it here puts the knob on the same surface as the port and the
+        # engine, instead of requiring the advanced Application entry.
+        self.drain_timeout: Optional[float] = None
+
         # Whether to enable the gateway middleware pipeline
         self.enable_middleware_pipeline: bool = True
 
@@ -222,6 +228,10 @@ class CullinanConfig:
             self.server_port = config['server_port']
         if 'explicit_modules' in config:
             self.explicit_modules = config['explicit_modules']
+        if 'drain_timeout' in config:
+            value = config['drain_timeout']
+            self.drain_timeout = float(value) if value is not None else None
+
         if 'static_files' in config:
             value = config['static_files']
             self.static_files = list(value) if value else []
@@ -257,6 +267,7 @@ class CullinanConfig:
             'asgi_server': self.asgi_server,
             'server_host': self.server_host,
             'server_port': self.server_port,
+            'drain_timeout': self.drain_timeout,
             'explicit_modules': self.explicit_modules,
             'static_files': list(self.static_files),
             'middlewares': list(self.middlewares),
@@ -330,6 +341,7 @@ def configure(
     asgi_server: Optional[str] = None,
     server_host: Optional[str] = None,
     server_port: Optional[int] = None,
+    drain_timeout: Optional[float] = None,
     explicit_modules: Optional[List[str]] = None,
     static_files: Optional[List[Any]] = None,
     *,
@@ -446,6 +458,11 @@ def configure(
             sys.path.insert(0, project_root)
             if verbose:
                 print(f"Auto-added project root to sys.path: {project_root}")
+
+    if drain_timeout is not None:
+        if drain_timeout <= 0:
+            raise ValueError("drain_timeout must be greater than zero")
+        _config.drain_timeout = float(drain_timeout)
 
     if project_root is not None:
         _config.set_project_root(project_root)

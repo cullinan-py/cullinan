@@ -81,15 +81,22 @@ Step 3 is bounded by one number, and that number is handed to the server that
 actually does the waiting:
 
 ```python
-from cullinan.application.public import run
-from cullinan.web.gateway import WebRuntimeConfig
+from cullinan import application, configure
 
-run(main, runtime_config=WebRuntimeConfig(drain_timeout=15.0))
+
+@configure(user_packages=["your_app"], drain_timeout=15.0)
+@application
+def main(): ...
+
+
+main()
 ```
 
-`Application(...)` is the **advanced entry class** and still works, but the
-public `run(entry, runtime_config=...)` shown above is the shorter route to the
-same object; `@configure(...)` does not expose this field yet.
+`drain_timeout` sits on `@configure(...)`, next to `server_port` and
+`server_engine`, because a knob that only the advanced entry can reach is a knob
+most applications will never find. `Application(...)` — the **advanced entry class** — still works with
+`WebRuntimeConfig(drain_timeout=...)`, and an explicitly passed runtime config
+takes precedence.
 
 Three things worth knowing about the bound:
 
@@ -149,12 +156,12 @@ are the same on both engines. These are not, and are listed so you can plan
 around them rather than discover them:
 
 - the `server` response header (`uvicorn` versus `TornadoServer`), which is set
-  by the server, not by the framework;
-- a method that no route accepts answers `404` on both engines — there is no
-  `405` with an `Allow` header yet;
-- `OPTIONS` for a path that does not exist answers `204`.
+  by the server, not by the framework.
 
-The first is cosmetic. The last two are open work, recorded rather than hidden.
+Everything else the lab measured for normal traffic — status codes, response
+bodies, `Allow` on a `405`, `404` for an `OPTIONS` on an unknown path — matches.
+The header is cosmetic, and it is listed so you can plan around it rather than
+discover it.
 
 ## Reverse proxies and forwarded headers
 

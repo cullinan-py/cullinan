@@ -959,7 +959,19 @@ class Application:
 
 def _clone_runtime_config(config: Optional[WebRuntimeConfig]) -> WebRuntimeConfig:
     if config is None:
-        return WebRuntimeConfig()
+        runtime_config = WebRuntimeConfig()
+        # ``@configure(drain_timeout=...)`` is the surface most applications
+        # already use for the port and the engine; a shutdown bound that only
+        # the advanced entry could reach was the odd one out.
+        try:
+            from cullinan.support.config import get_config
+
+            configured = getattr(get_config(), 'drain_timeout', None)
+        except Exception:  # noqa: BLE001 - configuration lookup must not break install
+            configured = None
+        if isinstance(configured, (int, float)) and not isinstance(configured, bool):
+            runtime_config.drain_timeout = float(configured)
+        return runtime_config
     return WebRuntimeConfig(
         warmup_checks=tuple(config.warmup_checks),
         health_checks=tuple(config.health_checks),
