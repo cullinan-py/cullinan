@@ -129,7 +129,7 @@ class OpsController:
 - `server` 响应头（`uvicorn` 与 `TornadoServer`），它由服务器设置，不由框架设置；
 - 排空期**新连接**是被回 `503`（Tornado）还是根本不被接受（ASGI，因为 uvicorn 先关监听）—— 见上面的关闭章节；
 - 上限切断在飞请求时客户端看到什么：ASGI 是 `500`，Tornado 是断连；
-- 超过 `max_request_body_bytes` 时的状态码：ASGI 是 `413`，Tornado 是 `400`（见上面的「请求体大小」章节）—— **两者都在上限处停止读取**，这才是关键。
+- 超过 `max_request_body_bytes` 时的状态码：ASGI 是 `413`，Tornado 是 `400`（见下面的「请求体大小」章节）—— **两者都在上限处停止读取**，这才是关键。
 
 **正常流量**上两个引擎一致：状态码、响应体、`405` 上的 `Allow`、对未知路径 `OPTIONS` 的 `404`。上面这些差异写出来，是为了让你能提前规划，而不是上线后才发现。
 
