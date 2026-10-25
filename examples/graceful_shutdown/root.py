@@ -48,7 +48,14 @@ class OpsController:
         return {"alive": True}
 
 
-@configure(user_packages=["examples.graceful_shutdown"], server_port=4082)
+@configure(
+    user_packages=["examples.graceful_shutdown"],
+    server_port=4082,
+    # Deliberately shorter than /ops/slow (5s): the point of the example is to
+    # watch the bound *do* something. With the 30s default the slow request
+    # finishes inside the drain and the reader sees nothing but a 200.
+    drain_timeout=2.0,
+)
 @application
 def main(): ...
 
