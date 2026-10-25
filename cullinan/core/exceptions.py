@@ -198,6 +198,15 @@ class LifecycleError(CullinanCoreError):
     pass
 
 
+class ContainerDrainingError(LifecycleError):
+    """Raised when a request scope is requested while the container is draining.
+
+    Separate from its parent so a serving layer can answer with ``503`` instead
+    of a generic server error: during shutdown the request is not wrong, the
+    timing is -- and a client or probe needs to be able to tell those apart.
+    """
+
+
 class ScopeViolationError(LifecycleError):
     """Exception raised when scope constraints are violated.
 

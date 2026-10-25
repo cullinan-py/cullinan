@@ -84,14 +84,30 @@ class _CullinanTornadoHandler(tornado.web.RequestHandler):
                 request.attributes['runtime'] = runtime
             response = await self._dispatcher.dispatch(request)
             self._adapter.create_response_writer().write_response(response, self)
-        except Exception:
-            # If the response has not been started yet, write a generic 500.
-            # If finish() was already called, silently swallow — the client
-            # already received *some* response.
+        except Exception as exc:
+            # If the response has not been started yet, write an error. Which
+            # error matters: a request that fails because the application is
+            # draining is a timing problem, and answering 500 tells the caller
+            # the code is broken. 503 says "try another instance".
             if not self._finished:
                 try:
-                    self.set_status(500)
-                    self.write(b'{"error":"Internal Server Error","status":500}')
+                    app = None
+                    try:
+                        from cullinan.application.model import Application
+
+                        app = Application.current()
+                    except Exception:  # noqa: BLE001
+                        app = None
+                    draining = app is not None and not getattr(app, 'accepts_requests', True)
+                    from cullinan.core.exceptions import ContainerDrainingError
+
+                    if isinstance(exc, ContainerDrainingError) or draining:
+                        self.set_status(503)
+                        self.set_header('Retry-After', '1')
+                        self.write(b'{"error":"Service Unavailable","reason":"the application is draining"}')
+                    else:
+                        self.set_status(500)
+                        self.write(b'{"error":"Internal Server Error","status":500}')
                     self.finish()
                 except Exception:
                     pass
@@ -338,14 +354,10 @@ class TornadoAdapter(WebAdapter):
             except Exception as exc:  # noqa: BLE001
                 logger.warning('Could not begin draining: %s', exc)
 
-        # Stop accepting new connections first: from here on the listener is
-        # closed, so "draining" and "still taking work" cannot both be true.
-        if self._http_server:
-            try:
-                self._http_server.stop()
-            except Exception:  # noqa: BLE001
-                pass
-
+        # The listener stays open until the drain is over, on purpose. Closing
+        # it first makes the process invisible to a probe -- the only signal it
+        # can send is a refused connection -- while keeping it open lets new
+        # requests be answered with 503, which says *why* they are not welcome.
         ctx = getattr(app, 'context', None) if app is not None else None
         if ctx is not None:
             try:
@@ -356,6 +368,14 @@ class TornadoAdapter(WebAdapter):
                 app._finalize_drain()  # noqa: SLF001 - same package, deliberate
             except Exception as exc:  # noqa: BLE001
                 logger.warning('Could not finalise draining: %s', exc)
+
+        # Only now close the listener: everything that arrived during the drain
+        # has been answered, and the process is about to disappear.
+        if self._http_server:
+            try:
+                self._http_server.stop()
+            except Exception:  # noqa: BLE001
+                pass
 
         try:
             tornado.ioloop.IOLoop.current().stop()

@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, Optional
 from cullinan.support.diagnostics import unknown_scope_type
 
 from .definitions import ScopeType
-from .exceptions import LifecycleError, ScopeNotActiveError
+from .exceptions import ContainerDrainingError, ScopeNotActiveError
 
 _current_request_scope: ContextVar[Optional["RequestScope"]] = ContextVar(
     "cullinan_request_scope", default=None
@@ -147,7 +147,7 @@ class ScopeManager:
     def enter_request_context(self):
         with self._lock:
             if not self._accepting_requests:
-                raise LifecycleError(
+                raise ContainerDrainingError(
                     "The current root container is draining and cannot accept new request scopes."
                 )
             self._active_request_count += 1

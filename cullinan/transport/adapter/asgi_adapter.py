@@ -258,6 +258,25 @@ class ASGIAdapter(WebAdapter):
 # ASGI event handlers
 # ======================================================================
 
+async def _send_error_body(
+    send: Send,
+    status: int,
+    body: bytes,
+    extra_headers: Optional[List[List[bytes]]] = None,
+) -> None:
+    """Send a complete, self-consistent error response.
+
+    Written once so that the 204/304 rule above cannot be forgotten here: every
+    response this adapter emits goes through the same framing decision.
+    """
+    headers = [[b'content-type', b'application/json']]
+    headers.extend(extra_headers or [])
+    if status not in (204, 304):
+        headers.append([b'content-length', str(len(body)).encode('latin-1')])
+    await send({'type': 'http.response.start', 'status': status, 'headers': headers})
+    await send({'type': 'http.response.body', 'body': body})
+
+
 async def _handle_http(
     scope: Scope,
     receive: Receive,
@@ -271,6 +290,7 @@ async def _handle_http(
     ASGI server.
     """
     binding = None
+    request: Optional[WebRequest] = None
     try:
         runtime = adapter.runtime
         if runtime is not None:
@@ -295,24 +315,46 @@ async def _handle_http(
         # 4. Send response via ASGI
         await adapter.create_response_writer().write_response(response, send)
 
-    except Exception:
+    except Exception as exc:
         logger.exception('Uncaught error in ASGI HTTP handler')
-        # Send a minimal 500 response so the connection is not left hanging
+        # Not every exception that reaches here is a server fault. A request
+        # that arrives while the application is draining is a *timing* problem,
+        # and answering 500 tells the caller (and any probe) that the code is
+        # broken. 503 says "try another instance", which is what is true.
+        from cullinan.core.exceptions import ContainerDrainingError
+
+        # A request that fails while the container is no longer accepting work
+        # is a timing problem whatever exception surfaced, and the surface can
+        # be a contextvar error, a closed scope manager, or our own subclass.
+        # Asking the application is more reliable than enumerating types.
+        _app = _active_application()
+        _draining = _app is not None and not getattr(_app, 'accepts_requests', True)
+        if isinstance(exc, ContainerDrainingError) or _draining:
+            await _send_error_body(
+                send,
+                503,
+                b'{"error":"Service Unavailable","reason":"the application is draining"}',
+                extra_headers=[[b'retry-after', b'1']],
+            )
+            return
+        # Anything else still goes through the gateway's resolver when we know
+        # what was asked, so framework exceptions keep their status codes
+        # instead of collapsing into 500 at the transport boundary.
+        response = None
+        if request is not None:
+            try:
+                response = await adapter.dispatcher.exception_resolver.resolve(request, exc)
+            except Exception:  # noqa: BLE001 - fall back to the minimal response
+                response = None
+        if response is not None:
+            try:
+                await adapter.create_response_writer().write_response(response, send)
+                return
+            except Exception:  # noqa: BLE001
+                pass
         try:
-            error_body = b'{"error":"Internal Server Error","status":500}'
-            await send({
-                'type': 'http.response.start',
-                'status': 500,
-                'headers': [
-                    [b'content-type', b'application/json'],
-                    [b'content-length', str(len(error_body)).encode('latin-1')],
-                ],
-            })
-            await send({
-                'type': 'http.response.body',
-                'body': error_body,
-            })
-        except Exception:
+            await _send_error_body(send, 500, b'{"error":"Internal Server Error","status":500}')
+        except Exception:  # noqa: BLE001 - nothing left to try
             pass
     finally:
         runtime = adapter.runtime
