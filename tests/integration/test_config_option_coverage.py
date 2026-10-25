@@ -15,6 +15,7 @@ new option that arrives without an example fails immediately.
 from __future__ import annotations
 
 import ast
+import re
 from pathlib import Path
 
 import pytest
@@ -26,12 +27,17 @@ EXAMPLES = REPO_ROOT / "examples"
 # Options that predate this check. Adding a name here is a decision to ship an
 # option with no example -- say so in the commit message rather than quietly
 # extending the list.
+# ``startup_error_policy`` joined this list when the check stopped looking for a
+# mention and started reading call sites: it was "covered" by a sentence, never
+# by a call. That is a correction of the measurement, not a new gap -- no option
+# was added without an example.
 UNCOVERED_BEFORE_THIS_CHECK = frozenset(
     {
         "root_module",
         "project_root",
         "verbose",
         "exclude_packages",
+        "startup_error_policy",
         "server_engine",
         "asgi_server",
         "server_host",
@@ -48,17 +54,40 @@ def _configure_options() -> list[str]:
     return [arg.arg for arg in args if arg.arg not in {"cls", "self"}]
 
 
-def _examples_text() -> str:
-    parts = []
-    for path in EXAMPLES.rglob("*"):
-        if path.suffix in {".py", ".md", ".json"}:
-            parts.append(path.read_text(encoding="utf-8", errors="ignore"))
-    return "\n".join(parts)
+def _kwargs_from(tree: ast.AST) -> set[str]:
+    found: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            name = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+            if name == "configure":
+                found.update(keyword.arg for keyword in node.keywords if keyword.arg)
+    return found
+
+
+def _covered_at_call_sites() -> set[str]:
+    """Options actually passed to ``configure`` in an example.
+
+    A substring test is not a test: appending a commented-out option name to any
+    README used to satisfy it without a single call. This parses the calls --
+    every ``.py`` in examples/, plus python fences in their READMEs -- and reads
+    the keyword arguments, which is the only thing that shows an option in use.
+    """
+    covered: set[str] = set()
+    for path in EXAMPLES.rglob("*.py"):
+        covered |= _kwargs_from(ast.parse(path.read_text(encoding="utf-8", errors="ignore")))
+    for path in EXAMPLES.rglob("*.md"):
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for block in re.findall(r"```python\n(.*?)```", text, re.S):
+            try:
+                covered |= _kwargs_from(ast.parse(block))
+            except SyntaxError:
+                continue
+    return covered
 
 
 def test_a_new_option_never_ships_without_an_example():
-    text = _examples_text()
-    missing = {option for option in _configure_options() if option not in text}
+    covered = _covered_at_call_sites()
+    missing = {option for option in _configure_options() if option not in covered}
     new_gaps = missing - UNCOVERED_BEFORE_THIS_CHECK
     assert not new_gaps, (
         "these configuration options are not shown in any example, so a reader "
@@ -68,8 +97,8 @@ def test_a_new_option_never_ships_without_an_example():
 
 def test_the_allowlist_only_shrinks():
     """A name here that has since been covered must be removed from the list."""
-    text = _examples_text()
-    now_covered = sorted(name for name in UNCOVERED_BEFORE_THIS_CHECK if name in text)
+    covered = _covered_at_call_sites()
+    now_covered = sorted(name for name in UNCOVERED_BEFORE_THIS_CHECK if name in covered)
     assert not now_covered, (
         "these options are covered by an example now, so they should not stay on the "
         f"uncovered list: {now_covered}"
@@ -86,4 +115,4 @@ def test_the_allowlist_has_no_ghosts():
 @pytest.mark.parametrize("option", ["max_request_body_bytes", "drain_timeout"])
 def test_the_options_that_shipped_with_this_line_are_shown(option):
     """The two options added for the shutdown work must never lose their example."""
-    assert option in _examples_text()
+    assert option in _covered_at_call_sites()
