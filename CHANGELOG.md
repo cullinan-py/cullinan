@@ -52,6 +52,38 @@ audited.
 - the examples each state which feature they demonstrate, and the two that had
   no README now have one
 
+## v0.96a6
+
+**v0.96a6** is the sixth alpha of the 0.96 line. It is the release where the
+shutdown path stops being a description and becomes a measurement: the bound is
+handed to the server that waits, the drain is announced while there is still
+traffic to shed, and both engines answer a request that arrives too late in a
+way a reader can plan around. It also closes the framing defects that made a
+HEAD request for a static file return nothing, and gives the request body a
+ceiling.
+
+### Added
+
+- `max_request_body_bytes` on `configure(...)`: an oversized body is answered `413` while the client is still sending, on both engines, before any handler runs. Unset means "read whatever arrives", which is the previous behaviour
+- `drain_timeout` on `configure(...)`, so the shutdown bound sits next to `server_port` and `server_engine` instead of requiring the advanced `Application` entry
+- `405` with an `Allow` header when a path exists for another method, and `404` for `OPTIONS` on a path nobody registered — previously every method mismatch was a `404` and every unregistered `OPTIONS` a `204`
+- a drain log that says how long the process is waiting and for how many requests
+
+### Changed
+
+- draining is announced when the stop signal arrives rather than after the wait, so `accepts_requests` turns `False` while there is still traffic to shed
+- a request refused because the container is draining answers `503` with `Retry-After` instead of a bare `500`, and transport-level failures go through the gateway resolver rather than being flattened into `500`
+- security headers are applied to error responses too, so the responses that echo the request path are no longer the ones without `nosniff`
+- the deployment guide describes what each engine actually does during a drain: Tornado answers `503`; ASGI closes its listener first, so there is no window a probe can rely on
+
+### Fixed
+
+- a HEAD request for a static file returned no bytes and ended in `ASGI callable returned without completing response`: the adapter appended a second `Content-Length` (`15`) next to the one the static layer had already set (`0`). Existing headers are left alone now, and `204`/`304` never carry one
+- the same request returned `200` on ASGI and `304` on Tornado, because Tornado invents an ETag and honours `If-None-Match`; the handler no longer invents one, so the status code no longer depends on the engine
+- the drain bound was resolved correctly and then never passed to uvicorn, whose own default is to wait forever; a four-second request ran to completion with `drain_timeout=0.2`
+- the Tornado signal handler stopped the loop directly, which cut in-flight requests instead of waiting for them
+- a drain that expired with work still running left `phase` at `draining` while the container was already closed; the transport that is about to stop the world now finalises it
+
 ## v0.96a5
 
 **v0.96a5** is the fifth alpha of the 0.96 line. It settles middleware ownership and the boot boundary, and makes the shutdown path actually graceful: draining no longer blocks the event loop it is called from, and an application can be asked whether it is still accepting requests.

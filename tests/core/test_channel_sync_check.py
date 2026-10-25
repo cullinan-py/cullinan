@@ -57,7 +57,7 @@ def test_parse_version_on_unparseable_input():
 
 
 def test_local_version_matches_the_ssot():
-    assert checker.read_local_version() == "0.96a5"
+    assert checker.read_local_version() == "0.96a6"
 
 
 def test_bundled_self_test_passes():
