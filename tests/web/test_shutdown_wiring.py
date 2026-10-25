@@ -48,8 +48,8 @@ class _StubApplication:
     def _begin_draining(self) -> None:
         self.events.append("begin_draining")
 
-    def _finalize_drain(self) -> None:
-        self.events.append("finalize_drain")
+    def _finalize_drain(self, force: bool = False) -> None:
+        self.events.append("finalize_drain" + ("(force)" if force else ""))
 
 
 @pytest.fixture()
@@ -117,7 +117,7 @@ def test_tornado_shutdown_stops_accepting_before_waiting(monkeypatch, stub_app):
 
     asyncio.run(adapter._shutdown_gracefully())
 
-    assert stub_app.events == ["begin_draining", "finalize_drain"]
+    assert stub_app.events == ["begin_draining", "finalize_drain(force)"]
     assert adapter._http_server.stopped == 1, "the listener has to close, or draining changes nothing"
     assert stub_app.context.calls and stub_app.context.calls[0][0] == "ashutdown"
 
@@ -157,3 +157,42 @@ def test_configure_rejects_a_useless_bound():
 
     with pytest.raises(ValueError):
         configure(drain_timeout=0)
+
+
+def test_a_timed_out_drain_is_still_finalised():
+    """When the bound expires the process is about to end, so nobody re-enters.
+
+    Deferring because work is still recorded is correct while something can call
+    back; at the end of the shutdown there is nothing left to call back, and a
+    deferred finalisation strands ``phase`` at "draining" for the rest of the
+    process's life -- which is a lie the last request could have read.
+    """
+    from types import SimpleNamespace
+
+    from cullinan.application.model import Application
+    from cullinan.core.application_context import ContainerState
+
+    class _Context:
+        state = ContainerState.DRAINING
+        calls: list = []
+        active_request_count = 1
+
+        def shutdown(self, timeout: float | None = None) -> bool:
+            self.calls.append(timeout)
+            self.state = ContainerState.CLOSED
+            return True
+
+    stub = SimpleNamespace(
+        runtime=SimpleNamespace(phase="active"),
+        web_runtime=SimpleNamespace(request_count=1, config=SimpleNamespace(drain_timeout=4.0)),
+        context=_Context(),
+        phase="draining",
+    )
+
+    Application._finalize_drain(stub)
+    assert stub.phase == "draining", "a deferral is right while a callback may still arrive"
+    assert stub.context.calls == []
+
+    Application._finalize_drain(stub, force=True)
+    assert stub.context.calls == [4.0]
+    assert stub.phase == "closed" and stub.runtime.phase == "closed"

@@ -365,7 +365,9 @@ class TornadoAdapter(WebAdapter):
             except Exception as exc:  # noqa: BLE001
                 logger.warning('Drain did not complete cleanly: %s', exc)
             try:
-                app._finalize_drain()  # noqa: SLF001 - same package, deliberate
+                # ``force``: the bound has expired and the loop is about to
+                # stop, so a deferred finalisation would never be re-entered.
+                app._finalize_drain(force=True)  # noqa: SLF001 - same package
             except Exception as exc:  # noqa: BLE001
                 logger.warning('Could not finalise draining: %s', exc)
 
