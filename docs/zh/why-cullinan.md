@@ -77,7 +77,7 @@ Cullinan 是一个**声明式**的 Python Web 框架：你标记一个入口方�
     },
     {
       "id": "C7",
-      "claim": "就绪性在还有流量可摘时就改变：停止信号到达即宣告排空，排空期到达的请求回 503。",
+      "claim": "就绪性在还有流量可摘时就改变：停止信号到达即宣告排空，已在跑的工作受一个可配置的上限约束。",
       "evidence": ["examples/graceful_shutdown/root.py", "examples/graceful_shutdown/README.md"],
       "symbols": ["cullinan/core/application_context.py::accepts_requests"]
     },

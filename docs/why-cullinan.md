@@ -86,7 +86,7 @@ must be present in that file.
     },
     {
       "id": "C7",
-      "claim": "Readiness changes while there is still traffic to shed: draining is announced when the stop signal arrives, and requests that arrive during it are answered 503.",
+      "claim": "Readiness changes while there is still traffic to shed: draining is announced when the stop signal arrives, and work already running is bounded by a configured deadline.",
       "evidence": ["examples/graceful_shutdown/root.py", "examples/graceful_shutdown/README.md"],
       "symbols": ["cullinan/core/application_context.py::accepts_requests"]
     },

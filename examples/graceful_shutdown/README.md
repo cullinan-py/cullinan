@@ -34,7 +34,7 @@ python -m examples.graceful_shutdown
 
 | Path | Meaning |
 |---|---|
-| `/ops/ready` | readiness — a request that arrives while draining gets `503` with `the application is draining` |
+| `/ops/ready` | readiness — a request on an established connection gets `503` while draining; under ASGI the listener is closed first, so a *new* connection is not accepted |
 | `/ops/live` | liveness — `{"alive": true}` for as long as the process runs |
 
 Wire `/ops/ready` to your readiness probe and `/ops/live` to your liveness

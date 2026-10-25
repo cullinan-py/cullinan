@@ -71,11 +71,24 @@ does four things in this order:
 
 1. **announces the drain** — the readiness predicate turns `False` immediately,
    so a probe or a load balancer has a window in which to stop sending work;
-2. **answers new requests with `503`** — not `500`. A request that arrives while
-   the container is draining is a timing problem, not a broken request, and the
-   two need to be distinguishable by whoever reads the status code;
+2. **answers what still arrives with `503`** — not `500`. A request that lands
+   during the drain is a timing problem, not a broken request, and the two need
+   to be distinguishable by whoever reads the status code;
 3. **waits for the requests already running**, up to `drain_timeout`;
 4. **closes** — the listener goes away, the container closes, the process exits.
+
+Step 2 needs a caveat that cost a release to learn: **who can still reach you
+during the drain depends on the engine.**
+
+| Engine | A request that arrives during the drain |
+|---|---|
+| Tornado | the listener stays open, so it is accepted and answered `503` with `Retry-After: 1` |
+| ASGI (uvicorn) | uvicorn closes the listener as the *first* step of its own shutdown, so **no new connection is accepted** (a client may hang until its own timeout); a request on an **already established** connection is answered `503` with `Retry-After: 1` |
+
+The framework cannot change that ordering: the bound is handed to the server,
+and the server decides when to stop listening. Plan for it — a probe that opens
+a new connection on every poll will see the instance disappear rather than see
+`503`, which is still a correct "do not send me traffic" signal.
 
 Step 3 is bounded by one number, and that number is handed to the server that
 actually does the waiting:
@@ -101,9 +114,10 @@ takes precedence.
 Three things worth knowing about the bound:
 
 1. **It is enforced, not advisory.** With `drain_timeout=1.0` and a request that
-   needs 6s, the process is gone in about 1.3s on either engine and the slow
-   request is cut. If you need slow requests to finish, say so with a larger
-   bound.
+   needs 6s, the process is gone in about 1.2s on ASGI and about 1.6s on Tornado,
+   and the slow request is cut. What the cut looks like to the client differs:
+   ASGI returns a `500` (the server cancels the task), Tornado drops the
+   connection. If you need slow requests to finish, say so with a larger bound.
 2. **It must fit your platform.** It should be longer than your slowest normal
    request and shorter than the orchestrator's kill grace period; the framework
    cannot know either number for you.
@@ -146,8 +160,9 @@ Keep liveness separate and answer it with `True`. During a graceful shutdown the
 process is healthy and is *supposed* to stop taking traffic; a liveness probe
 that reads draining state reports a healthy shutdown as a crash.
 
-The runnable version of both probes is in
-[the graceful shutdown example](examples.md).
+The runnable version of both probes is the
+`examples/graceful_shutdown/` package: `python -m examples.graceful_shutdown`
+starts it, and `root.py` holds the two routes.
 
 ## What the two engines do not share (yet)
 
@@ -156,12 +171,16 @@ are the same on both engines. These are not, and are listed so you can plan
 around them rather than discover them:
 
 - the `server` response header (`uvicorn` versus `TornadoServer`), which is set
-  by the server, not by the framework.
+  by the server, not by the framework;
+- during a drain, whether a *new* connection is answered `503` (Tornado) or not
+  accepted at all (ASGI, because uvicorn closes the listener first) — see the
+  shutdown section above;
+- what a client sees when the drain bound cuts an in-flight request: `500` on
+  ASGI, a dropped connection on Tornado.
 
-Everything else the lab measured for normal traffic — status codes, response
-bodies, `Allow` on a `405`, `404` for an `OPTIONS` on an unknown path — matches.
-The header is cosmetic, and it is listed so you can plan around it rather than
-discover it.
+For normal traffic the two engines agree on status codes, bodies, `Allow` on a
+`405`, and `404` for an `OPTIONS` on an unknown path. The differences above are
+listed so you can plan around them rather than discover them.
 
 ## Reverse proxies and forwarded headers
 
