@@ -8,8 +8,10 @@ credentials.
 
 The ceiling is opt-in (``@configure(max_request_body_bytes=...)``), because
 changing the default would break every existing upload; what is not optional is
-that once you ask for a ceiling, both engines enforce it, and enforce it *while
-the client is still sending*.
+that once you ask for a ceiling, both engines stop reading at the limit. What the
+client sees differs: the ASGI adapter answers `413`, while Tornado refuses at its
+own protocol layer with `400` before the framework is involved — measured, not
+assumed.
 """
 
 from __future__ import annotations
@@ -94,8 +96,11 @@ def test_an_oversized_body_is_refused_with_413_before_dispatch(monkeypatch):
     assert sent[0]['status'] == 413
     body = sent[1]['body']
     assert b'Payload Too Large' in body
-    headers = {name.decode().lower(): value.decode() for name, value in sent[0]['headers']}
-    assert headers['content-length'] == str(len(body)), "the 413 must be framed correctly too"
+    # A dict would fold a duplicate Content-Length and hide exactly the defect
+    # this asserts against, so count the pairs as they are.
+    pairs = [(name.decode().lower(), value.decode()) for name, value in sent[0]['headers']]
+    lengths = [value for name, value in pairs if name == 'content-length']
+    assert lengths == [str(len(body))], f"the 413 must carry exactly one Content-Length, got {lengths}"
 
 
 async def _drive(adapter, receive, send) -> None:
@@ -109,3 +114,25 @@ def test_the_configured_ceiling_must_be_a_positive_number():
 
     with pytest.raises(ValueError):
         configure(max_request_body_bytes=0)
+
+
+def test_tornado_is_told_the_ceiling_so_it_can_stop_reading(monkeypatch):
+    """The handler-level check cannot stop a body Tornado has already buffered.
+
+    Without ``max_body_size`` on its ``HTTPServer``, Tornado reads the whole body
+    and only then hands it over, so the adapter's 413 would fire after the cost
+    had already been paid — and a client that never finishes sending would never
+    get an answer at all.
+    """
+    from cullinan.support import config as config_module
+    from cullinan.transport.adapter.tornado_adapter import server_options
+
+    previous = config_module.get_config().max_request_body_bytes
+    try:
+        config_module.get_config().max_request_body_bytes = None
+        assert server_options() == {}, "no ceiling must not invent one"
+
+        config_module.configure(max_request_body_bytes=256)
+        assert server_options() == {"max_body_size": 256}
+    finally:
+        config_module.get_config().max_request_body_bytes = previous

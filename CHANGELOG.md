@@ -64,7 +64,7 @@ ceiling.
 
 ### Added
 
-- `max_request_body_bytes` on `configure(...)`: an oversized body is answered `413` while the client is still sending, on both engines, before any handler runs. Unset means "read whatever arrives", which is the previous behaviour
+- `max_request_body_bytes` on `configure(...)`: an oversized body is refused without reading the rest of it, before any handler runs. ASGI answers `413`; Tornado's protocol layer (`max_body_size`) answers `400` first — both stop early, the status differs by engine. Unset means "read whatever arrives", which is the previous behaviour
 - `drain_timeout` on `configure(...)`, so the shutdown bound sits next to `server_port` and `server_engine` instead of requiring the advanced `Application` entry
 - `405` with an `Allow` header when a path exists for another method, and `404` for `OPTIONS` on a path nobody registered — previously every method mismatch was a `404` and every unregistered `OPTIONS` a `204`
 - a drain log that says how long the process is waiting and for how many requests

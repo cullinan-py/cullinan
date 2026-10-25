@@ -215,8 +215,18 @@ def main(): ...
 
 With no value set, whatever the client sends is read — the historical
 behaviour, kept as the default because turning it into a limit would break
-existing uploads. With a value, a body that crosses it is answered `413` while
-the client is still sending, on both engines, before any handler runs.
+existing uploads. With a value, a body that crosses it is refused **without
+reading the rest of it**, before any handler runs. The status depends on which
+layer refuses, and that differs by engine:
+
+| Engine | Oversized body |
+|---|---|
+| ASGI | `413 Payload Too Large` with a JSON body, raised by the adapter |
+| Tornado | `400 Bad Request` with an empty body, raised by Tornado's protocol layer (`max_body_size`) before the framework sees the request |
+
+Both stop early, which is the property that matters; the two are not the same
+status, and pretending otherwise would be a difference you discover in
+production.
 
 Set it if the deployment accepts uploads from anywhere; the audit that produced
 this option found a 1 MiB body posted to a path that does not exist being fully

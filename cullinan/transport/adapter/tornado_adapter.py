@@ -187,6 +187,18 @@ class _CullinanTornadoHandler(tornado.web.RequestHandler):
                 self.set_header(str(h[0]), str(h[1]))
 
 
+def server_options() -> dict:
+    """Keyword arguments for ``HTTPServer``, given the configured ceiling.
+
+    ``max_body_size`` is the only thing that makes Tornado stop reading; without
+    it the handler-level check can only reject a body that has already been
+    accepted in full. Exposed separately so the wiring is testable without
+    starting a server.
+    """
+    limit = resolve_max_request_body_bytes()
+    return {'max_body_size': limit} if limit is not None else {}
+
+
 class TornadoAdapter(WebAdapter):
     """Tornado runtime adapter — single-handler mode.
 
@@ -274,7 +286,11 @@ class TornadoAdapter(WebAdapter):
             self.create_app()
 
         server_thread = kwargs.get('threads') or os.getenv('SERVER_THREAD')
-        self._http_server = tornado.httpserver.HTTPServer(self._app)
+        # Without this, Tornado buffers the whole body before the handler runs,
+        # so the ceiling in the adapter could only ever reject an upload that
+        # had already been accepted in full. The protocol layer has to know the
+        # number, and it refuses at the point the limit is crossed.
+        self._http_server = tornado.httpserver.HTTPServer(self._app, **server_options())
 
         if server_thread is not None:
             self._http_server.bind(port)
