@@ -204,24 +204,33 @@ per-IP rate limits and audit logs quietly stop meaning anything.
 
 ## The exit status after `SIGTERM`
 
-On POSIX, a graceful shutdown ends with a **signal exit**, not with `0`:
+The drain completing and the process exiting are two different events, and the
+status depends on **which engine** shut down:
+
+| Engine | Exit status after a clean drain | Where it was measured |
+|---|---|---|
+| ASGI (uvicorn) | `143` — Python reports the child as `-15` | Linux and macOS |
+| Tornado | `0` | Windows (`SIGBREAK`; the adapter stops its own loop and returns, so the same return path is what ends the process) |
+
+With uvicorn the non-zero status is by design: after the loop has drained and
+the lifespan has closed it restores the original handlers and **re-raises the
+signal it captured**, so the shell and any supervisor see the real cause — not
+an aborted shutdown:
 
 ```
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
 INFO:     Finished server process [2550]
-# $? is 143 (128 + 15), and Python reports the child as -15
+# ASGI:  $? is 143 (128 + 15)
 ```
 
-This is uvicorn's design, not an aborted shutdown: after the loop has drained
-and the lifespan has closed, it restores the original handlers and **re-raises
-the signal it captured**, so the shell and any supervisor see the real cause.
-Measured on both Linux and macOS.
+The Tornado adapter has no such step: it stops the loop it owns and returns, so
+the process leaves with `0`.
 
 Read the log for whether the drain completed, not the exit status. A supervisor
-that treats `143` as success is right; one that requires `0` will report a
-healthy shutdown as a crash.
+that requires `0` will report a healthy uvicorn shutdown as a crash, and one
+that requires `143` will report a healthy Tornado shutdown as one too.
 
 ## Request body size
 

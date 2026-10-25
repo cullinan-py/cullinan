@@ -148,22 +148,28 @@ config = WebRuntimeConfig(trust_forwarded_headers=True)
 
 ## `SIGTERM` 之后的退出码
 
-在 POSIX 上，优雅关闭的结尾是**被信号结束**，不是 `0`：
+排空完成与进程退出是两件事，而**退出码取决于引擎**：
+
+| 引擎 | 干净排空后的退出码 | 实测环境 |
+|---|---|---|
+| ASGI（uvicorn） | `143` —— Python 侧看到的子进程状态是 `-15` | Linux 与 macOS |
+| Tornado | `0` | Windows（`SIGBREAK`；适配器停掉自己的循环后返回，结束进程走的是同一条返回路径） |
+
+uvicorn 的非零退出码是**设计**，不是"关闭被打断"：事件循环排空、lifespan 关完之后，它恢复原有处理器并
+**把捕获到的信号重新发给自己**，这样 shell 与监督进程看到的是真实原因：
 
 ```
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
 INFO:     Finished server process [2550]
-# $? 是 143（128 + 15），Python 侧看到的子进程状态是 -15
+# ASGI：$? 是 143（128 + 15）
 ```
 
-这是 uvicorn 的设计，不是"关闭被打断"：事件循环排空、lifespan 关完之后，它恢复原有处理器并
-**把捕获到的信号重新发给自己**，这样 shell 与监督进程看到的是真实原因。Linux 与 macOS 上均由
-在 Linux 与 macOS 上均已实测。
+Tornado 没有这一步：它停掉自己持有的循环然后返回，进程以 `0` 退出。
 
-**判断有没有排空完成，看日志，不要看退出码。** 把 `143` 当成功的监督进程是对的；要求必须是
-`0` 的那种，会把一次健康关闭报成崩溃。
+**判断有没有排空完成，看日志，不要看退出码。** 要求必须是 `0` 的监督进程，会把一次健康的 uvicorn
+关闭报成崩溃；要求必须是 `143` 的，会把一次健康的 Tornado 关闭报成崩溃。
 
 ## 请求体大小
 

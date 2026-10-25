@@ -499,7 +499,7 @@ def _read(path: str) -> str:
 def test_add_class_is_a_registered_legacy_bare_construction_path():
     """``MiddlewarePipeline.add_class`` stays, and stays a bare-construction path.
 
-    ``add_class`` is the pre-R17 legacy convenience method: it constructs the
+    ``add_class`` is the legacy convenience method: it constructs the
     middleware itself, so the instance is **not** container-managed and its
     declared dependencies are **not** injected. The container-managed path is the
     declarative ``configure(middlewares=[Class])`` with ``@component``. The method

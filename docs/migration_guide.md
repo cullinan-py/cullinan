@@ -12,7 +12,7 @@
 
 This guide helps you migrate from Cullinan 1.x to 0.93 (0.90).
 
-## v0.95 migration notes (Track A internal refactor)
+## v0.95 migration notes (internal refactor)
 
 v0.95 is a non-breaking release that adds deprecation markers and optional
 strict switches. Existing code continues to work without changes, but you are
