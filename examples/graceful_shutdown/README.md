@@ -34,7 +34,8 @@ python -m examples.graceful_shutdown
 
 | Path | Meaning |
 |---|---|
-| `/ops/ready` | readiness — a request on an established connection gets `503` while draining; under ASGI the listener is closed first, so a *new* connection is not accepted |
+| `/ops/ready` | readiness — what a request sees mid-drain depends on the engine: Tornado answers `503`; ASGI closes the listener and then every open connection, so the probe mostly sees a refusal or a hang |
+| `/ops/slow` | a 5s request, so there is still work in flight when the signal arrives |
 | `/ops/live` | liveness — `{"alive": true}` for as long as the process runs |
 
 Wire `/ops/ready` to your readiness probe and `/ops/live` to your liveness
@@ -43,22 +44,32 @@ because the probe is part of your operations story.
 
 ## The drain bound
 
-The framework waits up to `WebRuntimeConfig.drain_timeout` (default 30s) for
-in-flight requests before closing. That is the same value the ASGI lifespan
-shutdown uses, so the number your process waits for and the number the
-framework waits for cannot disagree. A drain that finishes inside the bound
+The framework waits up to `drain_timeout` (default 30s, settable on
+`@configure(...)`) for in-flight requests before closing. The same value is
+handed to the server that actually does the waiting — uvicorn's graceful
+shutdown timeout — so the number your process waits for and the number the
+framework waits for cannot drift apart. A drain that finishes inside the bound
 returns `True`; one that times out returns `False` — read the return value
 rather than parsing logs.
 
 ## Try the transition by hand
 
 ```bash
-python -m examples.graceful_shutdown          # in one terminal
+python -m examples.graceful_shutdown &        # in one terminal
 curl -i http://127.0.0.1:4082/ops/ready       # 200 {"ready": true}
-# send a stop signal to the process, then:
-curl -i http://127.0.0.1:4082/ops/ready       # 503 while the drain is running
+curl -i http://127.0.0.1:4082/ops/slow &      # a request that is still running
+kill -TERM %1                                 # (Windows: Ctrl+Break on the console)
 ```
 
-While a long request is still running you will see `503` before the process
-exits — that window is the whole point, and it is why the drain is announced at
-the signal rather than after the wait.
+What the next `curl /ops/ready` shows depends on the engine, and that difference
+is real rather than a formatting detail:
+
+| Engine | What you should see |
+|---|---|
+| Tornado | `503` with `Retry-After: 1` while `/ops/slow` is still running |
+| ASGI (uvicorn) | a refused connection or a hang: uvicorn stops listening and then drops open connections, so there is no deliberate window in which to read a status |
+
+Either way the process is gone once the bound expires, and `/ops/slow` is cut.
+The point of the exercise is that the framework's own state turned to "not
+ready" at the signal rather than after the wait — the status code you happen to
+observe depends on who still has a connection open.

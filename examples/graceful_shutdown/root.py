@@ -12,6 +12,8 @@ port or an endpoint group: the probe is part of your operations story, and you
 already have somewhere to put it.
 """
 
+import asyncio
+
 from cullinan import application, configure
 from cullinan.application import Application
 from cullinan.web import controller, get_api
@@ -29,6 +31,14 @@ class OpsController:
         # that raced startup, so "no app" is reported as ready rather than as an
         # error the caller would read as "take this instance out".
         return {"ready": bool(app is None or app.accepts_requests)}
+
+    @get_api(url="/slow")
+    async def slow(self):
+        # A request long enough to still be running when the signal arrives.
+        # Without it the "watch the probe change" instruction in the README
+        # produces nothing to watch: the drain finishes before you can type.
+        await asyncio.sleep(5.0)
+        return {"slept": 5.0}
 
     @get_api(url="/live")
     def live(self):
