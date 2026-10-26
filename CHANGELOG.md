@@ -59,8 +59,8 @@ It also lands the surfaces a project needs in order to be depended on, operated 
 - the Tornado signal handler stopped the loop directly, which cut in-flight requests instead of waiting for them
 - a drain that expired with work still running left `phase` at `draining` while the container was already closed; the transport that is about to stop the world now finalises it
 
-
 ### Documentation
+
 - `docs/why-cullinan.md` states the positioning once, with each claim carrying
 - the examples each state which feature they demonstrate, and the two that had
 
