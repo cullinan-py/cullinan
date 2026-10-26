@@ -49,4 +49,4 @@ class UserService(Service):
 ## 另见
 
 - [依赖注入指南](../dependency_injection_guide.md)
-- [应用生命周期](../wiki/lifecycle.md)
+- [应用生命周期](../internals/lifecycle.md)

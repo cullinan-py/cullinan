@@ -36,7 +36,7 @@
         "middlewares=",
         "GatewayMiddleware"
       ],
-      "docs": "wiki/middleware.md"
+      "docs": "internals/middleware.md"
     },
     {
       "feature": "Middleware lifecycle owned by the container",
@@ -45,7 +45,7 @@
         "AuditMiddleware",
         "middlewares="
       ],
-      "docs": "wiki/middleware.md"
+      "docs": "internals/middleware.md"
     },
     {
       "feature": "Middleware control: built-in switch and tags",
@@ -53,7 +53,7 @@
       "evidence": [
         "builtin_middleware"
       ],
-      "docs": "wiki/middleware.md"
+      "docs": "internals/middleware.md"
     },
     {
       "feature": "Module boundary",
@@ -62,7 +62,7 @@
         "@module",
         "@middleware"
       ],
-      "docs": "wiki/components.md"
+      "docs": "internals/components.md"
     },
     {
       "feature": "Static files and SPA fallback",
@@ -78,7 +78,7 @@
       "evidence": [
         "get_assembly_snapshot"
       ],
-      "docs": "wiki/application_runtime.md"
+      "docs": "internals/application_runtime.md"
     },
     {
       "feature": "Component discovery boundary and assembly strictness",
@@ -87,7 +87,7 @@
         "strict_assembly",
         "@service"
       ],
-      "docs": "wiki/components.md"
+      "docs": "internals/components.md"
     },
     {
       "feature": "Testing an application without a server",

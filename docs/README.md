@@ -73,7 +73,7 @@ Use this section for symbol lookup and stable API surface review.
 
 Use this section only when you intentionally need advanced runtime or extension knowledge.
 
-- [Application Runtime Model](wiki/application_runtime.md)
+- [Application Runtime Model](internals/application_runtime.md)
 - [Extension Development Guide](extension_development_guide.md)
 - [Quick Start Extensions](quick_start_extensions.md)
 

@@ -95,5 +95,5 @@ class RootModule:
 
 ## 相关文档
 
-- [应用运行时模型](../wiki/application_runtime.md)
-- [应用生命周期](../wiki/lifecycle.md)
+- [应用运行时模型](../internals/application_runtime.md)
+- [应用生命周期](../internals/lifecycle.md)

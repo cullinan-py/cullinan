@@ -6,7 +6,7 @@ author: "plumeink"
 reviewers: []
 status: updated
 locale: zh
-translation_pair: "docs/wiki/application_runtime.md"
+translation_pair: "docs/internals/application_runtime.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/core/test_decorators.py", "tests/integration/test_adapter_integration.py", "tests/core/test_strict_assembly.py"]
 related_examples: []
 estimate_pd: 1.0

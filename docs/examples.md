@@ -77,6 +77,6 @@ The current example set intentionally keeps Cullinan's own concept front and cen
 - Middleware has several maintained examples: `examples/middleware_pipeline/` uses the
   recommended onion protocol, `examples/middleware_ownership/` shows the two declaration
   forms and their object ownership, while `examples/middleware_and_module/` uses the
-  compatibility protocol. See [Middleware](wiki/middleware.md).
+  compatibility protocol. See [Middleware](internals/middleware.md).
 - If you are learning Cullinan for the first time, start with `examples/minimal_app/` and then
   continue to `examples/controller_service_inject/`.

@@ -644,7 +644,7 @@ class TestMyMiddleware(ServiceTestCase):
 
 ## 进一步阅读
 
-- [维基扩展](wiki/extensions.md) - 扩展模式与最佳实践
+- [扩展](internals/extensions.md) - 扩展模式与最佳实践
 - [依赖注入指南](dependency_injection_guide.md) - DI 系统文档
 - [扩展快速入门](quick_start_extensions.md) - 扩展快速入门指南
 

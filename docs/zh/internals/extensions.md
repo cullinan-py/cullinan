@@ -6,7 +6,7 @@ author: "plumeink"
 reviewers: []
 status: updated
 locale: zh
-translation_pair: "docs/wiki/extensions.md"
+translation_pair: "docs/internals/extensions.md"
 related_tests: []
 related_examples: []
 estimate_pd: 1.0

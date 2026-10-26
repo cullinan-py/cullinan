@@ -6,7 +6,7 @@ author: "plumeink"
 reviewers: []
 status: updated
 locale: en
-translation_pair: "docs/zh/wiki/lifecycle.md"
+translation_pair: "docs/zh/internals/lifecycle.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/integration/test_service_lifecycle_integration.py"]
 related_examples: []
 estimate_pd: 1.0

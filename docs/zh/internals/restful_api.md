@@ -5,8 +5,8 @@ tags: ["wiki", "restful-api"]
 author: "plumeink"
 reviewers: []
 status: updated
-locale: en
-translation_pair: "docs/zh/wiki/restful_api.md"
+locale: zh
+translation_pair: "docs/internals/restful_api.md"
 related_tests: ["tests/web/test_web_runtime.py"]
 related_examples: []
 estimate_pd: 1.5
@@ -15,9 +15,9 @@ pr_links: []
 
 # RESTful API
 
-Cullinan's current REST stack combines controller decorators with the unified Web Runtime.
+Cullinan 当前的 REST 栈由控制器装饰器与统一后的 Web Runtime 共同组成。
 
-## Recommended controller style
+## 推荐控制器写法
 
 ```python
 from cullinan.web.controller import controller, get_api, post_api
@@ -34,19 +34,19 @@ class UserController:
         return {"created": True, "payload": payload}
 ```
 
-Plain dictionaries, models, or explicit `WebResponse` objects are all valid handler results.
+普通字典、模型对象或显式 `WebResponse` 都可以作为处理器返回值。
 
-## Current runtime model
+## 当前运行时模型
 
-- incoming requests are normalized to `WebRequest`
-- route matching is handled by `Router`
-- handler invocation is handled by `Dispatcher`
-- outgoing responses are normalized to `WebResponse`
-- server integration is delegated to a `WebAdapter`
+- 进入框架的请求会被归一化为 `WebRequest`
+- 路由匹配由 `Router` 负责
+- 处理器调用由 `Dispatcher` 负责
+- 输出响应统一归一化为 `WebResponse`
+- 服务器集成由 `WebAdapter` 承担
 
-## Response control
+## 响应控制
 
-Return `WebResponse` directly when you need explicit headers, cookies, or status handling.
+当需要显式控制 header、cookie 或状态码时，直接返回 `WebResponse`。
 
 ```python
 from cullinan.web.gateway import WebResponse
@@ -54,17 +54,17 @@ from cullinan.web.gateway import WebResponse
 return WebResponse.json({"ok": True}, status_code=201)
 ```
 
-## Migration note
+## 迁移说明
 
-New code and documentation should use:
+新代码与新文档应使用：
 
 - `WebRequest`
 - `WebResponse`
 - `WebAdapter`
 
-The old request / response / adapter naming is no longer the main public API surface.
+旧的 request / response / adapter 命名已不再是主要公开 API 面。
 
-## See also
+## 另见
 
-- [Web Runtime Guide](../web_runtime_guide.md)
-- [Application Lifecycle](lifecycle.md)
+- [Web Runtime 指南](../web_runtime_guide.md)
+- [应用生命周期](lifecycle.md)

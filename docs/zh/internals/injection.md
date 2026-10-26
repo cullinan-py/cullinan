@@ -6,7 +6,7 @@ author: "plumeink"
 reviewers: []
 status: updated
 locale: zh
-translation_pair: "docs/wiki/injection.md"
+translation_pair: "docs/internals/injection.md"
 related_tests: ["tests/di/test_core_constructor_injection.py"]
 related_examples: []
 estimate_pd: 1.0

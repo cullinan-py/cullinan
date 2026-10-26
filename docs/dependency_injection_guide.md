@@ -303,5 +303,5 @@ Those names are kept so older code paths fail less abruptly, but new code should
 ## Related documents
 
 - [Architecture](architecture.md)
-- [IoC & DI wiki](wiki/injection.md)
-- [Application Lifecycle](wiki/lifecycle.md)
+- [IoC & DI wiki](internals/injection.md)
+- [Application Lifecycle](internals/lifecycle.md)

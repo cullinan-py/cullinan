@@ -106,5 +106,5 @@ business decorators plus the top-level entry-method path.
 
 ## Related documents
 
-- [Application Runtime Model](../wiki/application_runtime.md)
-- [Application Lifecycle](../wiki/lifecycle.md)
+- [Application Runtime Model](../internals/application_runtime.md)
+- [Application Lifecycle](../internals/lifecycle.md)

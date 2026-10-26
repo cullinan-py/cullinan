@@ -650,7 +650,7 @@ class TestMyMiddleware(ServiceTestCase):
 
 ## Further Reading
 
-- [Wiki Extensions](wiki/extensions.md) - Extension patterns and best practices
+- [Extensions](internals/extensions.md) - Extension patterns and best practices
 - [Dependency Injection Guide](dependency_injection_guide.md) - DI system documentation
 - [Quick Start Extensions](quick_start_extensions.md) - Quick start guide for extensions
 

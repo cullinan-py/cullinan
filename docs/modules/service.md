@@ -49,4 +49,4 @@ For most code, use `@service` plus dependency markers and let the active `Applic
 ## See also
 
 - [Dependency Injection Guide](../dependency_injection_guide.md)
-- [Application Lifecycle](../wiki/lifecycle.md)
+- [Application Lifecycle](../internals/lifecycle.md)

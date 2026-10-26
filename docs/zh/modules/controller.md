@@ -55,5 +55,5 @@ class UserController:
 
 ## 另见
 
-- [RESTful API wiki](../wiki/restful_api.md)
+- [RESTful API wiki](../internals/restful_api.md)
 - [Web Runtime 指南](../web_runtime_guide.md)

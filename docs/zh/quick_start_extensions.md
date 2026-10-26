@@ -289,7 +289,7 @@ A: 装饰器注册的开销极小（~1μs），运行时无额外开销。中间
 
 - **示例代码**：`examples/extension_registration_demo.py`
 - **扩展开发指南**：`docs/extension_development_guide.md`
-- **中间件详解**：`docs/wiki/middleware.md`
+- **中间件详解**：`docs/internals/middleware.md`
 
 ---
 

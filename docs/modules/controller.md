@@ -55,5 +55,5 @@ New applications should treat controllers as part of the unified `ApplicationCon
 
 ## See also
 
-- [RESTful API wiki](../wiki/restful_api.md)
+- [RESTful API wiki](../internals/restful_api.md)
 - [Web Runtime Guide](../web_runtime_guide.md)

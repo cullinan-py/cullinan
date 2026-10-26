@@ -22,14 +22,14 @@ applications should not start here.
 
 ## Typical advanced topics
 
-- [Application Runtime Model](../wiki/application_runtime.md)
-- [Components](../wiki/components.md)
-- [Decorators](../wiki/decorators.md)
-- [Injection](../wiki/injection.md)
-- [Lifecycle](../wiki/lifecycle.md)
-- [Middleware](../wiki/middleware.md)
-- [Extensions](../wiki/extensions.md)
-- [RESTful API](../wiki/restful_api.md)
+- [Application Runtime Model](../internals/application_runtime.md)
+- [Components](../internals/components.md)
+- [Decorators](../internals/decorators.md)
+- [Injection](../internals/injection.md)
+- [Lifecycle](../internals/lifecycle.md)
+- [Middleware](../internals/middleware.md)
+- [Extensions](../internals/extensions.md)
+- [RESTful API](../internals/restful_api.md)
 - [Extension Development Guide](../extension_development_guide.md)
 - [Quick Start Extensions](../quick_start_extensions.md)
 

@@ -74,6 +74,6 @@ Cullinan 当前想表达的概念放在最前面：
 - `tests/integration/test_examples_public_guides.py` 会对当前维护的示例做 smoke test。
 - 中间件有多个维护中的示例：`examples/middleware_pipeline/` 使用推荐的洋葱协议，
   `examples/middleware_ownership/` 展示两种声明写法及其对象归属，
-  而 `examples/middleware_and_module/` 使用兼容协议。详见[中间件](wiki/middleware.md)。
+  而 `examples/middleware_and_module/` 使用兼容协议。详见[中间件](internals/middleware.md)。
 - 如果你第一次接触 Cullinan，建议先完成 `examples/minimal_app/`，再进入
   `examples/controller_service_inject/`。

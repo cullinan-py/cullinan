@@ -131,5 +131,5 @@ Use these names in new documentation and code:
 
 See also:
 
-- [RESTful API wiki](wiki/restful_api.md)
+- [RESTful API wiki](internals/restful_api.md)
 - [Architecture](architecture.md)

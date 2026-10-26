@@ -6,7 +6,7 @@ but only when the same material says so -- an unlabelled mention is how a reader
 gets taught to reach for the class form without knowing it is the advanced face.
 
 The older guard only watched a hand-picked list of recommended files, so a
-mention added to (say) ``docs/wiki/middleware.md`` would have gone unnoticed.
+mention added to (say) ``docs/internals/middleware.md`` would have gone unnoticed.
 These tests cover the whole public documentation and example surface instead,
 and prove the check itself can go red.
 """
@@ -111,9 +111,9 @@ def test_recommended_files_never_mention_the_class_form(rel_path):
 def test_the_guard_flags_an_unlabelled_wiki_page():
     """Red side: this is the hole the file-list guard used to leave open."""
     offenders = find_unlabelled_mentions([
-        ("docs/wiki/middleware.md", "app = Application(main)\napp.run()\n"),
+        ("docs/internals/middleware.md", "app = Application(main)\napp.run()\n"),
     ])
-    assert offenders == ["docs/wiki/middleware.md"]
+    assert offenders == ["docs/internals/middleware.md"]
 
 
 def test_the_guard_flags_an_unlabelled_example():
@@ -127,13 +127,13 @@ def test_the_guard_flags_an_unlabelled_example():
 def test_the_guard_accepts_a_labelled_mention(marker):
     """Green side: a labelled mention must pass, in either language."""
     offenders = find_unlabelled_mentions([
-        ("docs/wiki/whatever.md", f"Application(...) is the {marker}.\n"),
+        ("docs/internals/whatever.md", f"Application(...) is the {marker}.\n"),
     ])
     assert offenders == []
 
 
 def test_the_guard_ignores_files_without_the_class_form():
     offenders = find_unlabelled_mentions([
-        ("docs/wiki/plain.md", "@configure(middlewares=[AuditMiddleware])\n"),
+        ("docs/internals/plain.md", "@configure(middlewares=[AuditMiddleware])\n"),
     ])
     assert offenders == []

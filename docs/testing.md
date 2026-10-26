@@ -103,6 +103,6 @@ Representative files:
 
 ## Related documents
 
-- [Application Runtime Model](wiki/application_runtime.md)
+- [Application Runtime Model](internals/application_runtime.md)
 - [Architecture](architecture.md)
 - [Web Runtime Guide](web_runtime_guide.md)

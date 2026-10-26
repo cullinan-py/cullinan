@@ -6,7 +6,7 @@ author: "plumeink"
 reviewers: []
 status: updated
 locale: zh
-translation_pair: "docs/wiki/middleware.md"
+translation_pair: "docs/internals/middleware.md"
 related_tests: ["tests/web/test_web_runtime.py"]
 related_examples: []
 estimate_pd: 1.0
