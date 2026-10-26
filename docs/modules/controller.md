@@ -15,6 +15,9 @@ pr_links: []
 
 # cullinan.web.controller
 
+This page lists the entrypoints worth starting from, not the full export surface. For every symbol the module exports, see the generated [API reference](../reference/api/index.md).
+
+
 `cullinan.web.controller` contains the controller decorator plus REST-style route decorators and compatibility registries.
 
 ## Main exports

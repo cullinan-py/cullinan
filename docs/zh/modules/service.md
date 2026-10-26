@@ -15,6 +15,9 @@ pr_links: []
 
 # cullinan.core.services
 
+本页只列出值得作为起点的入口，**不是该模块的完整导出面**。完整符号清单见自动生成的 [API 参考](../reference/api/index.md)。
+
+
 `cullinan.core.services` 承载高级 Service 基类与 registry helper。对大多数业务代码，`@service` 与依赖标记应直接从 `cullinan.core` 导入。
 
 ## 主要导出

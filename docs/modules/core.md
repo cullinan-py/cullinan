@@ -15,6 +15,9 @@ pr_links: []
 
 # cullinan.core
 
+This page lists the entrypoints worth starting from, not the full export surface. For every symbol the module exports, see the generated [API reference](../reference/api/index.md).
+
+
 `cullinan.core` is the public facade for Cullinan's unified container, lifecycle, and request-context APIs.
 
 ## Recommended entrypoints

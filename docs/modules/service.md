@@ -15,6 +15,9 @@ pr_links: []
 
 # cullinan.core.services
 
+This page lists the entrypoints worth starting from, not the full export surface. For every symbol the module exports, see the generated [API reference](../reference/api/index.md).
+
+
 `cullinan.core.services` holds the advanced service base class and registry helpers. For most application code, import `@service` and dependency markers from `cullinan.core`.
 
 ## Main exports

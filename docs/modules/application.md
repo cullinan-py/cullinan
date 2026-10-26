@@ -15,6 +15,9 @@ pr_links: []
 
 # cullinan.application
 
+This page lists the entrypoints worth starting from, not the full export surface. For every symbol the module exports, see the generated [API reference](../reference/api/index.md).
+
+
 `cullinan.application` is the semantic package for application definition and
 advanced public application composition. Regular applications should prefer the shorter
 top-level `cullinan` startup API, but maintainers and advanced integrations

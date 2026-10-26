@@ -15,6 +15,9 @@ pr_links: []
 
 # cullinan.core
 
+本页只列出值得作为起点的入口，**不是该模块的完整导出面**。完整符号清单见自动生成的 [API 参考](../reference/api/index.md)。
+
+
 `cullinan.core` 是 Cullinan 统一容器、生命周期与请求上下文 API 的公开门面。
 
 ## 推荐入口

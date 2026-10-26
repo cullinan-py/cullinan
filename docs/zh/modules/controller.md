@@ -15,6 +15,9 @@ pr_links: []
 
 # cullinan.web.controller
 
+本页只列出值得作为起点的入口，**不是该模块的完整导出面**。完整符号清单见自动生成的 [API 参考](../reference/api/index.md)。
+
+
 `cullinan.web.controller` 包含控制器装饰器、REST 风格路由装饰器以及兼容层 registry API。
 
 ## 主要导出

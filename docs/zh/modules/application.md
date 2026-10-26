@@ -15,6 +15,9 @@ pr_links: []
 
 # cullinan.application
 
+本页只列出值得作为起点的入口，**不是该模块的完整导出面**。完整符号清单见自动生成的 [API 参考](../reference/api/index.md)。
+
+
 `cullinan.application` 是应用定义与高级公开应用装配语义包。常规应用应优先使用更短的
 顶层 `cullinan` 启动 API；但维护者和高级集成场景在需要更完整的应用模型时，仍然会落到这里：
 
