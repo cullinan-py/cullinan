@@ -6,6 +6,7 @@ predicate. The gate's own ``--self-test`` provides the end-to-end red/green
 contrast, and the CI job / release tag gate wire it into the pipeline.
 """
 import importlib.util
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -245,4 +246,24 @@ def test_the_grandfather_baseline_cannot_drift():
     commit, in plain sight. A baseline that can be nudged by a later commit is
     not a baseline, it is an escape hatch.
     """
-    assert gate.GATE_BASELINE == "3fe65f7"
+    assert gate.GATE_BASELINE == "f2148b7ffcb64eed40b2e92156f4aa36e2b418cf"
+
+
+def test_the_baseline_is_reachable_from_head():
+    """A baseline that cannot be resolved exempts nobody, and exempts silently.
+
+    Rewriting history moves the baseline commit to a new sha. The old one stays
+    in the object database as an orphan, so "the object exists" is not enough:
+    every commit after it stops being its descendant and the gate starts
+    reporting red on commits that were never meant to be judged. Asking whether
+    it is an ancestor of HEAD is what catches that.
+    """
+    repo = str(Path(gate.__file__).resolve().parents[1])
+    result = subprocess.run(
+        ["git", "-C", repo, "merge-base", "--is-ancestor", gate.GATE_BASELINE, "HEAD"],
+        capture_output=True,
+    )
+    assert result.returncode == 0, (
+        "GATE_BASELINE is not an ancestor of HEAD; if history was rewritten, point it "
+        "at the rewritten commit in the same change"
+    )
