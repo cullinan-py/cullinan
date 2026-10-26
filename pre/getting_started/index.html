@@ -2027,7 +2027,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/application_runtime/" class="md-nav__link">
+      <a href="../internals/application_runtime/" class="md-nav__link">
         
   
   
@@ -2062,7 +2062,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/components/" class="md-nav__link">
+      <a href="../internals/components/" class="md-nav__link">
         
   
   
@@ -2097,7 +2097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/decorators/" class="md-nav__link">
+      <a href="../internals/decorators/" class="md-nav__link">
         
   
   
@@ -2125,7 +2125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/injection/" class="md-nav__link">
+      <a href="../internals/injection/" class="md-nav__link">
         
   
   
@@ -2160,7 +2160,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/lifecycle/" class="md-nav__link">
+      <a href="../internals/lifecycle/" class="md-nav__link">
         
   
   
@@ -2195,7 +2195,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/middleware/" class="md-nav__link">
+      <a href="../internals/middleware/" class="md-nav__link">
         
   
   
@@ -2230,7 +2230,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/extensions/" class="md-nav__link">
+      <a href="../internals/extensions/" class="md-nav__link">
         
   
   
@@ -2265,7 +2265,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/restful_api/" class="md-nav__link">
+      <a href="../internals/restful_api/" class="md-nav__link">
         
   
   
@@ -3008,7 +3008,7 @@ Common options:
 
 </details>
 
-<p>For a deeper dive into URL patterns and all decorator options, see <code>wiki/restful_api.md</code>.</p>
+<p>For a deeper dive into URL patterns and all decorator options, see <code>internals/restful_api.md</code>.</p>
 <hr />
 <h4 id="recommended-dependency-injection-approaches">Recommended Dependency Injection Approaches<a class="headerlink" href="#recommended-dependency-injection-approaches" title="Permanent link">&para;</a></h4>
 <p><strong>Approach 1: Constructor Injection (Recommended)</strong></p>
@@ -3085,7 +3085,7 @@ Common options:
 - <strong>Inject</strong>: Explicit syntax for legacy compatibility or when explicit injection semantics are preferred
 - <strong>InjectByName</strong>: Useful for decoupling or avoiding circular imports
 - <strong>Inject + TYPE_CHECKING</strong>: Best for strong editor support without runtime import coupling</p>
-<p>For detailed information on injection patterns, see <code>wiki/injection.md</code>.</p>
+<p>For detailed information on injection patterns, see <code>internals/injection.md</code>.</p>
 <h2 id="common-patterns">Common patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="adding-middleware">Adding middleware<a class="headerlink" href="#adding-middleware" title="Permanent link">&para;</a></h3>
 <p><div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayMiddleware</span>
@@ -3097,7 +3097,7 @@ Common options:
         <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
 </code></pre></div>
 Declare it with <code>configure(middlewares=[LoggingMiddleware])</code>, or pass an instance
-you own. See <a href="../wiki/middleware/">Middleware</a> for the two declaration forms and
+you own. See <a href="../internals/middleware/">Middleware</a> for the two declaration forms and
 their object ownership.</p>
 <h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.support.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">CullinanConfig</span>
@@ -3112,16 +3112,16 @@ their object ownership.</p>
 </ul>
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Read <code>wiki/injection.md</code> for IoC/DI details.</li>
+<li>Read <code>internals/injection.md</code> for IoC/DI details.</li>
 <li>Explore <code>examples/</code> for runnable samples.</li>
 </ul>
 <h2 id="additional-resources">Additional resources<a class="headerlink" href="#additional-resources" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Architecture</strong>: See <code>architecture.md</code> for system design overview</li>
-<li><strong>Application runtime</strong>: Read <code>wiki/application_runtime.md</code> for module graph, ownership, and draining</li>
-<li><strong>Components</strong>: Read <code>wiki/components.md</code> for component responsibilities</li>
-<li><strong>Lifecycle</strong>: Learn about application lifecycle in <code>wiki/lifecycle.md</code></li>
-<li><strong>Middleware</strong>: Understand middleware in <code>wiki/middleware.md</code></li>
+<li><strong>Application runtime</strong>: Read <code>internals/application_runtime.md</code> for module graph, ownership, and draining</li>
+<li><strong>Components</strong>: Read <code>internals/components.md</code> for component responsibilities</li>
+<li><strong>Lifecycle</strong>: Learn about application lifecycle in <code>internals/lifecycle.md</code></li>
+<li><strong>Middleware</strong>: Understand middleware in <code>internals/middleware.md</code></li>
 <li><strong>API Reference</strong>: Browse <code>api_reference.md</code> for complete API documentation</li>
 <li><strong>Examples</strong>: Explore <code>examples/</code> directory for more samples</li>
 </ul>

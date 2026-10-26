@@ -22,13 +22,6 @@
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/architecture/"/>
     </url>
     <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/bugfix_controller_di/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/bugfix_controller_di/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/bugfix_controller_di/"/>
-    </url>
-    <url>
         <loc>https://cullinan-py.github.io/cullinan/pre/build_run/</loc>
         <lastmod>2026-10-26</lastmod>
         <changefreq>daily</changefreq>
@@ -190,6 +183,62 @@
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/"/>
     </url>
     <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/internals/application_runtime/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/application_runtime/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/application_runtime/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/internals/components/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/components/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/components/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/internals/decorators/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/decorators/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/decorators/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/internals/extensions/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/extensions/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/extensions/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/internals/injection/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/injection/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/injection/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/internals/lifecycle/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/lifecycle/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/lifecycle/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/internals/middleware/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/middleware/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/middleware/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/internals/restful_api/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/restful_api/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/restful_api/"/>
+    </url>
+    <url>
         <loc>https://cullinan-py.github.io/cullinan/pre/migration/</loc>
         <lastmod>2026-10-26</lastmod>
         <changefreq>daily</changefreq>
@@ -274,69 +323,6 @@
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/start/"/>
     </url>
     <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/template/release-note-template/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/template/release-note-template/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/template/release-note-template/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/application_runtime/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/application_runtime/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/application_runtime/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/components/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/components/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/components/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/decorators/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/decorators/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/decorators/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/extensions/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/extensions/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/extensions/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/injection/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/injection/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/injection/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/lifecycle/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/lifecycle/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/lifecycle/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/middleware/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/middleware/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/middleware/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/wiki/restful_api/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/restful_api/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/restful_api/"/>
-    </url>
-    <url>
         <loc>https://cullinan-py.github.io/cullinan/pre/zh/</loc>
         <lastmod>2026-10-26</lastmod>
         <changefreq>daily</changefreq>
@@ -356,13 +342,6 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/architecture/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/architecture/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/bugfix_controller_di/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/bugfix_controller_di/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/bugfix_controller_di/"/>
     </url>
     <url>
         <loc>https://cullinan-py.github.io/cullinan/pre/zh/build_run/</loc>
@@ -526,6 +505,62 @@
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/"/>
     </url>
     <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/internals/application_runtime/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/application_runtime/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/application_runtime/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/internals/components/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/components/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/components/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/internals/decorators/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/decorators/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/decorators/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/internals/extensions/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/extensions/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/extensions/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/internals/injection/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/injection/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/injection/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/internals/lifecycle/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/lifecycle/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/lifecycle/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/internals/middleware/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/middleware/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/middleware/"/>
+    </url>
+    <url>
+        <loc>https://cullinan-py.github.io/cullinan/pre/zh/internals/restful_api/</loc>
+        <lastmod>2026-10-26</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/internals/restful_api/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/internals/restful_api/"/>
+    </url>
+    <url>
         <loc>https://cullinan-py.github.io/cullinan/pre/zh/migration/</loc>
         <lastmod>2026-10-26</lastmod>
         <changefreq>daily</changefreq>
@@ -608,68 +643,5 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/start/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/start/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/template/release-note-template/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/template/release-note-template/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/template/release-note-template/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/application_runtime/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/application_runtime/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/application_runtime/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/components/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/components/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/components/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/decorators/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/decorators/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/decorators/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/extensions/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/extensions/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/extensions/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/injection/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/injection/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/injection/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/lifecycle/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/lifecycle/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/lifecycle/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/middleware/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/middleware/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/middleware/"/>
-    </url>
-    <url>
-        <loc>https://cullinan-py.github.io/cullinan/pre/zh/wiki/restful_api/</loc>
-        <lastmod>2026-10-26</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://cullinan-py.github.io/cullinan/pre/zh/wiki/restful_api/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://cullinan-py.github.io/cullinan/pre/wiki/restful_api/"/>
     </url>
 </urlset>

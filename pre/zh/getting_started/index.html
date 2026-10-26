@@ -2036,7 +2036,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/application_runtime/" class="md-nav__link">
+      <a href="../internals/application_runtime/" class="md-nav__link">
         
   
   
@@ -2071,7 +2071,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/components/" class="md-nav__link">
+      <a href="../internals/components/" class="md-nav__link">
         
   
   
@@ -2106,7 +2106,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/decorators/" class="md-nav__link">
+      <a href="../internals/decorators/" class="md-nav__link">
         
   
   
@@ -2134,7 +2134,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/injection/" class="md-nav__link">
+      <a href="../internals/injection/" class="md-nav__link">
         
   
   
@@ -2169,7 +2169,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/lifecycle/" class="md-nav__link">
+      <a href="../internals/lifecycle/" class="md-nav__link">
         
   
   
@@ -2204,7 +2204,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/middleware/" class="md-nav__link">
+      <a href="../internals/middleware/" class="md-nav__link">
         
   
   
@@ -2239,7 +2239,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/extensions/" class="md-nav__link">
+      <a href="../internals/extensions/" class="md-nav__link">
         
   
   
@@ -2274,7 +2274,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wiki/restful_api/" class="md-nav__link">
+      <a href="../internals/restful_api/" class="md-nav__link">
         
   
   
@@ -3029,7 +3029,7 @@ python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </sp
 
 </details>
 
-<p>如需了解 URL 模板与各装饰器参数的完整说明，请参考 <code>wiki/restful_api.md</code>。</p>
+<p>如需了解 URL 模板与各装饰器参数的完整说明，请参考 <code>internals/restful_api.md</code>。</p>
 <hr />
 <h4 id="_10">推荐的依赖注入方式<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h4>
 <p><strong>方式一：构造注入（推荐）</strong></p>
@@ -3106,7 +3106,7 @@ python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </sp
 - <strong>Inject</strong>：兼容旧代码的显式注入语法，或需要显式注入语义时使用
 - <strong>InjectByName</strong>：适合解耦或规避循环导入
 - <strong>Inject + TYPE_CHECKING</strong>：兼顾运行时解耦与编辑器类型支持</p>
-<p>有关注入模式的详细信息，请参阅 <code>wiki/injection.md</code>。</p>
+<p>有关注入模式的详细信息，请参阅 <code>internals/injection.md</code>。</p>
 <h2 id="_11">常见模式<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <h3 id="_12">添加中间件<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
 <p><div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayMiddleware</span>
@@ -3118,7 +3118,7 @@ python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </sp
         <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
 </code></pre></div>
 用 <code>configure(middlewares=[LoggingMiddleware])</code> 声明它，或传入你自己持有的实例。
-两种声明写法及其对象归属见<a href="../wiki/middleware/">中间件</a>。</p>
+两种声明写法及其对象归属见<a href="../internals/middleware/">中间件</a>。</p>
 <h3 id="_13">配置<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.support.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">CullinanConfig</span>
 
@@ -3133,16 +3133,16 @@ python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </sp
 </ul>
 <h2 id="_15">下一步<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h2>
 <ul>
-<li>阅读 <code>wiki/injection.md</code> 了解 IoC/DI 细节。</li>
+<li>阅读 <code>internals/injection.md</code> 了解 IoC/DI 细节。</li>
 <li>浏览 <code>examples/</code> 目录查看可运行示例。</li>
 </ul>
 <h2 id="_16">其他资源<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>架构</strong>：参阅 <code>architecture.md</code> 了解系统设计概览</li>
-<li><strong>应用运行时</strong>：阅读 <code>wiki/application_runtime.md</code> 了解模块图、归属与 draining</li>
-<li><strong>组件</strong>：阅读 <code>wiki/components.md</code> 了解组件职责</li>
-<li><strong>生命周期</strong>：在 <code>wiki/lifecycle.md</code> 中学习应用生命周期</li>
-<li><strong>中间件</strong>：在 <code>wiki/middleware.md</code> 中理解中间件</li>
+<li><strong>应用运行时</strong>：阅读 <code>internals/application_runtime.md</code> 了解模块图、归属与 draining</li>
+<li><strong>组件</strong>：阅读 <code>internals/components.md</code> 了解组件职责</li>
+<li><strong>生命周期</strong>：在 <code>internals/lifecycle.md</code> 中学习应用生命周期</li>
+<li><strong>中间件</strong>：在 <code>internals/middleware.md</code> 中理解中间件</li>
 <li><strong>API 参考</strong>：浏览 <code>api_reference.md</code> 查看完整 API 文档</li>
 <li><strong>示例</strong>：探索 <code>examples/</code> 目录获取更多示例</li>
 </ul>
