@@ -472,8 +472,8 @@ def test_onion_protocol_is_registered_as_a_middleware_extension_point():
 
 
 def test_middleware_wiki_documents_both_protocols_and_recommends_the_onion_one():
-    en = _read("docs/wiki/middleware.md")
-    zh = _read("docs/zh/wiki/middleware.md")
+    en = _read("docs/internals/middleware.md")
+    zh = _read("docs/zh/internals/middleware.md")
 
     for content in (en, zh):
         assert "GatewayMiddleware" in content

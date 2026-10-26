@@ -10,10 +10,13 @@ translation_pair: "docs/modules/application.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/core/test_decorators.py", "tests/di/test_global_container_manager.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-05-31T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.application
+
+本页只列出值得作为起点的入口，**不是该模块的完整导出面**。完整符号清单见自动生成的 [API 参考](../reference/api/index.md)。
+
 
 `cullinan.application` 是应用定义与高级公开应用装配语义包。常规应用应优先使用更短的
 顶层 `cullinan` 启动 API；但维护者和高级集成场景在需要更完整的应用模型时，仍然会落到这里：
@@ -95,5 +98,5 @@ class RootModule:
 
 ## 相关文档
 
-- [应用运行时模型](../wiki/application_runtime.md)
-- [应用生命周期](../wiki/lifecycle.md)
+- [应用运行时模型](../internals/application_runtime.md)
+- [应用生命周期](../internals/lifecycle.md)

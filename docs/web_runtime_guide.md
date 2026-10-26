@@ -10,7 +10,7 @@ translation_pair: "docs/zh/web_runtime_guide.md"
 related_tests: ["tests/web/test_web_runtime.py"]
 related_examples: ["examples/minimal_app", "examples/middleware_and_module"]
 estimate_pd: 1.5
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Web Runtime Guide
@@ -131,5 +131,5 @@ Use these names in new documentation and code:
 
 See also:
 
-- [RESTful API wiki](wiki/restful_api.md)
+- [RESTful API wiki](internals/restful_api.md)
 - [Architecture](architecture.md)

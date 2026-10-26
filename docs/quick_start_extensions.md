@@ -1,3 +1,5 @@
+last_updated: "2026-10-27"
+
 # Cullinan Extension Registration Quick Start
 
 > **Feature**: Unified Extension Registration and Discovery Pattern  
@@ -290,7 +292,7 @@ A: Decorator registration overhead is minimal (~1μs), with no runtime overhead.
 
 - **Example Code**: `examples/extension_registration_demo.py`
 - **Extension Development Guide**: `docs/extension_development_guide.md`
-- **Middleware Details**: `docs/wiki/middleware.md`
+- **Middleware Details**: `docs/internals/middleware.md`
 
 ---
 

@@ -10,10 +10,13 @@ translation_pair: "docs/zh/modules/service.md"
 related_tests: ["tests/integration/test_service_lifecycle_integration.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-05-30T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.core.services
+
+This page lists the entrypoints worth starting from, not the full export surface. For every symbol the module exports, see the generated [API reference](../reference/api/index.md).
+
 
 `cullinan.core.services` holds the advanced service base class and registry helpers. For most application code, import `@service` and dependency markers from `cullinan.core`.
 
@@ -49,4 +52,4 @@ For most code, use `@service` plus dependency markers and let the active `Applic
 ## See also
 
 - [Dependency Injection Guide](../dependency_injection_guide.md)
-- [Application Lifecycle](../wiki/lifecycle.md)
+- [Application Lifecycle](../internals/lifecycle.md)

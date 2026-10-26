@@ -10,7 +10,7 @@ translation_pair: "docs/how-to/index.md"
 related_tests: ["tests/core/test_developer_experience.py", "tests/web/test_openapi_generator.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # 工程实践

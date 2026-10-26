@@ -10,7 +10,7 @@ translation_pair: "docs/README.md"
 related_tests: []
 related_examples: []
 estimate_pd: 0.5
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Cullinan 文档
@@ -69,7 +69,7 @@ pr_links: []
 
 只有在你明确需要高级运行时或扩展知识时才进入这里。
 
-- [应用运行时模型](wiki/application_runtime.md)
+- [应用运行时模型](internals/application_runtime.md)
 - [扩展开发指南](extension_development_guide.md)
 - [扩展快速入门](quick_start_extensions.md)
 

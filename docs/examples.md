@@ -10,7 +10,7 @@ translation_pair: "docs/zh/examples.md"
 related_tests: ["tests/integration/test_examples_public_guides.py"]
 related_examples: ["examples/minimal_app", "examples/controller_service_inject", "examples/middleware_and_module", "examples/middleware_pipeline", "examples/middleware_control", "examples/parameter_handling", "examples/testing_flow"]
 estimate_pd: 1.5
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Examples and Guidance
@@ -77,6 +77,6 @@ The current example set intentionally keeps Cullinan's own concept front and cen
 - Middleware has several maintained examples: `examples/middleware_pipeline/` uses the
   recommended onion protocol, `examples/middleware_ownership/` shows the two declaration
   forms and their object ownership, while `examples/middleware_and_module/` uses the
-  compatibility protocol. See [Middleware](wiki/middleware.md).
+  compatibility protocol. See [Middleware](internals/middleware.md).
 - If you are learning Cullinan for the first time, start with `examples/minimal_app/` and then
   continue to `examples/controller_service_inject/`.

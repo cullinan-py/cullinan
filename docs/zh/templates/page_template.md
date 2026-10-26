@@ -10,7 +10,7 @@ translation_pair: "docs/<same-path>.md"
 related_tests: []
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2025-11-18T00:00:00Z"
+last_updated: "2025-11-18"
 pr_links: []
 
 # <简短标题>

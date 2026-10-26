@@ -10,10 +10,13 @@ translation_pair: "docs/zh/modules/controller.md"
 related_tests: ["tests/web/test_handler_module.py", "tests/web/test_web_runtime.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-05-30T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.web.controller
+
+This page lists the entrypoints worth starting from, not the full export surface. For every symbol the module exports, see the generated [API reference](../reference/api/index.md).
+
 
 `cullinan.web.controller` contains the controller decorator plus REST-style route decorators and compatibility registries.
 
@@ -55,5 +58,5 @@ New applications should treat controllers as part of the unified `ApplicationCon
 
 ## See also
 
-- [RESTful API wiki](../wiki/restful_api.md)
+- [RESTful API wiki](../internals/restful_api.md)
 - [Web Runtime Guide](../web_runtime_guide.md)

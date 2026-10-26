@@ -10,7 +10,7 @@ translation_pair: "docs/zh/api_reference.md"
 related_tests: []
 related_examples: []
 estimate_pd: 1.5
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # API Reference

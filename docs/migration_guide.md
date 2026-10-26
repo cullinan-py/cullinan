@@ -1,3 +1,5 @@
+last_updated: "2026-10-27"
+
 # Cullinan 0.93 Migration Guide
 
 > **Version**: v0.90  

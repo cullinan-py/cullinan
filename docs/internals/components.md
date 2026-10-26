@@ -6,11 +6,11 @@ author: "plumeink"
 reviewers: []
 status: updated
 locale: en
-translation_pair: "docs/zh/wiki/components.md"
+translation_pair: "docs/zh/internals/components.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/web/test_web_runtime.py", "tests/integration/test_service_lifecycle_integration.py", "tests/core/test_strict_assembly.py"]
 related_examples: []
 estimate_pd: 1.5
-last_updated: "2026-05-31T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Components

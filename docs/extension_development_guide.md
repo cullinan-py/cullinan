@@ -2,7 +2,7 @@
 
 > **Version**: 0.96a6
 > **Author**: plumeink  
-> **Last Updated**: 2026-09-28
+> **Last Updated**: 2026-10-27
 
 > **Advanced topic:** this guide is for framework extension work, not the default
 > application learning path.
@@ -650,7 +650,7 @@ class TestMyMiddleware(ServiceTestCase):
 
 ## Further Reading
 
-- [Wiki Extensions](wiki/extensions.md) - Extension patterns and best practices
+- [Extensions](internals/extensions.md) - Extension patterns and best practices
 - [Dependency Injection Guide](dependency_injection_guide.md) - DI system documentation
 - [Quick Start Extensions](quick_start_extensions.md) - Quick start guide for extensions
 

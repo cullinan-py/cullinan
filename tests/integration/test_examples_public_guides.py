@@ -143,14 +143,14 @@ _EXPECTED_EXEMPT_BLOCK_HEADINGS = {
 _UNPARSEABLE_PYTHON_BLOCK_REGISTRY = {
     ("migration_guide.md", "ae21a01a6f41da35"): "exception transcript, not python",
     ("migration_guide.md", "6fe4e6d66b1407b3"): "exception transcript, not python",
-    ("wiki/decorators.md", "48092db847348ed7"): "list-indented decorator snippet",
-    ("wiki/decorators.md", "7339b6c7c292229d"): "list-indented method snippet",
-    ("wiki/injection.md", "c0a8d61cc95caa59"): "list-indented class-body snippet",
+    ("internals/decorators.md", "48092db847348ed7"): "list-indented decorator snippet",
+    ("internals/decorators.md", "7339b6c7c292229d"): "list-indented method snippet",
+    ("internals/injection.md", "c0a8d61cc95caa59"): "list-indented class-body snippet",
     ("zh/migration_guide.md", "f9bfad16a7018de9"): "exception transcript, not python",
     ("zh/migration_guide.md", "6425d12359b2bd33"): "exception transcript, not python",
-    ("zh/wiki/decorators.md", "212921b13424a2b0"): "list-indented decorator snippet",
-    ("zh/wiki/decorators.md", "7339b6c7c292229d"): "list-indented method snippet",
-    ("zh/wiki/injection.md", "fc0322cfe8f06542"): "list-indented class-body snippet",
+    ("zh/internals/decorators.md", "212921b13424a2b0"): "list-indented decorator snippet",
+    ("zh/internals/decorators.md", "7339b6c7c292229d"): "list-indented method snippet",
+    ("zh/internals/injection.md", "fc0322cfe8f06542"): "list-indented class-body snippet",
 }
 
 # Code blocks whose cullinan imports are deliberately non-resolvable: they are
@@ -815,8 +815,8 @@ def test_tornado_decoupling_docs_keep_top_level_startup_and_backend_neutral_term
     zh_architecture = _read_zh_doc_file("architecture.md")
     framework_semantics = _read_doc_file("framework_semantics.md")
     zh_framework_semantics = _read_zh_doc_file("framework_semantics.md")
-    components = _read_doc_file("wiki", "components.md")
-    zh_components = _read_zh_doc_file("wiki", "components.md")
+    components = _read_doc_file("internals", "components.md")
+    zh_components = _read_zh_doc_file("internals", "components.md")
     migration_v2 = _read_doc_file("migration_guide_v2.md")
     zh_migration_v2 = _read_zh_doc_file("migration_guide_v2.md")
 

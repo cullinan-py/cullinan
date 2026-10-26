@@ -6,11 +6,11 @@ author: "plumeink"
 reviewers: []
 status: updated
 locale: zh
-translation_pair: "docs/wiki/restful_api.md"
+translation_pair: "docs/internals/restful_api.md"
 related_tests: ["tests/web/test_web_runtime.py"]
 related_examples: []
 estimate_pd: 1.5
-last_updated: "2026-05-30T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # RESTful API

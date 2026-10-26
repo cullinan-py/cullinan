@@ -6,11 +6,11 @@ author: "plumeink"
 reviewers: []
 status: updated
 locale: en
-translation_pair: "docs/zh/wiki/injection.md"
+translation_pair: "docs/zh/internals/injection.md"
 related_tests: ["tests/di/test_core_constructor_injection.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # IoC & DI

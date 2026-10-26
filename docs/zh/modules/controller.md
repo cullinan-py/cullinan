@@ -10,10 +10,13 @@ translation_pair: "docs/modules/controller.md"
 related_tests: ["tests/web/test_handler_module.py", "tests/web/test_web_runtime.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-05-30T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.web.controller
+
+本页只列出值得作为起点的入口，**不是该模块的完整导出面**。完整符号清单见自动生成的 [API 参考](../reference/api/index.md)。
+
 
 `cullinan.web.controller` 包含控制器装饰器、REST 风格路由装饰器以及兼容层 registry API。
 
@@ -55,5 +58,5 @@ class UserController:
 
 ## 另见
 
-- [RESTful API wiki](../wiki/restful_api.md)
+- [RESTful API wiki](../internals/restful_api.md)
 - [Web Runtime 指南](../web_runtime_guide.md)

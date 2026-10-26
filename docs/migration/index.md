@@ -10,7 +10,7 @@ translation_pair: "docs/zh/migration/index.md"
 related_tests: []
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Migration & Version Notes

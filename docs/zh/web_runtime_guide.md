@@ -10,7 +10,7 @@ translation_pair: "docs/web_runtime_guide.md"
 related_tests: ["tests/web/test_web_runtime.py"]
 related_examples: ["examples/minimal_app", "examples/middleware_and_module"]
 estimate_pd: 1.5
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Web Runtime 指南
@@ -127,5 +127,5 @@ runtime_config = WebRuntimeConfig(drain_timeout=10.0)
 
 另见：
 
-- [RESTful API wiki](wiki/restful_api.md)
+- [RESTful API wiki](internals/restful_api.md)
 - [架构设计](architecture.md)

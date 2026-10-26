@@ -1,7 +1,7 @@
 # Cullinan 依赖注入指南
 
 > **版本**：0.96a6
-> **最后更新**：2026-06-01  
+> **最后更新**：2026-10-27
 > **状态**：已更新
 
 ## 概述
@@ -300,5 +300,5 @@ Cullinan 仍导出部分旧名称，但不应再作为主要编程模型：
 ## 相关文档
 
 - [架构设计](architecture.md)
-- [IoC 与 DI wiki](wiki/injection.md)
-- [应用生命周期](wiki/lifecycle.md)
+- [IoC 与 DI wiki](internals/injection.md)
+- [应用生命周期](internals/lifecycle.md)

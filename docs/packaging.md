@@ -1,3 +1,5 @@
+last_updated: "2026-10-27"
+
 # Packaging Guide — Module Discovery in Frozen Environments
 
 Cullinan v0.93a11.post2+ introduces a **unified strategy pipeline** for module

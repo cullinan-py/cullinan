@@ -10,10 +10,13 @@ translation_pair: "docs/modules/service.md"
 related_tests: ["tests/integration/test_service_lifecycle_integration.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-05-30T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.core.services
+
+本页只列出值得作为起点的入口，**不是该模块的完整导出面**。完整符号清单见自动生成的 [API 参考](../reference/api/index.md)。
+
 
 `cullinan.core.services` 承载高级 Service 基类与 registry helper。对大多数业务代码，`@service` 与依赖标记应直接从 `cullinan.core` 导入。
 
@@ -49,4 +52,4 @@ class UserService(Service):
 ## 另见
 
 - [依赖注入指南](../dependency_injection_guide.md)
-- [应用生命周期](../wiki/lifecycle.md)
+- [应用生命周期](../internals/lifecycle.md)

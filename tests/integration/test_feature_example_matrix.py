@@ -139,7 +139,7 @@ def test_each_feature_links_to_a_page_that_exists_in_both_languages():
 
 def test_the_monolingual_exception_list_does_not_grow_silently():
     """Only pages that were already monolingual may stay that way."""
-    allowed = {"packaging.md", "template/release-note-template.md"}
+    allowed = {"packaging.md", "templates/release-note-template.md"}
     docs_root = REPO_ROOT / "docs"
     missing = []
     for english in docs_root.rglob("*.md"):

@@ -10,7 +10,7 @@ translation_pair: "docs/zh/getting_started.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/integration/test_adapter_integration.py"]
 related_examples: ["examples/minimal_app"]
 estimate_pd: 2.0
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Getting Started with Cullinan
@@ -287,7 +287,7 @@ class UserController:
 
 </details>
 
-For a deeper dive into URL patterns and all decorator options, see `wiki/restful_api.md`.
+For a deeper dive into URL patterns and all decorator options, see `internals/restful_api.md`.
 
 ---
 
@@ -384,7 +384,7 @@ class UserRepository:
 - **InjectByName**: Useful for decoupling or avoiding circular imports
 - **Inject + TYPE_CHECKING**: Best for strong editor support without runtime import coupling
 
-For detailed information on injection patterns, see `wiki/injection.md`.
+For detailed information on injection patterns, see `internals/injection.md`.
 
 ## Common patterns
 
@@ -399,7 +399,7 @@ class LoggingMiddleware(GatewayMiddleware):
         return await call_next(request)
 ```
 Declare it with `configure(middlewares=[LoggingMiddleware])`, or pass an instance
-you own. See [Middleware](wiki/middleware.md) for the two declaration forms and
+you own. See [Middleware](internals/middleware.md) for the two declaration forms and
 their object ownership.
 
 ### Configuration
@@ -415,16 +415,16 @@ config.set_project_root(".")
 - If you encounter errors installing packages, ensure your Python and pip are up to date and that you have network access to PyPI.
 
 ## Next steps
-- Read `wiki/injection.md` for IoC/DI details.
+- Read `internals/injection.md` for IoC/DI details.
 - Explore `examples/` for runnable samples.
 
 ## Additional resources
 
 - **Architecture**: See `architecture.md` for system design overview
-- **Application runtime**: Read `wiki/application_runtime.md` for module graph, ownership, and draining
-- **Components**: Read `wiki/components.md` for component responsibilities
-- **Lifecycle**: Learn about application lifecycle in `wiki/lifecycle.md`
-- **Middleware**: Understand middleware in `wiki/middleware.md`
+- **Application runtime**: Read `internals/application_runtime.md` for module graph, ownership, and draining
+- **Components**: Read `internals/components.md` for component responsibilities
+- **Lifecycle**: Learn about application lifecycle in `internals/lifecycle.md`
+- **Middleware**: Understand middleware in `internals/middleware.md`
 - **API Reference**: Browse `api_reference.md` for complete API documentation
 - **Examples**: Explore `examples/` directory for more samples
 

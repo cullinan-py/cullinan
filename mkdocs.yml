@@ -46,14 +46,14 @@ nav:
       - service: modules/service.md
   - Internals:
     - Overview: internals/index.md
-    - Application Runtime: wiki/application_runtime.md
-    - Components: wiki/components.md
-    - Decorators: wiki/decorators.md
-    - Injection: wiki/injection.md
-    - Lifecycle: wiki/lifecycle.md
-    - Middleware: wiki/middleware.md
-    - Extensions: wiki/extensions.md
-    - RESTful API: wiki/restful_api.md
+    - Application Runtime: internals/application_runtime.md
+    - Components: internals/components.md
+    - Decorators: internals/decorators.md
+    - Injection: internals/injection.md
+    - Lifecycle: internals/lifecycle.md
+    - Middleware: internals/middleware.md
+    - Extensions: internals/extensions.md
+    - RESTful API: internals/restful_api.md
   - Migration:
     - Overview: migration/index.md
     - Import Migration (0.83 → 0.90): import_migration_090.md
@@ -62,26 +62,13 @@ nav:
     - Final Structure Migration (0.93a6 and earlier → final layout): migration_to_final_semantic_layout.md
 
 # Exclude internal documentation files from nav warnings
+# Every page lives in nav; the build fails on an orphan rather than hiding it.
 not_in_nav: |
-  /REFACTORING_VERIFICATION_REPORT.md
-  /bugfix_controller_di.md
-  /template/**
-  /templates/**
-  /work/**
-  /superpowers/**
-  /examples/*.py
-  /zh/bugfix_controller_di.md
-  /zh/templates/**
-  /zh/work/**
-  /zh/superpowers/**
+  # intentionally empty -- an orphan page is a defect, not a setting
 
-# Exclude work directories from being processed entirely
 exclude_docs: |
-  work/
-  zh/work/
   templates/
   zh/templates/
-  superpowers/
 
 # Hooks: separate griffe's annotation notes from build failures (see the module
 # docstring in scripts/mkdocs_hooks.py for why this is not a silent suppression).

@@ -10,7 +10,7 @@ translation_pair: "docs/zh/internals/index.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/integration/test_adapter_integration.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Internals & Extensions
@@ -22,14 +22,14 @@ applications should not start here.
 
 ## Typical advanced topics
 
-- [Application Runtime Model](../wiki/application_runtime.md)
-- [Components](../wiki/components.md)
-- [Decorators](../wiki/decorators.md)
-- [Injection](../wiki/injection.md)
-- [Lifecycle](../wiki/lifecycle.md)
-- [Middleware](../wiki/middleware.md)
-- [Extensions](../wiki/extensions.md)
-- [RESTful API](../wiki/restful_api.md)
+- [Application Runtime Model](../internals/application_runtime.md)
+- [Components](../internals/components.md)
+- [Decorators](../internals/decorators.md)
+- [Injection](../internals/injection.md)
+- [Lifecycle](../internals/lifecycle.md)
+- [Middleware](../internals/middleware.md)
+- [Extensions](../internals/extensions.md)
+- [RESTful API](../internals/restful_api.md)
 - [Extension Development Guide](../extension_development_guide.md)
 - [Quick Start Extensions](../quick_start_extensions.md)
 

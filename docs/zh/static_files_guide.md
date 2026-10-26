@@ -10,7 +10,7 @@ translation_pair: "docs/static_files_guide.md"
 related_tests: ["tests/web/test_static_files.py"]
 related_examples: ["examples/static_files_and_spa"]
 estimate_pd: 1.0
-last_updated: "2026-06-29T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # 静态文件与 SPA 指南

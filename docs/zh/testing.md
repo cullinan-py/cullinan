@@ -10,7 +10,7 @@ translation_pair: "docs/testing.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/core/test_public_api_boundaries.py", "tests/core/test_developer_experience.py", "tests/core/test_decorators.py", "tests/integration/test_adapter_integration.py", "tests/integration/test_gateway_integration.py", "tests/integration/test_examples_public_guides.py", "tests/web/test_openapi_generator.py", "tests/web/test_web_runtime.py", "tests/di/test_core_constructor_injection.py"]
 related_examples: ["examples/testing_flow"]
 estimate_pd: 1.5
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # 测试与验证
@@ -103,6 +103,6 @@ addopts = -ra
 
 ## 相关文档
 
-- [应用运行时模型](wiki/application_runtime.md)
+- [应用运行时模型](internals/application_runtime.md)
 - [架构设计](architecture.md)
 - [Web Runtime 指南](web_runtime_guide.md)

@@ -10,10 +10,13 @@ translation_pair: "docs/zh/modules/core.md"
 related_tests: ["tests/di/test_core_constructor_injection.py", "tests/integration/test_service_lifecycle_integration.py"]
 related_examples: []
 estimate_pd: 1.5
-last_updated: "2026-05-30T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.core
+
+This page lists the entrypoints worth starting from, not the full export surface. For every symbol the module exports, see the generated [API reference](../reference/api/index.md).
+
 
 `cullinan.core` is the public facade for Cullinan's unified container, lifecycle, and request-context APIs.
 

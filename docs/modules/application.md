@@ -10,10 +10,13 @@ translation_pair: "docs/zh/modules/application.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/core/test_decorators.py", "tests/di/test_global_container_manager.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-05-31T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.application
+
+This page lists the entrypoints worth starting from, not the full export surface. For every symbol the module exports, see the generated [API reference](../reference/api/index.md).
+
 
 `cullinan.application` is the semantic package for application definition and
 advanced public application composition. Regular applications should prefer the shorter
@@ -106,5 +109,5 @@ business decorators plus the top-level entry-method path.
 
 ## Related documents
 
-- [Application Runtime Model](../wiki/application_runtime.md)
-- [Application Lifecycle](../wiki/lifecycle.md)
+- [Application Runtime Model](../internals/application_runtime.md)
+- [Application Lifecycle](../internals/lifecycle.md)

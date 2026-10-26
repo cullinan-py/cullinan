@@ -10,7 +10,7 @@ translation_pair: "docs/internals/index.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/integration/test_adapter_integration.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # 运行时与扩展
@@ -21,14 +21,14 @@ pr_links: []
 
 ## 典型高级主题
 
-- [应用运行时模型](../wiki/application_runtime.md)
-- [组件](../wiki/components.md)
-- [装饰器](../wiki/decorators.md)
-- [注入](../wiki/injection.md)
-- [生命周期](../wiki/lifecycle.md)
-- [中间件](../wiki/middleware.md)
-- [扩展](../wiki/extensions.md)
-- [RESTful API](../wiki/restful_api.md)
+- [应用运行时模型](../internals/application_runtime.md)
+- [组件](../internals/components.md)
+- [装饰器](../internals/decorators.md)
+- [注入](../internals/injection.md)
+- [生命周期](../internals/lifecycle.md)
+- [中间件](../internals/middleware.md)
+- [扩展](../internals/extensions.md)
+- [RESTful API](../internals/restful_api.md)
 - [扩展开发指南](../extension_development_guide.md)
 - [扩展快速入门](../quick_start_extensions.md)
 

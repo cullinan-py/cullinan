@@ -10,7 +10,7 @@ translation_pair: "docs/getting_started.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/integration/test_adapter_integration.py"]
 related_examples: ["examples/minimal_app"]
 estimate_pd: 2.0
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Cullinan 快速开始
@@ -300,7 +300,7 @@ class UserController:
 
 </details>
 
-如需了解 URL 模板与各装饰器参数的完整说明，请参考 `wiki/restful_api.md`。
+如需了解 URL 模板与各装饰器参数的完整说明，请参考 `internals/restful_api.md`。
 
 ---
 
@@ -397,7 +397,7 @@ class UserRepository:
 - **InjectByName**：适合解耦或规避循环导入
 - **Inject + TYPE_CHECKING**：兼顾运行时解耦与编辑器类型支持
 
-有关注入模式的详细信息，请参阅 `wiki/injection.md`。
+有关注入模式的详细信息，请参阅 `internals/injection.md`。
 
 ## 常见模式
 
@@ -412,7 +412,7 @@ class LoggingMiddleware(GatewayMiddleware):
         return await call_next(request)
 ```
 用 `configure(middlewares=[LoggingMiddleware])` 声明它，或传入你自己持有的实例。
-两种声明写法及其对象归属见[中间件](wiki/middleware.md)。
+两种声明写法及其对象归属见[中间件](internals/middleware.md)。
 
 ### 配置
 ```python
@@ -428,16 +428,16 @@ config.set_project_root(".")
 - 如果在运行 PowerShell 命令时遇到权限问题，请检查 PowerShell 的执行策略或以管理员权限运行命令。
 
 ## 下一步
-- 阅读 `wiki/injection.md` 了解 IoC/DI 细节。
+- 阅读 `internals/injection.md` 了解 IoC/DI 细节。
 - 浏览 `examples/` 目录查看可运行示例。
 
 ## 其他资源
 
 - **架构**：参阅 `architecture.md` 了解系统设计概览
-- **应用运行时**：阅读 `wiki/application_runtime.md` 了解模块图、归属与 draining
-- **组件**：阅读 `wiki/components.md` 了解组件职责
-- **生命周期**：在 `wiki/lifecycle.md` 中学习应用生命周期
-- **中间件**：在 `wiki/middleware.md` 中理解中间件
+- **应用运行时**：阅读 `internals/application_runtime.md` 了解模块图、归属与 draining
+- **组件**：阅读 `internals/components.md` 了解组件职责
+- **生命周期**：在 `internals/lifecycle.md` 中学习应用生命周期
+- **中间件**：在 `internals/middleware.md` 中理解中间件
 - **API 参考**：浏览 `api_reference.md` 查看完整 API 文档
 - **示例**：探索 `examples/` 目录获取更多示例
 

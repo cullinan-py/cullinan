@@ -1,3 +1,5 @@
+last_updated: "2026-10-27"
+
 # Cullinan 0.90 Import Migration Guide
 
 This guide helps you migrate your imports from the old structure to the new 0.90 structure.
