@@ -9,7 +9,7 @@
         <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content="plumeink">
+        <meta name="author" content=""plumeink"">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/zh/packaging/">
@@ -18,7 +18,7 @@
         <link rel="prev" href="../quick_reference_di/">
       
       
-        <link rel="next" href="../testing/">
+        <link rel="next" href="../deployment/">
       
       
         
@@ -33,7 +33,7 @@
     
     
       
-        <title>打包 - Cullinan Documentation</title>
+        <title>"打包指南" - Cullinan Documentation</title>
       
     
     
@@ -56,6 +56,10 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
       <link rel="stylesheet" href="../../assets/stylesheets/version-switcher.css">
     
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
@@ -76,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#packaging-guide-module-discovery-in-frozen-environments" class="md-skip">
+        <a href="#_1" class="md-skip">
           跳转至
         </a>
       
@@ -92,10 +96,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a5"
+      data-current-version="0.96a6"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a5"
+      data-pre-version="0.96a6"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -146,7 +150,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              打包
+              "打包指南"
             
           </span>
         </div>
@@ -578,6 +582,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../why-cullinan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cullinan 是什么
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../framework_semantics/" class="md-nav__link">
         
   
@@ -916,6 +955,13 @@
   </span>
   
   
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
 
           <span class="md-nav__icon md-icon"></span>
         </label>
@@ -933,6 +979,13 @@
     
   </span>
   
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
   
 
       </a>
@@ -953,22 +1006,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick Start
+        快速开始
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Quick Start">
+    <nav class="md-nav" aria-label="快速开始">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#explicit-module-list-recommended-for-one-file-modes" class="md-nav__link">
+  <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Explicit Module List (Recommended for One-File Modes)
+        显式模块清单（单文件模式下推荐）
       
     </span>
   </a>
@@ -976,10 +1029,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#user-packages-recommended-for-directory-modes" class="md-nav__link">
+  <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        User Packages (Recommended for Directory Modes)
+        用户包（目录模式下推荐）
       
     </span>
   </a>
@@ -992,15 +1045,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#strategy-pipeline" class="md-nav__link">
+  <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Strategy Pipeline
+        策略流水线
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Strategy Pipeline">
+    <nav class="md-nav" aria-label="策略流水线">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1026,10 +1079,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#development" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Development
+        开发环境
       
     </span>
   </a>
@@ -1037,10 +1090,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#strategy-reference" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Strategy Reference
+        策略说明
       
     </span>
   </a>
@@ -1053,10 +1106,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#performance-improvements-v093a11post2" class="md-nav__link">
+  <a href="#v093a11post2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Performance Improvements (v0.93a11.post2+)
+        性能改进（v0.93a11.post2+）
       
     </span>
   </a>
@@ -1064,10 +1117,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#migration-from-v093a11" class="md-nav__link">
+  <a href="#v093a11" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Migration from v0.93a11
+        从 v0.93a11 迁移
       
     </span>
   </a>
@@ -1075,22 +1128,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Troubleshooting
+        故障排查
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Troubleshooting">
+    <nav class="md-nav" aria-label="故障排查">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#no-modules-discovered-in-one-file-mode" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       
-        No modules discovered in one-file mode
+        单文件模式下发现不到任何模块
       
     </span>
   </a>
@@ -1098,10 +1151,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#type-hints-resolution-error-after-class-reload-tests" class="md-nav__link">
+  <a href="#_10" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Type hints resolution error after class reload (tests)
+        类重载后类型提示解析报错（测试中）
       
     </span>
   </a>
@@ -1109,10 +1162,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#strategy-override-advanced" class="md-nav__link">
+  <a href="#_11" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Strategy override (advanced)
+        覆盖策略（进阶）
       
     </span>
   </a>
@@ -1128,6 +1181,41 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    生产部署
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+      </a>
     </li>
   
 
@@ -1408,7 +1496,7 @@
   <span class="md-ellipsis">
     
   
-    模块参考
+    自动生成的参考
   
 
     
@@ -1421,6 +1509,236 @@
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    自动生成的参考
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    总览
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/api/cullinan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cullinan
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/api/application/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cullinan.application
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/api/web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cullinan.web
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/api/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cullinan.core
+  
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    模块参考
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2182,22 +2500,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick Start
+        快速开始
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Quick Start">
+    <nav class="md-nav" aria-label="快速开始">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#explicit-module-list-recommended-for-one-file-modes" class="md-nav__link">
+  <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Explicit Module List (Recommended for One-File Modes)
+        显式模块清单（单文件模式下推荐）
       
     </span>
   </a>
@@ -2205,10 +2523,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#user-packages-recommended-for-directory-modes" class="md-nav__link">
+  <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        User Packages (Recommended for Directory Modes)
+        用户包（目录模式下推荐）
       
     </span>
   </a>
@@ -2221,15 +2539,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#strategy-pipeline" class="md-nav__link">
+  <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Strategy Pipeline
+        策略流水线
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Strategy Pipeline">
+    <nav class="md-nav" aria-label="策略流水线">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2255,10 +2573,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#development" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Development
+        开发环境
       
     </span>
   </a>
@@ -2266,10 +2584,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#strategy-reference" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Strategy Reference
+        策略说明
       
     </span>
   </a>
@@ -2282,10 +2600,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#performance-improvements-v093a11post2" class="md-nav__link">
+  <a href="#v093a11post2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Performance Improvements (v0.93a11.post2+)
+        性能改进（v0.93a11.post2+）
       
     </span>
   </a>
@@ -2293,10 +2611,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#migration-from-v093a11" class="md-nav__link">
+  <a href="#v093a11" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Migration from v0.93a11
+        从 v0.93a11 迁移
       
     </span>
   </a>
@@ -2304,22 +2622,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Troubleshooting
+        故障排查
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Troubleshooting">
+    <nav class="md-nav" aria-label="故障排查">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#no-modules-discovered-in-one-file-mode" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       
-        No modules discovered in one-file mode
+        单文件模式下发现不到任何模块
       
     </span>
   </a>
@@ -2327,10 +2645,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#type-hints-resolution-error-after-class-reload-tests" class="md-nav__link">
+  <a href="#_10" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Type hints resolution error after class reload (tests)
+        类重载后类型提示解析报错（测试中）
       
     </span>
   </a>
@@ -2338,10 +2656,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#strategy-override-advanced" class="md-nav__link">
+  <a href="#_11" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Strategy override (advanced)
+        覆盖策略（进阶）
       
     </span>
   </a>
@@ -2370,13 +2688,12 @@
 
 
 
-<h1 id="packaging-guide-module-discovery-in-frozen-environments">Packaging Guide — Module Discovery in Frozen Environments<a class="headerlink" href="#packaging-guide-module-discovery-in-frozen-environments" title="Permanent link">&para;</a></h1>
-<p>Cullinan v0.93a11.post2+ introduces a <strong>unified strategy pipeline</strong> for module
-discovery across all packaging tools (Nuitka, PyInstaller) and development
-environments.</p>
-<h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
-<h3 id="explicit-module-list-recommended-for-one-file-modes">Explicit Module List (Recommended for One-File Modes)<a class="headerlink" href="#explicit-module-list-recommended-for-one-file-modes" title="Permanent link">&para;</a></h3>
-<p>The most reliable approach for <code>--onefile</code> builds:</p>
+<h1 id="_1">打包指南 —— 冻结环境下的模块发现<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>Cullinan 自 v0.93a11.post2+ 起，把跨打包工具（Nuitka、PyInstaller）与开发环境的模块发现
+统一成一条<strong>策略流水线</strong>。</p>
+<h2 id="_2">快速开始<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h3 id="_3">显式模块清单（单文件模式下推荐）<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p><code>--onefile</code> 构建里最可靠的做法：</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span>
 
 <span class="n">configure</span><span class="p">(</span>
@@ -2384,40 +2701,39 @@ environments.</p>
     <span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"myapp"</span><span class="p">],</span>
 <span class="p">)</span>
 </code></pre></div>
-<p><strong><code>explicit_modules</code></strong> replaces the deprecated <code>nuitka_modules</code> (removed in
-v0.93a11.post2). It works with <strong>all</strong> packaging tools — Nuitka, PyInstaller, and
-any future freezer.</p>
-<h3 id="user-packages-recommended-for-directory-modes">User Packages (Recommended for Directory Modes)<a class="headerlink" href="#user-packages-recommended-for-directory-modes" title="Permanent link">&para;</a></h3>
-<p>For <code>--standalone</code> / <code>--onedir</code> builds where filesystem access is available:</p>
+<p><strong><code>explicit_modules</code></strong> 取代了已废弃的 <code>nuitka_modules</code>（v0.93a11.post2 移除）。它对<strong>所有</strong>
+打包工具都有效 —— Nuitka、PyInstaller，以及将来任何一种打包器。</p>
+<h3 id="_4">用户包（目录模式下推荐）<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>适用于 <code>--standalone</code> / <code>--onedir</code> 这类<strong>文件系统可达</strong>的构建：</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span>
 
 <span class="n">configure</span><span class="p">(</span>
     <span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"myapp"</span><span class="p">],</span>
-    <span class="n">auto_scan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># default</span>
+    <span class="n">auto_scan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># 默认值</span>
 <span class="p">)</span>
 </code></pre></div>
-<h2 id="strategy-pipeline">Strategy Pipeline<a class="headerlink" href="#strategy-pipeline" title="Permanent link">&para;</a></h2>
-<p>Cullinan now uses a <strong>composable pipeline</strong> of six independent strategies.
-Each pipeline is selected automatically based on <code>get_packaging_mode()</code>:</p>
+<h2 id="_5">策略流水线<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>Cullinan 现在由<strong>六个相互独立的策略</strong>组成一条可组合的流水线，具体走哪条由
+<code>get_packaging_mode()</code> 自动决定：</p>
 <h3 id="nuitka">Nuitka<a class="headerlink" href="#nuitka" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th>Mode</th>
-<th>Pipeline</th>
-<th>Notes</th>
+<th>模式</th>
+<th>流水线</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>--standalone</code></td>
 <td>S0 → S1 → S2 → S3 → S4</td>
-<td>Full filesystem scan</td>
+<td>完整文件系统扫描</td>
 </tr>
 <tr>
 <td><code>--onefile</code></td>
 <td>S0 → S1 → S2 → S3 → S5</td>
-<td>Skip S4 (no source files), use recursive <code>dir(pkg)</code> + <code>sys.modules</code> fallback</td>
+<td>跳过 S4（没有源文件），改用递归 <code>dir(pkg)</code> + <code>sys.modules</code> 兜底</td>
 </tr>
 </tbody>
 </table>
@@ -2425,102 +2741,100 @@ Each pipeline is selected automatically based on <code>get_packaging_mode()</cod
 <table>
 <thead>
 <tr>
-<th>Mode</th>
-<th>Pipeline</th>
-<th>Notes</th>
+<th>模式</th>
+<th>流水线</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>--onedir</code></td>
 <td>S0 → S1 → S4</td>
-<td><code>_MEIPASS</code> + executable dir scan</td>
+<td><code>_MEIPASS</code> + 可执行文件所在目录扫描</td>
 </tr>
 <tr>
 <td><code>--onefile</code></td>
 <td>S0 → S1 → S4</td>
-<td><code>_MEIPASS</code> temp extraction dir</td>
+<td><code>_MEIPASS</code> 解压临时目录</td>
 </tr>
 </tbody>
 </table>
-<h3 id="development">Development<a class="headerlink" href="#development" title="Permanent link">&para;</a></h3>
+<h3 id="_6">开发环境<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th>Mode</th>
-<th>Pipeline</th>
-<th>Notes</th>
+<th>模式</th>
+<th>流水线</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>development</code></td>
 <td>S0 → S1 → S2 → S3</td>
-<td><code>get_caller_package()</code> + fallback</td>
+<td><code>get_caller_package()</code> + 兜底</td>
 </tr>
 </tbody>
 </table>
-<h3 id="strategy-reference">Strategy Reference<a class="headerlink" href="#strategy-reference" title="Permanent link">&para;</a></h3>
+<h3 id="_7">策略说明<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th>Strategy</th>
-<th>Description</th>
-<th>Runs When</th>
+<th>策略</th>
+<th>作用</th>
+<th>触发条件</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong>S0: explicit_modules</strong></td>
-<td>User-provided explicit module list</td>
-<td><code>explicit_modules</code> is set</td>
+<td>用户显式给出的模块清单</td>
+<td>设置了 <code>explicit_modules</code></td>
 </tr>
 <tr>
 <td><strong>S1: user_packages</strong></td>
-<td>Configured packages via <code>pkgutil.walk_packages</code></td>
-<td><code>user_packages</code> is set</td>
+<td>通过 <code>pkgutil.walk_packages</code> 遍历配置的包</td>
+<td>设置了 <code>user_packages</code></td>
 </tr>
 <tr>
 <td><strong>S2: sys_modules_scan</strong></td>
-<td>Auto-scan <code>sys.modules</code> with path heuristics</td>
+<td>按路径启发式自动扫描 <code>sys.modules</code></td>
 <td><code>auto_scan=True</code></td>
 </tr>
 <tr>
 <td><strong>S3: main_module_inference</strong></td>
-<td>Infer package from <code>__main__.__file__</code></td>
-<td>Always</td>
+<td>由 <code>__main__.__file__</code> 反推包</td>
+<td>总是执行</td>
 </tr>
 <tr>
 <td><strong>S4: directory_scanning</strong></td>
-<td>Walk filesystem for <code>.py</code>/<code>.pyc</code>/<code>.pyd</code>/<code>.so</code></td>
-<td>Standalone/onedir modes</td>
+<td>遍历文件系统找 <code>.py</code>/<code>.pyc</code>/<code>.pyd</code>/<code>.so</code></td>
+<td>standalone/onedir 模式</td>
 </tr>
 <tr>
 <td><strong>S5: onefile_dir_fallback</strong></td>
-<td>Recursive <code>dir(pkg)</code> + <code>sys.modules</code> prefix scan</td>
-<td>One-file modes (last resort)</td>
+<td>递归 <code>dir(pkg)</code> + <code>sys.modules</code> 前缀扫描</td>
+<td>单文件模式（最后手段）</td>
 </tr>
 </tbody>
 </table>
-<h2 id="performance-improvements-v093a11post2">Performance Improvements (v0.93a11.post2+)<a class="headerlink" href="#performance-improvements-v093a11post2" title="Permanent link">&para;</a></h2>
+<h2 id="v093a11post2">性能改进（v0.93a11.post2+）<a class="headerlink" href="#v093a11post2" title="Permanent link">&para;</a></h2>
 <ol>
 <li>
-<p><strong>Global type hints cache</strong> — <code>typing.get_type_hints()</code> results are cached
-   at module level (shared across <code>ApplicationContext</code> instances). Previously
-   each context instance had its own cache, causing duplicate resolution.</p>
+<p><strong>类型提示全局缓存</strong> —— <code>typing.get_type_hints()</code> 的结果在模块级缓存，<strong>跨
+   <code>ApplicationContext</code> 实例共享</strong>。此前每个上下文实例各有一份缓存，导致重复解析。</p>
 </li>
 <li>
-<p><strong>Lazy source line</strong> — <code>inspect.getsourcelines()</code> is no longer called
-   during decorator registration. Source file paths are still captured; line
-   numbers are deferred to on-demand diagnostics.</p>
+<p><strong>源码行号延迟获取</strong> —— 注册装饰器时不再调用 <code>inspect.getsourcelines()</code>。源文件路径
+   仍然会记录，行号推迟到真正需要诊断时才取。</p>
 </li>
 </ol>
-<h2 id="migration-from-v093a11">Migration from v0.93a11<a class="headerlink" href="#migration-from-v093a11" title="Permanent link">&para;</a></h2>
+<h2 id="v093a11">从 v0.93a11 迁移<a class="headerlink" href="#v093a11" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Old API</th>
-<th>New API</th>
+<th>旧 API</th>
+<th>新 API</th>
 </tr>
 </thead>
 <tbody>
@@ -2530,27 +2844,26 @@ Each pipeline is selected automatically based on <code>get_packaging_mode()</cod
 </tr>
 <tr>
 <td><code>scan_modules_nuitka()</code></td>
-<td>Pipeline auto-selected</td>
+<td>流水线自动选择</td>
 </tr>
 <tr>
 <td><code>scan_modules_pyinstaller()</code></td>
-<td>Pipeline auto-selected</td>
+<td>流水线自动选择</td>
 </tr>
 </tbody>
 </table>
-<p>The old functions have been removed. No backward-compatibility aliases
-are provided — update your configuration at the same time you upgrade
-the framework.</p>
-<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<h3 id="no-modules-discovered-in-one-file-mode">No modules discovered in one-file mode<a class="headerlink" href="#no-modules-discovered-in-one-file-mode" title="Permanent link">&para;</a></h3>
+<p>旧函数<strong>已移除</strong>，不提供向后兼容别名 —— 升级框架的同时请一并改配置。</p>
+<h2 id="_8">故障排查<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h3 id="_9">单文件模式下发现不到任何模块<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">configure</span><span class="p">(</span><span class="n">explicit_modules</span><span class="o">=</span><span class="p">[</span><span class="s2">"your_top_level_package"</span><span class="p">])</span>
 </code></pre></div>
-<h3 id="type-hints-resolution-error-after-class-reload-tests">Type hints resolution error after class reload (tests)<a class="headerlink" href="#type-hints-resolution-error-after-class-reload-tests" title="Permanent link">&para;</a></h3>
-<p><code>PendingRegistry.reset()</code> now also invalidates the global type hints cache:</p>
+<h3 id="_10">类重载后类型提示解析报错（测试中）<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<p><code>PendingRegistry.reset()</code> 现在会同时让类型提示的全局缓存失效：</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.core.pending</span><span class="w"> </span><span class="kn">import</span> <span class="n">PendingRegistry</span>
-<span class="n">PendingRegistry</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>  <span class="c1"># also clears type hints cache</span>
+
+<span class="n">PendingRegistry</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>  <span class="c1"># 同时清掉类型提示缓存</span>
 </code></pre></div>
-<h3 id="strategy-override-advanced">Strategy override (advanced)<a class="headerlink" href="#strategy-override-advanced" title="Permanent link">&para;</a></h3>
+<h3 id="_11">覆盖策略（进阶）<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.runtime.scan_pipelines</span><span class="w"> </span><span class="kn">import</span> <span class="n">execute_pipeline</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.support.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_config</span>
 
@@ -2558,7 +2871,7 @@ the framework.</p>
     <span class="n">get_config</span><span class="p">(),</span>
     <span class="n">packaging_mode</span><span class="o">=</span><span class="s2">"nuitka-onefile"</span><span class="p">,</span>
     <span class="n">base_dirs</span><span class="o">=</span><span class="p">[</span><span class="s2">"/custom/path"</span><span class="p">],</span>
-    <span class="n">early_termination</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># run ALL strategies</span>
+    <span class="n">early_termination</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># 跑完全部策略</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2567,6 +2880,9 @@ the framework.</p>
 
 
 
+
+  
+  
 
 
 
@@ -2626,7 +2942,7 @@ the framework.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a5", "pre_is_available": true, "pre_label": "0.96a5", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a6", "pre_is_available": true, "pre_label": "0.96a6", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
