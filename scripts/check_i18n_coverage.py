@@ -1,5 +1,6 @@
 import yaml
 import os
+import sys
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 MKDOCS = os.path.join(ROOT, 'mkdocs.yml')
@@ -65,4 +66,9 @@ print('Total nav entries:', len(paths))
 print('Missing zh translations for:')
 for m in missing:
     print('-', m)
+
+# A checker that always exits 0 is a checker nobody can call from CI. The parity
+# test wraps this script today, but anyone running it by hand would read the
+# list and then see a success status -- the two disagree.
+sys.exit(1 if missing else 0)
 
