@@ -10,7 +10,7 @@ translation_pair: "docs/zh/internals/application_runtime.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/core/test_decorators.py", "tests/integration/test_adapter_integration.py", "tests/core/test_strict_assembly.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-05-31T00:00:00Z"
+last_updated: "2026-10-27"T00:00:00Z"
 pr_links: []
 
 # Application Runtime Model

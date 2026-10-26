@@ -10,7 +10,7 @@ translation_pair: "docs/zh/README.md"
 related_tests: []
 related_examples: []
 estimate_pd: 0.5
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"T00:00:00Z"
 pr_links: []
 
 # Cullinan Documentation

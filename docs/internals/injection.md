@@ -10,7 +10,7 @@ translation_pair: "docs/zh/internals/injection.md"
 related_tests: ["tests/di/test_core_constructor_injection.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-10-27"T00:00:00Z"
 pr_links: []
 
 # IoC & DI

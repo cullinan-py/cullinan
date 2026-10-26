@@ -2,7 +2,7 @@
 
 > **Version**: 0.96a6
 > **Author**: plumeink  
-> **Last Updated**: 2026-09-28
+> **Last Updated**: 2026-10-27
 
 > **Advanced topic:** this guide is for framework extension work, not the default
 > application learning path.
