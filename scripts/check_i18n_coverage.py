@@ -51,15 +51,12 @@ walk(nav)
 
 missing = []
 for p in paths:
-    # map to zh path
+    # Every nav entry is an English path; its counterpart lives under docs/zh/
+    # with the same relative name. One existence check is enough -- the second
+    # copy of this test could never disagree with the first.
     if p.startswith('zh/'):
         continue
-    zh_p = os.path.join(ROOT, 'docs', 'zh', p)
-    if os.path.exists(zh_p):
-        continue
-    # handle paths like 'work/progress_tracker.md' -> zh/work/progress_tracker.md
-    zh_candidate = os.path.join(ROOT, 'docs', 'zh', p)
-    if not os.path.exists(zh_candidate):
+    if not os.path.exists(os.path.join(ROOT, 'docs', 'zh', p)):
         missing.append(p)
 
 print('Total nav entries:', len(paths))
