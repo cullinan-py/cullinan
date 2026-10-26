@@ -2,6 +2,7 @@
 """Cullinan framework configuration."""
 
 from contextlib import contextmanager
+import logging
 import os
 import sys
 from typing import Any, Dict, Iterator, List, Optional
@@ -485,6 +486,11 @@ def configure(
         _config.set_project_root(project_root)
 
     _config.verbose = verbose
+    # ``verbose`` used to be stored and never read, so turning it on changed
+    # nothing. It now lowers the framework's own logger to DEBUG, which is where
+    # the scan reports what it imported and what it skipped.
+    if verbose:
+        logging.getLogger('cullinan').setLevel(logging.DEBUG)
     _config.auto_scan = auto_scan
 
     if exclude_packages is not None:
@@ -498,6 +504,7 @@ def configure(
             f"Must be one of: {', '.join(valid_policies)}"
         )
     _config.startup_error_policy = startup_error_policy
+
     if server_engine is not None:
         _config.server_engine = server_engine
     if asgi_server is not None:

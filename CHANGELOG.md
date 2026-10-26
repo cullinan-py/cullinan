@@ -78,6 +78,7 @@ ceiling.
 
 ### Fixed
 
+- `configure(verbose=True)` now lowers the framework logger to `DEBUG`. It was stored and never read, so turning it on changed nothing; the registration lines it is supposed to reveal are now actually emitted
 - **Tornado ignored a stop signal on Linux.** The handler scheduled the drain with `add_callback`, which does not wake a loop blocked in `epoll`, so after `SIGTERM` the callback waited for an unrelated event and the process kept sitting there until something else killed it. The loop is now resolved when the handlers are installed and the drain is scheduled with `add_callback_from_signal`; a failure to schedule is logged instead of swallowed. Measured on Linux and macOS: the process now exits with `0` within the drain bound.
 - a HEAD request for a static file returned no bytes and ended in `ASGI callable returned without completing response`: the adapter appended a second `Content-Length` (`0`) next to the one the static layer had already set (`15`). Existing headers are left alone now, and `204`/`304` never carry one
 - the same request returned `200` on ASGI and `304` on Tornado, because Tornado invents an ETag and honours `If-None-Match`; the handler no longer invents one, so the status code no longer depends on the engine
