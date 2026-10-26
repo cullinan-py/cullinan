@@ -7,9 +7,10 @@ something about the four non-code aspects. It does not prove the example exists.
 which is the gap this file closes: an option nobody can see demonstrated is an
 option readers learn about from the changelog.
 
-The seven names below were already uncovered when this check was introduced.
-They are frozen rather than ignored: the allowlist may shrink, never grow, and a
-new option that arrives without an example fails immediately.
+Options that predate this check are listed below and frozen rather than
+ignored: the allowlist may shrink, never grow, and a new option that arrives
+without an example fails immediately. It is down to one entry -- an option that
+refuses to run cannot be demonstrated.
 """
 
 from __future__ import annotations

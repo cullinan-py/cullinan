@@ -35,8 +35,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 class RuntimeController:
     @get_api(url="/where")
     def where(self):
+        # Read back what the framework was configured with, so changing
+        # ``server_host`` / ``server_port`` below changes this answer too --
+        # a hardcoded string would look like a demonstration and prove nothing.
+        from cullinan.support.config import get_config
+
+        config = get_config()
         return {
-            "bound": "127.0.0.1:4085",
+            "bound": "{}:{}".format(config.server_host, config.server_port),
             "scanned": "examples.runtime_controls only",
             "skipped": "examples.minimal_app",
         }

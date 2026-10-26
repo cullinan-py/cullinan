@@ -369,7 +369,10 @@ def configure(
         root_module: Legacy root-module entrypoint. This default startup path has been removed.
         user_packages: User package list, for example ``['myapp', 'myapp.controllers']``.
         project_root: Project root directory. If omitted, it is inferred automatically.
-        verbose: Whether to enable verbose logging.
+        verbose: Lower the ``cullinan`` logger to ``DEBUG`` so the scan and the route table
+            report themselves. The level is process-wide and is not restored when the
+            configuration is replaced, so treat it as a startup decision rather than a
+            per-application flag. A logger with no handler still prints nothing.
         auto_scan: Whether to auto-scan packages. When ``False``, only the given
             user packages are imported.
         exclude_packages: Package names excluded from scanning.
