@@ -10,6 +10,11 @@ from typing import Any, Dict, Iterator, List, Optional
 
 _CLASS_CONFIG_ATTR = "__cullinan_config__"
 
+# The logger level that was in place before ``verbose=True`` raised it, so that
+# ``verbose=False`` can put it back. One slot is enough: the framework logger is
+# process-global, and the last enable is the one whose level matters.
+_VERBOSE_RESTORE_LEVEL: List[Optional[int]] = [None]
+
 class CullinanConfig:
     """Global configuration container for Cullinan."""
 
@@ -491,9 +496,17 @@ def configure(
     _config.verbose = verbose
     # ``verbose`` used to be stored and never read, so turning it on changed
     # nothing. It now lowers the framework's own logger to DEBUG, which is where
-    # the scan reports what it imported and what it skipped.
+    # the scan reports what it imported and what it skipped -- and turning it off
+    # restores the level that was in place before, because a switch that only
+    # works in one direction is a switch nobody trusts twice.
+    _framework_logger = logging.getLogger('cullinan')
     if verbose:
-        logging.getLogger('cullinan').setLevel(logging.DEBUG)
+        if _framework_logger.level != logging.DEBUG:
+            _VERBOSE_RESTORE_LEVEL[0] = _framework_logger.level
+            _framework_logger.setLevel(logging.DEBUG)
+    elif _VERBOSE_RESTORE_LEVEL[0] is not None:
+        _framework_logger.setLevel(_VERBOSE_RESTORE_LEVEL[0])
+        _VERBOSE_RESTORE_LEVEL[0] = None
     _config.auto_scan = auto_scan
 
     if exclude_packages is not None:
