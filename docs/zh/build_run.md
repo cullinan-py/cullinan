@@ -10,7 +10,7 @@ translation_pair: "docs/build_run.md"
 related_tests: []
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-09-27"
+last_updated: "2026-10-27"
 pr_links: []
 
 # 本地构建与运行

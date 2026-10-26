@@ -10,7 +10,7 @@ translation_pair: "docs/start/index.md"
 related_tests: ["tests/core/test_public_api_boundaries.py", "tests/integration/test_adapter_integration.py"]
 related_examples: ["examples/minimal_app"]
 estimate_pd: 1.0
-last_updated: "2026-09-27"
+last_updated: "2026-10-27"
 pr_links: []
 
 # 应用构建

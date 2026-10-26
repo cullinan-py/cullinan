@@ -10,7 +10,7 @@ translation_pair: "docs/reference/api/index.md"
 related_tests: []
 related_examples: []
 estimate_pd: 0.5
-last_updated: "2026-10-25"
+last_updated: "2026-10-27"
 pr_links: []
 
 # 自动生成的 API 参考

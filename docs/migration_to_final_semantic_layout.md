@@ -10,7 +10,7 @@ translation_pair: "docs/zh/migration_to_final_semantic_layout.md"
 related_tests: ["tests/core/test_public_api_boundaries.py", "tests/core/test_semantic_package_facades.py"]
 related_examples: ["examples/minimal_app", "examples/testing_flow"]
 estimate_pd: 1.0
-last_updated: "2026-10-26"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Final Structure Migration

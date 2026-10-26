@@ -1,4 +1,4 @@
-last_updated: "2026-10-26"
+last_updated: "2026-10-27"
 
 # Cullinan 0.93 迁移指南
 

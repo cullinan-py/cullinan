@@ -1,4 +1,4 @@
-last_updated: "2026-06-07"
+last_updated: "2026-10-27"
 
 # Packaging Guide — Module Discovery in Frozen Environments
 
