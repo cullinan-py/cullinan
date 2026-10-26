@@ -68,6 +68,7 @@ ceiling.
 - `drain_timeout` on `configure(...)`, so the shutdown bound sits next to `server_port` and `server_engine` instead of requiring the advanced `Application` entry
 - `405` with an `Allow` header when a path exists for another method, and `404` for `OPTIONS` on a path nobody registered — previously every method mismatch was a `404` and every unregistered `OPTIONS` a `204`
 - a drain log that says how long the process is waiting and for how many requests
+- `examples/runtime_controls/`: every knob a deployment usually sets (`project_root`, `exclude_packages`, `startup_error_policy`, `server_engine`, `asgi_server`, `server_host`, `verbose`) in one runnable file, so each option can be seen taking effect
 
 ### Changed
 

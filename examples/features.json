@@ -130,6 +130,18 @@
         "@configure("
       ],
       "docs": "deployment.md"
+    },
+    {
+      "feature": "Runtime controls (root, scan, policy, engine, host)",
+      "example": "runtime_controls",
+      "evidence": [
+        "project_root",
+        "exclude_packages",
+        "startup_error_policy",
+        "server_engine",
+        "asgi_server"
+      ],
+      "docs": "deployment.md"
     }
   ]
 }

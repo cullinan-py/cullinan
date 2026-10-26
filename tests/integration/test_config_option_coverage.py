@@ -27,22 +27,12 @@ EXAMPLES = REPO_ROOT / "examples"
 # Options that predate this check. Adding a name here is a decision to ship an
 # option with no example -- say so in the commit message rather than quietly
 # extending the list.
-# ``startup_error_policy`` joined this list when the check stopped looking for a
-# mention and started reading call sites: it was "covered" by a sentence, never
-# by a call. That is a correction of the measurement, not a new gap -- no option
-# was added without an example.
-UNCOVERED_BEFORE_THIS_CHECK = frozenset(
-    {
-        "root_module",
-        "project_root",
-        "verbose",
-        "exclude_packages",
-        "startup_error_policy",
-        "server_engine",
-        "asgi_server",
-        "server_host",
-    }
-)
+# ``root_module`` is the only option that cannot be shown by a working call: the
+# startup path it selected was removed, the parameter is kept for source
+# compatibility, and passing it now warns and does nothing. Demonstrating it as
+# if it worked would be worse than leaving it out, so it is named here with that
+# reason instead of being quietly dropped.
+UNCOVERED_BEFORE_THIS_CHECK = frozenset({"root_module"})
 
 
 def _configure_options() -> list[str]:
