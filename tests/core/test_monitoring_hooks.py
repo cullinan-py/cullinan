@@ -18,6 +18,19 @@ from cullinan.monitoring import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _isolated_global_manager():
+    """The manager is process-global; cleanup must survive a failing assertion.
+
+    Resetting at the end of a test body only runs when the test passes. A test
+    that fails midway would leave hooks registered for every later test in the
+    session, which turns one failure into a cascade whose cause is invisible.
+    """
+    reset_monitoring_manager()
+    yield
+    reset_monitoring_manager()
+
+
 class RecordingHook(MonitoringHook):
     def __init__(self):
         super().__init__()
@@ -45,6 +58,15 @@ class RecordingHook(MonitoringHook):
 class ExplodingHook(RecordingHook):
     def on_request_start(self, context):
         raise RuntimeError("hook blew up")
+
+
+def test_the_default_manager_starts_empty():
+    """A test that fails midway must not leave its hooks behind for the next one.
+
+    This asserts the cleanup, not the manager: without the autouse fixture the
+    previous test's hook survives a failed assertion and this count is 1.
+    """
+    assert get_monitoring_manager().count() == 0
 
 
 def test_every_event_reaches_a_registered_hook():
@@ -122,4 +144,3 @@ def test_a_hook_registered_before_a_reset_no_longer_hears_anything():
     manager.on_request_start({"path": "/after-reset"})
 
     assert stale.calls == []
-    reset_monitoring_manager()
