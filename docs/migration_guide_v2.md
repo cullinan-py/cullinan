@@ -1,3 +1,5 @@
+last_updated: "2026-10-27"
+
 # Migration Guide: v0.9x → v0.93
 
 > **Cullinan Framework** — Comprehensive migration guide for upgrading from v0.9x to v0.93.

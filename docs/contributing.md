@@ -10,7 +10,7 @@ translation_pair: "docs/zh/contributing.md"
 related_tests: []
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2025-12-25T00:00:00Z"
+last_updated: "2026-09-27"
 pr_links: []
 
 # Contributing

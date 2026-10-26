@@ -10,7 +10,7 @@ translation_pair: "docs/zh/modules/core.md"
 related_tests: ["tests/di/test_core_constructor_injection.py", "tests/integration/test_service_lifecycle_integration.py"]
 related_examples: []
 estimate_pd: 1.5
-last_updated: "2026-05-30T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.core

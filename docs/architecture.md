@@ -1,7 +1,7 @@
 # Cullinan Framework Architecture
 
 > **Version**: 0.96a6
-> **Last Updated**: 2026-06-01  
+> **Last Updated**: 2026-10-26  
 > **Status**: Updated
 
 > **This page explains framework structure, not the default startup tutorial.**  

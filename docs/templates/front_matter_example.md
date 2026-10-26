@@ -10,7 +10,7 @@ translation_pair: "docs/zh/templates/front_matter_example.md"
 related_tests: []
 related_examples: ["examples/minimal_app"]
 estimate_pd: 0.1
-last_updated: "2025-11-18T00:00:00Z"
+last_updated: "2025-11-18"
 pr_links: []
 
 # Front-matter example (template)
@@ -30,7 +30,7 @@ translation_pair: "docs/zh/<file>.md"
 related_tests: ["tests/test_real_app_startup.py"]
 related_examples: ["examples/minimal_app"]
 estimate_pd: 2.0
-last_updated: "2025-11-18T00:00:00Z"
+last_updated: "2025-11-18"
 pr_links: []
 ```
 

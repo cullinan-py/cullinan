@@ -1,3 +1,5 @@
+last_updated: "2026-09-29"
+
 # 装饰器
 
 > **作者**: plumeink

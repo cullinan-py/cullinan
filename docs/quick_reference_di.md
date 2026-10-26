@@ -1,3 +1,5 @@
+last_updated: "2026-10-26"
+
 # Cullinan Dependency Injection Quick Reference
 
 > **Version**: 0.96a6

@@ -10,7 +10,7 @@ translation_pair: "docs/modules/controller.md"
 related_tests: ["tests/web/test_handler_module.py", "tests/web/test_web_runtime.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-10-27"T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.web.controller

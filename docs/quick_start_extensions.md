@@ -1,3 +1,5 @@
+last_updated: "2026-10-27"
+
 # Cullinan Extension Registration Quick Start
 
 > **Feature**: Unified Extension Registration and Discovery Pattern  

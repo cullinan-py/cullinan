@@ -10,7 +10,7 @@ translation_pair: "docs/internals/extensions.md"
 related_tests: []
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-10-27"T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # 扩展与插件

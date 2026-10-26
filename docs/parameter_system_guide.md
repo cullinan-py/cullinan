@@ -11,7 +11,7 @@ translation_pair: "docs/zh/parameter_system_guide.md"
 related_tests: ["tests/test_params.py", "tests/test_codec.py", "tests/test_resolver.py"]
 related_examples: ["examples/parameter_handling"]
 estimate_pd: 2
-last_updated: "2026-01-08T00:00:00Z"
+last_updated: "2026-09-27"
 pr_links: []
 ---
 

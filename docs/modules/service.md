@@ -10,7 +10,7 @@ translation_pair: "docs/zh/modules/service.md"
 related_tests: ["tests/integration/test_service_lifecycle_integration.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-10-27"T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # cullinan.core.services

@@ -10,7 +10,7 @@ translation_pair: "docs/zh/why-cullinan.md"
 related_tests: ["tests/integration/test_positioning_claims.py"]
 related_examples: ["examples/minimal_app", "examples/graceful_shutdown"]
 estimate_pd: 1.0
-last_updated: "2026-10-25T00:00:00Z"
+last_updated: "2026-10-26"
 pr_links: []
 
 # What Cullinan Is

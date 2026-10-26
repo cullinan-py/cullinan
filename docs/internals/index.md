@@ -10,7 +10,7 @@ translation_pair: "docs/zh/internals/index.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/integration/test_adapter_integration.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-10-27"T00:00:00Z"
+last_updated: "2026-10-27"
 pr_links: []
 
 # Internals & Extensions

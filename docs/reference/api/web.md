@@ -10,7 +10,7 @@ translation_pair: "docs/zh/reference/api/web.md"
 related_tests: []
 related_examples: []
 estimate_pd: 0.2
-last_updated: "2026-10-25T00:00:00Z"
+last_updated: "2026-10-25"
 pr_links: []
 
 # The web namespace

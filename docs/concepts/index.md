@@ -10,7 +10,7 @@ translation_pair: "docs/zh/concepts/index.md"
 related_tests: ["tests/core/test_application_model_refactor.py", "tests/regression/test_component_reliability.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-06-01T00:00:00Z"
+last_updated: "2026-09-27"
 pr_links: []
 
 # Framework Semantics
