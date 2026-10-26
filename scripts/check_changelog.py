@@ -186,6 +186,23 @@ def check(text: str, tags: Sequence[str], version: Optional[str]) -> List[str]:
                 "released but not recorded in the changelog: " + ", ".join(f"v{tag}" for tag in missing)
             )
 
+    # Entries parked under ``Unreleased`` while the version they will ship in
+    # already has its own section do not go unrecorded -- they go unannounced.
+    # The reader of that version will not see them, and the continuity checks
+    # below deliberately skip the section they sit in.
+    #
+    # Only a *pending* version can be in this state: once it is tagged, work
+    # that lands afterwards legitimately belongs under ``Unreleased`` again.
+    if version and version not in tags:
+        pending_sections = [e for e in entries if e.version.lower() == version.lower()]
+        parked = [e for e in entries if e.version.lower() == "unreleased" and e.bullets]
+        if pending_sections and parked:
+            problems.append(
+                f"v{version} is not tagged yet and has its own section, but {parked[0].bullets} "
+                "entries still sit under Unreleased; they will ship in that version without "
+                "appearing in it"
+            )
+
     # The structured convention applies going forward: the newest released
     # entry and any Unreleased section must be typed. Entries already released
     # before the convention existed are history and are left as written.
@@ -293,6 +310,16 @@ def _self_test() -> int:
         "0.96a13",
         True,
     )
+
+    print("self-test: entries parked under Unreleased while their version ships")
+    PENDING = (
+        "## Unreleased\n\n### Added\n\n- parked\n\n"
+        "## v0.97\n\n### Added\n\n- shipped\n\n## v0.96\n\n### Added\n\n- older\n"
+    )
+    expect("pending version with parked entries", PENDING, ["0.96"], "0.97", False)
+    # Same text, but 0.97 is tagged: parking the next thing under Unreleased is
+    # the normal way to work, and must stay allowed.
+    expect("tagged version, new work in Unreleased", PENDING, ["0.96", "0.97"], "0.97", True)
 
     print("self-test: an Unreleased section is allowed but is not a release claim")
     expect(
