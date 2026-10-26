@@ -66,6 +66,7 @@ ceiling.
 
 - `max_request_body_bytes` on `configure(...)`: an oversized body is refused without reading the rest of it, before any handler runs. ASGI answers `413`; Tornado's protocol layer (`max_body_size`) answers `400` first — both stop early, the status differs by engine. Unset means "read whatever arrives", which is the previous behaviour
 - `drain_timeout` on `configure(...)`, so the shutdown bound sits next to `server_port` and `server_engine` instead of requiring the advanced `Application` entry
+- `ContainerDrainingError` in `cullinan.core.exceptions`: the error a route raises when the container has begun draining, so a caller can tell "shut down" apart from "this handler failed"
 - `405` with an `Allow` header when a path exists for another method, and `404` for `OPTIONS` on a path nobody registered — previously every method mismatch was a `404` and every unregistered `OPTIONS` a `204`
 - a drain log that says how long the process is waiting and for how many requests
 - `examples/runtime_controls/`: every knob a deployment usually sets (`project_root`, `exclude_packages`, `startup_error_policy`, `server_engine`, `asgi_server`, `server_host`, `verbose`) in one runnable file, so each option can be seen taking effect
@@ -76,10 +77,12 @@ ceiling.
 - a request refused because the container is draining answers `503` with `Retry-After` instead of a bare `500`, and transport-level failures go through the gateway resolver rather than being flattened into `500`
 - security headers are applied to error responses too, so the responses that echo the request path are no longer the ones without `nosniff`
 - the deployment guide describes what each engine actually does during a drain: Tornado answers `503`; ASGI closes its listener first, so there is no window a probe can rely on
+- the exit status after a stop signal is documented as what it is: ASGI exits `143` on Linux and macOS because uvicorn re-raises the signal it captured, Tornado exits `0` on all three platforms because its adapter stops the loop it owns and returns, and Windows uses `SIGBREAK`
 
 ### Fixed
 
 - `configure(verbose=True)` now lowers the framework logger to `DEBUG`. It was stored and never read, so turning it on changed nothing; the registration lines it is supposed to reveal are now actually emitted
+- `configure(verbose=False)` restores the logger level that was in place before `verbose=True` raised it; the switch used to work in one direction only, so every later configuration in the same process inherited the noise
 - **Tornado ignored a stop signal on Linux.** The handler scheduled the drain with `add_callback`, which does not wake a loop blocked in `epoll`, so after `SIGTERM` the callback waited for an unrelated event and the process kept sitting there until something else killed it. The loop is now resolved when the handlers are installed and the drain is scheduled with `add_callback_from_signal`; a failure to schedule is logged instead of swallowed. Measured on Linux and macOS: the process now exits with `0` within the drain bound.
 - a HEAD request for a static file returned no bytes and ended in `ASGI callable returned without completing response`: the adapter appended a second `Content-Length` (`0`) next to the one the static layer had already set (`15`). Existing headers are left alone now, and `204`/`304` never carry one
 - the same request returned `200` on ASGI and `304` on Tornado, because Tornado invents an ETag and honours `If-None-Match`; the handler no longer invents one, so the status code no longer depends on the engine
