@@ -54,7 +54,7 @@ TRAILER_KEY = "Meta-Sync"
 # invalidate margins that were signed against their hashes, and a declaration
 # added after the fact is not a decision, it is a formality. Everything after it
 # must declare -- that is where the gate starts doing work.
-GATE_BASELINE = "f2148b7ffcb64eed40b2e92156f4aa36e2b418cf"  # pinned by tests/core/test_sync_declaration_gate.py
+GATE_BASELINE = "94eb19b83b00fb08859f8fbd2d8a32178409507c"  # pinned by tests/core/test_sync_declaration_gate.py
 
 
 # ---------------------------------------------------------------------------

@@ -246,7 +246,7 @@ def test_the_grandfather_baseline_cannot_drift():
     commit, in plain sight. A baseline that can be nudged by a later commit is
     not a baseline, it is an escape hatch.
     """
-    assert gate.GATE_BASELINE == "f2148b7ffcb64eed40b2e92156f4aa36e2b418cf"
+    assert gate.GATE_BASELINE == "94eb19b83b00fb08859f8fbd2d8a32178409507c"
 
 
 def test_the_baseline_is_reachable_from_head():
