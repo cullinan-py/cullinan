@@ -4,7 +4,7 @@
 
 > **Upgrade-only page:** keep this page for version transition work, not for first-time onboarding.
 
-> **Note**: applies to the v0.9x → v0.93 range, with notes through v0.96a5; read it
+> **Note**: applies to the v0.9x → v0.93 range, with notes through v0.96a6; read it
 > when upgrading a v0.9x codebase to v0.93.
 
 ## Overview of Changes
