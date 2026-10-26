@@ -96,7 +96,7 @@ def test_one_failing_hook_does_not_stop_the_others():
     assert good.calls == [("start", "/survives")]
 
 
-def test_reset_clears_the_hooks_without_invalidating_references():
+def test_reset_empties_the_manager_without_invalidating_references():
     """``reset`` empties the manager rather than replacing it.
 
     Replacing the object would leave every reference taken earlier pointing at a
@@ -109,4 +109,17 @@ def test_reset_clears_the_hooks_without_invalidating_references():
     reset_monitoring_manager()
 
     assert get_monitoring_manager() is manager
-    assert manager._hooks == []
+    assert manager.count() == 0
+
+
+def test_a_hook_registered_before_a_reset_no_longer_hears_anything():
+    """The count alone would also pass if dispatch kept the old list alive."""
+    manager = get_monitoring_manager()
+    stale = RecordingHook()
+    manager.register(stale)
+
+    reset_monitoring_manager()
+    manager.on_request_start({"path": "/after-reset"})
+
+    assert stale.calls == []
+    reset_monitoring_manager()
