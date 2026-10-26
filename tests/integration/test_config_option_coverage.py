@@ -29,10 +29,10 @@ EXAMPLES = REPO_ROOT / "examples"
 # option with no example -- say so in the commit message rather than quietly
 # extending the list.
 # ``root_module`` is the only option that cannot be shown by a working call: the
-# startup path it selected was removed, the parameter is kept for source
-# compatibility, and passing it now warns and does nothing. Demonstrating it as
-# if it worked would be worse than leaving it out, so it is named here with that
-# reason instead of being quietly dropped.
+# startup path it selected was removed, passing it raises ``ValueError`` with the
+# replacement spelled out, and it stays in the signature only so existing imports
+# keep working. An example cannot demonstrate an option that refuses to run, so
+# it is named here with that reason instead of being quietly dropped.
 UNCOVERED_BEFORE_THIS_CHECK = frozenset({"root_module"})
 
 
