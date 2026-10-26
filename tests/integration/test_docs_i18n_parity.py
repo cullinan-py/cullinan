@@ -49,3 +49,21 @@ def test_every_nav_page_has_a_chinese_counterpart():
         "a page in the nav has no Chinese version; either translate it or take it "
         f"out of the nav: {missing}"
     )
+
+
+def test_no_chinese_page_exists_without_an_english_original():
+    """The parity check only walked nav entries, which is one direction.
+
+    A translated page whose English original was renamed or removed becomes a
+    page nobody reviews: it stays in the repository, drifts away from the source
+    it was translated from, and no check notices because no nav entry points at
+    it. This walks the other way.
+    """
+    docs = REPO_ROOT / "docs"
+    zh = docs / "zh"
+    orphans = sorted(
+        str(page.relative_to(zh))
+        for page in zh.rglob("*.md")
+        if not (docs / page.relative_to(zh)).exists()
+    )
+    assert not orphans, f"Chinese pages with no English original: {orphans}"
