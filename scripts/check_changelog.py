@@ -198,7 +198,8 @@ def check(text: str, tags: Sequence[str], version: Optional[str]) -> List[str]:
         parked = [e for e in entries if e.version.lower() == "unreleased" and e.bullets]
         if pending_sections and parked:
             problems.append(
-                f"v{version} is not tagged yet and has its own section, but {parked[0].bullets} "
+                f"v{version} is not tagged yet and has its own section, but "
+                f"{sum(e.bullets for e in parked)} "
                 "entries still sit under Unreleased; they will ship in that version without "
                 "appearing in it"
             )
@@ -336,6 +337,21 @@ def _self_test() -> int:
         "0.97",
         False,
     )
+
+    # Two parked sections must be counted together: reporting only the first
+    # one understates how much would ship unannounced, and the message is the
+    # only thing a reader gets.
+    split_example = (
+        "## Unreleased\n\n### Added\n\n- a\n- b\n- c\n\n"
+        "## Unreleased\n\n### Added\n\n- d\n- e\n\n"
+        "## v0.97\n\n### Added\n\n- shipped\n"
+    )
+    problems = check(split_example, ["0.96"], "0.97")
+    if not any("5 entries" in p for p in problems):
+        failures += 1
+        print(f"  FAIL split parked sections are counted together: got {problems}")
+    else:
+        print("  ok   split parked sections are counted together")
 
     print("self-test: history predating the convention is grandfathered")
     expect(
