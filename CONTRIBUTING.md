@@ -52,8 +52,10 @@ backend-specific behavior that diverges between engines.
 
 ## Code style
 
-- Lint with `ruff check .` (config in `ruff.toml`).
-- Match surrounding code; comment only where clarification is needed.
+- Lint with `ruff check .` (config in `ruff.toml`). That check is the gate.
+- **Formatting is not gated and not enforced.** `ruff format` would rewrite roughly 278 of the 454 files today, and the repository has never been run through it. That is a decision, not an oversight: a mechanical rewrite of that size before a release makes the release diff unreviewable and breaks `git blame` for every line it touches.
+- If formatting is adopted later, it happens at the **start** of a cycle, in **one** commit that contains nothing else, with `ruff format --check` wired into CI in the same change. Until then, matching the surrounding code is the rule.
+- Style rules grow through `ruff.toml` (`E9` + `F` today), not through reformatting.
 
 ## Commits
 
