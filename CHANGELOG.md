@@ -16,6 +16,7 @@ traffic to shed, and both engines answer a request that arrives too late in a
 way a reader can plan around. It also closes the framing defects that made a
 HEAD request for a static file return nothing, and gives the request body a
 ceiling.
+
 It also lands the surfaces a project needs in order to be depended on, operated and audited: a generated API reference, a deployment guide in both languages, a benchmark harness with a recorded baseline, and repository checks that fail when the changelog, the example map or the version copies fall behind.
 
 ### Added
@@ -27,12 +28,24 @@ It also lands the surfaces a project needs in order to be depended on, operated 
 - a drain log that says how long the process is waiting and for how many requests
 - `examples/runtime_controls/`: every knob a deployment usually sets (`project_root`, `exclude_packages`, `startup_error_policy`, `server_engine`, `asgi_server`, `server_host`, `verbose`) in one runnable file, so each option can be seen taking effect
 - a generated API reference (`docs/reference/api/`), built from the installed
+  package by mkdocstrings, so a published signature is the signature the code
+  has; the hand-written guides remain as the place that tells you which symbol
+  to reach for
 - a production deployment guide in both languages, naming only surfaces that
+  exist and checked against them by test
 - a benchmark harness (`benchmarks/bench.py`) with a recorded baseline and a
+  `--check` mode that reports a regression instead of a headline number
 - `examples/graceful_shutdown/`, a runnable readiness recipe built on
+  `accepts_requests` and `add_draining_handler`
 - `examples/features.json`, the feature-to-example map, enforced in both
+  directions: a feature without an example fails, and an example nobody
+  declared fails too
 - `SECURITY.md`, with a private reporting channel and a supported-version table
 - repository checks: `scripts/check_changelog.py` (the changelog covers the
+  released versions), `scripts/check_claims.py` (every positioning claim still
+  has its evidence), `scripts/check_release_tag_matches_version.py` (a tag names
+  the version the code carries), and `scripts/check_channel_sync.py` (a release
+  reached the documentation channel too)
 
 ### Changed
 
@@ -42,8 +55,12 @@ It also lands the surfaces a project needs in order to be depended on, operated 
 - the deployment guide describes what each engine actually does during a drain: Tornado answers `503`; ASGI closes its listener first, so there is no window a probe can rely on
 - the exit status after a stop signal is documented as what it is: ASGI exits `143` on Linux and macOS because uvicorn re-raises the signal it captured, Tornado exits `0` on all three platforms because its adapter stops the loop it owns and returns, and Windows uses `SIGBREAK`
 - coverage is measured and enforced: `[tool.coverage.*]` in `pyproject.toml`
+  with a floor, and a CI job that runs the same number locally and in CI
 - the publisher now verifies the tag against `cullinan/_version.py` and installs
+  the wheel it built before uploading, so a mislabelled or unimportable artefact
+  cannot reach the package index
 - the docs build installs the package and generator it needs, and separates
+  griffe's annotation notes from build failures without hiding them
 - **breaking:** `cullinan.web.controller` now names the controller submodule instead of the `@controller` decorator, matching `cullinan.web.middleware` in `v0.96a5`; the decorator stays at `from cullinan import controller` and at `from cullinan.web.controller import controller`. Code importing the decorator from `cullinan.web` fails loudly with `'module' object is not callable` rather than binding a module by accident
 - the dotted import path `import cullinan.web.controller.<module> as x` works again; while the decorator owned the name it raised `ImportError: cannot import name ... (unknown location)`
 
@@ -62,7 +79,9 @@ It also lands the surfaces a project needs in order to be depended on, operated 
 ### Documentation
 
 - `docs/why-cullinan.md` states the positioning once, with each claim carrying
+  machine-checked evidence and no claim without one
 - the examples each state which feature they demonstrate, and the two that had
+  no README now have one
 
 ## v0.96a5
 
