@@ -31,8 +31,9 @@ jobs:
         with:
           # These two jobs run the suite, and parts of it assert
           # things about history: that the declaration gate's
-          # baseline is an ancestor of HEAD, and that the changelog
-          # covers every release tag.
+          # baseline is an ancestor of HEAD, that the changelog
+          # covers every release tag, and that no page advertises a
+          # last-changed date older than its last real change.
           fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -86,8 +87,9 @@ jobs:
         with:
           # These two jobs run the suite, and parts of it assert
           # things about history: that the declaration gate's
-          # baseline is an ancestor of HEAD, and that the changelog
-          # covers every release tag.
+          # baseline is an ancestor of HEAD, that the changelog
+          # covers every release tag, and that no page advertises a
+          # last-changed date older than its last real change.
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
