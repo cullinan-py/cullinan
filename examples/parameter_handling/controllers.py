@@ -1,4 +1,5 @@
-from cullinan.web import Body, Path, Query, controller, get_api, post_api
+from cullinan import controller
+from cullinan.web import Body, Path, Query, get_api, post_api
 
 
 @controller(url="/catalog")

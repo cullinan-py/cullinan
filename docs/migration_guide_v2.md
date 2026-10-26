@@ -255,6 +255,34 @@ directly readable.
 The built-in layer is declarative too: `configure(builtin_middleware=[...])`
 replaces it, and `configure(builtin_middleware=[])` switches it off.
 
+#### v0.96a6: the controller decorator moves to the top-level import
+
+`from cullinan.web import controller` used to give you the `@controller`
+decorator. `cullinan.web.controller` is now the controller submodule, so that
+name resolves to the submodule instead. The decorator itself is unchanged and is
+still available at the top level.
+
+| Import | Before | After |
+|---|---|---|
+| `from cullinan.web import controller` | the decorator | the `cullinan.web.controller` submodule |
+| `from cullinan import controller` | the decorator | the decorator (unchanged) |
+| `from cullinan.web.controller import controller` | the decorator | the decorator (unchanged) |
+
+**Who is affected.** Only code that imports `controller` *from* `cullinan.web`.
+Anything importing it from the top level, or from `cullinan.web.controller`,
+needs no change.
+
+**Migration.** Move the import to the top level:
+
+    from cullinan import controller
+
+**What this fixes.** While the decorator owned the name, the dotted form was
+broken: `import cullinan.web.controller.registry as registry` raised
+`ImportError: cannot import name 'registry' from 'controller' (unknown
+location)`, because the attribute lookup found a function where a package was
+expected. After the switch that import works, and reaching the decorator through
+either legal spelling still does.
+
 #### v0.96a5: the middleware decorator moves to the top-level import
 
 `from cullinan.web import middleware` used to give you the `@middleware`

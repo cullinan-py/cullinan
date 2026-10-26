@@ -12,7 +12,7 @@ from cullinan.web.controller import (
     response,
     set_missing_header_handler,
 )
-from cullinan.core import controller
+from cullinan.web import controller
 from cullinan.web.gateway import WebRequest, WebResponse
 from cullinan.web.middleware import BodyDecoderMiddleware, Middleware, get_decoded_body, set_decoded_body
 from cullinan.web.params import (
@@ -42,10 +42,19 @@ from cullinan.web.websocket_registry import websocket_handler
 # decorator binding fails immediately (``'module' object is not callable``)
 # rather than silently, so this transition carries no runtime warning of its own.
 #
-# ``controller`` is NOT switched in this release line: unlike ``middleware``,
-# ``from cullinan.web import controller`` is used by the maintained examples, so
-# the referent change is a breaking change that has to go through the
-# deprecation process (ADR + migration note + window) rather than ride along.
+# ``controller`` is switched on this release line, for the same reason and by the
+# same rule as ``middleware`` above: the name now resolves to the
+# ``cullinan.web.controller`` submodule, and the decorator stays available at the
+# top level (``from cullinan import controller``) and inside the submodule
+# (``from cullinan.web.controller import controller``).
+#
+# The reason it had been deferred is that a name cannot mean two things at once:
+# while the decorator owned ``cullinan.web.controller``, the dotted form
+# ``import cullinan.web.controller.<module> as x`` failed outright, because the
+# attribute lookup found a function instead of a package. Deferring kept the
+# examples working and left that import path broken; the switch trades a loud
+# ``'module' object is not callable`` at the old call site for a working import
+# path everywhere else.
 
 __all__ = [
     "Auto",

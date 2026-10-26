@@ -146,7 +146,8 @@ readiness route that reads the predicate — or simply returns `503` while
 
 ```python
 from cullinan.application import Application
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 
 
 @controller(url="/ops")

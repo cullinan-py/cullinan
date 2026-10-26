@@ -12,6 +12,10 @@ from cullinan.application import (
 )
 from cullinan.core.decorators import Inject, InjectByName, Lazy, component, service
 from cullinan.core.injection_types import Provider
+# The decorator is imported from where it is defined, not re-exported through
+# ``cullinan.web``: that package's ``controller`` name belongs to the submodule
+# of the same name, so going through it would hand back a module.
+from cullinan.core import controller
 from cullinan.web import (
     Auto,
     AutoType,
@@ -33,7 +37,6 @@ from cullinan.web import (
     ValidationError,
     WebRequest,
     WebResponse,
-    controller,
     delete_api,
     get_api,
     get_decoded_body,

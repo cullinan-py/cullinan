@@ -17,7 +17,8 @@ import logging
 from pathlib import Path
 
 from cullinan import application, configure
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 
 # ``verbose=True`` below lowers the framework logger to DEBUG, but a logger with
 # no handler prints nothing. This is the handler; uvicorn's own loggers are

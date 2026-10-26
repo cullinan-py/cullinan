@@ -3,10 +3,9 @@
 
 When a package both imports a submodule and rebinds the same name to a
 decorator, ``cullinan.web.<name>`` ends up disagreeing with
-``sys.modules['cullinan.web.<name>']``. These tests pin the resolved identity
-for ``middleware`` -- already converged so the submodule wins -- and record the
-``controller`` divergence as a known, deliberate state rather than letting it
-drift unnoticed.
+``sys.modules['cullinan.web.<name>']``. Both names that used to be at risk --
+``middleware`` and ``controller`` -- now resolve to their submodules, and the
+decorators stay reachable from the top level.
 """
 import importlib
 import sys
@@ -14,7 +13,7 @@ import types
 
 import pytest
 
-CONVERGED_NAMES = ["middleware"]
+CONVERGED_NAMES = ["middleware", "controller"]
 
 
 @pytest.mark.parametrize("name", CONVERGED_NAMES)
@@ -49,22 +48,31 @@ def test_top_level_names_are_exported(name):
     assert name in top.__all__
 
 
-def test_controller_identity_is_known_divergent():
-    """Recorded divergence, not an endorsement.
+def test_the_dotted_path_to_a_submodule_is_importable():
+    """The form that the divergence broke.
 
-    ``cullinan.web.controller`` still resolves to the decorator while
-    ``sys.modules`` holds the module. Switching it is a breaking change --
-    ``from cullinan.web import controller`` is used by the maintained examples
-    -- so it has to go through the deprecation process (ADR, migration note,
-    window) instead of riding along with an unrelated slice.
-
-    If this test fails, the switch happened: update the migration guide, the
-    examples and the release notes in the same change, and delete this test.
+    While the decorator owned ``cullinan.web.controller``, the attribute was a
+    function, so ``import cullinan.web.controller.registry as reg`` raised
+    "cannot import name ... (unknown location)". Importing the leaf module and
+    reaching its names is the thing a caller does when they want one piece of
+    the package rather than the whole facade.
     """
+    registry = importlib.import_module("cullinan.web.controller.registry")
+    assert registry.__name__ == "cullinan.web.controller.registry"
+    assert hasattr(registry, "get_controller_registry")
+
+
+def test_the_controller_decorator_lives_where_the_names_are_not_taken():
+    """Two names, two referents, no shadowing.
+
+    ``cullinan.controller`` is the decorator and ``cullinan.web.controller`` is
+    the submodule; the submodule exports the decorator under the same name
+    inside itself, which is what makes both spellings honest.
+    """
+    top = importlib.import_module("cullinan")
     web = importlib.import_module("cullinan.web")
-    attribute = getattr(web, "controller")
-    assert not isinstance(attribute, types.ModuleType), (
-        "cullinan.web.controller changed referent -- finish the deprecation "
-        "process (ADR + migration note + examples + release notes) and remove "
-        "this known-divergence test"
-    )
+    submodule = importlib.import_module("cullinan.web.controller")
+
+    assert isinstance(web.controller, types.ModuleType)
+    assert callable(top.controller) and not isinstance(top.controller, types.ModuleType)
+    assert submodule.controller is top.controller

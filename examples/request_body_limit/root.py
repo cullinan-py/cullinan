@@ -8,7 +8,8 @@ the ceiling" and "over it" is the only thing to look at.
 """
 
 from cullinan import application, configure
-from cullinan.web import controller, post_api
+from cullinan import controller
+from cullinan.web import post_api
 
 LIMIT = 1024
 

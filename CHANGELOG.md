@@ -44,6 +44,8 @@ audited.
   cannot reach the package index
 - the docs build installs the package and generator it needs, and separates
   griffe's annotation notes from build failures without hiding them
+- **breaking:** `cullinan.web.controller` now names the controller submodule instead of the `@controller` decorator, matching `cullinan.web.middleware` in `v0.96a5`; the decorator stays at `from cullinan import controller` and at `from cullinan.web.controller import controller`. Code importing the decorator from `cullinan.web` fails loudly with `'module' object is not callable` rather than binding a module by accident
+- the dotted import path `import cullinan.web.controller.<module> as x` works again; while the decorator owned the name it raised `ImportError: cannot import name ... (unknown location)`
 
 ### Documentation
 

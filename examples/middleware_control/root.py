@@ -11,7 +11,8 @@ joins the same pipeline as its own layer, so the introspection order reflects
 one declarative ordering across declared, built-in and legacy middleware.
 """
 from cullinan import application, configure
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 from cullinan.web.gateway import get_pipeline
 
 from .middleware import QuietAccessLogMiddleware, TraceHeaderMiddleware
