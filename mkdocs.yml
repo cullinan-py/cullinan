@@ -14,6 +14,7 @@ nav:
     - Build & Run: build_run.md
   - Core Concepts:
     - Overview: concepts/index.md
+    - What Cullinan Is: why-cullinan.md
     - Framework Semantics: framework_semantics.md
     - Architecture: architecture.md
   - Guides:
@@ -24,6 +25,7 @@ nav:
     - Parameter System: parameter_system_guide.md
     - DI Quick Reference: quick_reference_di.md
     - Packaging: packaging.md
+    - Deploying to Production: deployment.md
     - Testing: testing.md
     - Contributing: contributing.md
     - Extension Development: extension_development_guide.md
@@ -31,6 +33,12 @@ nav:
   - API Reference:
     - Overview: reference/index.md
     - API Reference Overview: api_reference.md
+    - Generated Reference:
+      - Overview: reference/api/index.md
+      - cullinan: reference/api/cullinan.md
+      - cullinan.application: reference/api/application.md
+      - cullinan.web: reference/api/web.md
+      - cullinan.core: reference/api/core.md
     - Module Reference:
       - application: modules/application.md
       - core: modules/core.md
@@ -75,9 +83,32 @@ exclude_docs: |
   zh/templates/
   superpowers/
 
+# Hooks: separate griffe's annotation notes from build failures (see the module
+# docstring in scripts/mkdocs_hooks.py for why this is not a silent suppression).
+hooks:
+  - scripts/mkdocs_hooks.py
+
 # Plugins: enable search and static-i18n for bilingual support
 plugins:
   - search
+  # The API reference pages are generated from the installed package rather
+  # than transcribed by hand, so a signature shown to a reader is the signature
+  # the code has. `show_source: false` keeps the pages about behaviour; the
+  # source is one click away in the repository.
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            separate_signature: true
+            signature_crossrefs: true
+            merge_init_into_class: true
+            members_order: source
+            filters: ["!^_"]
   - i18n:
       docs_structure: folder
       fallback_to_default: true
@@ -97,6 +128,7 @@ plugins:
             Home: 首页
             Getting Started: 快速开始
             Core Concepts: 核心概念
+            What Cullinan Is: Cullinan 是什么
             Guides: 工程指南
             API Reference: API 参考
             Internals: 内部机制
@@ -132,6 +164,8 @@ plugins:
             Static Files & SPA: 静态文件与 SPA
             DI Quick Reference: DI 快速参考
             Parameter System: 参数系统
+            Deploying to Production: 生产部署
+            Generated Reference: 自动生成的参考
             Extension Development: 扩展开发
             Quick Start Extensions: 扩展快速入门
             Build & Run: 构建与运行

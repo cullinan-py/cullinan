@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Meta-Sync declaration gate for release-process and configuration changes.
+"""Meta-Sync declaration gate for changes that ship together.
 
 Background
 ----------
-A handful of repository paths carry release-process or team-convention weight:
-the CI workflow definitions, the release tag gate, the release verification
-helpers, the contributor / security / license / documentation-site config, the
-version single source of truth, and the release-critical keys of
-``pyproject.toml``. When a commit touches any of them the change is expected to
-be deliberate, so its commit message must carry a machine-readable declaration
-in a trailer::
+A change is not only the file it edits. A framework feature that arrives without
+tests, without an example, without documentation, or without the knowledge base
+being told about it is a partial change, and the missing part is invisible
+unless something asks for it.
+
+This gate asks. When a commit touches the shipped surface -- the framework
+source, the tests, the public documentation, the examples -- or the
+release-process surface (CI definitions, the release tag gate, the verification
+helpers, contributor/security/license/site config, the version single source of
+truth, the release-critical keys of ``pyproject.toml``), its commit message must
+carry a machine-readable declaration in a trailer::
 
     Meta-Sync: required id=<opaque-token>
     Meta-Sync: n-a reason=<free text, at least 8 characters>
@@ -44,6 +48,15 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 
 TRAILER_KEY = "Meta-Sync"
 
+# Commits at or before this one were written while the gate covered only release
+# plumbing. Moving this value forward would whitelist commits that were never
+# declared, so it is pinned by a test: changing it is a decision, not a tweak. They are grandfathered rather than retro-declared: rewriting them would
+# invalidate margins that were signed against their hashes, and a declaration
+# added after the fact is not a decision, it is a formality. Everything after it
+# must declare -- that is where the gate starts doing work.
+GATE_BASELINE = "94eb19b83b00fb08859f8fbd2d8a32178409507c"  # pinned by tests/core/test_sync_declaration_gate.py
+
+
 # ---------------------------------------------------------------------------
 # Governed surface (file level)
 #
@@ -60,6 +73,19 @@ GOVERNED_GLOBS: Tuple[Tuple[str, str], ...] = (
     ("LICENSE", "license and distribution"),
     ("mkdocs.yml", "documentation site configuration"),
     ("cullinan/_version.py", "version single source of truth"),
+    ("cullinan/*.py", "framework source"),
+    ("cullinan/**/*.py", "framework source"),
+    ("tests/*.py", "test suite"),
+    ("tests/**/*.py", "test suite"),
+    ("docs/*.md", "public documentation"),
+    ("docs/**/*.md", "public documentation"),
+    ("examples/*.py", "runnable example"),
+    ("examples/**/*.py", "runnable example"),
+    ("examples/**/*.md", "runnable example"),
+    ("README.MD", "public entry point"),
+    ("CHANGELOG.md", "public change log"),
+    ("scripts/*.py", "repository tooling"),
+    ("scripts/**/*.py", "repository tooling"),
 )
 
 # ``pyproject.toml`` is *not* listed above: it holds both release-critical keys
@@ -83,10 +109,26 @@ _NA_REASON = re.compile(r"^n-a\s+reason=(.+)$", re.DOTALL)
 # File-level surface matching
 # ---------------------------------------------------------------------------
 def _glob_to_re(pattern: str) -> "re.Pattern[str]":
-    """Compile a restricted glob (``*`` only, never crossing ``/``)."""
+    """Compile a restricted glob: ``*`` stays inside a segment, ``**`` crosses.
+
+    ``**/`` also matches zero segments, so ``cullinan/**/*.py`` covers both
+    ``cullinan/web/router.py`` and a hypothetical ``cullinan/router.py``.
+    """
     pieces = []
-    for ch in pattern:
-        pieces.append("[^/]*" if ch == "*" else re.escape(ch))
+    i = 0
+    while i < len(pattern):
+        if pattern.startswith("**/", i):
+            pieces.append("(?:.*/)?")
+            i += 3
+        elif pattern.startswith("**", i):
+            pieces.append(".*")
+            i += 2
+        elif pattern[i] == "*":
+            pieces.append("[^/]*")
+            i += 1
+        else:
+            pieces.append(re.escape(pattern[i]))
+            i += 1
     return re.compile("^" + "".join(pieces) + "$")
 
 
@@ -343,10 +385,33 @@ def evaluate_commit(repo: str, rev: str) -> Tuple[str, str, str]:
     return verdict, commit_subject(repo, rev), detail
 
 
+def is_grandfathered(repo: str, sha: str) -> bool:
+    """True when ``sha`` is at or before GATE_BASELINE (pre-gate, not checked)."""
+    if not GATE_BASELINE:
+        return False
+    result = subprocess.run(
+        ["git", "-C", repo, "merge-base", "--is-ancestor", sha, GATE_BASELINE],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    # Unknown baseline (shallow clone, rewritten history): do not silently pass.
+    return False
+
+
 def evaluate_range(repo: str, base: str, head: str) -> List[Tuple[str, str, str]]:
     """Return ``[(verdict, label, detail), ...]`` for ``base..head`` (oldest first)."""
     results: List[Tuple[str, str, str]] = []
     for sha in range_shas(repo, base, head):
+        if is_grandfathered(repo, sha):
+            verdict, label, _ = evaluate_commit(repo, sha)
+            results.append(
+                ("GREEN", label, "pre-gate commit, grandfathered (declarations enforced from {})".format(GATE_BASELINE))
+            )
+            continue
         results.append(evaluate_commit(repo, sha))
     return results
 
@@ -368,8 +433,16 @@ _PATH_CASES: Tuple[Tuple[str, Sequence[str], str, str], ...] = (
     ("S6 governed + unknown value",
      ["mkdocs.yml"], "docs: x\n\nMeta-Sync: maybe\n", "RED"),
     ("S7 non-governed + no declaration",
-     ["cullinan/core/model.py"], "feat: x\n", "GREEN"),
-    ("S8 non-governed + declaration",
+     ["misc/notes.txt"], "chore: x\n", "GREEN"),
+    ("S7b framework source + no declaration",
+     ["cullinan/core/model.py"], "feat: x\n", "RED"),
+    ("S7c framework source + declaration",
+     ["cullinan/core/model.py"], "feat: x\n\nMeta-Sync: required id=abc0001\n", "GREEN"),
+    ("S7d nested source + declaration",
+     ["cullinan/web/gateway/router.py"], "feat: x\n\nMeta-Sync: required id=abc0004\n", "GREEN"),
+    ("S7e tests + no declaration",
+     ["tests/web/test_x.py"], "test: x\n", "RED"),
+    ("S8 governed doc + declaration",
      ["docs/guide.md"], "docs: x\n\nMeta-Sync: required id=abc0002\n", "GREEN"),
     ("S9 version SSOT + declaration",
      ["cullinan/_version.py"], "release: x\n\nMeta-Sync: required id=abc0003\n", "GREEN"),

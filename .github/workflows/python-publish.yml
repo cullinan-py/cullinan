@@ -1,10 +1,16 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
+# Builds the package from the tagged commit and uploads it to PyPI when a
+# GitHub Release is published.
+#
+# Two things are checked before anything is uploaded, because a PyPI upload
+# cannot be undone (a version number can only be yanked, never reused):
+#
+#   1. the tag names the version the code carries -- otherwise the artefact is
+#      labelled with a version the source does not claim;
+#   2. the built wheel actually imports and reports that version -- otherwise
+#      a packaging fault ships as a release.
+#
+# For more information on publishing to package registries see
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries
 
 name: Upload Python Package
 
@@ -21,21 +27,50 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.x'
-    - name: Install dependencies
+        python-version: '3.13'
+    - name: Install build tooling
       run: |
         python -m pip install --upgrade pip
-        pip install build setuptools wheel twine
+        pip install build twine
+    - name: Verify the tag names the version the code carries
+      run: python scripts/check_release_tag_matches_version.py --tag "${GITHUB_REF_NAME}"
     - name: Build package
-      run: python -m build --sdist --wheel --outdir dist/ --no-isolation
+      run: python -m build --sdist --wheel --outdir dist/
+    - name: Check metadata
+      run: twine check dist/*
+    - name: Check the wheel declares its types
+      run: |
+        python - <<'PY'
+        import sys, zipfile, pathlib
+        wheels = list(pathlib.Path("dist").glob("*.whl"))
+        if len(wheels) != 1:
+            sys.exit(f"expected exactly one wheel, found {[w.name for w in wheels]}")
+        names = zipfile.ZipFile(wheels[0]).namelist()
+        required = ["cullinan/py.typed", "cullinan/_contracts.json"]
+        missing = [name for name in required if name not in names]
+        if missing:
+            sys.exit(f"{wheels[0].name} is missing {missing}")
+        print(f"{wheels[0].name} carries {', '.join(required)}")
+        PY
+    - name: Install the built wheel and read its version back
+      run: |
+        python -m venv "$RUNNER_TEMP/smoke"
+        "$RUNNER_TEMP/smoke/bin/pip" install --quiet dist/*.whl
+        "$RUNNER_TEMP/smoke/bin/python" - <<'PY'
+        import os, sys
+        import cullinan
+        expected = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+        if cullinan.__version__ != expected:
+            sys.exit(f"installed wheel reports {cullinan.__version__}, tag says {expected}")
+        print(f"installed wheel imports and reports {cullinan.__version__}")
+        PY
     - name: Publish package
       env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TWINE_TOKEN }}
       run: |
-          twine check dist/*
           twine upload dist/*

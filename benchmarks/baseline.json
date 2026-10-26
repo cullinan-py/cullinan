@@ -1,0 +1,41 @@
+{
+  "environment": {
+    "python": "3.13.14",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "cullinan": "0.96a5"
+  },
+  "metrics": {
+    "router_match_static": {
+      "ops_per_second": 944670.6,
+      "seconds": 0.021171,
+      "rounds": 5,
+      "iterations": 20000
+    },
+    "router_match_param": {
+      "ops_per_second": 757567.1,
+      "seconds": 0.0264,
+      "rounds": 5,
+      "iterations": 20000
+    },
+    "dispatch_json": {
+      "ops_per_second": 45068.6,
+      "seconds": 0.443768,
+      "rounds": 5,
+      "iterations": 20000
+    },
+    "dispatch_param": {
+      "ops_per_second": 31925.9,
+      "seconds": 0.626451,
+      "rounds": 5,
+      "iterations": 20000
+    },
+    "dispatch_miss": {
+      "ops_per_second": 468896.9,
+      "seconds": 0.042653,
+      "rounds": 5,
+      "iterations": 20000
+    }
+  }
+}

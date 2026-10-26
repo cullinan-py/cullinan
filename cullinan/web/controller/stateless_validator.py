@@ -184,6 +184,12 @@ def check_controller_init_source(cls: Type, strict: bool = False) -> None:
                         f"Verify these are not request-specific."
                     )
 
+    except StatefulControllerError:
+        # A refusal is the point of strict mode, not a failure to analyse the
+        # source. Without this clause the generic handler below catches it and
+        # downgrades a hard error to a debug line -- strict mode then reads as
+        # "raises" in the docstring and behaves as "does nothing".
+        raise
     except (OSError, TypeError):
         # Can't get source (built-in, dynamically created, etc.)
         # Skip validation

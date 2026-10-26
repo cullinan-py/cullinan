@@ -194,7 +194,7 @@ print("Param" in payload["stability_commitment"]["cullinan.web"])
 
 完整 API 参考可以通过自动生成脚本或手工整理的方式填充上述结构。
 
-## v0.95 新增（Track A 内部重构）
+## v0.95 新增（内部重构）
 
 ### 新增公共 API 符号
 

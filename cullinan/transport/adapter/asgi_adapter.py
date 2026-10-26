@@ -27,7 +27,7 @@ from cullinan.application.model import (
 )
 from cullinan.web.gateway.dispatcher import Dispatcher
 from cullinan.web.gateway.web_core import WebRequest, WebResponse
-from .base import WebAdapter
+from .base import WebAdapter, resolve_max_request_body_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,56 @@ def _resolve_drain_timeout(default: float = 30.0) -> float:
     except Exception:  # noqa: BLE001 - the drain bound must never crash shutdown
         pass
     return default
+
+
+def _active_application() -> Any:
+    """The running ``Application``, or ``None`` outside an application.
+
+    Imported lazily: the adapter is usable on its own (tests build it around a
+    bare ``Dispatcher``), and the application module imports the web layer, so a
+    module-level import here would be a cycle.
+    """
+    try:
+        from cullinan.application.model import Application
+
+        return Application.current()
+    except Exception:  # noqa: BLE001 - draining must never fail because of this
+        return None
+
+
+def _begin_draining_for_active_application() -> None:
+    """Announce that draining has begun, before the in-flight work is awaited.
+
+    This is the whole point of the readiness predicate: a probe is only useful
+    if it changes while there is still traffic to shed. Calling it after the
+    drain -- which is what lifespan shutdown amounts to -- answers a question
+    nobody is asking any more.
+    """
+    app = _active_application()
+    if app is None:
+        return
+    try:
+        app._begin_draining()  # noqa: SLF001 - same package, deliberate internal call
+        # T-14: say what the process is waiting for, and for how long. A drain
+        # that logs nothing is indistinguishable from a hang.
+        logger.info(
+            'Draining: waiting up to %ss for %s in-flight request(s); new work is refused',
+            _resolve_drain_timeout(),
+            getattr(app.web_runtime, 'request_count', 0),
+        )
+    except Exception as exc:  # noqa: BLE001 - never block a shutdown
+        logger.warning('Could not begin draining: %s', exc)
+
+
+def _finalize_draining_for_active_application() -> None:
+    """Close the loop: let the application record that it finished draining."""
+    app = _active_application()
+    if app is None:
+        return
+    try:
+        app._finalize_drain()  # noqa: SLF001 - same package, deliberate internal call
+    except Exception as exc:  # noqa: BLE001 - never block a shutdown
+        logger.warning('Could not finalise draining: %s', exc)
 
 
 class ASGIAdapter(WebAdapter):
@@ -146,13 +196,51 @@ class ASGIAdapter(WebAdapter):
                     "uvicorn is required for ASGI mode. Install it with: pip install uvicorn"
                 )
             logger.info('Starting ASGI server (uvicorn) on %s:%s', host, port)
-            uvicorn.run(
+
+            # The graceful bound is the framework's, and it has to be given to
+            # the server rather than kept here: uvicorn is the one that decides
+            # how long to wait for connections to close, so a bound nobody
+            # passes to it is a bound that never applies. Before this, a 4s
+            # request ran to completion with ``drain_timeout=0.2`` because
+            # uvicorn's own default is "wait forever".
+            drain_timeout = _resolve_drain_timeout()
+
+            class _CullinanUvicornServer(uvicorn.Server):
+                """Uvicorn server that tells the application it is going away.
+
+                Uvicorn closes connections first and only then runs the lifespan
+                shutdown, so a readiness predicate driven from lifespan shutdown
+                flips *after* the requests it was supposed to shed. Overriding
+                ``handle_exit`` -- the first thing a stop signal reaches -- is
+                the earliest point at which the framework can honestly say
+                "draining has begun".
+                """
+
+                def handle_exit(self, sig: int, frame: Any) -> None:  # type: ignore[override]
+                    _begin_draining_for_active_application()
+                    super().handle_exit(sig, frame)
+
+            config_kwargs = {
+                key: value
+                for key, value in kwargs.items()
+                if key not in ('server', 'log_level', 'timeout_graceful_shutdown')
+            }
+            config_kwargs.setdefault('timeout_graceful_shutdown', drain_timeout)
+            config = uvicorn.Config(
                 self._asgi_app,
                 host=host,
                 port=port,
                 log_level=kwargs.get('log_level', 'info'),
-                **{k: v for k, v in kwargs.items() if k not in ('server', 'log_level')},
+                **config_kwargs,
             )
+            try:
+                _CullinanUvicornServer(config).run()
+            finally:
+                # The drain is over (or was abandoned); make the application say
+                # so. Without this the process exits while ``phase`` still reads
+                # "draining" -- a state nobody can observe afterwards except in a
+                # report, which is exactly how it stayed wrong for a release.
+                _finalize_draining_for_active_application()
         elif server == 'hypercorn':
             try:
                 from hypercorn.config import Config
@@ -177,6 +265,43 @@ class ASGIAdapter(WebAdapter):
 # ASGI event handlers
 # ======================================================================
 
+async def _send_error_body(
+    send: Send,
+    status: int,
+    body: bytes,
+    extra_headers: Optional[List[List[bytes]]] = None,
+) -> None:
+    """Send a complete, self-consistent error response.
+
+    Written once so that the 204/304 rule above cannot be forgotten here: every
+    response this adapter emits goes through the same framing decision.
+    """
+    headers = [[b'content-type', b'application/json']]
+    headers.extend(extra_headers or [])
+    if status not in (204, 304):
+        headers.append([b'content-length', str(len(body)).encode('latin-1')])
+    await send({'type': 'http.response.start', 'status': status, 'headers': headers})
+    await send({'type': 'http.response.body', 'body': body})
+
+
+async def _read_body(receive: Receive, limit: Optional[int]) -> tuple[bytes, bool]:
+    """Read the request body, stopping once ``limit`` is exceeded.
+
+    Returns ``(body, too_large)``. The overflow is reported rather than raised
+    so the caller can answer 413 while the client is still sending: waiting for
+    the last byte of an upload you have already decided to reject is exactly the
+    cost the ceiling exists to avoid.
+    """
+    body = b''
+    while True:
+        message = await receive()
+        body += message.get('body', b'')
+        if limit is not None and len(body) > limit:
+            return body, True
+        if not message.get('more_body', False):
+            return body, False
+
+
 async def _handle_http(
     scope: Scope,
     receive: Receive,
@@ -190,18 +315,23 @@ async def _handle_http(
     ASGI server.
     """
     binding = None
+    request: Optional[WebRequest] = None
     try:
         runtime = adapter.runtime
         if runtime is not None:
             runtime.begin_request()
         binding = bind_runtime_request_context(runtime)
-        # 1. Read full body
-        body = b''
-        while True:
-            message = await receive()
-            body += message.get('body', b'')
-            if not message.get('more_body', False):
-                break
+        # 1. Read full body (bounded, if a bound is configured)
+        limit = resolve_max_request_body_bytes()
+        body, too_large = await _read_body(receive, limit)
+        if too_large:
+            await _send_error_body(
+                send,
+                413,
+                b'{"error":"Payload Too Large","reason":"request body exceeded max_request_body_bytes"}',
+                extra_headers=[[b'connection', b'close']],
+            )
+            return
 
         # 2. Build WebRequest from ASGI scope
         request = await adapter.create_request_adapter().build_request(scope, body)
@@ -214,24 +344,46 @@ async def _handle_http(
         # 4. Send response via ASGI
         await adapter.create_response_writer().write_response(response, send)
 
-    except Exception:
+    except Exception as exc:
         logger.exception('Uncaught error in ASGI HTTP handler')
-        # Send a minimal 500 response so the connection is not left hanging
+        # Not every exception that reaches here is a server fault. A request
+        # that arrives while the application is draining is a *timing* problem,
+        # and answering 500 tells the caller (and any probe) that the code is
+        # broken. 503 says "try another instance", which is what is true.
+        from cullinan.core.exceptions import ContainerDrainingError
+
+        # A request that fails while the container is no longer accepting work
+        # is a timing problem whatever exception surfaced, and the surface can
+        # be a contextvar error, a closed scope manager, or our own subclass.
+        # Asking the application is more reliable than enumerating types.
+        _app = _active_application()
+        _draining = _app is not None and not getattr(_app, 'accepts_requests', True)
+        if isinstance(exc, ContainerDrainingError) or _draining:
+            await _send_error_body(
+                send,
+                503,
+                b'{"error":"Service Unavailable","reason":"the application is draining"}',
+                extra_headers=[[b'retry-after', b'1']],
+            )
+            return
+        # Anything else still goes through the gateway's resolver when we know
+        # what was asked, so framework exceptions keep their status codes
+        # instead of collapsing into 500 at the transport boundary.
+        response = None
+        if request is not None:
+            try:
+                response = await adapter.dispatcher.exception_resolver.resolve(request, exc)
+            except Exception:  # noqa: BLE001 - fall back to the minimal response
+                response = None
+        if response is not None:
+            try:
+                await adapter.create_response_writer().write_response(response, send)
+                return
+            except Exception:  # noqa: BLE001
+                pass
         try:
-            error_body = b'{"error":"Internal Server Error","status":500}'
-            await send({
-                'type': 'http.response.start',
-                'status': 500,
-                'headers': [
-                    [b'content-type', b'application/json'],
-                    [b'content-length', str(len(error_body)).encode('latin-1')],
-                ],
-            })
-            await send({
-                'type': 'http.response.body',
-                'body': error_body,
-            })
-        except Exception:
+            await _send_error_body(send, 500, b'{"error":"Internal Server Error","status":500}')
+        except Exception:  # noqa: BLE001 - nothing left to try
             pass
     finally:
         runtime = adapter.runtime
@@ -392,8 +544,27 @@ async def _send_response(
         for name, value in response.iter_headers(include_content_type=True):
             raw_headers.append([name.encode('latin-1'), value.encode('latin-1')])
 
-    # Content-Length
-    raw_headers.append([b'content-length', str(len(body)).encode('latin-1')])
+    # Content-Length.
+    #
+    # Three cases have to be kept apart, because getting them wrong is visible
+    # to clients and to intermediaries:
+    #
+    # * 204 and 304 carry no body by definition, so a Content-Length header is
+    #   not allowed at all (RFC 9110 §8.6). Sending ``content-length: 0`` there
+    #   is a protocol violation that some proxies reject.
+    # * The response may already carry a Content-Length -- set explicitly by a
+    #   handler, or by the static-file layer for a HEAD request, where it
+    #   announces the size of the representation that a GET would return.
+    #   Appending a second one produced ``15`` and ``0`` in the same header
+    #   list; h11 then waits for a body that never comes and the response is
+    #   never completed.
+    # * Otherwise the header is ours to add, from the body we are about to send.
+    _NO_BODY_STATUS = (204, 304)
+    has_content_length = any(
+        name.lower() == b'content-length' for name, _value in raw_headers
+    )
+    if response.status_code not in _NO_BODY_STATUS and not has_content_length:
+        raw_headers.append([b'content-length', str(len(body)).encode('latin-1')])
 
     await send({
         'type': 'http.response.start',

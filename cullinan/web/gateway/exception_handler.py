@@ -161,6 +161,17 @@ class ExceptionHandler:
         status = 500
         message = 'Internal Server Error'
 
+        from cullinan.core.exceptions import ContainerDrainingError
+
+        if isinstance(exc, ContainerDrainingError):
+            # Not an error in the request: the server is going away. A probe or
+            # a proxy needs to read this as "try another instance", and 500
+            # reads as "this code is broken".
+            return WebResponse.json(
+                {'error': 'Service Unavailable', 'reason': 'the application is draining'},
+                status_code=503,
+            )
+
         if isinstance(exc, CullinanError):
             # Try to infer status from error_code
             code = getattr(exc, 'error_code', '')

@@ -2,12 +2,18 @@
 """Cullinan framework configuration."""
 
 from contextlib import contextmanager
+import logging
 import os
 import sys
 from typing import Any, Dict, Iterator, List, Optional
 
 
 _CLASS_CONFIG_ATTR = "__cullinan_config__"
+
+# The logger level that was in place before ``verbose=True`` raised it, so that
+# ``verbose=False`` can put it back. One slot is enough: the framework logger is
+# process-global, and the last enable is the one whose level matters.
+_VERBOSE_RESTORE_LEVEL: List[Optional[int]] = [None]
 
 class CullinanConfig:
     """Global configuration container for Cullinan."""
@@ -92,6 +98,18 @@ class CullinanConfig:
 
         # ASGI server: 'uvicorn' (default), 'hypercorn'
         self.asgi_server: str = 'uvicorn'
+
+        # Largest request body the framework will read, in bytes. ``None``
+        # (the default) keeps the historical behaviour of reading whatever the
+        # client sends; a number turns an oversized upload into 413 before the
+        # body reaches a handler.
+        self.max_request_body_bytes: Optional[int] = None
+
+        # How long a graceful shutdown may wait for in-flight requests before
+        # cutting them. ``None`` means "leave the runtime default alone" (30s);
+        # setting it here puts the knob on the same surface as the port and the
+        # engine, instead of requiring the advanced Application entry.
+        self.drain_timeout: Optional[float] = None
 
         # Whether to enable the gateway middleware pipeline
         self.enable_middleware_pipeline: bool = True
@@ -222,6 +240,14 @@ class CullinanConfig:
             self.server_port = config['server_port']
         if 'explicit_modules' in config:
             self.explicit_modules = config['explicit_modules']
+        if 'max_request_body_bytes' in config:
+            value = config['max_request_body_bytes']
+            self.max_request_body_bytes = int(value) if value is not None else None
+
+        if 'drain_timeout' in config:
+            value = config['drain_timeout']
+            self.drain_timeout = float(value) if value is not None else None
+
         if 'static_files' in config:
             value = config['static_files']
             self.static_files = list(value) if value else []
@@ -257,6 +283,8 @@ class CullinanConfig:
             'asgi_server': self.asgi_server,
             'server_host': self.server_host,
             'server_port': self.server_port,
+            'drain_timeout': self.drain_timeout,
+            'max_request_body_bytes': self.max_request_body_bytes,
             'explicit_modules': self.explicit_modules,
             'static_files': list(self.static_files),
             'middlewares': list(self.middlewares),
@@ -330,6 +358,8 @@ def configure(
     asgi_server: Optional[str] = None,
     server_host: Optional[str] = None,
     server_port: Optional[int] = None,
+    drain_timeout: Optional[float] = None,
+    max_request_body_bytes: Optional[int] = None,
     explicit_modules: Optional[List[str]] = None,
     static_files: Optional[List[Any]] = None,
     *,
@@ -344,7 +374,10 @@ def configure(
         root_module: Legacy root-module entrypoint. This default startup path has been removed.
         user_packages: User package list, for example ``['myapp', 'myapp.controllers']``.
         project_root: Project root directory. If omitted, it is inferred automatically.
-        verbose: Whether to enable verbose logging.
+        verbose: Lower the ``cullinan`` logger to ``DEBUG`` so the scan and the route table
+            report themselves. The level is process-wide and is not restored when the
+            configuration is replaced, so treat it as a startup decision rather than a
+            per-application flag. A logger with no handler still prints nothing.
         auto_scan: Whether to auto-scan packages. When ``False``, only the given
             user packages are imported.
         exclude_packages: Package names excluded from scanning.
@@ -447,10 +480,33 @@ def configure(
             if verbose:
                 print(f"Auto-added project root to sys.path: {project_root}")
 
+    if max_request_body_bytes is not None:
+        if max_request_body_bytes <= 0:
+            raise ValueError("max_request_body_bytes must be greater than zero")
+        _config.max_request_body_bytes = int(max_request_body_bytes)
+
+    if drain_timeout is not None:
+        if drain_timeout <= 0:
+            raise ValueError("drain_timeout must be greater than zero")
+        _config.drain_timeout = float(drain_timeout)
+
     if project_root is not None:
         _config.set_project_root(project_root)
 
     _config.verbose = verbose
+    # ``verbose`` used to be stored and never read, so turning it on changed
+    # nothing. It now lowers the framework's own logger to DEBUG, which is where
+    # the scan reports what it imported and what it skipped -- and turning it off
+    # restores the level that was in place before, because a switch that only
+    # works in one direction is a switch nobody trusts twice.
+    _framework_logger = logging.getLogger('cullinan')
+    if verbose:
+        if _framework_logger.level != logging.DEBUG:
+            _VERBOSE_RESTORE_LEVEL[0] = _framework_logger.level
+            _framework_logger.setLevel(logging.DEBUG)
+    elif _VERBOSE_RESTORE_LEVEL[0] is not None:
+        _framework_logger.setLevel(_VERBOSE_RESTORE_LEVEL[0])
+        _VERBOSE_RESTORE_LEVEL[0] = None
     _config.auto_scan = auto_scan
 
     if exclude_packages is not None:
@@ -464,6 +520,7 @@ def configure(
             f"Must be one of: {', '.join(valid_policies)}"
         )
     _config.startup_error_policy = startup_error_policy
+
     if server_engine is not None:
         _config.server_engine = server_engine
     if asgi_server is not None:

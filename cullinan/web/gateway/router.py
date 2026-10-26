@@ -189,6 +189,25 @@ class Router:
         result = self._match_node(self._root, segments, 0, method, params)
         return result
 
+    def allowed_methods(self, path: str) -> List[str]:
+        """Methods registered for ``path``, ignoring which one was asked for.
+
+        Used to tell "this URL does not exist" (404) from "this URL exists but
+        not for that method" (405). Without it every method mismatch looked like
+        a missing route, which is both wrong and unhelpful to a client that
+        simply guessed the verb.
+        """
+        methods: set[str] = set()
+        for entry in self._all_routes:
+            if entry.method == '*':
+                continue
+            methods.add(entry.method)
+        allowed: List[str] = []
+        for method in sorted(methods):
+            if self.match(method, path) is not None:
+                allowed.append(method)
+        return allowed
+
     def _match_node(
         self,
         node: _TrieNode,

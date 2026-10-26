@@ -108,7 +108,8 @@ from cullinan.controller import controller
 from cullinan.params import Body
 
 # After
-from cullinan.web import controller, Body
+from cullinan import controller
+from cullinan.web import Body
 ```
 
 ### 高级传输集成

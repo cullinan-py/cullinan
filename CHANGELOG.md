@@ -7,15 +7,116 @@ in [`README.MD`](README.MD).
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## v0.96a6
+
+**v0.96a6** is the sixth alpha of the 0.96 line. It is the release where the
+shutdown path stops being a description and becomes a measurement: the bound is
+handed to the server that waits, the drain is announced while there is still
+traffic to shed, and both engines answer a request that arrives too late in a
+way a reader can plan around. It also closes the framing defects that made a
+HEAD request for a static file return nothing, and gives the request body a
+ceiling.
+
+It also lands the surfaces a project needs in order to be depended on, operated and audited: a generated API reference, a deployment guide in both languages, a benchmark harness with a recorded baseline, and repository checks that fail when the changelog, the example map or the version copies fall behind.
+
+### Added
+
+- `max_request_body_bytes` on `configure(...)`: an oversized body is refused without reading the rest of it, before any handler runs. ASGI answers `413`; Tornado's protocol layer (`max_body_size`) answers `400` first — both stop early, the status differs by engine. Unset means "read whatever arrives", which is the previous behaviour
+- `drain_timeout` on `configure(...)`, so the shutdown bound sits next to `server_port` and `server_engine` instead of requiring the advanced `Application` entry
+- `ContainerDrainingError` in `cullinan.core.exceptions`: the error a route raises when the container has begun draining, so a caller can tell "shut down" apart from "this handler failed"
+- `405` with an `Allow` header when a path exists for another method, and `404` for `OPTIONS` on a path nobody registered — previously every method mismatch was a `404` and every unregistered `OPTIONS` a `204`
+- a drain log that says how long the process is waiting and for how many requests
+- `examples/runtime_controls/`: every knob a deployment usually sets (`project_root`, `exclude_packages`, `startup_error_policy`, `server_engine`, `asgi_server`, `server_host`, `verbose`) in one runnable file, so each option can be seen taking effect
+- a generated API reference (`docs/reference/api/`), built from the installed
+  package by mkdocstrings, so a published signature is the signature the code
+  has; the hand-written guides remain as the place that tells you which symbol
+  to reach for
+- a production deployment guide in both languages, naming only surfaces that
+  exist and checked against them by test
+- a benchmark harness (`benchmarks/bench.py`) with a recorded baseline and a
+  `--check` mode that reports a regression instead of a headline number
+- `examples/graceful_shutdown/`, a runnable readiness recipe built on
+  `accepts_requests` and `add_draining_handler`
+- `examples/features.json`, the feature-to-example map, enforced in both
+  directions: a feature without an example fails, and an example nobody
+  declared fails too
+- `SECURITY.md`, with a private reporting channel and a supported-version table
+- repository checks: `scripts/check_changelog.py` (the changelog covers the
+  released versions), `scripts/check_claims.py` (every positioning claim still
+  has its evidence), `scripts/check_release_tag_matches_version.py` (a tag names
+  the version the code carries), and `scripts/check_channel_sync.py` (a release
+  reached the documentation channel too)
+
+### Changed
+
+- draining is announced when the stop signal arrives rather than after the wait, so `accepts_requests` turns `False` while there is still traffic to shed
+- a request refused because the container is draining answers `503` with `Retry-After` instead of a bare `500`, and transport-level failures go through the gateway resolver rather than being flattened into `500`
+- security headers are applied to error responses too, so the responses that echo the request path are no longer the ones without `nosniff`
+- the deployment guide describes what each engine actually does during a drain: Tornado answers `503`; ASGI closes its listener first, so there is no window a probe can rely on
+- the exit status after a stop signal is documented as what it is: ASGI exits `143` on Linux and macOS because uvicorn re-raises the signal it captured, Tornado exits `0` on all three platforms because its adapter stops the loop it owns and returns, and Windows uses `SIGBREAK`
+- coverage is measured and enforced: `[tool.coverage.*]` in `pyproject.toml`
+  with a floor, and a CI job that runs the same number locally and in CI
+- the publisher now verifies the tag against `cullinan/_version.py` and installs
+  the wheel it built before uploading, so a mislabelled or unimportable artefact
+  cannot reach the package index
+- the docs build installs the package and generator it needs, and separates
+  griffe's annotation notes from build failures without hiding them
+- **breaking:** `cullinan.web.controller` now names the controller submodule instead of the `@controller` decorator, matching `cullinan.web.middleware` in `v0.96a5`; the decorator stays at `from cullinan import controller` and at `from cullinan.web.controller import controller`. Code importing the decorator from `cullinan.web` fails loudly with `'module' object is not callable` rather than binding a module by accident
+- the dotted import path `import cullinan.web.controller.<module> as x` works again; while the decorator owned the name it raised `ImportError: cannot import name ... (unknown location)`
+
+### Fixed
+
+- `configure(verbose=True)` now lowers the framework logger to `DEBUG`. It was stored and never read, so turning it on changed nothing; the registration lines it is supposed to reveal are now actually emitted
+- `configure(verbose=False)` restores the logger level that was in place before `verbose=True` raised it; the switch used to work in one direction only, so every later configuration in the same process inherited the noise
+- `check_controller_init_source(..., strict=True)` now raises `StatefulControllerError`. It raised inside a `try` whose generic handler caught the exception, so the refusal arrived as a debug log line and the function returned normally
+- **Tornado ignored a stop signal on Linux.** The handler scheduled the drain with `add_callback`, which does not wake a loop blocked in `epoll`, so after `SIGTERM` the callback waited for an unrelated event and the process kept sitting there until something else killed it. The loop is now resolved when the handlers are installed and the drain is scheduled with `add_callback_from_signal`; a failure to schedule is logged instead of swallowed. Measured on Linux and macOS: the process now exits with `0` within the drain bound.
+- a HEAD request for a static file returned no bytes and ended in `ASGI callable returned without completing response`: the adapter appended a second `Content-Length` (`0`) next to the one the static layer had already set (`15`). Existing headers are left alone now, and `204`/`304` never carry one
+- the same request returned `200` on ASGI and `304` on Tornado, because Tornado invents an ETag and honours `If-None-Match`; the handler no longer invents one, so the status code no longer depends on the engine
+- the drain bound was resolved correctly and then never passed to uvicorn, whose own default is to wait forever; a four-second request ran to completion with `drain_timeout=0.2`
+- the Tornado signal handler stopped the loop directly, which cut in-flight requests instead of waiting for them
+- a drain that expired with work still running left `phase` at `draining` while the container was already closed; the transport that is about to stop the world now finalises it
+
+### Documentation
+
+- `docs/why-cullinan.md` states the positioning once, with each claim carrying
+  machine-checked evidence and no claim without one
+- the examples each state which feature they demonstrate, and the two that had
+  no README now have one
+
 ## v0.96a5
 
-**v0.96a5** is the fifth alpha of the 0.96 line. It settles middleware ownership and the boot boundary: a middleware declared as a class is created and held by the container, a class that cannot be honoured is refused before it is constructed, and a registration made on the gateway pipeline before startup is refused instead of being silently reset:
+**v0.96a5** is the fifth alpha of the 0.96 line. It settles middleware ownership and the boot boundary, and makes the shutdown path actually graceful: draining no longer blocks the event loop it is called from, and an application can be asked whether it is still accepting requests.
 
+### Added
+
+- `ApplicationContext.ashutdown()` and `ApplicationContext.await_drained()`, so a caller already on an event loop has a path that yields control instead of starving the requests it is waiting for
+- `ApplicationContext.accepts_requests`, a predicate that turns `False` the moment draining begins
+- `ApplicationContext.add_draining_handler()`, a callback fired once on that transition, mirroring `add_shutdown_handler()`
+
+### Changed
+
+- `shutdown()` and `ashutdown()` now return whether the drain completed within the bound, so a clean drain and a timed-out one are distinguishable without reading logs
+- the ASGI lifespan shutdown uses the asynchronous path and resolves its drain bound from `WebRuntimeConfig.drain_timeout` rather than a hard-coded default
+- `uninstall()` drives the close to a terminal state instead of leaving the application in draining with its lifecycle instances unreleased
 - a middleware class passed to `configure(middlewares=[Class])` — or to `configure(builtin_middleware=[Class])` — is created by the application container, with its declared dependencies injected; a class without `@component` is refused at startup, and the legacy `@middleware(priority=...)` path follows the same rule
 - a refused middleware class is validated before it is constructed, so the rejection path has no side effect and nothing reaches the pipeline
 - a `get_pipeline().add(...)` registration made before startup is reported and then refused at the boot boundary with a `ConfigurationError` (`PREBOOT_REGISTRATION_ERROR`), rather than being accepted and reset
 - `cullinan.web.middleware` now names the middleware submodule instead of the `@middleware` decorator; the decorator moves to the top-level import (`from cullinan import middleware`)
 - no public API symbol is added or removed; the four `__all__` surfaces stay at 44 / 26 / 34 / 72
+
+### Fixed
+
+- the drain wait no longer blocks when it is called from inside a running event loop. It used a blocking sleep there, which starved the in-flight request tasks it was waiting for, so the wait always burned the full timeout and then dropped them; the blocking wait now runs only when no loop is running, and skipping it is reported at warning level
+- drain finalisation that must defer while requests are still in flight now says so instead of returning silently
+- a closed-state guard compared the container state against `"CLOSED"` while the enum value is `"closed"`, so the condition was always true and guarded nothing; it now compares the enum member, in all three places that had the same mistake
+
+### Removed
+
+- a shutdown helper that was defined twice, byte-identical, with no callers, and waited on a request counter that did not exist on the module it read
+
+### Documentation
+
+- the lifecycle guide records why the synchronous wait must not run on the event loop, and shows the readiness recipe — the predicate plus the draining callback — for wiring your own probe
 
 ## v0.96a4
 

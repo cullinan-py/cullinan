@@ -18,7 +18,8 @@ runtime selection stays a deployment decision, not an application concern.
 from pathlib import Path
 
 from cullinan import application, configure
-from cullinan.web import StaticFiles, controller, get_api
+from cullinan import controller
+from cullinan.web import StaticFiles, get_api
 
 
 _HERE = Path(__file__).resolve().parent

@@ -28,6 +28,12 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          # These two jobs run the suite, and parts of it assert
+          # things about history: that the declaration gate's
+          # baseline is an ancestor of HEAD, and that the changelog
+          # covers every release tag.
+          fetch-depth: 0
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -52,6 +58,51 @@ jobs:
         run: pip install ruff
       - name: Ruff check
         run: ruff check .
+
+  changelog:
+    # Needs the tags, which a default checkout does not fetch -- comparing the
+    # entries against what was actually released is the entire job. Without
+    # full history this check ran against zero tags and passed vacuously.
+    name: changelog gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Check entries against release tags
+        run: python scripts/check_changelog.py
+
+  coverage:
+    # A single job rather than one per matrix entry: the floor is a property of
+    # the suite as a whole, and repeating the measurement five times would only
+    # produce five copies of the same number.
+    name: coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # These two jobs run the suite, and parts of it assert
+          # things about history: that the declaration gate's
+          # baseline is an ancestor of HEAD, and that the changelog
+          # covers every release tag.
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+      - name: Measure coverage
+        run: python -m coverage run --source=cullinan -m pytest tests -q
+      - name: Enforce the floor
+        # The floor lives in pyproject.toml, so the local run and this job use
+        # the same number; `coverage report` exits non-zero when it is missed.
+        run: python -m coverage report
 
   build:
     name: build & twine check

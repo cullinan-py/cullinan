@@ -4,7 +4,7 @@
 
 > **仅用于升级：** 这页只服务于版本迁移工作，不属于首次 onboarding。
 
-> **说明**：适用于 v0.9x → v0.93 范围，并含至 v0.96a5 的说明；当你要把 v0.9x 代码库升级到 v0.93 时，阅读本页。
+> **说明**：适用于 v0.9x → v0.93 范围，并含至 v0.96a6 的说明；当你要把 v0.9x 代码库升级到 v0.93 时，阅读本页。
 
 ## 变更总览
 
@@ -209,6 +209,24 @@ get_pipeline().add(AuthMiddleware())
 **自省面。** `cullinan.web.gateway.get_pipeline().list_middleware()` 现在按遗留中间件**逐个**列出条目 —— 条目数由**单个桥接条目变为每个已注册中间件各一条** —— 且每条以**真实中间件**命名（而非桥接名），因此解析后的顺序可直接读取。
 
 内置层同样是声明式的：`configure(builtin_middleware=[...])` 可替换它，`configure(builtin_middleware=[])` 可关闭它。
+
+#### v0.96a6：控制器装饰器移到顶层导入
+
+`from cullinan.web import controller` 过去得到的是 `@controller` 装饰器。现在 `cullinan.web.controller` 是控制器子模块，因此该名字解析为子模块。装饰器本身未变，仍可从顶层取得。
+
+| 导入 | 变更前 | 变更后 |
+|---|---|---|
+| `from cullinan.web import controller` | 装饰器 | `cullinan.web.controller` 子模块 |
+| `from cullinan import controller` | 装饰器 | 装饰器（不变） |
+| `from cullinan.web.controller import controller` | 装饰器 | 装饰器（不变） |
+
+**受影响者界定。** 只有**从** `cullinan.web` 导入 `controller` 的代码受影响。从顶层、或从 `cullinan.web.controller` 导入的代码无需改动。
+
+**迁移动作。** 把导入移到顶层：
+
+    from cullinan import controller
+
+**这次修的是什么。** 装饰器占用该名字期间，点号路径是坏的：`import cullinan.web.controller.registry as registry` 会抛 `ImportError: cannot import name 'registry' from 'controller' (unknown location)` —— 属性查找本该拿到包，却拿到一个函数。切换之后该导入可用，且两种合法写法都仍能取到装饰器。
 
 #### v0.96a5：中间件装饰器移到顶层导入
 

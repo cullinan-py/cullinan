@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
-from cullinan.web import Path, WebResponse, controller, get_api
+from cullinan import controller
+from cullinan.web import Path, WebResponse, get_api
 
 if TYPE_CHECKING:
     from .services import UserDirectoryService

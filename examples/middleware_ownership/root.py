@@ -12,7 +12,8 @@ and the ownership difference between them are visible in one place.
 """
 from cullinan import application, configure
 from cullinan.core import component, get_application_context
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 from cullinan.web.gateway import GatewayMiddleware, get_pipeline
 
 

@@ -6,6 +6,7 @@ predicate. The gate's own ``--self-test`` provides the end-to-end red/green
 contrast, and the CI job / release tag gate wire it into the pipeline.
 """
 import importlib.util
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -39,13 +40,33 @@ def test_governed_paths_are_detected(path):
 
 
 @pytest.mark.parametrize("path", [
-    "cullinan/core/model.py",
-    "docs/guide.md",
-    "README.MD",
-    "scripts/check_sync_declaration.py",
+    "misc/notes.txt",
+    "tools/release.sh",
+    "examples/features.json.probe",
 ])
 def test_unrelated_paths_are_ignored(path):
     assert gate.governed_reason(path) is None
+
+
+@pytest.mark.parametrize("path", [
+    "cullinan/core/model.py",
+    "cullinan/web/gateway/router.py",
+    "tests/web/test_x.py",
+    "tests/platform/test_posix_signals.py",
+    "docs/guide.md",
+    "docs/zh/deployment.md",
+    "examples/request_body_limit/root.py",
+    "README.MD",
+    "CHANGELOG.md",
+    "scripts/check_sync_declaration.py",
+])
+def test_shipped_surface_requires_a_declaration(path):
+    """A feature, a test, a page or an example is a shipped change, not plumbing.
+
+    These paths used to be listed as unrelated, which is why a feature could ship
+    with no example and every gate stayed green.
+    """
+    assert gate.governed_reason(path) is not None
 
 
 def test_pyproject_is_handled_by_the_key_predicate_not_the_file_table():
@@ -59,8 +80,11 @@ def test_leading_dot_slash_is_normalized():
 
 
 def test_governed_hits_reports_each_matched_path():
-    hits = gate.governed_hits([".github/workflows/ci.yml", "cullinan/core/model.py"])
-    assert [path for path, _ in hits] == [".github/workflows/ci.yml"]
+    hits = gate.governed_hits(
+        [".github/workflows/ci.yml", "cullinan/core/model.py", "misc/notes.txt"]
+    )
+    assert [path for path, _ in hits] == [".github/workflows/ci.yml", "cullinan/core/model.py"]
+    assert dict(hits)["cullinan/core/model.py"].endswith("framework source")
 
 
 # ---------------------------------------------------------------------------
@@ -212,3 +236,34 @@ def test_no_change_does_not_trigger():
 # ---------------------------------------------------------------------------
 def test_builtin_self_test_is_green():
     assert gate.self_test() == 0
+
+
+def test_the_grandfather_baseline_cannot_drift():
+    """The baseline decides which commits escape a declaration.
+
+    Moving it forward would whitelist commits that were never declared, so the
+    value is pinned here: changing it means changing this test, in the same
+    commit, in plain sight. A baseline that can be nudged by a later commit is
+    not a baseline, it is an escape hatch.
+    """
+    assert gate.GATE_BASELINE == "94eb19b83b00fb08859f8fbd2d8a32178409507c"
+
+
+def test_the_baseline_is_reachable_from_head():
+    """A baseline that cannot be resolved exempts nobody, and exempts silently.
+
+    Rewriting history moves the baseline commit to a new sha. The old one stays
+    in the object database as an orphan, so "the object exists" is not enough:
+    every commit after it stops being its descendant and the gate starts
+    reporting red on commits that were never meant to be judged. Asking whether
+    it is an ancestor of HEAD is what catches that.
+    """
+    repo = str(Path(gate.__file__).resolve().parents[1])
+    result = subprocess.run(
+        ["git", "-C", repo, "merge-base", "--is-ancestor", gate.GATE_BASELINE, "HEAD"],
+        capture_output=True,
+    )
+    assert result.returncode == 0, (
+        "GATE_BASELINE is not an ancestor of HEAD; if history was rewritten, point it "
+        "at the rewritten commit in the same change"
+    )

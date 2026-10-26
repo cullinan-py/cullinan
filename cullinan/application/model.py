@@ -930,12 +930,21 @@ class Application:
         self.phase = "draining"
         self.runtime.begin_draining()
 
-    def _finalize_drain(self) -> None:
+    def _finalize_drain(self, force: bool = False) -> None:
+        """Record that draining is over.
+
+        ``force`` exists for the transport that has already stopped the world:
+        when the drain bound expires and the server is about to stop its loop,
+        nothing will ever call back in, so deferring here would strand the
+        application in ``draining`` -- permanently, since the process is going
+        away. The counts are still reported in that case, they just stop being a
+        veto.
+        """
         if self.runtime is None:
             return
         pending = self.web_runtime.request_count
         scopes = self.context.active_request_count
-        if pending > 0 or scopes > 0:
+        if not force and (pending > 0 or scopes > 0):
             # This close trigger fires on the transport counter alone, so it can
             # run while request scopes are still active. Defer -- but never
             # silently: a deferral is only safe because a later trigger (or
@@ -947,6 +956,12 @@ class Application:
                 scopes,
             )
             return
+        if force and (pending > 0 or scopes > 0):
+            _logger.warning(
+                "Finalising drain with work still recorded: transport_requests=%s request_scopes=%s",
+                pending,
+                scopes,
+            )
         if self.context.state is not ContainerState.CLOSED:
             # The drain bound comes from the runtime configuration rather than a
             # hidden default: ``WebRuntimeConfig.drain_timeout`` (default 30.0,
@@ -959,7 +974,19 @@ class Application:
 
 def _clone_runtime_config(config: Optional[WebRuntimeConfig]) -> WebRuntimeConfig:
     if config is None:
-        return WebRuntimeConfig()
+        runtime_config = WebRuntimeConfig()
+        # ``@configure(drain_timeout=...)`` is the surface most applications
+        # already use for the port and the engine; a shutdown bound that only
+        # the advanced entry could reach was the odd one out.
+        try:
+            from cullinan.support.config import get_config
+
+            configured = getattr(get_config(), 'drain_timeout', None)
+        except Exception:  # noqa: BLE001 - configuration lookup must not break install
+            configured = None
+        if isinstance(configured, (int, float)) and not isinstance(configured, bool):
+            runtime_config.drain_timeout = float(configured)
+        return runtime_config
     return WebRuntimeConfig(
         warmup_checks=tuple(config.warmup_checks),
         health_checks=tuple(config.health_checks),

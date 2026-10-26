@@ -62,7 +62,8 @@ python -m pip install cullinan
 # minimal_app.py
 from cullinan import application, configure
 from cullinan.core import service
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 
 
 @service
@@ -123,7 +124,8 @@ python minimal_app.py
 # minimal_app.py
 from cullinan import application, configure
 from cullinan.core import service
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 
 
 @service
@@ -181,7 +183,8 @@ Cullinan 通过装饰器驱动的组件发现与运行时管理的装配流程�
 - 如果你明确需要底层容器或运行时内部机制，请转到 [运行时与扩展](internals/index.md)，不要把那条路径当成快速开始模型
 
 ```python
-from cullinan.web import controller, get_api, Path
+from cullinan import controller
+from cullinan.web import get_api, Path
 from cullinan.core import service
 
 @service

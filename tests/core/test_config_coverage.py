@@ -274,3 +274,25 @@ class TestProjectRootDetection(unittest.TestCase):
         config.set_project_root(cwd)
         
         self.assertEqual(config.project_root, cwd)
+
+
+def test_verbose_can_be_turned_off_again():
+    """A switch that only works in one direction is a switch nobody trusts twice.
+
+    ``configure(verbose=True)`` lowers the framework logger to DEBUG. Without a
+    way back, every later configuration in the same process inherits the noise,
+    which is how a test suite starts printing logs nobody asked for.
+    """
+    import logging
+
+    from cullinan import configure
+
+    logger = logging.getLogger("cullinan")
+    original = logger.level
+    try:
+        configure(verbose=True)
+        assert logger.level == logging.DEBUG
+        configure(verbose=False)
+        assert logger.level == original, "verbose=False did not restore the previous level"
+    finally:
+        logger.setLevel(original)

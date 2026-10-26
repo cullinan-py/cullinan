@@ -157,7 +157,7 @@ def test_container_surface_mirrors_the_declaration_diff(tmp_path, monkeypatch):
 def _pipeline_dropped_is_present(snapshot) -> bool:
     """The pipeline sub-surface exists and carries a ``dropped`` sequence.
 
-    This is the check ORCH's per-surface verdict asks for: on a successful start
+    This is the per-surface guarantee a review asks for: on a successful start
     the pipeline's dropped set is empty, so it must be *present and empty*, never
     *absent*. The predicate has teeth (see the red/green pair below).
     """

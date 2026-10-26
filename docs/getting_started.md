@@ -63,7 +63,8 @@ python -m pip install cullinan
 # minimal_app.py
 from cullinan import application, configure
 from cullinan.core import service
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 
 
 @service
@@ -124,7 +125,8 @@ Here's a minimal Cullinan application that demonstrates the core framework featu
 # minimal_app.py
 from cullinan import application, configure
 from cullinan.core import service
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 
 
 @service
@@ -168,7 +170,8 @@ Cullinan provides built-in IoC/DI support through decorator-driven component dis
 - If you intentionally need low-level container or runtime internals, continue in [Internals & Extensions](internals/index.md) instead of treating that path as the quick-start model
 
 ```python
-from cullinan.web import controller, get_api, Path
+from cullinan import controller
+from cullinan.web import get_api, Path
 from cullinan.core import service
 
 @service

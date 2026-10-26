@@ -16,6 +16,24 @@ from cullinan.web.gateway.dispatcher import Dispatcher
 logger = logging.getLogger(__name__)
 
 
+def resolve_max_request_body_bytes() -> Optional[int]:
+    """The configured request-body ceiling, or ``None`` for no ceiling.
+
+    A ceiling nobody enforces is a comment: both adapters call this and both
+    refuse the request themselves, because the body is read before routing (the
+    framework cannot know whether the route wants it until it has it).
+    """
+    try:
+        from cullinan.support.config import get_config
+
+        value = getattr(get_config(), 'max_request_body_bytes', None)
+    except Exception:  # noqa: BLE001 - a config lookup must never break a request
+        return None
+    if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+        return value
+    return None
+
+
 class WebAdapter(WebDriver, ABC):
     """Abstract base class for runtime-specific Web adapters.
 

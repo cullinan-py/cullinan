@@ -11,7 +11,8 @@ The ordered pipeline can be read back at runtime through the public reflection
 API: ``cullinan.web.gateway.get_pipeline().list_middleware()``.
 """
 from cullinan import application, configure
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 from cullinan.web.gateway import get_pipeline
 
 from .middleware import ApiKeyGateMiddleware, RequestMarkerMiddleware

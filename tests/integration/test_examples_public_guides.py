@@ -165,13 +165,13 @@ _EXEMPT_LEGACY_IMPORT_BLOCKS = {
     ("migration_guide.md", "a69165a46a5a0ec7"): "'Old style' example: removed cullinan.app entrypoint",
     ("migration_to_final_semantic_layout.md", "4ff57b10c924a54b"): "'Before' example: removed cullinan.public_api",
     ("migration_to_final_semantic_layout.md", "c630f77e3d7d2c30"): "'Before' example: removed cullinan.application_model",
-    ("migration_to_final_semantic_layout.md", "b620681f8fe9905b"): "'Before' example: removed cullinan.controller / cullinan.params",
+    ("migration_to_final_semantic_layout.md", "0fdc4a06c3177d10"): "'Before' example: removed cullinan.controller / cullinan.params",
     ("migration_to_final_semantic_layout.md", "c817df3ddebca627"): "'Before' example: removed cullinan.adapter",
     ("zh/migration_guide.md", "8dbbadbaf22519c2"): "'Before (1.x)' example: removed grouped registry helpers",
     ("zh/migration_guide.md", "0f481ec0a8c741b6"): "'Old style' example: removed cullinan.app entrypoint",
     ("zh/migration_to_final_semantic_layout.md", "4ff57b10c924a54b"): "'Before' example: removed cullinan.public_api",
     ("zh/migration_to_final_semantic_layout.md", "c630f77e3d7d2c30"): "'Before' example: removed cullinan.application_model",
-    ("zh/migration_to_final_semantic_layout.md", "b620681f8fe9905b"): "'Before' example: removed cullinan.controller / cullinan.params",
+    ("zh/migration_to_final_semantic_layout.md", "0fdc4a06c3177d10"): "'Before' example: removed cullinan.controller / cullinan.params",
     ("zh/migration_to_final_semantic_layout.md", "c817df3ddebca627"): "'Before' example: removed cullinan.adapter",
 }
 
@@ -767,7 +767,7 @@ def test_root_readme_keeps_default_path_on_top_level_api():
     # Pin the *current* release line the README's "Current series" section
     # advertises; asserting the previous line would stay green forever once the
     # README keeps it as historical context, making the guard vacuous.
-    assert "**v0.96a5**" in readme
+    assert "**v0.96a6**" in readme
 
 
 def test_getting_started_stays_on_business_first_onboarding_path():
@@ -1127,7 +1127,7 @@ def test_current_version_markers_follow_v094a1_release_line():
         extension_guide,
         zh_extension_guide,
     ):
-        assert "0.96a5" in content
+        assert "0.96a6" in content
         assert "0.94a1" not in content
 
 
