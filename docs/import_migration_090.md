@@ -1,4 +1,18 @@
+title: "0.90 Import Migration Guide"
+slug: "import-migration-090"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/import_migration_090.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
 last_updated: "2026-10-27"
+pr_links: []
+
 
 # Cullinan 0.90 Import Migration Guide
 

@@ -1,4 +1,18 @@
+title: "Migration Guide: v0.9x → v0.93"
+slug: "migration-guide-v2"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/migration_guide_v2.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
 last_updated: "2026-10-27"
+pr_links: []
+
 
 # Migration Guide: v0.9x → v0.93
 

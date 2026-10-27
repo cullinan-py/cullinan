@@ -1,4 +1,18 @@
+title: "Packaging Guide — Module Discovery in Frozen Environments"
+slug: "packaging"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/packaging.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
 last_updated: "2026-10-27"
+pr_links: []
+
 
 # Packaging Guide — Module Discovery in Frozen Environments
 

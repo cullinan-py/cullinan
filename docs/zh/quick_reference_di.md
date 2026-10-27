@@ -1,4 +1,18 @@
+title: "依赖注入快速参考"
+slug: "quick-reference-di"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: zh
+translation_pair: "docs/quick_reference_di.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
 last_updated: "2026-10-27"
+pr_links: []
+
 
 # Cullinan 依赖注入快速参考
 

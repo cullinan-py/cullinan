@@ -1,3 +1,18 @@
+title: "Extension Development Guide"
+slug: "extension-development-guide"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/extension_development_guide.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-27"
+pr_links: []
+
 # Cullinan Extension Development Guide
 
 > **Version**: 0.96a7.post1

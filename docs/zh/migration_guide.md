@@ -1,4 +1,18 @@
+title: "0.93 迁移指南"
+slug: "migration-guide"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: zh
+translation_pair: "docs/migration_guide.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
 last_updated: "2026-10-27"
+pr_links: []
+
 
 # Cullinan 0.93 迁移指南
 

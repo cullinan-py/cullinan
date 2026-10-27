@@ -1,4 +1,18 @@
+title: "Dependency Injection Quick Reference"
+slug: "quick-reference-di"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/quick_reference_di.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
 last_updated: "2026-10-27"
+pr_links: []
+
 
 # Cullinan Dependency Injection Quick Reference
 
