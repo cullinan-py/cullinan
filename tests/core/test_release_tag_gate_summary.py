@@ -209,3 +209,20 @@ def test_losing_one_of_two_banners_on_the_same_page_is_reported():
     assert not clean
     assert "guide.md" in detail
 
+
+def test_a_tag_prefixed_banner_is_treated_as_an_applicability_claim(tmp_path):
+    """``**版本**：v0.90`` says which release a page describes, not which is current.
+
+    Two pages use that form to describe older behaviour; dragging them to the
+    SSOT would be a false positive, and silently stripping the prefix would hide
+    that the two forms mean different things.
+    """
+    (tmp_path / "p.md").write_text("> **版本**：v0.90\n", encoding="utf-8")
+    assert gate.find_doc_banners(tmp_path) == []
+
+
+def test_a_tag_prefixed_floor_is_still_skipped(tmp_path):
+    """The ``+`` rule applies to the prefixed form too."""
+    (tmp_path / "p.md").write_text("> **版本**: v0.90a5+\n", encoding="utf-8")
+    assert gate.find_doc_banners(tmp_path) == []
+
