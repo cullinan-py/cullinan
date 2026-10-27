@@ -74,10 +74,6 @@ class _MiddlewareEntry:
     origin: Optional[str] = None
 
 
-#: Sentinel meaning "the caller did not say where this registration came from".
-_UNSET = object()
-
-
 def _registration_origin(depth: int = 2) -> Optional[str]:
     """The caller ``depth`` frames up as ``path:line``, or None if it is gone.
 
@@ -161,7 +157,6 @@ class MiddlewarePipeline:
         before: Optional[OrderingAnchor] = None,
         after: Optional[OrderingAnchor] = None,
         priority: Optional[int] = None,
-        _origin: object = _UNSET,
     ) -> None:
         """Append a middleware to the pipeline.
 
@@ -187,10 +182,36 @@ class MiddlewarePipeline:
                 "Middleware ordering declarations are mutually exclusive: pass either "
                 "'priority' or 'before'/'after', not both."
             )
-        # Framework-internal callers pass ``_origin`` explicitly: the declarative
-        # path has no meaningful registration line, and its frame would otherwise
-        # be attributed to this module.
-        origin = _registration_origin(2) if _origin is _UNSET else _origin
+        # ``_registration_origin(2)``: frame 0 is that helper, frame 1 is this
+        # method, frame 2 is whoever called ``add``.
+        self._append(
+            mw,
+            before=before,
+            after=after,
+            priority=priority,
+            origin=_registration_origin(2),
+        )
+
+    def _append(
+        self,
+        mw: GatewayMiddleware,
+        *,
+        before: Optional[OrderingAnchor] = None,
+        after: Optional[OrderingAnchor] = None,
+        priority: Optional[int] = None,
+        origin: Optional[str] = None,
+    ) -> None:
+        """Store one entry, with the origin its caller decided on.
+
+        Kept separate from ``add()`` so the public signature stays the one the
+        documentation describes: the entry point of a middleware is not a place
+        to grow keywords for the framework's own bookkeeping.
+        """
+        if priority is not None and (before is not None or after is not None):
+            raise ValueError(
+                "Middleware ordering declarations are mutually exclusive: pass either "
+                "'priority' or 'before'/'after', not both."
+            )
         self._entries.append(
             _MiddlewareEntry(
                 middleware=mw,
@@ -222,8 +243,9 @@ class MiddlewarePipeline:
         behaviour and must go through a deprecation window.
         """
         inst = mw_cls(**kwargs)
-        # Attribute the entry to the caller of ``add_class``, not to this method.
-        self.add(inst, _origin=_registration_origin(2))
+        # Attribute the entry to the caller of ``add_class``, not to the frame
+        # inside the private helper.
+        self._append(inst, origin=_registration_origin(2))
         return inst
 
     async def execute(

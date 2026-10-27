@@ -1101,10 +1101,20 @@ class ApplicationContext:
         self._warn_declared_not_assembled()
 
     def _drain_pending_registrations(self):
-        """Empty the pending queue and return what was in it."""
+        """Empty the pending queue and return what was in it.
+
+        The queue is frozen here when it is empty, which is where the baseline
+        froze it too: an empty queue means registration is over, and closing it
+        before the reconciliation keeps a late ``register()`` from slipping in
+        between the drain and the apply.
+        """
         from .pending import PendingRegistry
 
-        return PendingRegistry.get_instance().drain()
+        pending = PendingRegistry.get_instance()
+        registrations = pending.drain()
+        if not registrations:
+            pending.freeze()
+        return registrations
 
     def _apply_pending_registrations(self, registrations) -> None:
         from .pending import PendingRegistry

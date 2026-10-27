@@ -74,21 +74,23 @@ DOC_BANNER_PATTERNS = (
 #: remain somewhere, which is the failure this is meant to catch. A page that
 #: starts or stops carrying one has to be listed here, and that edit is the
 #: reminder that the page belongs to the published version surface.
-EXPECTED_BANNER_PAGES = frozenset({
-    "README.md",
-    "zh/README.md",
-    "architecture.md",
-    "zh/architecture.md",
-    "dependency_injection_guide.md",
-    "zh/dependency_injection_guide.md",
-    "extension_development_guide.md",
-    "zh/extension_development_guide.md",
-    "quick_reference_di.md",
-    "zh/quick_reference_di.md",
-})
+EXPECTED_BANNER_PAGES = {
+    "README.md": 1,
+    "zh/README.md": 1,
+    "architecture.md": 1,
+    "zh/architecture.md": 1,
+    "dependency_injection_guide.md": 1,
+    "zh/dependency_injection_guide.md": 1,
+    # These two carry a banner in two places, and both are published claims.
+    "extension_development_guide.md": 2,
+    "zh/extension_development_guide.md": 2,
+    "quick_reference_di.md": 1,
+    "zh/quick_reference_di.md": 1,
+}
 
 #: A credential binds itself to the tree it was issued for by carrying
-#: ``#tree=<40 hex>``. Binding to the tree rather than the commit is deliberate:/n#: a merge commit and the commit it merges can share one tree, so a commit-bound
+#: ``#tree=<40 hex>``. Binding to the tree rather than the commit is deliberate:
+#: a merge commit and the commit it merges can share one tree, so a commit-bound
 #: token would reject a valid approval.
 TREE_BINDING = re.compile(r"#tree=([0-9a-f]{40})")
 
@@ -130,11 +132,13 @@ def banner_findings(banners, expected_version, expected_pages=None):
     """
     pages = EXPECTED_BANNER_PAGES if expected_pages is None else expected_pages
     stale = [(page, version) for page, version in banners if version != expected_version]
-    found_pages = {page for page, _version in banners}
-    missing = sorted(set(pages) - found_pages)
-    unexpected = sorted(found_pages - set(pages))
+    found: dict[str, int] = {}
+    for page, _version in banners:
+        found[page] = found.get(page, 0) + 1
+    missing = sorted(page for page, count in pages.items() if found.get(page, 0) < count)
+    unexpected = sorted(set(found) - set(pages))
     if missing:
-        return False, "no banner on " + ", ".join(missing)
+        return False, "missing banner on " + ", ".join(missing)
     if unexpected:
         return False, "banner on an unlisted page: " + ", ".join(unexpected)
     if stale:

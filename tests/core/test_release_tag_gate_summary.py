@@ -164,7 +164,7 @@ def test_a_page_that_loses_its_banner_is_reported():
     clean, detail = gate.banner_findings(
         [("README.md", "1.0"), ("zh/README.md", "1.0")],
         "1.0",
-        expected_pages={"README.md", "zh/README.md", "architecture.md"},
+        expected_pages={"README.md": 1, "zh/README.md": 1, "architecture.md": 1},
     )
     assert not clean
     assert "architecture.md" in detail
@@ -175,7 +175,7 @@ def test_a_page_that_gains_a_banner_is_reported():
     clean, detail = gate.banner_findings(
         [("README.md", "1.0"), ("zh/README.md", "1.0"), ("new_page.md", "1.0")],
         "1.0",
-        expected_pages={"README.md", "zh/README.md"},
+        expected_pages={"README.md": 1, "zh/README.md": 1},
     )
     assert not clean
     assert "new_page.md" in detail
@@ -185,7 +185,7 @@ def test_a_stale_version_is_reported_even_when_every_page_is_present():
     clean, detail = gate.banner_findings(
         [("README.md", "0.96a6"), ("zh/README.md", "1.0")],
         "1.0",
-        expected_pages={"README.md", "zh/README.md"},
+        expected_pages={"README.md": 1, "zh/README.md": 1},
     )
     assert not clean
     assert "README.md says 0.96a6" in detail
@@ -198,4 +198,14 @@ def test_both_colon_widths_are_recognised(tmp_path):
     (tmp_path / "cur.md").write_text("> **当前版本：0.96a8**\n", encoding="utf-8")
     found = dict(gate.find_doc_banners(tmp_path))
     assert found == {"full.md": "0.96a8", "half.md": "0.96a8", "cur.md": "0.96a8"}, found
+
+def test_losing_one_of_two_banners_on_the_same_page_is_reported():
+    """A page count, not a page set: the extension guides carry two banners."""
+    clean, detail = gate.banner_findings(
+        [("guide.md", "1.0")],
+        "1.0",
+        expected_pages={"guide.md": 2},
+    )
+    assert not clean
+    assert "guide.md" in detail
 

@@ -685,7 +685,7 @@ def _add_middleware_entries(pipeline, entries) -> int:
             )
         # Declarative registration: the line that matters is the application
         # being assembled, not a line in this module, so no origin is recorded.
-        pipeline.add(middleware, _origin=None, **options)
+        pipeline._append(middleware, origin=None, **options)
         count += 1
     return count
 
