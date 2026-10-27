@@ -168,3 +168,50 @@ def test_the_gate_can_actually_fail():
     absent = "definitely-not-in-this-example-8f3c1a"
     missing = [needle for needle in entry["evidence"] + [absent] if needle not in sources]
     assert missing == [absent]
+
+
+# What each kind of example promises about its own shape. Without this, a
+# directory can satisfy the matrix with a README and a stray function while
+# claiming to be something a reader can run.
+KNOWN_KINDS = {"runnable", "test-driven", "historical"}
+
+
+def test_every_example_names_a_kind_it_belongs_to():
+    unknown = [
+        f"{entry['example']}: {entry.get('kind')!r}"
+        for entry in _matrix()["features"]
+        if entry.get("kind") not in KNOWN_KINDS
+    ]
+    assert not unknown, (
+        "these examples do not say what kind of example they are, so nothing can "
+        f"decide what shape they should have: {unknown}"
+    )
+
+
+def test_each_kind_has_the_shape_it_promises():
+    problems = []
+    for entry in _matrix()["features"]:
+        directory = EXAMPLES / entry["example"]
+        kind = entry["kind"]
+
+        if kind == "runnable":
+            if not (directory / "__main__.py").is_file():
+                problems.append(
+                    f"{entry['example']} is declared runnable but has no __main__.py, "
+                    "so `python -m examples.<name>` cannot start it"
+                )
+        elif kind == "test-driven":
+            if not list(directory.glob("test_*.py")):
+                problems.append(
+                    f"{entry['example']} is declared test-driven but holds no test_*.py, "
+                    "so pytest collects nothing from it"
+                )
+        elif kind == "historical":
+            readme = (directory / "README.md").read_text(encoding="utf-8").lower()
+            if not any(marker in readme for marker in ("legacy", "historical", "历史", "0.90", "0.9x")):
+                problems.append(
+                    f"{entry['example']} is declared historical but its README never says so, "
+                    "so a reader will try to run it as current guidance"
+                )
+
+    assert not problems, "examples do not match the shape their kind promises:/n" + "\n".join(problems)

@@ -4,6 +4,7 @@
     {
       "feature": "Recommended entry point",
       "example": "minimal_app",
+      "kind": "runnable",
       "evidence": [
         "@application",
         "@configure("
@@ -13,6 +14,7 @@
     {
       "feature": "Service injection into a controller",
       "example": "controller_service_inject",
+      "kind": "runnable",
       "evidence": [
         "@service",
         "UserDirectoryService"
@@ -22,6 +24,7 @@
     {
       "feature": "Path, query and body parameters",
       "example": "parameter_handling",
+      "kind": "runnable",
       "evidence": [
         "Path(",
         "Query(",
@@ -32,6 +35,7 @@
     {
       "feature": "Middleware declaration and ordering",
       "example": "middleware_pipeline",
+      "kind": "runnable",
       "evidence": [
         "middlewares=",
         "GatewayMiddleware"
@@ -41,6 +45,7 @@
     {
       "feature": "Middleware lifecycle owned by the container",
       "example": "middleware_ownership",
+      "kind": "runnable",
       "evidence": [
         "AuditMiddleware",
         "middlewares="
@@ -50,6 +55,7 @@
     {
       "feature": "Middleware control: built-in switch and tags",
       "example": "middleware_control",
+      "kind": "runnable",
       "evidence": [
         "builtin_middleware"
       ],
@@ -58,6 +64,7 @@
     {
       "feature": "Module boundary",
       "example": "middleware_and_module",
+      "kind": "runnable",
       "evidence": [
         "@module",
         "@middleware"
@@ -67,6 +74,7 @@
     {
       "feature": "Static files and SPA fallback",
       "example": "static_files_and_spa",
+      "kind": "runnable",
       "evidence": [
         "static_files"
       ],
@@ -75,6 +83,7 @@
     {
       "feature": "Assembly snapshot of a running application",
       "example": "assembly_snapshot",
+      "kind": "runnable",
       "evidence": [
         "get_assembly_snapshot"
       ],
@@ -83,6 +92,7 @@
     {
       "feature": "Component discovery boundary and assembly strictness",
       "example": "component_discovery_boundary",
+      "kind": "runnable",
       "evidence": [
         "strict_assembly",
         "@service"
@@ -92,6 +102,7 @@
     {
       "feature": "Testing an application without a server",
       "example": "testing_flow",
+      "kind": "test-driven",
       "evidence": [
         "run_example_assertions"
       ],
@@ -100,6 +111,7 @@
     {
       "feature": "Packaging a project",
       "example": "packaging_demo",
+      "kind": "runnable",
       "evidence": [
         "def main()"
       ],
@@ -108,6 +120,7 @@
     {
       "feature": "Graceful shutdown and readiness",
       "example": "graceful_shutdown",
+      "kind": "runnable",
       "evidence": [
         "accepts_requests",
         "add_draining_handler"
@@ -117,6 +130,7 @@
     {
       "feature": "Legacy compatibility surface",
       "example": "legacy",
+      "kind": "historical",
       "evidence": [
         "UserController"
       ],
@@ -125,6 +139,7 @@
     {
       "feature": "Request body ceiling",
       "example": "request_body_limit",
+      "kind": "runnable",
       "evidence": [
         "max_request_body_bytes",
         "@configure("
@@ -134,6 +149,7 @@
     {
       "feature": "Runtime controls (root, scan, policy, engine, host)",
       "example": "runtime_controls",
+      "kind": "runnable",
       "evidence": [
         "project_root",
         "exclude_packages",

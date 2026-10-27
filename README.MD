@@ -171,7 +171,7 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
-**v0.96a6** is the current release of the 0.96 line; **v0.95** remains the current stable line, centered on the top-level `cullinan` API.
+**v0.96a7** is the current release of the 0.96 line; **v0.95** remains the current stable line, centered on the top-level `cullinan` API.
 The release history for earlier versions is recorded in [CHANGELOG.md](CHANGELOG.md).
 
 ---
@@ -181,8 +181,9 @@ The release history for earlier versions is recorded in [CHANGELOG.md](CHANGELOG
 Cullinan — the project carries the name `Cullinan`, the package on PyPI is
 `cullinan` — is under active development, working through the `0.96` alpha
 line towards `1.0`. Alphas are published to PyPI as they land, so
-`pip install cullinan` follows the alpha line, while `v0.95` stays the stable
-one.
+`pip install cullinan` installs the stable line (`v0.95` today) and
+`pip install --pre cullinan` installs the newest alpha. Ask for the alphas
+explicitly; pip will not choose one for you while a stable release exists.
 
 Development is driven by `plumeink`, who reads and answers issues and pull
 requests as time allows — usually within a week, though real life occasionally

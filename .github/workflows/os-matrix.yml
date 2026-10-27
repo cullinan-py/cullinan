@@ -1,0 +1,63 @@
+name: os-matrix
+
+# Cross-platform verification. It answers what the ubuntu-only CI cannot: the
+# POSIX signal path and the exit status on macOS, and the Windows behaviour that
+# a local run can only approximate.
+#
+# It runs on dev/** and on demand, never on release, preview or master. The
+# matrix costs four full suites, and it is a tool for answering a question
+# rather than a gate every change must pass; keeping it off the shared branches
+# is deliberate, not an oversight. Run it before a release by dispatching it
+# against the branch under test.
+on:
+  push:
+    branches:
+      - "dev/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }} / py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python-version: "3.9"
+          - os: ubuntu-latest
+            python-version: "3.13"
+          - os: macos-latest
+            python-version: "3.13"
+          - os: windows-latest
+            python-version: "3.13"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the suite asserts things about history and tags
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      - name: Report the platform under test
+        run: |
+          python -c "import platform, sys; print(platform.platform()); print(sys.version)"
+
+      - name: Run the suite
+        run: python -m pytest tests -q -p no:randomly -rs
+
+      - name: Show what was skipped and why
+        if: always()
+        shell: bash
+        run: python -m pytest tests/platform -q -rs || true
