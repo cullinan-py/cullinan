@@ -12,7 +12,6 @@ The runtime version comes from cullinan/_version.py (single source of truth).
 """
 
 from cullinan._version import __version__ as _package_version
-import warnings as _warnings
 from cullinan.support.deprecation import deprecated as _deprecated
 from cullinan.support.deprecation import resolve_removal_version as _resolve_removal_version
 from .registry import Registry, SimpleRegistry
@@ -367,27 +366,18 @@ __all__ = [
 
 
 # ----------------------------------------------------------------------------
-# A1: One-time module-load deprecation notice for the legacy compatibility
-# surface (PEP 562 style). Fires a single DeprecationWarning the first time
-# `cullinan.core` is imported, so tooling (pytest -W error::DeprecationWarning,
-# linters, IDEs) can surface the migration path without spamming callers.
-# Per-call DeprecationWarning is still emitted by the @deprecated decorator
-# wrapping each symbol; the CompatibilitySemanticWarning from
-# warn_semantic_once remains deduplicated per key.
+# A1: The legacy compatibility surface warns on **use**, never on import.
+#
+# Each of the five symbols above is wrapped by ``@deprecated``, so touching one
+# emits a ``DeprecationWarning`` that names the replacement and the removal
+# version, plus a deduplicated ``CompatibilitySemanticWarning``.
+#
+# A module-load notice used to fire as well. It was removed because it reached
+# every consumer -- including the ones that never touch these symbols -- and
+# under a filter that turns deprecations into errors (``-W
+# error::DeprecationWarning``, and the equivalent ``pytest.ini`` setting) it made
+# ``import cullinan`` itself fail: during collection, inside a third-party
+# import, with no frame of the caller's on the stack to explain it. A warning
+# every consumer pays for and no consumer can act on is not a deprecation notice;
+# the per-use one is.
 # ----------------------------------------------------------------------------
-_DEPRECATED_LEGACY_SYMBOLS = (
-    "injectable",
-    "inject_constructor",
-    "InjectionRegistry",
-    "get_injection_registry",
-    "reset_injection_registry",
-)
-_warnings.warn(
-    "cullinan.core exports legacy compatibility symbols "
-    f"({_DEPRECATED_LEGACY_SYMBOLS}) that are deprecated since v0.95 "
-    f"and will be removed in v{_REMOVAL_VERSION}. See each symbol's __deprecated_info__ "
-    "for the recommended replacement.",
-    DeprecationWarning,
-    stacklevel=2,
-)
-del _warnings

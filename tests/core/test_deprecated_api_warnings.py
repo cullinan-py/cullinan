@@ -15,7 +15,10 @@ the version the surface was deprecated on plus the deprecation window):
     - reset_injection_registry
 """
 import importlib
+import subprocess
+import sys
 import warnings
+from pathlib import Path
 
 import pytest
 
@@ -221,6 +224,57 @@ class TestBehaviorPreserved:
             warnings.simplefilter("ignore")
             instance = core.InjectionRegistry()
             assert instance is not None
+
+
+class TestImportingIsNotAUse:
+    """Importing the package must not warn on its own.
+
+    A deprecation notice fired at module load reaches every consumer, including
+    the ones that never touch a deprecated symbol, and under a "deprecations are
+    errors" filter it turns ``import cullinan`` into a failure that surfaces
+    inside a third-party import -- during test collection, before a single test
+    of the consumer's own runs. The warning that carries information is the one
+    emitted when a symbol is *used*, and ``@deprecated`` already emits it.
+
+    Both cases run in a subprocess: this interpreter has already imported the
+    package, so an in-process check would measure nothing.
+    """
+
+    REPO_ROOT = Path(__file__).resolve().parents[2]
+
+    def _run(self, code: str, *flags: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, *flags, "-c", code],
+            cwd=str(self.REPO_ROOT),
+            capture_output=True,
+            text=True,
+        )
+
+    def test_import_survives_a_warnings_are_errors_filter(self):
+        completed = self._run(
+            "import cullinan; print(cullinan.__version__)",
+            "-W", "error::DeprecationWarning",
+        )
+        assert completed.returncode == 0, (
+            "importing cullinan raised under -W error::DeprecationWarning, so a "
+            "consumer whose CI treats deprecations as errors cannot import the "
+            "package at all:\n" + completed.stderr
+        )
+
+    def test_import_emits_no_deprecation_warning(self):
+        completed = self._run(
+            "import warnings\n"
+            "with warnings.catch_warnings(record=True) as caught:\n"
+            "    warnings.simplefilter('always')\n"
+            "    import cullinan\n"
+            "print(sum(1 for w in caught if issubclass(w.category, DeprecationWarning)))\n"
+        )
+        assert completed.returncode == 0, completed.stderr
+        assert completed.stdout.strip() == "0", (
+            "importing cullinan emitted a DeprecationWarning before anything was "
+            "called; that warning cannot distinguish a consumer that uses the "
+            "legacy symbols from one that does not"
+        )
 
 
 class TestRuleBasedDeprecationWindow:
