@@ -282,14 +282,16 @@ class ApplicationContext:
                 self._state = ContainerState.REGISTERING
 
             logger.info("ApplicationContext.refresh() started.")
-            self._process_pending_registrations()
-            # The declared-vs-assembled reconciliation is the second step of the
-            # refresh, not a side effect of draining pending registrations. It
-            # used to live inside _process_pending_registrations(), where a later
-            # refactor could have made it conditional on that drain having
-            # produced something -- which would have silenced a
-            # strict_assembly=True failure without any test noticing.
+            # Three explicit steps, and the order is the semantics: empty the
+            # queue, compare declarations against the assembly *as it stands at
+            # that moment*, then apply what was drained. Reconciling after the
+            # loop would compare against an assembly that already includes those
+            # registrations, and an exception raised inside the loop would skip
+            # the report entirely -- both are silent changes to what
+            # ``strict_assembly=True`` means.
+            registrations = self._drain_pending_registrations()
             self._reconcile_declared_not_assembled()
+            self._apply_pending_registrations(registrations)
             self._state = ContainerState.VALIDATING
             self._validate_definitions()
             self._state = ContainerState.WARMING_UP
@@ -1086,11 +1088,11 @@ class ApplicationContext:
         """Report the declared-but-not-assembled difference, once, at refresh.
 
         A reconciliation is not a registration, so it is its own step of
-        ``refresh()`` rather than a side effect of draining pending ones: while
-        it lived inside ``_process_pending_registrations()`` a later change to
-        that drain path could have made the report conditional on the drain
-        having produced something, silencing a ``strict_assembly=True`` failure
-        with nothing to catch it.
+        ``refresh()`` rather than a side effect of draining pending ones. It sits
+        between the drain and the apply, which is the only position where the
+        comparison means the same thing it did when it lived inside the drain:
+        the queue is already emptied, and the drained registrations have not yet
+        been added to the assembly.
 
         Everything the caller observes happens here and only here -- the warning
         channels, the stderr fallback when both are dark, and the optional
@@ -1098,11 +1100,16 @@ class ApplicationContext:
         """
         self._warn_declared_not_assembled()
 
-    def _process_pending_registrations(self) -> None:
+    def _drain_pending_registrations(self):
+        """Empty the pending queue and return what was in it."""
+        from .pending import PendingRegistry
+
+        return PendingRegistry.get_instance().drain()
+
+    def _apply_pending_registrations(self, registrations) -> None:
         from .pending import PendingRegistry
 
         pending = PendingRegistry.get_instance()
-        registrations = pending.drain()
         if not registrations:
             pending.freeze()
             return
