@@ -191,3 +191,65 @@ def test_the_signature_gate_can_actually_fail():
     problems = documented_call_problems(block)
     assert problems, "the gate silently accepted a call with an impossible parameter"
     assert "this_parameter_does_not_exist" in problems[0]
+
+
+# Blocks that are fragments on purpose rather than runnable programs: a method
+# body shown without its class, or a before/after pair where the "before" is a
+# comment describing output instead of code. They cannot be parsed, so the
+# signature check steps over them -- which is exactly why the list is pinned
+# here. An *unlisted* unparseable block is a documentation defect that would
+# otherwise be stepped over in silence, which is the failure mode this gate
+# exists to prevent.
+_SYNTAX_EXEMPT = {
+    ("docs/internals/decorators.md", "@service  # First"),
+    ("docs/internals/decorators.md", "def setup_method(self):"),
+    ("docs/internals/injection.md", "class MyClass:"),
+    ("docs/migration_guide.md", "# Unordered, inconsistent output"),
+    ("docs/migration_guide.md", "# Stable, ordered chain"),
+    ("docs/zh/internals/decorators.md", "@service  # \u9996\u5148"),
+    ("docs/zh/internals/decorators.md", "def setup_method(self):"),
+    ("docs/zh/internals/injection.md", "class MyClass:"),
+    ("docs/zh/migration_guide.md", "# \u65e0\u5e8f\uff0c\u4e0d\u4e00\u81f4\u7684\u8f93\u51fa"),
+    ("docs/zh/migration_guide.md", "# \u7a33\u5b9a\u3001\u6709\u5e8f\u7684\u94fe\u8def"),
+}
+
+
+def _unparseable_blocks(text: str, page: str) -> set[tuple[str, str]]:
+    """Blocks this page offers that the signature check has to step over."""
+    found: set[tuple[str, str]] = set()
+    for match in PY_BLOCK.finditer(text):
+        if any(marker in _heading_before(text, match.start()).lower() for marker in STALE_HEADING_MARKERS):
+            continue
+        block = match.group(1)
+        try:
+            ast.parse(block)
+        except SyntaxError:
+            stripped = block.strip()
+            first = stripped.splitlines()[0].strip() if stripped else "<empty block>"
+            found.add((page, first))
+    return found
+
+
+def test_blocks_the_gate_steps_over_are_enumerated():
+    """An unparseable block is skipped by the signature check, so pin the set.
+
+    Without this, a page could grow a broken Python block and the only gate that
+    reads blocks would walk straight past it: the strict build does not parse
+    code fences, and the import gate only looks at what does parse.
+    """
+    found: set[tuple[str, str]] = set()
+    for page, text in public_pages():
+        found |= _unparseable_blocks(text, page)
+
+    unexpected = sorted(found - _SYNTAX_EXEMPT)
+    assert not unexpected, (
+        "these documented blocks do not parse and are not declared as fragments: "
+        + ", ".join(f"{page} -> {first!r}" for page, first in unexpected)
+    )
+
+    stale = sorted(_SYNTAX_EXEMPT - found)
+    assert not stale, (
+        "these blocks are declared as unparseable fragments but now parse (or are gone); "
+        "drop them from _SYNTAX_EXEMPT: "
+        + ", ".join(f"{page} -> {first!r}" for page, first in stale)
+    )
