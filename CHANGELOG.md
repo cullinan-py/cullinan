@@ -49,11 +49,13 @@ Two checks that did not exist before, both for things that were believed rather 
 
 ### Changed
 
-- `ApplicationContext.refresh()` emits the declared-versus-assembled report as a
-  step of its own. It used to run inside `_process_pending_registrations()`;
-  nothing was broken, because that drain returns early only after the report, but
-  a later "nothing pending, return sooner" would have silenced a
-  `strict_assembly=True` failure with no test to notice it
+- `ApplicationContext.refresh()` now spells out three steps instead of one:
+  drain the pending queue, reconcile declarations against the assembly, then apply
+  what was drained. The reconciliation used to live inside the drain, immediately
+  after the queue was emptied; moving it out is only equivalent if it keeps that
+  position, because applying the drained registrations first would compare
+  declarations against an assembly that already contains them. The split also
+  means a registration that raises no longer takes the report down with it
 - The markdown lint step publishes its findings and exit status to the job
   summary, and states that it does not fail the build. It still does not: making
   it a gate needs the size of the existing debt, and suppressing the result is

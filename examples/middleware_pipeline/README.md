@@ -69,4 +69,4 @@ curl -i -H 'X-Demo-Key: let-me-in' http://127.0.0.1:4085/pipeline
 This example binds `server_port=4085`; ports 4081–4084 are taken by the other
 examples.
 
-This example uses the recommended onion protocol — the compatibility protocol (`process_request` / `process_response`) is covered by [`examples/middleware_and_module/`](../middleware_and_module/) and described on [the middleware page](../../docs/wiki/middleware.md).
+This example uses the recommended onion protocol — the compatibility protocol (`process_request` / `process_response`) is covered by [`examples/middleware_and_module/`](../middleware_and_module/) and described on [the middleware page](../../docs/internals/middleware.md).

@@ -69,4 +69,4 @@ This example binds `server_port=4087`.
 For controlling the built-in layer and the legacy ordering, see
 [`examples/middleware_control/`](../middleware_control/); for the declarative
 entry on its own, see [`examples/middleware_pipeline/`](../middleware_pipeline/).
-Background: [the middleware page](../../docs/wiki/middleware.md).
+Background: [the middleware page](../../docs/internals/middleware.md).
