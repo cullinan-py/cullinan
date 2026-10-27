@@ -94,10 +94,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a7"
+      data-current-version="0.96a7.post1"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a7"
+      data-pre-version="0.96a7.post1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2863,8 +2863,46 @@ layer refuses, and that differs by engine:</p>
 </tr>
 </tbody>
 </table>
-<p>Both stop early, which is the property that matters; the two are not the same
-status, and pretending otherwise would be a difference you discover in
+<p>That table is the server's answer. What the <strong>client</strong> sees is a different
+question, and on Tornado it depends on whether the client is still writing when
+the server refuses:</p>
+<table>
+<thead>
+<tr>
+<th>Client behaviour</th>
+<th>What it observes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sends the whole body in one write, moderately over the ceiling</td>
+<td><code>400</code> with an empty body</td>
+</tr>
+<tr>
+<td>Sends the whole body in one write, far over the ceiling</td>
+<td>the connection is reset (<code>ConnectionResetError</code>; WSAECONNRESET on Windows) — <strong>no status line</strong></td>
+</tr>
+<tr>
+<td>Streams it in chunks (<code>Transfer-Encoding: chunked</code>)</td>
+<td>the connection is aborted — <strong>no status line</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The dividing line is not the ratio but the race: a client that has finished
+writing can still read the <code>400</code>, one that has not gets its socket closed
+underneath it. Measured against a 1 KiB ceiling: one-shot bodies up to about
+16× over still returned <code>400</code>; a body 64× over, and a chunked upload only 1.5×
+over, both ended in a reset.</p>
+<p>Two consequences for callers:</p>
+<ul>
+<li><strong>Do not use "received a <code>400</code>" as the oversize signal.</strong> The reliable signal
+  is that the request did not complete normally; on an upload path, treat a
+  reset or an abort as a possible oversized body.</li>
+<li><strong>Measure the payload before sending it</strong> when the size is yours to know. A
+  server that has already refused cannot give you a status code it never sends.</li>
+</ul>
+<p>Both engines stop early, which is the property that matters; the two are not the
+same status, and pretending otherwise would be a difference you discover in
 production.</p>
 <p>Set it if the deployment accepts uploads from anywhere: without a ceiling, a
 1 MiB body posted to a path that does not exist is read in full before the
@@ -2971,7 +3009,7 @@ now".</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a7", "pre_is_available": true, "pre_label": "0.96a7", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a7.post1", "pre_is_available": true, "pre_label": "0.96a7.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

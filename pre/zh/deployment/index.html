@@ -96,10 +96,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a7"
+      data-current-version="0.96a7.post1"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a7"
+      data-pre-version="0.96a7.post1"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -2806,6 +2806,35 @@ INFO:     Finished server process [2550]
 </tr>
 </tbody>
 </table>
+<p><strong>这张表是"服务端的回答"。客户端实际看到什么，是另一个问题</strong>，而且在 Tornado 上取决于「服务端拒绝时，客户端是不是还在写」：</p>
+<table>
+<thead>
+<tr>
+<th>客户端行为</th>
+<th>客户端观察到</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一次性发完，小幅超限</td>
+<td><code>400</code> + 空体</td>
+</tr>
+<tr>
+<td>一次性发完，大幅超限</td>
+<td>连接被重置（<code>ConnectionResetError</code>；Windows 上是 WSAECONNRESET）——<strong>没有状态行</strong></td>
+</tr>
+<tr>
+<td>分块/流式上传（<code>Transfer-Encoding: chunked</code>）</td>
+<td>连接被中止 —— <strong>没有状态行</strong></td>
+</tr>
+</tbody>
+</table>
+<p>分界不在超限倍数，而在时序：<strong>已经写完的客户端还能读到那个 <code>400</code>；还没写完的，socket 会在它脚下被关掉。</strong> 以 1 KiB 上限实测：一次性发送超到约 16 倍仍返回 <code>400</code>；超到 64 倍、以及分块上传只超 1.5 倍，都以连接重置收场。</p>
+<p>由此两条对调用方的要求：</p>
+<ul>
+<li><strong>不要用「收到了 <code>400</code>」作为超限判据。</strong> 可靠的信号是「请求没有正常完成」；在上传路径上，把连接重置或中止当作<strong>可能</strong>的超限。</li>
+<li><strong>能量出体积就在发送前量。</strong> 服务端既然已经拒绝，就不会再给你一个它从未发出的状态码。</li>
+</ul>
 <p>两者都是早停 —— 这才是关键性质；但它们<strong>不是同一个状态码</strong>，把它写成一致等于让你上线后自己发现。</p>
 <p>部署对公网接受上传时请设它 —— 不设上限时，一个 1 MiB 的 body 打到一个<strong>不存在的路径</strong>，会被完整缓冲后才回 <code>404</code>。</p>
 <h2 id="_10">静态文件<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
@@ -2901,7 +2930,7 @@ INFO:     Finished server process [2550]
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a7", "pre_is_available": true, "pre_label": "0.96a7", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a7.post1", "pre_is_available": true, "pre_label": "0.96a7.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
