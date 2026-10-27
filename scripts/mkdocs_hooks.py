@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 """MkDocs hooks used by this project's documentation build.
 
-Right now there is one job: separate *lint-level* messages from *build* errors.
+Two jobs: separate *lint-level* messages from *build* errors, and keep the
+addresses of pages that moved answering.
+
+The second one used to be a plugin. It was dropped on 2026-03-28 when its newest
+release started depending on a package that had appeared twelve days earlier,
+shared a name with MkDocs and shipped three versions in four days -- the shape of
+a supply-chain problem rather than a feature. Seventeen lines of our own do the
+same work with nothing added to the dependency list.
 
 The generated API reference reads the package through griffe, which reports
 things like "no type annotation for ``**kwargs``". Those are real observations
@@ -18,6 +25,7 @@ notes were set aside, so the backlog stays visible rather than disappearing.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 _SUPPRESSED = {"count": 0}
 _SUMMARISED = {"done": False}
@@ -42,6 +50,59 @@ def _install() -> None:
             logger.addFilter(_Counter())
 
 
+
+# ---------------------------------------------------------------------------
+# Pages that moved keep working.
+#
+# The internals section used to live under ``docs/wiki/``; it is
+# ``docs/internals/`` now, matching the name the navigation always used. A
+# bookmark saved against the old address should land on the page it named
+# instead of a 404, so each old path gets a small page that forwards.
+MOVED_PAGES = (
+    "application_runtime",
+    "components",
+    "decorators",
+    "extensions",
+    "injection",
+    "lifecycle",
+    "middleware",
+    "restful_api",
+)
+
+_REDIRECT_PAGE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Moved: {name}</title>
+<link rel="canonical" href="{target}">
+<meta http-equiv="refresh" content="0; url={target}">
+<meta name="robots" content="noindex">
+</head>
+<body>
+<p>This page moved to <a href="{target}">{target}</a>.</p>
+</body>
+</html>
+"""
+
+
+def _write_redirects(config) -> int:
+    """Write one forwarding page per moved address, per locale."""
+    site_dir = Path(config["site_dir"])
+    written = 0
+    for locale in ("", "zh"):
+        for name in MOVED_PAGES:
+            page = site_dir / locale / "wiki" / name / "index.html"
+            page.parent.mkdir(parents=True, exist_ok=True)
+            # From <site>/[zh/]wiki/<name>/ back to <site>/[zh/], then into internals.
+            target = "../../internals/" + name + "/"
+            page.write_text(
+                _REDIRECT_PAGE.format(name=name, target=target),
+                encoding="utf-8",
+            )
+            written += 1
+    return written
+
+
 def on_startup(*_args, **_kwargs) -> None:
     _install()
 
@@ -55,7 +116,12 @@ def on_pre_build(*_args, **_kwargs) -> None:
     _install()
 
 
-def on_post_build(*_args, **_kwargs) -> None:
+def on_post_build(config=None, **_kwargs) -> None:
+    if config is not None:
+        moved = _write_redirects(config)
+        logging.getLogger("mkdocs").info(
+            "moved pages: %d forwarding page(s) written for the internals section", moved
+        )
     if _SUMMARISED["done"]:
         return
     _SUMMARISED["done"] = True

@@ -15,5 +15,4 @@ python-dotenv
 mkdocs>=1.6,<2
 mkdocs-material>=9.5
 mkdocs-static-i18n>=1.2
-mkdocs-redirects>=1.2,<2
 mkdocstrings[python]>=0.26

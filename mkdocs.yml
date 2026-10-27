@@ -96,26 +96,6 @@ plugins:
             merge_init_into_class: true
             members_order: source
             filters: ["!^_"]
-  # Pages that moved keep working. The internals section used to live under
-  # `wiki/`, and a bookmark to any of those addresses should not dead-end.
-  - redirects:
-      redirect_maps:
-        "wiki/application_runtime.md": "internals/application_runtime.md"
-        "zh/wiki/application_runtime.md": "zh/internals/application_runtime.md"
-        "wiki/components.md": "internals/components.md"
-        "zh/wiki/components.md": "zh/internals/components.md"
-        "wiki/decorators.md": "internals/decorators.md"
-        "zh/wiki/decorators.md": "zh/internals/decorators.md"
-        "wiki/extensions.md": "internals/extensions.md"
-        "zh/wiki/extensions.md": "zh/internals/extensions.md"
-        "wiki/injection.md": "internals/injection.md"
-        "zh/wiki/injection.md": "zh/internals/injection.md"
-        "wiki/lifecycle.md": "internals/lifecycle.md"
-        "zh/wiki/lifecycle.md": "zh/internals/lifecycle.md"
-        "wiki/middleware.md": "internals/middleware.md"
-        "zh/wiki/middleware.md": "zh/internals/middleware.md"
-        "wiki/restful_api.md": "internals/restful_api.md"
-        "zh/wiki/restful_api.md": "zh/internals/restful_api.md"
   - i18n:
       docs_structure: folder
       fallback_to_default: true
