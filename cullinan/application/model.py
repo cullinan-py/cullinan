@@ -189,7 +189,7 @@ class Runtime:
         # Read the pre-boot registrations *before* the reset, so the report names
         # exactly the entries the reset discards. The read must not create the
         # pipeline it is about to see wiped.
-        discarded_entries = _registered_pipeline_entry_names()
+        discarded_entries = _registered_pipeline_entry_details()
         reset_gateway()
         # Report first, then refuse: a deployment that swallows the exception
         # still saw the diagnostic. The refusal lands on the consequence of the
@@ -242,6 +242,35 @@ def _registered_pipeline_entry_names() -> Tuple[str, ...]:
     if pipeline is None:
         return ()
     return _pipeline_entry_names(pipeline)
+
+
+def _pipeline_entry_details(pipeline: Any) -> Tuple[Tuple[str, Optional[str]], ...]:
+    """``(display name, registration site)`` for each entry, in registration order.
+
+    The registration site is ``path:line`` captured when ``add()`` was called.
+    A boot-time refusal that names only the middleware leaves the reader to grep
+    for the call; naming the site puts the line in the message.
+    """
+    details: List[Tuple[str, Optional[str]]] = []
+    for entry in pipeline._entries:
+        middleware = entry.middleware
+        name = getattr(middleware, "display_name", None) or type(middleware).__name__
+        details.append((name, getattr(entry, "origin", None)))
+    return tuple(details)
+
+
+def _registered_pipeline_entry_details() -> Tuple[Tuple[str, Optional[str]], ...]:
+    """The same reading as :func:`_registered_pipeline_entry_names`, with sites."""
+    pipeline = _peek_pipeline()
+    if pipeline is None:
+        return ()
+    return _pipeline_entry_details(pipeline)
+
+
+def _describe_entries(entries: Tuple[Tuple[str, Optional[str]], ...]) -> str:
+    """Render ``name @ path:line`` pairs for a diagnostic message."""
+    parts = [f"{name} @ {site}" if site else name for name, site in entries]
+    return ", ".join(parts)
 
 
 def _read_gateway_surface_holdings() -> Dict[str, Tuple[str, ...]]:
@@ -301,7 +330,9 @@ def _build_surface_holdings(
     return _SurfaceHoldings(declared=declared, assembled=assembled, dropped=dropped)
 
 
-def _warn_pipeline_registrations_reset(names: Tuple[str, ...]) -> None:
+def _warn_pipeline_registrations_reset(
+    entries: Tuple[Tuple[str, Optional[str]], ...]
+) -> None:
     """Report the pipeline entries that the boot-time gateway reset discards.
 
     This belongs to the boot boundary only. ``reset_gateway()`` keeps its plain
@@ -310,27 +341,32 @@ def _warn_pipeline_registrations_reset(names: Tuple[str, ...]) -> None:
     announced here is the consequence of that reset for a starting application:
     entries registered imperatively before startup do not survive it.
 
+    Each entry is named with the ``path:line`` that registered it, because the
+    middleware name alone leaves the reader grepping for the call.
+
     With nothing registered there is nothing to say, and no channel is used.
     """
-    if not names:
+    if not entries:
         return
-    joined = ", ".join(names)
+    joined = ", ".join(name for name, _site in entries)
+    described = _describe_entries(entries)
     problem = (
         "[gateway-pipeline-reset] "
-        f"{len(names)} gateway pipeline entry(ies) registered before startup were reset at "
-        f"the boot boundary and will not take part in request handling: {joined}."
+        f"{len(entries)} gateway pipeline entry(ies) registered before startup were reset at "
+        f"the boot boundary and will not take part in request handling: {described}."
     )
     guidance = (
         "Declare middleware where the startup assembly reads it -- "
         "configure(middlewares=[...]) or the @middleware decorator. "
         "get_pipeline().add(...) is an imperative pre-boot entry point: its entries are "
-        "discarded when the gateway globals are rebuilt."
+        "discarded when the gateway globals are rebuilt. Move the call at each site named "
+        "above into the declaration the assembly reads."
     )
     _logger.warning(
         "Gateway pipeline entries registered before startup were reset: %d (%s). "
         "Declare middleware with configure(middlewares=[...]) or @middleware instead.",
-        len(names),
-        joined,
+        len(entries),
+        described,
     )
     warn_semantic_once(
         key=f"gateway-pipeline-reset:{joined}",
@@ -343,7 +379,9 @@ def _warn_pipeline_registrations_reset(names: Tuple[str, ...]) -> None:
     _emit_report_fallback(problem, guidance)
 
 
-def _reject_preboot_pipeline_registrations(names: Tuple[str, ...]) -> None:
+def _reject_preboot_pipeline_registrations(
+    entries: Tuple[Tuple[str, Optional[str]], ...]
+) -> None:
     """Refuse a start when the pre-boot pipeline still held registrations.
 
     ``reset_gateway()`` rebuilds the gateway globals and discards whatever was
@@ -356,25 +394,27 @@ def _reject_preboot_pipeline_registrations(names: Tuple[str, ...]) -> None:
     The report is emitted first (see ``_warn_pipeline_registrations_reset``), so
     even a caller that catches the exception has already seen the diagnostic.
     """
-    if not names:
+    if not entries:
         return
-    joined = ", ".join(names)
+    described = _describe_entries(entries)
     problem = (
         f"The pre-boot registrations reported above are rejected at the startup boundary: "
-        f"{len(names)} gateway pipeline entry(ies) added before startup ({joined}) would not "
+        f"{len(entries)} gateway pipeline entry(ies) added before startup ({described}) would not "
         "take part in request handling."
     )
     guidance = (
         "Declare middleware where the startup assembly reads it -- "
         "configure(middlewares=[...]) or the @middleware decorator. "
         "get_pipeline().add(...) registers on a pipeline that is rebuilt at the boot boundary, "
-        "so pre-boot entries are refused instead of being silently discarded."
+        "so pre-boot entries are refused instead of being silently discarded. The site of "
+        "each refused registration is named above; move that call into the declaration the "
+        "assembly reads."
     )
     _logger.error(
         "Refusing to start: %d gateway pipeline entry(ies) were registered before startup (%s). "
         "Declare middleware with configure(middlewares=[...]) or @middleware instead.",
-        len(names),
-        joined,
+        len(entries),
+        described,
     )
     raise ConfigurationError(
         message=format_semantic_message(

@@ -153,7 +153,10 @@ def test_pre_boot_registration_is_reported_then_refused(
         message = reports[-1].getMessage()
         assert "PipelineMarkerMiddleware" in message
         # The count is reported together with the name, not only the name.
-        assert "1 (PipelineMarkerMiddleware)" in message
+        assert "1 (PipelineMarkerMiddleware @" in message
+        # ... and the line that registered it: without the site the reader has to
+        # grep the codebase for the call this report is about.
+        assert "test_gateway_pipeline_reset_visibility.py:" in message, message
 
         # Then the refusal, carrying its own dedicated code.
         assert excinfo.value.error_code == ERROR_CODE_MARKER

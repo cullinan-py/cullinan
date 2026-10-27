@@ -10,6 +10,7 @@ Author: plumeink
 
 import heapq
 import logging
+import sys
 import time
 from dataclasses import dataclass
 from typing import Any, Callable, Awaitable, Dict, List, Optional, Type, Union
@@ -66,6 +67,25 @@ class _MiddlewareEntry:
     before: Optional[OrderingAnchor] = None
     after: Optional[OrderingAnchor] = None
     priority: Optional[int] = None
+    #: ``path:line`` of the ``add()`` call that created this entry. Recorded so a
+    #: boot-time report can name the line that registered a pre-boot entry, not
+    #: only the middleware that was discarded -- without it, the reader has to
+    #: search the codebase for the call the message is about.
+    origin: Optional[str] = None
+
+
+def _registration_origin() -> Optional[str]:
+    """The caller of ``add()`` as ``path:line``, or None if the frame is gone.
+
+    Deliberately best-effort: a missing origin only costs a less specific
+    message, so nothing here is allowed to raise.
+    """
+    try:
+        frame = sys._getframe(2)
+    except (AttributeError, ValueError):
+        return None
+    filename = frame.f_code.co_filename
+    return f"{filename}:{frame.f_lineno}"
 
 
 class GatewayMiddleware:
@@ -164,6 +184,7 @@ class MiddlewarePipeline:
                 before=before,
                 after=after,
                 priority=priority,
+                origin=_registration_origin(),
             )
         )
         self._invalidate()
