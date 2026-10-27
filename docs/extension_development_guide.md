@@ -15,7 +15,7 @@ pr_links: []
 
 # Cullinan Extension Development Guide
 
-> **Version**: 0.96a7.post1
+> **Version**: 0.96a8
 > **Author**: plumeink  
 > **Last Updated**: 2026-10-27
 
@@ -684,6 +684,6 @@ class TestMyMiddleware(ServiceTestCase):
 
 ---
 
-**Version**: 0.96a7.post1
+**Version**: 0.96a8
 **Author**: plumeink  
 **Last Updated**: 2026-09-28

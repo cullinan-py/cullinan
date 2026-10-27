@@ -1,3 +1,3 @@
 """Single source of truth for the published Cullinan package version."""
 
-__version__ = "0.96a7.post1"
+__version__ = "0.96a8"
