@@ -2,7 +2,7 @@ last_updated: "2026-10-27"
 
 # Cullinan Dependency Injection Quick Reference
 
-> **Version**: 0.96a7
+> **Version**: 0.96a7.post1
 > **Author**: plumeink
 
 > **Quick lookup page:** use this page as a compact DI recipe sheet; use

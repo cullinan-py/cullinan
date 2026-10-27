@@ -7,6 +7,43 @@ in [`README.MD`](README.MD).
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## v0.96a7.post1
+
+**v0.96a7.post1** is a patch on `v0.96a7`. It carries one behaviour fix and three
+documentation corrections, all of them raised by a project that upgraded to
+0.96a7 and wrote down what it hit.
+
+The fix is about who pays for a warning. The corrections are about saying what a
+client observes rather than what the server sends, and about what "compatible"
+means when a name keeps its spelling and changes what it points at.
+
+### Fixed
+
+- Importing `cullinan` no longer emits a `DeprecationWarning`. The legacy
+  compatibility symbols warned while `cullinan.core` was being imported, so
+  every consumer paid for it, including the ones that never touch those symbols;
+  under `-W error::DeprecationWarning` — and the equivalent `pytest.ini` setting
+  — that warning made `import cullinan` fail outright, during collection, inside
+  a third-party import. Each of the five symbols is still wrapped by
+  `@deprecated`, so using one warns exactly as before. Two subprocess tests pin
+  both halves: the import survives the strict filter, and it emits nothing
+
+### Documentation
+
+- `deployment.md` describes an oversized body by what the client observes, not
+  only by the status the server sends. A client still writing when the server
+  refuses sees its connection reset with no status line, so receiving `400` is
+  not a reliable oversize signal. The measured boundaries — which sizes still
+  answer `400`, which end in a reset, and that a chunked upload ends in a reset
+  at a much smaller overage — are on the page, in both languages
+- `migration_guide_v2.md` gained a step on rolling back across this line: two
+  `configure()` keywords arrived in 0.96a6 and are rejected by 0.96a5 at import
+  time, so the rollback unit is the pin *and* the configuration, not the pin
+- The release-note template now requires compatibility claims to describe
+  referents rather than names, and says why a symbol count cannot stand in for
+  that: a name that keeps its spelling and changes what it points at is a break,
+  and a count of names cannot see it
+
 ## v0.96a7
 
 **v0.96a7** is the seventh alpha of the 0.96 line. It is mostly about the parts of
