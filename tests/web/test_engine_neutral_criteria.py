@@ -12,6 +12,10 @@ the guarantee checkable rather than a promise:
 4. The descriptions the framework reports through its own extension-point
    introspection surface name no single engine, and that check is itself
    falsifiable.
+5. The one place a controller writes a response through an engine-native API
+   is the documented legacy entry point, and the route registration does not
+   hand that entry point to the dispatcher -- so its reachability is a checked
+   fact rather than a belief.
 
 The dual-engine, field-by-field response parity check belongs to a later
 milestone; this module only pins the criteria that make such a check meaningful.
@@ -156,3 +160,82 @@ def test_engine_name_check_in_descriptions_is_falsifiable():
     assert _descriptions_naming_an_engine([bound]) == [bound], (
         "the criterion must flag a description that names a single engine"
     )
+
+_CONTROLLER_CORE = "cullinan/web/controller/core.py"
+
+#: The engine-native response API. A controller may produce a response object, but
+#: only one function is allowed to push bytes through the transport's own handle.
+_ENGINE_WRITE_ATTRS = ("write", "finish")
+
+
+def _engine_write_sites(source: str):
+    """``(line, attribute)`` for every ``self.write`` / ``self.finish`` in ``source``."""
+    tree = ast.parse(source)
+    sites = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "self"
+            and node.func.attr in _ENGINE_WRITE_ATTRS
+        ):
+            sites.append((node.lineno, node.func.attr))
+    return sorted(sites)
+
+
+def _sites_inside(source: str, function: str):
+    """The same sites, restricted to one top-level function."""
+    tree = ast.parse(source)
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == function:
+            segment = ast.get_source_segment(source, node) or ""
+            base = node.lineno - 1
+            return sorted((line + base, attr) for line, attr in _engine_write_sites(segment))
+    return []
+
+
+def test_engine_native_response_writes_are_confined_to_one_entry_point():
+    """A new ``self.write`` anywhere else would make the controller engine-bound."""
+    source = (REPO_ROOT / _CONTROLLER_CORE).read_text(encoding="utf-8")
+    everywhere = _engine_write_sites(source)
+    inside = _sites_inside(source, "request_handler")
+    assert everywhere, "the scan found no engine-native writes at all -- check the scan"
+    assert everywhere == inside, (
+        "engine-native writes outside request_handler: "
+        f"{sorted(set(everywhere) - set(inside))}"
+    )
+
+
+def test_the_confined_entry_point_is_not_what_the_dispatcher_calls():
+    """The wrappers call ``request_handler``; registration hands over the original.
+
+    This is the fact that makes the confinement harmless rather than merely
+    tidy: ``@get_api`` builds a transport-shaped method, and the route
+    registration unwraps it, so the dispatcher invokes the controller function
+    directly and never reaches the code that writes through the handler.
+    """
+    from cullinan.core.application_context import ApplicationContext
+    from cullinan.web.controller.core import get_api
+
+    def index(self):
+        return {"ok": True}
+
+    wrapped = get_api(url="/probe")(index)
+    assert wrapped is not index, "the decorator is expected to return a wrapper"
+    assert ApplicationContext._unwrap_route_func(wrapped) is index, (
+        "route registration must unwrap the wrapper, otherwise request_handler "
+        "is on the request path and the controller is no longer engine-neutral"
+    )
+
+
+def test_the_write_confinement_check_is_falsifiable():
+    """A write outside the entry point must be reported, not tolerated."""
+    stray = "def other(self):\n    self.write('x')\n"
+    inside = "def request_handler(self):\n    self.write('x')\n"
+    assert _engine_write_sites(stray) == [(2, "write")]
+    assert _sites_inside(inside, "request_handler") == [(2, "write")]
+    assert _sites_inside(inside + stray, "request_handler") != _engine_write_sites(inside + stray), (
+        "a write outside the entry point must not be attributed to it"
+    )
+
