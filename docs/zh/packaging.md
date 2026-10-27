@@ -1,5 +1,5 @@
 pr_links: []
-last_updated: "2026-10-27"
+last_updated: "2026-10-28"
 title: "打包指南"
 slug: "packaging"
 module: []

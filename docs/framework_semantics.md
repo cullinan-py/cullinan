@@ -10,7 +10,7 @@ translation_pair: "docs/zh/framework_semantics.md"
 related_tests: ["tests/regression/test_component_reliability.py", "tests/core/test_injection_annotation_parsing.py"]
 related_examples: []
 estimate_pd: 1.0
-last_updated: "2026-10-27"
+last_updated: "2026-10-28"
 pr_links: []
 
 # Framework Semantics

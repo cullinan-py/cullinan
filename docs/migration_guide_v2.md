@@ -10,7 +10,7 @@ translation_pair: "docs/zh/migration_guide_v2.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-27"
+last_updated: "2026-10-28"
 pr_links: []
 
 
@@ -210,7 +210,8 @@ instead: those are read by the assembly and survive it.
 `get_pipeline()` itself keeps its runtime-introspection, advanced-use and testing
 role — after the application has started, `list_middleware()` reports what is
 installed — but a pre-boot `get_pipeline().add(...)` is not supported at the boot
-boundary. `Runtime.warmup()` rebuilds the gateway globals — pipeline, router,
+boundary (refused since `0.96a5`; on earlier releases it was accepted and then
+silently discarded by the same reset). `Runtime.warmup()` rebuilds the gateway globals — pipeline, router,
 dispatcher and exception handler — so a pre-boot registration cannot carry over
 silently. Integrate middleware through the declarative entries:
 `configure(middlewares=[...])` or the `@middleware` decorator.
