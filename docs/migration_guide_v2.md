@@ -352,6 +352,44 @@ The `@websocket_handler` API is unchanged. When running in ASGI mode, WebSocket 
 
 The `cullinan.web.params` system (`Path`, `Query`, `Body`, `Header`) is unchanged and works identically in v0.93. Parameters are now resolved by the `Dispatcher` instead of Tornado handlers.
 
+### 10. Rolling back across this line
+
+A version pin is not a complete rollback. Two `configure()` keywords were added
+inside the 0.96 alpha line, so an application that uses them cannot go back to an
+earlier alpha by editing the pin alone:
+
+| Keyword | Accepted from |
+|---|---|
+| `max_request_body_bytes` | `0.96a6` |
+| `drain_timeout` | `0.96a6` |
+
+On `0.96a5` and earlier, `configure()` does not take either name and the call
+fails at import time with `TypeError: configure() got an unexpected keyword
+argument ...`. The keyword is **rejected**, not ignored — nothing silently
+disappears — but it does mean the rollback unit is *pin **and** configuration*,
+not pin alone.
+
+If a rollback has to stay cheap, ask the installed version what it accepts instead
+of asking the pin which number it is:
+
+```python
+import inspect
+
+from cullinan import configure
+
+print(sorted(inspect.signature(configure).parameters))
+```
+
+Keep the settings in one place per version and pass only the names that list
+contains; then a pin change is the whole change. The alternative — a single
+`@configure(...)` call carrying both keywords — makes the rollback a code edit,
+and a code edit is the thing a rollback is trying to avoid.
+
+The reverse direction has its own trap, covered in step 2: going *forward* past
+`0.96a6` re-points `cullinan.web.controller` at the submodule, so code that
+imported the decorator from `cullinan.web` fails at import until it is changed.
+Plan a rollback and a roll-forward as one exercise, not two.
+
 ## Architecture Comparison
 
 ### v0.9x Architecture

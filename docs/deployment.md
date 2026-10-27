@@ -258,8 +258,32 @@ layer refuses, and that differs by engine:
 | ASGI | `413 Payload Too Large` with a JSON body, raised by the adapter |
 | Tornado | `400 Bad Request` with an empty body, raised by Tornado's protocol layer (`max_body_size`) before the framework sees the request |
 
-Both stop early, which is the property that matters; the two are not the same
-status, and pretending otherwise would be a difference you discover in
+That table is the server's answer. What the **client** sees is a different
+question, and on Tornado it depends on whether the client is still writing when
+the server refuses:
+
+| Client behaviour | What it observes |
+|---|---|
+| Sends the whole body in one write, moderately over the ceiling | `400` with an empty body |
+| Sends the whole body in one write, far over the ceiling | the connection is reset (`ConnectionResetError`; WSAECONNRESET on Windows) — **no status line** |
+| Streams it in chunks (`Transfer-Encoding: chunked`) | the connection is aborted — **no status line** |
+
+The dividing line is not the ratio but the race: a client that has finished
+writing can still read the `400`, one that has not gets its socket closed
+underneath it. Measured against a 1 KiB ceiling: one-shot bodies up to about
+16× over still returned `400`; a body 64× over, and a chunked upload only 1.5×
+over, both ended in a reset.
+
+Two consequences for callers:
+
+- **Do not use "received a `400`" as the oversize signal.** The reliable signal
+  is that the request did not complete normally; on an upload path, treat a
+  reset or an abort as a possible oversized body.
+- **Measure the payload before sending it** when the size is yours to know. A
+  server that has already refused cannot give you a status code it never sends.
+
+Both engines stop early, which is the property that matters; the two are not the
+same status, and pretending otherwise would be a difference you discover in
 production.
 
 Set it if the deployment accepts uploads from anywhere: without a ceiling, a

@@ -291,6 +291,31 @@ class ChatHandler:
 
 `cullinan.web.params` 系统（`Path`、`Query`、`Body`、`Header`）不变，在 v0.93 中工作方式完全相同。参数现在由 `Dispatcher` 而非 Tornado handler 解析。
 
+### 10. 跨这条线回退
+
+**改 pin 不等于完成回退。** 0.96 的 alpha 线内新增了两个 `configure()` 关键字参数，用到它们的应用无法只靠改 pin 回到更早的 alpha：
+
+| 关键字参数 | 自哪个版本起可用 |
+|---|---|
+| `max_request_body_bytes` | `0.96a6` |
+| `drain_timeout` | `0.96a6` |
+
+在 `0.96a5` 及更早，`configure()` 不接受这两个名字，调用会在**导入期**直接失败：`TypeError: configure() got an unexpected keyword argument ...`。也就是说它们是**被拒绝**、不是被静默忽略 —— 不会有东西悄悄消失 —— 但回退单元因此是「**pin 加配置**」，不是「pin」。
+
+如果希望回退保持便宜，就别问 pin 是哪个数字，而是问**装上的那一版接受什么**：
+
+```python
+import inspect
+
+from cullinan import configure
+
+print(sorted(inspect.signature(configure).parameters))
+```
+
+把配置按版本集中放一处，只传这份清单里存在的名字，那么换 pin 就是全部改动。反过来做 —— 一个 `@configure(...)` 同时写两个关键字 —— 会把回退变成一次改代码，而"改代码"正是回退要避免的事。
+
+**反向（向前升级）另有自己的坑**，见第 2 节：越过 `0.96a6` 之后，`cullinan.web.controller` 指向子模块，从 `cullinan.web` 导入装饰器的代码在导入期就会失败。**把回退与前进当成同一件事来演练，别当成两件。**
+
 ## 架构对比
 
 ### v0.9x 架构
