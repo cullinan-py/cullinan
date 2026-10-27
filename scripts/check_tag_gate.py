@@ -19,6 +19,16 @@ confirmations:
       - every docs page that advertises a current version advertises the SSOT
         one, and at least MIN_DOC_BANNERS such banners exist (a check that finds
         nothing would pass without comparing anything).
+  (f) credential scope (locally verifiable part):
+      - the review and sync credentials carry `#tree=<40 hex>` and it equals the tree
+        of the commit being tagged. The sign-off credential is exempt: it binds to its
+        evidence bundle, not to the tree.
+      LIMIT: this compares format and scope, not authenticity. A string that is shaped
+      like a credential and names the right tree passes whether or not it was ever
+      issued; that is what the issuing process is for, and a gate that claimed
+      otherwise would be lying about what it checked. Sign-off is exempt because its
+      credential carries an evidence-bundle hash, not a tree -- requiring a tree there
+      would reject every valid sign-off.
 
 Usage:
   python scripts/check_tag_gate.py --sign-off-token <TOKEN> --review-token <TOKEN> --sync-token <TOKEN> [--version <VERSION>] [--meta-sync-range <base>..<head>]
@@ -63,6 +73,11 @@ DOC_BANNER_PATTERNS = (
 #: churn does not trip it, but far enough above zero that deleting the banners
 #: cannot turn this into a check that passes by finding nothing.
 MIN_DOC_BANNERS = 8
+
+#: A credential binds itself to the tree it was issued for by carrying
+#: ``#tree=<40 hex>``. Binding to the tree rather than the commit is deliberate:/n#: a merge commit and the commit it merges can share one tree, so a commit-bound
+#: token would reject a valid approval.
+TREE_BINDING = re.compile(r"#tree=([0-9a-f]{40})")
 
 
 def read_ssot_version():
@@ -183,6 +198,42 @@ def main():
         f"{len(banners)} found -- {detail}",
     )
 
+    # (f) credential -> tree binding. Until now (b) and the sync credential were
+    # only tested for being non-empty, so a token issued for an earlier tree was
+    # accepted just as readily as one issued for the tree being tagged -- the gate
+    # said PASS while the approval pointed somewhere else.
+    #
+    # The binding is to the *tree*, not the commit: `d69e66d` and the merge commit
+    # `86fc32d` are different commits with the same tree, so a commit-bound token
+    # would reject a perfectly valid approval. Sign-off is exempt on purpose --
+    # that credential carries a hash of the evidence bundle, not of the tree.
+    head_tree = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD^{tree}"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    unbound = []
+    mismatched = []
+    for slot, token in (("(b) review", args.review_token), ("sync", args.sync_token)):
+        match = TREE_BINDING.search(token)
+        if match is None:
+            unbound.append(slot)
+        elif match.group(1) != head_tree:
+            mismatched.append(f"{slot} bound to {match.group(1)}")
+    if unbound:
+        detail = (
+            f"no #tree=<40-hex> on: {', '.join(unbound)} -- reissue the token in the "
+            f"bound form ('...#tree={head_tree}')"
+        )
+    elif mismatched:
+        detail = f"bound to a different tree than HEAD ({head_tree}): " + "; ".join(mismatched)
+    else:
+        detail = f"both bound to {head_tree}"
+    check(
+        "(f) review and sync credentials bound to the tagged tree",
+        not unbound and not mismatched,
+        detail,
+    )
+
     # (d) declaration backstop (see scripts/check_sync_declaration.py).
     # Backstop only: the primary enforcement runs on every PR/push in CI. Kept
     # narrow by default (the commit being tagged) so that pre-existing history
@@ -219,6 +270,8 @@ def main():
     # missing one.
     print("  (d) change declaration: Meta-Sync trailer present on governed changes")
     print("  (e) docs version banners: every banner names the SSOT version")
+    print("  (f) credential scope: review + sync tokens bound to the tagged tree")
+    print("      (format and scope only -- authenticity comes from the issuing process)")
     return 0
 
 

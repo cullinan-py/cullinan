@@ -98,3 +98,64 @@ def test_banner_scan_does_not_backtrack_into_a_truncated_version(tmp_path):
     (tmp_path / "p.md").write_text("> **版本**: 0.90a5+\n", encoding="utf-8")
     assert gate.find_doc_banners(tmp_path) == []
 
+# --- (f) credential -> tree binding ----------------------------------------
+
+def _head_tree() -> str:
+    import subprocess
+    return subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD^{tree}"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+
+def _run_gate(review: str, sync: str, sign_off: str = "P"):
+    import subprocess
+    import sys
+    return subprocess.run(
+        [sys.executable, str(GATE_PATH),
+         "--sign-off-token", sign_off,
+         "--review-token", review,
+         "--sync-token", sync],
+        cwd=str(REPO_ROOT), capture_output=True, text=True, encoding="utf-8",
+    )
+
+
+def test_the_tree_bound_credential_is_accepted():
+    tree = _head_tree()
+    result = _run_gate(f"ARCH#tree={tree}", f"KB#tree={tree}")
+    assert "PASS (f)" in result.stdout, result.stdout[-400:]
+
+
+def test_an_unbound_credential_is_refused_with_the_bound_form_suggested():
+    result = _run_gate("ARCH-0.96a7.post1-d69e66d", "KB-0.96a7.post1-d69e66d")
+    assert "FAIL (f)" in result.stdout
+    assert "reissue" in result.stdout, "the message must say how to fix the credential"
+    assert _head_tree() in result.stdout, "and must print the tree to bind to"
+
+
+def test_a_credential_bound_to_another_tree_fails_for_that_reason():
+    """V4: a stale credential must fail as "wrong tree", not "unrecognised"."""
+    zero = "0" * 40
+    result = _run_gate(f"ARCH#tree={zero}", f"KB#tree={_head_tree()}")
+    assert "FAIL (f)" in result.stdout
+    assert "different tree" in result.stdout
+    assert "reissue" not in result.stdout, (
+        "the format was understood; sending the reader off to reissue would hide that "
+        "the real problem is a credential for a different tree"
+    )
+
+
+def test_sign_off_is_exempt_from_the_tree_binding():
+    """The sign-off credential binds to its evidence bundle, not to the tree."""
+    tree = _head_tree()
+    result = _run_gate(f"ARCH#tree={tree}", f"KB#tree={tree}", sign_off="<bundle>#sha256=deadbeef")
+    assert "PASS (f)" in result.stdout
+
+
+def test_the_scope_limit_is_stated_where_a_reader_will_see_it():
+    """The gate must not let its PASS be read as an authenticity check."""
+    assert "(f) credential scope" in _summary_labels() or "f" in _summary_labels()
+    assert "authenticity" in SOURCE, (
+        "the docstring must say the check is format+scope, not authenticity"
+    )
+
