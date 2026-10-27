@@ -9,7 +9,7 @@
         <meta name="description" content="Documentation for the Cullinan engine-neutral Python web framework with built-in IoC/DI, type-safe parameters, pluggable model handlers, and Pydantic integration">
       
       
-        <meta name="author" content="plumeink">
+        <meta name="author" content=""plumeink"">
       
       
         <link rel="canonical" href="https://cullinan-py.github.io/cullinan/pre/zh/migration_guide_v2/">
@@ -33,7 +33,7 @@
     
     
       
-        <title>迁移指南 v2（v0.9x → v0.93） - Cullinan Documentation</title>
+        <title>"迁移指南: v0.9x → v0.93" - Cullinan Documentation</title>
       
     
     
@@ -96,10 +96,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a7.post1"
+      data-current-version="0.96a8"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a7.post1"
+      data-pre-version="0.96a8"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -150,7 +150,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              迁移指南 v2（v0.9x → v0.93）
+              "迁移指南: v0.9x → v0.93"
             
           </span>
         </div>
@@ -666,6 +666,13 @@
   </span>
   
   
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
 
       </a>
     </li>
@@ -782,6 +789,13 @@
     
   </span>
   
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
   
 
       </a>
@@ -915,6 +929,13 @@
     
   </span>
   
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
   
 
       </a>
@@ -1084,6 +1105,13 @@
   </span>
   
   
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
 
       </a>
     </li>
@@ -1111,6 +1139,13 @@
     
   </span>
   
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
   
 
       </a>
@@ -1848,6 +1883,13 @@
   </span>
   
   
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
 
       </a>
     </li>
@@ -2142,6 +2184,13 @@
   </span>
   
   
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
 
       </a>
     </li>
@@ -2179,6 +2228,13 @@
   </span>
   
   
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
+  
 
           <span class="md-nav__icon md-icon"></span>
         </label>
@@ -2196,6 +2252,13 @@
     
   </span>
   
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
   
 
       </a>
@@ -2599,6 +2662,13 @@
     
   </span>
   
+  
+    
+  
+  
+    <span class="md-status md-status--updated"></span>
+  
+
   
 
       </a>
@@ -3262,7 +3332,7 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
 <span class="n">get_pipeline</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">AuthMiddleware</span><span class="p">())</span>
 </code></pre></div>
 <p><strong>启动会拒绝该入口。</strong> <code>get_pipeline().add(...)</code> 写入的是<strong>引导之前</strong>就已存在的那份管线；应用装配时会重建 gateway globals，因此经该入口注册的条目会在<strong>启动边界</strong>被拒绝 —— 应用不会启动。框架会<strong>先</strong>报告它丢弃的条目（一条诊断，给出名称与数量），<strong>再</strong>抛出，因此在调用方捕获异常之后，报告仍已被看到。请改用 <code>configure(middlewares=[...])</code> 或 <code>@middleware</code> 装饰器声明中间件：这些入口由装配过程读取，因而能在启动后存活。</p>
-<p><code>get_pipeline()</code> 本身保留其<strong>运行时自省 / 高级用途 / 测试</strong>级别的作用 —— 应用启动<strong>之后</strong>，<code>list_middleware()</code> 会报告已安装的中间件 —— 但<strong>启动前</strong>的 <code>get_pipeline().add(...)</code> 在引导边界<strong>不受支持</strong>。<code>Runtime.warmup()</code> 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此启动前的注册无法静默沿用。请通过声明式入口接入中间件：<code>configure(middlewares=[...])</code> 或 <code>@middleware</code> 装饰器。</p>
+<p><code>get_pipeline()</code> 本身保留其<strong>运行时自省 / 高级用途 / 测试</strong>级别的作用 —— 应用启动<strong>之后</strong>，<code>list_middleware()</code> 会报告已安装的中间件 —— 但<strong>启动前</strong>的 <code>get_pipeline().add(...)</code> 在引导边界<strong>不受支持</strong>（自 <code>0.96a5</code> 起拒绝；更早的版本会接受它，随后被同一次重置静默丢弃）。<code>Runtime.warmup()</code> 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此启动前的注册无法静默沿用。请通过声明式入口接入中间件：<code>configure(middlewares=[...])</code> 或 <code>@middleware</code> 装饰器。</p>
 <p><strong>向后兼容</strong>：旧的 <code>@middleware</code> 类仍会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。</p>
 <h4 id="v096a1">v0.96a1：遗留中间件纳入声明式排序<a class="headerlink" href="#v096a1" title="Permanent link">&para;</a></h4>
 <p>过去，旧的 <code>@middleware</code> 类会被折叠成<strong>单个</strong>桥接层，且始终位于内置 access log 层<strong>内侧</strong>，因此遗留 <code>priority</code> 无法移动它 —— 该优先级只在遗留链<strong>内部</strong>排序，从不跨越桥接边界。现在每个遗留中间件各自成为一个管线层，并与声明层、内置层共用同一个声明式 <code>priority</code> 键排序，因此一个较低的遗留 <code>priority</code> 现在可以把遗留中间件放到内置层<strong>外侧</strong>。</p>
@@ -3557,7 +3627,7 @@ pip<span class="w"> </span>install<span class="w"> </span>cullinan<span class="o
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a7.post1", "pre_is_available": true, "pre_label": "0.96a7.post1", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a8", "pre_is_available": true, "pre_label": "0.96a8", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
