@@ -283,6 +283,13 @@ class ApplicationContext:
 
             logger.info("ApplicationContext.refresh() started.")
             self._process_pending_registrations()
+            # The declared-vs-assembled reconciliation is the second step of the
+            # refresh, not a side effect of draining pending registrations. It
+            # used to live inside _process_pending_registrations(), where a later
+            # refactor could have made it conditional on that drain having
+            # produced something -- which would have silenced a
+            # strict_assembly=True failure without any test noticing.
+            self._reconcile_declared_not_assembled()
             self._state = ContainerState.VALIDATING
             self._validate_definitions()
             self._state = ContainerState.WARMING_UP
@@ -1075,12 +1082,27 @@ class ApplicationContext:
         """
         _emit_report_fallback(problem, guidance)
 
+    def _reconcile_declared_not_assembled(self) -> None:
+        """Report the declared-but-not-assembled difference, once, at refresh.
+
+        A reconciliation is not a registration, so it is its own step of
+        ``refresh()`` rather than a side effect of draining pending ones: while
+        it lived inside ``_process_pending_registrations()`` a later change to
+        that drain path could have made the report conditional on the drain
+        having produced something, silencing a ``strict_assembly=True`` failure
+        with nothing to catch it.
+
+        Everything the caller observes happens here and only here -- the warning
+        channels, the stderr fallback when both are dark, and the optional
+        failure -- so the report is never an alternative to the diagnostic.
+        """
+        self._warn_declared_not_assembled()
+
     def _process_pending_registrations(self) -> None:
         from .pending import PendingRegistry
 
         pending = PendingRegistry.get_instance()
         registrations = pending.drain()
-        self._warn_declared_not_assembled()
         if not registrations:
             pending.freeze()
             return

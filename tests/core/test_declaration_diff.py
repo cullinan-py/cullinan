@@ -440,3 +440,49 @@ def test_declaration_diff_warning_is_engine_neutral(tmp_path, monkeypatch, engin
         if app is not None:
             app.uninstall()
         _clear_modules(package_name, outside_name)
+
+def test_the_reconciliation_is_its_own_step_of_refresh(monkeypatch):
+    """The reconciliation must not be a side effect of the pending drain.
+
+    It used to run inside ``_process_pending_registrations()``. Nothing broke --
+    that drain returns early only *after* the report -- but the coupling meant a
+    later change to that early return could have made the report conditional on
+    the drain having produced registrations, silencing a ``strict_assembly=True``
+    failure with no test to catch it.
+
+    Recording the order makes the decoupling checkable: the reconciliation has
+    to happen *after* the drain has finished, not inside it. Moving the call back
+    in leaves ``pending:end`` unrecorded before the reconcile, and this fails.
+    """
+    from cullinan.core.application_context import ApplicationContext
+
+    order = []
+    original_pending = ApplicationContext._process_pending_registrations
+    original_reconcile = ApplicationContext._reconcile_declared_not_assembled
+
+    def recording_pending(self):
+        order.append("pending:start")
+        result = original_pending(self)
+        order.append("pending:end")
+        return result
+
+    def recording_reconcile(self):
+        order.append("reconcile")
+        return original_reconcile(self)
+
+    monkeypatch.setattr(
+        ApplicationContext, "_process_pending_registrations", recording_pending
+    )
+    monkeypatch.setattr(
+        ApplicationContext, "_reconcile_declared_not_assembled", recording_reconcile
+    )
+
+    context = ApplicationContext(container_id="reconcile-step-probe")
+    try:
+        context.refresh()
+    finally:
+        pass
+
+    assert "reconcile" in order, order
+    assert order.index("reconcile") > order.index("pending:end"), order
+
