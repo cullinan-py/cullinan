@@ -40,6 +40,12 @@ full = ["tornado", "uvicorn", "pyyaml"]
 exclude = [
   "tests*", "examples*", "docs*", "docs_archive*", "scripts*",
   "benchmarks*", "build*", "dist*", "site*",
+  # ``overrides/`` is the MkDocs Material theme override directory
+  # (``overrides/main.html``), not a Python package. Without this line the finder
+  # treats it as one, so the wheel ships a top-level ``overrides`` alongside the
+  # PyPI distribution of the same name and ``top_level.txt`` advertises a module
+  # the wheel does not contain.
+  "overrides*",
 ]
 
 [tool.setuptools.package-data]
