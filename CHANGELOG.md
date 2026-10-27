@@ -42,9 +42,10 @@ parameter that was renamed.
 
 ### Fixed
 
-- A wheel built from this tree shipped `benchmarks/bench.py`. The benchmark is a
-  development tool and has no place in an installed package; it is excluded now,
-  and a wheel built from this tree carries 131 files rather than 132
+- Both artifacts built from this tree carried `benchmarks/bench.py`, as did the
+  ones published as 0.96a6. The benchmark is a development tool with no place in
+  an installed package; it is excluded now, and a wheel built from this tree
+  carries 131 files rather than 132
 - The package metadata records the licence as `License-Expression: MIT` instead
   of the table form that the packaging specification has deprecated
 
