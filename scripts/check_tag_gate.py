@@ -15,6 +15,10 @@ confirmations:
         they touch a release-process / configuration path
         (see scripts/check_sync_declaration.py). This is a backstop only --
         primary enforcement runs on every PR/push in CI.
+  (e) docs channel reconciliation (locally verifiable part):
+      - every docs page that advertises a current version advertises the SSOT
+        one, and at least MIN_DOC_BANNERS such banners exist (a check that finds
+        nothing would pass without comparing anything).
 
 Usage:
   python scripts/check_tag_gate.py --sign-off-token <TOKEN> --review-token <TOKEN> --sync-token <TOKEN> [--version <VERSION>] [--meta-sync-range <base>..<head>]
@@ -35,6 +39,31 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+#: Banner shapes in use, both near the top of a page: the docs home pages write
+#: ``**Current version: X**`` / ``**当前版本：X**``, the guide pages write
+#: ``**Version**: X`` / ``**版本**：X``. Note the colon: the English pages use the
+#: ASCII one and the Chinese pages the full-width one, so an English-only pattern
+#: would silently cover half the tree.
+#:
+#: ``+`` suffix is filtered in code, not with a lookahead: a pattern-level
+#: ``(?!\+)`` makes the greedy group backtrack and capture ``0.90a`` out of
+#: ``0.90a5+``, which then looks like a legitimate (if odd) version. A page that
+#: writes ``**Version**: 0.90a5+`` is stating the *oldest* release its feature
+#: set applies to, not the current one, and holding it to the SSOT is a false
+#: positive. Only a bare version asserts "this is the version you are reading".
+DOC_BANNER_PATTERNS = (
+    re.compile(r"\*\*Current version:\s*([0-9][0-9A-Za-z._-]*)\*\*"),
+    re.compile(r"\*\*当前版本：\s*([0-9][0-9A-Za-z._-]*)\*\*"),
+    re.compile(r"\*\*Version\*\*:\s*([0-9][0-9A-Za-z._-]*)"),
+    re.compile(r"\*\*版本\*\*：\s*([0-9][0-9A-Za-z._-]*)"),
+)
+
+#: How many banners a release tree is expected to carry. Eleven banners exist
+#: today (six English, five Chinese); the floor sits below that so ordinary page
+#: churn does not trip it, but far enough above zero that deleting the banners
+#: cannot turn this into a check that passes by finding nothing.
+MIN_DOC_BANNERS = 8
+
 
 def read_ssot_version():
     text = (ROOT / "cullinan" / "_version.py").read_text(encoding="utf-8")
@@ -42,6 +71,25 @@ def read_ssot_version():
     if not match:
         return None
     return match.group(1)
+
+
+def find_doc_banners(docs_dir):
+    """``(relative path, advertised version)`` for every page banner found.
+
+    A banner immediately followed by ``+`` states the oldest release its content
+    applies to, not the current one, so it is skipped here rather than in the
+    pattern (see DOC_BANNER_PATTERNS).
+    """
+    found = []
+    for page in sorted(docs_dir.rglob("*.md")):
+        text = page.read_text(encoding="utf-8", errors="replace")
+        for pattern in DOC_BANNER_PATTERNS:
+            for match in pattern.finditer(text):
+                end = match.end(1)
+                if end < len(text) and text[end] == "+":
+                    continue
+                found.append((page.relative_to(docs_dir).as_posix(), match.group(1)))
+    return found
 
 
 def main():
@@ -110,6 +158,31 @@ def main():
     ).stdout.strip()
     check("Working tree clean", status == "", status or "clean")
 
+    # (e) docs version banners. The docs pages carry the version as a *copy* --
+    # they are not generated from the SSOT, so nothing made them move with it,
+    # and until now nothing compared them either. This is that comparison: every
+    # banner found must name the SSOT version, and there must be at least
+    # MIN_DOC_BANNERS of them, so that removing the banners cannot turn the
+    # check into one that passes by finding nothing.
+    banners = find_doc_banners(ROOT / "docs")
+    stale = [(page, version) for page, version in banners if version != expected]
+    if not banners:
+        detail = "no banner found -- this would pass without comparing anything"
+    elif len(banners) < MIN_DOC_BANNERS:
+        detail = f"only {len(banners)} banner(s), expected at least {MIN_DOC_BANNERS}"
+    elif stale:
+        detail = "; ".join(f"{page} says {version}" for page, version in stale)
+    else:
+        detail = "aligned"
+    # The label stays a literal: the summary/registration correspondence test
+    # compares the two sets of labels, and a label carrying an interpolated value
+    # would change shape from run to run and make that comparison meaningless.
+    check(
+        "(e) docs version banners aligned",
+        len(banners) >= MIN_DOC_BANNERS and not stale,
+        f"{len(banners)} found -- {detail}",
+    )
+
     # (d) declaration backstop (see scripts/check_sync_declaration.py).
     # Backstop only: the primary enforcement runs on every PR/push in CI. Kept
     # narrow by default (the commit being tagged) so that pre-existing history
@@ -145,6 +218,7 @@ def main():
     # going by the output, which is how a present gate can be mistaken for a
     # missing one.
     print("  (d) change declaration: Meta-Sync trailer present on governed changes")
+    print("  (e) docs version banners: every banner names the SSOT version")
     return 0
 
 

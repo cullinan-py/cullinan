@@ -23,7 +23,7 @@ _spec.loader.exec_module(gate)
 SOURCE = GATE_PATH.read_text(encoding="utf-8")
 
 # ``check("(x) ...")`` registrations, e.g. ``check("(d) declaration present ...")``
-_REGISTERED = re.compile(r'check\(\s*"\s*\(([a-z])\)')
+_REGISTERED = re.compile(r'check\(\s*f?"\s*\(([a-z])\)')
 # ``print(f"  (x) ...")`` lines in the PASS summary
 _SUMMARY = re.compile(r'print\(\s*f?"\s*\(([a-z])\)')
 
@@ -60,3 +60,41 @@ def test_declaration_check_actually_gates():
     assert "check(" in body and "if not reds" in body, (
         "(d) must be registered through check(...) so a RED blocks the tag"
     )
+
+def test_docs_banner_check_is_registered_and_echoed():
+    """(e) is the docs channel's only reconciliation -- it must be visible."""
+    assert "e" in _registered_labels(), "(e) docs banner check is not registered"
+    assert "e" in _summary_labels(), "(e) docs banner check is not in the summary"
+
+
+def test_docs_banner_check_actually_gates():
+    """The (e) item must feed ``fails``, not merely print a line."""
+    body = SOURCE.split("# (e) docs version banners", 1)[1]
+    assert "check(" in body, "(e) must be registered through check(...)"
+    assert "MIN_DOC_BANNERS" in body and "stale" in body, (
+        "(e) must fail on a stale banner and on an empty scan"
+    )
+
+
+def test_banner_scan_finds_the_offending_page(tmp_path):
+    """A page that advertises the wrong version must be named, not averaged away."""
+    (tmp_path / "a.md").write_text("> **Version**: 0.96a7.post1\n", encoding="utf-8")
+    (tmp_path / "b.md").write_text("> **当前版本：0.96a7.post1**\n", encoding="utf-8")
+    (tmp_path / "c.md").write_text("> **Version**: 0.90a5\n", encoding="utf-8")
+    found = dict(gate.find_doc_banners(tmp_path))
+    assert found["a.md"] == "0.96a7.post1"
+    assert found["b.md"] == "0.96a7.post1"
+    assert found["c.md"] == "0.90a5", "the stale page must survive into the report"
+
+
+def test_banner_scan_ignores_a_minimum_version_claim(tmp_path):
+    """``0.90a5+`` states a floor, not the version being read."""
+    (tmp_path / "p.md").write_text("> **Version**: 0.90a5+\n", encoding="utf-8")
+    assert gate.find_doc_banners(tmp_path) == []
+
+
+def test_banner_scan_does_not_backtrack_into_a_truncated_version(tmp_path):
+    """The ``+`` filter must not leave ``0.90a`` behind as a captured version."""
+    (tmp_path / "p.md").write_text("> **版本**: 0.90a5+\n", encoding="utf-8")
+    assert gate.find_doc_banners(tmp_path) == []
+
