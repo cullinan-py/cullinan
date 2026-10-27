@@ -22,8 +22,10 @@ step runs.
 
 - `check_tag_gate.py` reconciles the docs version banners before a tag: every
   page that advertises a version must advertise the one in `cullinan/_version.py`,
-  and at least eight such banners must exist -- a check that finds nothing would
-  otherwise pass without comparing anything. The Chinese pages use a full-width
+  and the pages expected to carry a banner are enumerated, with a count per page --
+  a total would let a page lose its banner while another still had one, and a page
+  that drops below its count is now a finding with its name in it. The Chinese pages
+  use a full-width
   colon and different wording, so an English-only pattern would have covered half
   the tree and reported green on the half it never read
 - The review and sync credentials carry `#tree=<40 hex>` and the gate compares it
