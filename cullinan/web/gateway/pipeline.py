@@ -177,11 +177,6 @@ class MiddlewarePipeline:
         resolved order depends only on the declarations, never on when the
         middleware was registered.
         """
-        if priority is not None and (before is not None or after is not None):
-            raise ValueError(
-                "Middleware ordering declarations are mutually exclusive: pass either "
-                "'priority' or 'before'/'after', not both."
-            )
         # ``_registration_origin(2)``: frame 0 is that helper, frame 1 is this
         # method, frame 2 is whoever called ``add``.
         self._append(
@@ -206,6 +201,11 @@ class MiddlewarePipeline:
         Kept separate from ``add()`` so the public signature stays the one the
         documentation describes: the entry point of a middleware is not a place
         to grow keywords for the framework's own bookkeeping.
+
+        The mutual-exclusion rule between ``priority`` and ``before``/``after``
+        is enforced here and only here -- every caller, including ``add()`` and
+        the declarative path, arrives through this method, so a second copy in
+        ``add()`` would be a rule stated twice and drifting once.
         """
         if priority is not None and (before is not None or after is not None):
             raise ValueError(
