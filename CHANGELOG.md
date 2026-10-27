@@ -7,6 +7,59 @@ in [`README.MD`](README.MD).
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## v0.96a7
+
+**v0.96a7** is the seventh alpha of the 0.96 line. It is mostly about the parts of
+a project that are easy to let rot because nothing fails when they do: the
+documentation tree, the address of every page in it, and the discipline that
+keeps a page from describing a version of the framework that no longer exists.
+
+Two of the changes are gates rather than features. One requires every published
+page to say when it last changed, and compares that date against the commit that
+last changed the page, so a page edited without its date moving is a failure
+instead of a habit. The other resolves each call shown in the guides to the
+callable it names and compares the keywords against the live signature, which
+catches a guide that imports a function correctly and then calls it with a
+parameter that was renamed.
+
+### Changed
+
+- The internals pages moved from `docs/wiki/` to `docs/internals/`, matching the
+  name the navigation had always used for that section. The old addresses are
+  answered by redirects in both languages, so a saved bookmark still lands on the
+  page it named
+- `docs/template/` and `docs/templates/` are one directory. They differed by a
+  single letter and held different things
+- Every example in `examples/features.json` now declares a kind (`runnable`,
+  `test-driven`, `historical`), and the check requires that kind's shape instead
+  of one shape for all of them. A testing example has no entry point by design,
+  and treating that as a defect was the reason five directories never matched the
+  rule
+
+- The multi-OS workflow lives in the repository rather than on a throwaway
+  branch, so the cross-platform run a release depends on can be reproduced from a
+  clean clone. It still runs only on `dev/**` and on demand
+
+### Fixed
+
+- A wheel built from this tree shipped `benchmarks/bench.py`. The benchmark is a
+  development tool and has no place in an installed package; it is excluded now,
+  and a wheel built from this tree carries 131 files rather than 132
+- The package metadata records the licence as `License-Expression: MIT` instead
+  of the table form that the packaging specification has deprecated
+
+### Documentation
+
+- Every page states when it last changed, in one form, with a date that matches
+  its own history. Fourteen pages had no such statement at all and thirty-three
+  advertised a date older than their last edit
+- The four module reference pages say in their first sentence that they list the
+  entrypoints worth starting from rather than the full export surface, and point
+  at the generated reference that carries every symbol
+- The navigation no longer carries an exclusion list. It had eleven entries and
+  six of them named paths that did not exist; an orphan page is a defect, and the
+  strict build now fails on one instead of hiding it
+
 ## v0.96a6
 
 **v0.96a6** is the sixth alpha of the 0.96 line. It is the release where the
