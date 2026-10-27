@@ -25,9 +25,9 @@ step runs.
   and the pages expected to carry a banner are enumerated, with a count per page --
   a total would let a page lose its banner while another still had one, and a page
   that drops below its count is now a finding with its name in it. The Chinese pages
-  use a full-width
-  colon and different wording, so an English-only pattern would have covered half
-  the tree and reported green on the half it never read
+  use different wording, and the colon width is not even consistent within them, so
+  an English-only pattern would have covered half the tree and reported green on the
+  half it never read
 - The review and sync credentials carry `#tree=<40 hex>` and the gate compares it
   with `HEAD^{tree}`. Bound to the tree, not the commit: `d69e66d` and the merge
   commit that released it are different commits with the same tree, and a
