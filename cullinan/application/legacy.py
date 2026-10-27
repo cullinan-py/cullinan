@@ -683,7 +683,9 @@ def _add_middleware_entries(pipeline, entries) -> int:
                 "Declarative middleware must be a GatewayMiddleware instance or class, "
                 f"got {type(middleware).__name__!r}."
             )
-        pipeline.add(middleware, **options)
+        # Declarative registration: the line that matters is the application
+        # being assembled, not a line in this module, so no origin is recorded.
+        pipeline._append(middleware, origin=None, **options)
         count += 1
     return count
 

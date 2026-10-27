@@ -1,4 +1,18 @@
-last_updated: "2026-10-27"
+title: "Decorators"
+slug: "decorators"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/internals/decorators.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 
 # Decorators
 

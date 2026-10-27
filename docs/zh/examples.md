@@ -10,7 +10,7 @@ translation_pair: "docs/examples.md"
 related_tests: ["tests/integration/test_examples_public_guides.py"]
 related_examples: ["examples/minimal_app", "examples/controller_service_inject", "examples/middleware_and_module", "examples/middleware_pipeline", "examples/middleware_control", "examples/parameter_handling", "examples/testing_flow"]
 estimate_pd: 1.5
-last_updated: "2026-10-27"
+last_updated: "2026-10-28"
 pr_links: []
 
 # 示例与指引
@@ -49,6 +49,11 @@ pr_links: []
 | `examples/testing_flow/` | 基于公开 API 的 ASGI 测试流 | `python -m pytest examples/testing_flow/test_app.py -q` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/testing_flow) |
 | `examples/static_files_and_spa/` | 声明式 `StaticFiles` 挂载 + SPA 回退（引擎中立） | `python -m examples.static_files_and_spa` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/static_files_and_spa) |
 | `examples/assembly_snapshot/` | 装配快照：一次调用取得四个 gateway 子面 + 容器面的 `declared` / `assembled` / `dropped`（高级 / 边界） | `python -m examples.assembly_snapshot` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/assembly_snapshot) |
+| `examples/graceful_shutdown/` | 优雅退出与就绪：部署方如何得知实例要下线，应用又如何用框架已跟踪的状态回答「我是否还应继续接收流量」 | `python -m examples.graceful_shutdown` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/graceful_shutdown) |
+| `examples/packaging_demo/` | 在冻结打包（Nuitka / PyInstaller）环境里运行容器：扫描管线自动识别打包模式并选择对应策略链 | `python -m examples.packaging_demo` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/packaging_demo) |
+| `examples/request_body_limit/` | `configure(max_request_body_bytes=...)` 在任何 handler 之前拒绝超限请求体，以及由此产生的两引擎状态差异 | `python -m examples.request_body_limit` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/request_body_limit) |
+| `examples/runtime_controls/` | 部署通常需要的每个开关集中在一个文件里，逐个看它生效而不是只在签名里读名字 | `python -m examples.runtime_controls` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/runtime_controls) |
+| `examples/legacy/` | 0.90 的装饰器面保持可运行：其中任何一个不再工作，这个脚本就跑不起来 | `python examples/legacy/decorator_demo_090.py` | [在 GitHub 查看](https://github.com/cullinan-py/cullinan/tree/main/examples/legacy) |
 
 ## 为什么要重构示例
 

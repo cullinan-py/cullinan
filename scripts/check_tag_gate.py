@@ -15,6 +15,21 @@ confirmations:
         they touch a release-process / configuration path
         (see scripts/check_sync_declaration.py). This is a backstop only --
         primary enforcement runs on every PR/push in CI.
+  (e) docs channel reconciliation (locally verifiable part):
+      - every docs page that advertises a current version advertises the SSOT
+        one, and the set of pages carrying a banner is exactly
+        EXPECTED_BANNER_PAGES (a count would tolerate a page losing its banner
+        while another still had one).
+  (f) credential scope (locally verifiable part):
+      - the review and sync credentials carry `#tree=<40 hex>` and it equals the tree
+        of the commit being tagged. The sign-off credential is exempt: it binds to its
+        evidence bundle, not to the tree.
+      LIMIT: this compares format and scope, not authenticity. A string that is shaped
+      like a credential and names the right tree passes whether or not it was ever
+      issued; that is what the issuing process is for, and a gate that claimed
+      otherwise would be lying about what it checked. Sign-off is exempt because its
+      credential carries an evidence-bundle hash, not a tree -- requiring a tree there
+      would reject every valid sign-off.
 
 Usage:
   python scripts/check_tag_gate.py --sign-off-token <TOKEN> --review-token <TOKEN> --sync-token <TOKEN> [--version <VERSION>] [--meta-sync-range <base>..<head>]
@@ -35,6 +50,50 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+#: Banner shapes in use, both near the top of a page: the docs home pages write
+#: ``**Current version: X**`` / ``**当前版本：X**``, the guide pages write
+#: ``**Version**: X`` / ``**版本**：X``. Note the colon: the English pages use the
+#: ASCII one and the Chinese pages the full-width one, so an English-only pattern
+#: would silently cover half the tree.
+#:
+#: ``+`` suffix is filtered in code, not with a lookahead: a pattern-level
+#: ``(?!\+)`` makes the greedy group backtrack and capture ``0.90a`` out of
+#: ``0.90a5+``, which then looks like a legitimate (if odd) version. A page that
+#: writes ``**Version**: 0.90a5+`` is stating the *oldest* release its feature
+#: set applies to, not the current one, and holding it to the SSOT is a false
+#: positive. Only a bare version asserts "this is the version you are reading".
+DOC_BANNER_PATTERNS = (
+    re.compile(r"\*\*Current version:\s*([0-9][0-9A-Za-z._-]*)\*\*"),
+    re.compile(r"\*\*当前版本[：:]\s*([0-9][0-9A-Za-z._-]*)\*\*"),
+    re.compile(r"\*\*Version\*\*:\s*([0-9][0-9A-Za-z._-]*)"),
+    re.compile(r"\*\*版本\*\*[：:]\s*([0-9][0-9A-Za-z._-]*)"),
+)
+
+#: Pages that carry a version banner. Enumerated rather than counted: with a
+#: count, deleting the banner from some pages still passes as long as enough
+#: remain somewhere, which is the failure this is meant to catch. A page that
+#: starts or stops carrying one has to be listed here, and that edit is the
+#: reminder that the page belongs to the published version surface.
+EXPECTED_BANNER_PAGES = {
+    "README.md": 1,
+    "zh/README.md": 1,
+    "architecture.md": 1,
+    "zh/architecture.md": 1,
+    "dependency_injection_guide.md": 1,
+    "zh/dependency_injection_guide.md": 1,
+    # These two carry a banner in two places, and both are published claims.
+    "extension_development_guide.md": 2,
+    "zh/extension_development_guide.md": 2,
+    "quick_reference_di.md": 1,
+    "zh/quick_reference_di.md": 1,
+}
+
+#: A credential binds itself to the tree it was issued for by carrying
+#: ``#tree=<40 hex>``. Binding to the tree rather than the commit is deliberate:
+#: a merge commit and the commit it merges can share one tree, so a commit-bound
+#: token would reject a valid approval.
+TREE_BINDING = re.compile(r"#tree=([0-9a-f]{40})")
+
 
 def read_ssot_version():
     text = (ROOT / "cullinan" / "_version.py").read_text(encoding="utf-8")
@@ -42,6 +101,49 @@ def read_ssot_version():
     if not match:
         return None
     return match.group(1)
+
+
+def find_doc_banners(docs_dir):
+    """``(relative path, advertised version)`` for every page banner found.
+
+    A banner immediately followed by ``+`` states the oldest release its content
+    applies to, not the current one, so it is skipped here rather than in the
+    pattern (see DOC_BANNER_PATTERNS).
+    """
+    found = []
+    for page in sorted(docs_dir.rglob("*.md")):
+        text = page.read_text(encoding="utf-8", errors="replace")
+        for pattern in DOC_BANNER_PATTERNS:
+            for match in pattern.finditer(text):
+                end = match.end(1)
+                if end < len(text) and text[end] == "+":
+                    continue
+                found.append((page.relative_to(docs_dir).as_posix(), match.group(1)))
+    return found
+
+
+def banner_findings(banners, expected_version, expected_pages=None):
+    """``(clean, detail)`` for a banner scan, comparing versions *and* pages.
+
+    Two separate failures, deliberately reported apart: a page advertising the
+    wrong version, and a page missing from (or added to) the expected set. The
+    second one is why the set is enumerated -- a count would report "11 found"
+    whether or not one of them was a duplicate on the same page.
+    """
+    pages = EXPECTED_BANNER_PAGES if expected_pages is None else expected_pages
+    stale = [(page, version) for page, version in banners if version != expected_version]
+    found: dict[str, int] = {}
+    for page, _version in banners:
+        found[page] = found.get(page, 0) + 1
+    missing = sorted(page for page, count in pages.items() if found.get(page, 0) < count)
+    unexpected = sorted(set(found) - set(pages))
+    if missing:
+        return False, "missing banner on " + ", ".join(missing)
+    if unexpected:
+        return False, "banner on an unlisted page: " + ", ".join(unexpected)
+    if stale:
+        return False, "; ".join(f"{page} says {version}" for page, version in stale)
+    return True, "aligned"
 
 
 def main():
@@ -110,6 +212,59 @@ def main():
     ).stdout.strip()
     check("Working tree clean", status == "", status or "clean")
 
+    # (e) docs version banners. The docs pages carry the version as a *copy* --
+    # they are not generated from the SSOT, so nothing made them move with it,
+    # and until now nothing compared them either. This is that comparison: every
+    # banner found must name the SSOT version, and the set of pages carrying one
+    # must be exactly the expected set, so that a page cannot quietly lose its
+    # banner while the check still counts enough of them elsewhere.
+    banners = find_doc_banners(ROOT / "docs")
+    banners_clean, detail = banner_findings(banners, expected)
+    # The label stays a literal: the summary/registration correspondence test
+    # compares the two sets of labels, and a label carrying an interpolated value
+    # would change shape from run to run and make that comparison meaningless.
+    check(
+        "(e) docs version banners aligned",
+        banners_clean,
+        f"{len(banners)} found on {len({page for page, _v in banners})} page(s) -- {detail}",
+    )
+
+    # (f) credential -> tree binding. Until now (b) and the sync credential were
+    # only tested for being non-empty, so a token issued for an earlier tree was
+    # accepted just as readily as one issued for the tree being tagged -- the gate
+    # said PASS while the approval pointed somewhere else.
+    #
+    # The binding is to the *tree*, not the commit: `d69e66d` and the merge commit
+    # `86fc32d` are different commits with the same tree, so a commit-bound token
+    # would reject a perfectly valid approval. Sign-off is exempt on purpose --
+    # that credential carries a hash of the evidence bundle, not of the tree.
+    head_tree = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD^{tree}"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    unbound = []
+    mismatched = []
+    for slot, token in (("(b) review", args.review_token), ("sync", args.sync_token)):
+        match = TREE_BINDING.search(token)
+        if match is None:
+            unbound.append(slot)
+        elif match.group(1) != head_tree:
+            mismatched.append(f"{slot} bound to {match.group(1)}")
+    if unbound:
+        detail = (
+            f"no #tree=<40-hex> on: {', '.join(unbound)} -- reissue the token in the "
+            f"bound form ('...#tree={head_tree}')"
+        )
+    elif mismatched:
+        detail = f"bound to a different tree than HEAD ({head_tree}): " + "; ".join(mismatched)
+    else:
+        detail = f"both bound to {head_tree}"
+    check(
+        "(f) review and sync credentials bound to the tagged tree",
+        not unbound and not mismatched,
+        detail,
+    )
+
     # (d) declaration backstop (see scripts/check_sync_declaration.py).
     # Backstop only: the primary enforcement runs on every PR/push in CI. Kept
     # narrow by default (the commit being tagged) so that pre-existing history
@@ -145,6 +300,9 @@ def main():
     # going by the output, which is how a present gate can be mistaken for a
     # missing one.
     print("  (d) change declaration: Meta-Sync trailer present on governed changes")
+    print("  (e) docs version banners: every banner names the SSOT version")
+    print("  (f) credential scope: review + sync tokens bound to the tagged tree")
+    print("      (format and scope only -- authenticity comes from the issuing process)")
     return 0
 
 

@@ -70,7 +70,7 @@ the entry is **dropped and still queryable**, not merely logged.
 
 On a **successful** start the pipeline sub-surface's `dropped` is always empty.
 A pre-boot `get_pipeline().add(...)` does not get dropped — it *refuses the
-start* (see the [middleware page](../../docs/wiki/middleware.md)). So for the
+start* (see the [middleware page](../../docs/internals/middleware.md)). So for the
 pipeline, `dropped` is **present and empty**, and a snapshot that omitted the
 field entirely would be a failure, not a silent omission. The other three
 gateway surfaces only *record* a pre-boot registration; they do not refuse the

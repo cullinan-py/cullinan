@@ -1,6 +1,21 @@
+title: "Dependency Injection Guide"
+slug: "dependency-injection-guide"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/dependency_injection_guide.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 # Cullinan Dependency Injection Guide
 
-> **Version**: 0.96a7.post1
+> **Version**: 0.96a8
 > **Last Updated**: 2026-10-27
 > **Status**: Updated
 

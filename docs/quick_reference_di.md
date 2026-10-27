@@ -1,8 +1,22 @@
-last_updated: "2026-10-27"
+title: "Dependency Injection Quick Reference"
+slug: "quick-reference-di"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/quick_reference_di.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 
 # Cullinan Dependency Injection Quick Reference
 
-> **Version**: 0.96a7.post1
+> **Version**: 0.96a8
 > **Author**: plumeink
 
 > **Quick lookup page:** use this page as a compact DI recipe sheet; use

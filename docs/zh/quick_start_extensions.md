@@ -1,4 +1,18 @@
-last_updated: "2026-10-27"
+title: "扩展注册快速指南"
+slug: "quick-start-extensions"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: zh
+translation_pair: "docs/quick_start_extensions.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 
 # Cullinan 扩展注册快速指南
 

@@ -282,7 +282,16 @@ class ApplicationContext:
                 self._state = ContainerState.REGISTERING
 
             logger.info("ApplicationContext.refresh() started.")
-            self._process_pending_registrations()
+            # Three explicit steps, and the order is the semantics: empty the
+            # queue, compare declarations against the assembly *as it stands at
+            # that moment*, then apply what was drained. Reconciling after the
+            # loop would compare against an assembly that already includes those
+            # registrations, and an exception raised inside the loop would skip
+            # the report entirely -- both are silent changes to what
+            # ``strict_assembly=True`` means.
+            registrations = self._drain_pending_registrations()
+            self._reconcile_declared_not_assembled()
+            self._apply_pending_registrations(registrations)
             self._state = ContainerState.VALIDATING
             self._validate_definitions()
             self._state = ContainerState.WARMING_UP
@@ -1075,12 +1084,42 @@ class ApplicationContext:
         """
         _emit_report_fallback(problem, guidance)
 
-    def _process_pending_registrations(self) -> None:
+    def _reconcile_declared_not_assembled(self) -> None:
+        """Report the declared-but-not-assembled difference, once, at refresh.
+
+        A reconciliation is not a registration, so it is its own step of
+        ``refresh()`` rather than a side effect of draining pending ones. It sits
+        between the drain and the apply, which is the only position where the
+        comparison means the same thing it did when it lived inside the drain:
+        the queue is already emptied, and the drained registrations have not yet
+        been added to the assembly.
+
+        Everything the caller observes happens here and only here -- the warning
+        channels, the stderr fallback when both are dark, and the optional
+        failure -- so the report is never an alternative to the diagnostic.
+        """
+        self._warn_declared_not_assembled()
+
+    def _drain_pending_registrations(self):
+        """Empty the pending queue and return what was in it.
+
+        The queue is frozen here when it is empty, which is where the baseline
+        froze it too: an empty queue means registration is over, and closing it
+        before the reconciliation keeps a late ``register()`` from slipping in
+        between the drain and the apply.
+        """
         from .pending import PendingRegistry
 
         pending = PendingRegistry.get_instance()
         registrations = pending.drain()
-        self._warn_declared_not_assembled()
+        if not registrations:
+            pending.freeze()
+        return registrations
+
+    def _apply_pending_registrations(self, registrations) -> None:
+        from .pending import PendingRegistry
+
+        pending = PendingRegistry.get_instance()
         if not registrations:
             pending.freeze()
             return

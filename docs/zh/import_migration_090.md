@@ -1,4 +1,18 @@
-last_updated: "2026-10-27"
+title: "0.90 导入迁移手册"
+slug: "import-migration-090"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: zh
+translation_pair: "docs/import_migration_090.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 
 # Cullinan 0.90 导入迁移手册
 

@@ -1,4 +1,18 @@
-last_updated: "2026-10-27"
+title: "迁移指南: v0.9x → v0.93"
+slug: "migration-guide-v2"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: zh
+translation_pair: "docs/migration_guide_v2.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 
 # 迁移指南: v0.9x → v0.93
 
@@ -185,7 +199,7 @@ get_pipeline().add(AuthMiddleware())
 
 **启动会拒绝该入口。** `get_pipeline().add(...)` 写入的是**引导之前**就已存在的那份管线；应用装配时会重建 gateway globals，因此经该入口注册的条目会在**启动边界**被拒绝 —— 应用不会启动。框架会**先**报告它丢弃的条目（一条诊断，给出名称与数量），**再**抛出，因此在调用方捕获异常之后，报告仍已被看到。请改用 `configure(middlewares=[...])` 或 `@middleware` 装饰器声明中间件：这些入口由装配过程读取，因而能在启动后存活。
 
-`get_pipeline()` 本身保留其**运行时自省 / 高级用途 / 测试**级别的作用 —— 应用启动**之后**，`list_middleware()` 会报告已安装的中间件 —— 但**启动前**的 `get_pipeline().add(...)` 在引导边界**不受支持**。`Runtime.warmup()` 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此启动前的注册无法静默沿用。请通过声明式入口接入中间件：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
+`get_pipeline()` 本身保留其**运行时自省 / 高级用途 / 测试**级别的作用 —— 应用启动**之后**，`list_middleware()` 会报告已安装的中间件 —— 但**启动前**的 `get_pipeline().add(...)` 在引导边界**不受支持**（自 `0.96a5` 起拒绝；更早的版本会接受它，随后被同一次重置静默丢弃）。`Runtime.warmup()` 会重建 gateway globals —— pipeline、router、dispatcher、exception handler —— 因此启动前的注册无法静默沿用。请通过声明式入口接入中间件：`configure(middlewares=[...])` 或 `@middleware` 装饰器。
 
 **向后兼容**：旧的 `@middleware` 类仍会被自动桥接进 gateway pipeline —— 每个遗留中间件各成一层。
 

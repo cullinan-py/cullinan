@@ -23,6 +23,7 @@ configured by the harness.
 from __future__ import annotations
 
 import importlib
+import inspect
 import logging
 import os
 import subprocess
@@ -44,6 +45,9 @@ from cullinan.web.gateway import (
     get_pipeline,
     reset_gateway,
 )
+
+from cullinan.application.legacy import _add_middleware_entries
+from cullinan.web.gateway.pipeline import MiddlewarePipeline
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -153,7 +157,10 @@ def test_pre_boot_registration_is_reported_then_refused(
         message = reports[-1].getMessage()
         assert "PipelineMarkerMiddleware" in message
         # The count is reported together with the name, not only the name.
-        assert "1 (PipelineMarkerMiddleware)" in message
+        assert "1 (PipelineMarkerMiddleware @" in message
+        # ... and the line that registered it: without the site the reader has to
+        # grep the codebase for the call this report is about.
+        assert "test_gateway_pipeline_reset_visibility.py:" in message, message
 
         # Then the refusal, carrying its own dedicated code.
         assert excinfo.value.error_code == ERROR_CODE_MARKER
@@ -361,3 +368,43 @@ def test_collecting_entry_names_does_not_materialize_the_pipeline():
 
     get_pipeline().add(PipelineMarkerMiddleware())
     assert _registered_pipeline_entry_names() == ("PipelineMarkerMiddleware",)
+
+# --- registration origin ---------------------------------------------------
+
+
+class _PlainMiddleware(GatewayMiddleware):
+    async def __call__(self, request, call_next):
+        return await call_next(request)
+
+
+def test_add_records_the_callers_line():
+    """The origin points at the caller, not at the module that stores it."""
+    pipeline = MiddlewarePipeline()
+    pipeline.add(_PlainMiddleware())
+    entry = pipeline._entries[-1]
+    assert entry.origin is not None
+    assert entry.origin.endswith("test_gateway_pipeline_reset_visibility.py:%d" % (
+        inspect.currentframe().f_lineno - 3
+    )) or "test_gateway_pipeline_reset_visibility.py" in entry.origin, entry.origin
+    assert "gateway/pipeline.py" not in entry.origin
+
+
+def test_add_class_records_the_callers_line_not_the_framework_line():
+    """``add_class`` calls ``add`` internally, so a naive read names this file."""
+    pipeline = MiddlewarePipeline()
+    pipeline.add_class(_PlainMiddleware)
+    entry = pipeline._entries[-1]
+    assert entry.origin is not None
+    assert "gateway/pipeline.py" not in entry.origin, (
+        "the origin must be the caller of add_class, not the frame inside add()"
+    )
+    assert "test_gateway_pipeline_reset_visibility.py" in entry.origin, entry.origin
+
+
+def test_declarative_registration_records_no_origin():
+    """The declarative path has no meaningful call site, so it reports none."""
+    pipeline = MiddlewarePipeline()
+    added = _add_middleware_entries(pipeline, [(_PlainMiddleware(), {})])
+    assert added == 1
+    assert pipeline._entries[-1].origin is None
+

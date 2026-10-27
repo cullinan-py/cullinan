@@ -8,7 +8,7 @@ This example explains two ideas that are easy to confuse:
 > This example uses the **compatibility** middleware protocol
 > (`process_request` / `process_response`). For new code, prefer the recommended
 > onion protocol shown in [`examples/middleware_pipeline/`](../middleware_pipeline/);
-> see [the middleware page](../../docs/wiki/middleware.md).
+> see [the middleware page](../../docs/internals/middleware.md).
 
 Run:
 

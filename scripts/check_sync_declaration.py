@@ -4,9 +4,8 @@
 Background
 ----------
 A change is not only the file it edits. A framework feature that arrives without
-tests, without an example, without documentation, or without the knowledge base
-being told about it is a partial change, and the missing part is invisible
-unless something asks for it.
+tests, without an example, or without documentation is a partial change, and the
+missing part is invisible unless something asks for it.
 
 This gate asks. When a commit touches the shipped surface -- the framework
 source, the tests, the public documentation, the examples -- or the

@@ -1,4 +1,18 @@
-last_updated: "2026-10-27"
+title: "Extension Registration Quick Start"
+slug: "quick-start-extensions"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/quick_start_extensions.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 
 # Cullinan Extension Registration Quick Start
 

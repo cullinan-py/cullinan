@@ -2,7 +2,7 @@
 """Example: Unified Extension Registration Pattern
 
 Demonstrates the new decorator-based middleware registration and 
-extension point discovery API introduced in Task-7.2.
+extension point discovery API.
 
 This example shows:
 1. Using the @middleware decorator for automatic registration
@@ -240,8 +240,8 @@ def main():
     print("\n")
     print("+" + "=" * 68 + "+")
     print("|" + " " * 68 + "|")
-    print("|" + "  Cullinan Framework - Unified Extension Pattern Demo".center(68) + "|")
-    print("|" + "  Task-7.2: Extension Registration & Discovery".center(68) + "|")
+    print("|" + "  Unified Extension Pattern Demo".center(68) + "|")
+    print("|" + "  Extension Registration & Discovery".center(68) + "|")
     print("|" + " " * 68 + "|")
     print("+" + "=" * 68 + "+")
     

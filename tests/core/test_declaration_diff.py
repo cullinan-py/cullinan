@@ -21,6 +21,8 @@ import logging
 import sys
 import textwrap
 import warnings
+
+import pytest
 from pathlib import Path
 
 import pytest
@@ -440,3 +442,92 @@ def test_declaration_diff_warning_is_engine_neutral(tmp_path, monkeypatch, engin
         if app is not None:
             app.uninstall()
         _clear_modules(package_name, outside_name)
+
+def test_the_reconciliation_is_its_own_step_of_refresh(monkeypatch):
+    """The reconciliation must not be a side effect of the pending drain.
+
+    It used to run inside the drain, right after the queue was emptied. The
+    position was load-bearing, not incidental: reconciling *after* the drained
+    registrations are applied would compare declarations against an assembly
+    that already contains them, which is a different question.
+
+    Recording the order makes both halves checkable: the reconciliation runs
+    after the drain finishes and before the apply starts. Moving it either way
+    reorders these three markers and fails.
+    """
+    from cullinan.core.application_context import ApplicationContext
+
+    order = []
+    original_drain = ApplicationContext._drain_pending_registrations
+    original_reconcile = ApplicationContext._reconcile_declared_not_assembled
+    original_apply = ApplicationContext._apply_pending_registrations
+
+    def recording_drain(self):
+        order.append("drain:start")
+        result = original_drain(self)
+        order.append("drain:end")
+        return result
+
+    def recording_reconcile(self):
+        order.append("reconcile")
+        return original_reconcile(self)
+
+    def recording_apply(self, registrations):
+        order.append("apply")
+        return original_apply(self, registrations)
+
+    monkeypatch.setattr(
+        ApplicationContext, "_drain_pending_registrations", recording_drain
+    )
+    monkeypatch.setattr(
+        ApplicationContext, "_reconcile_declared_not_assembled", recording_reconcile
+    )
+    monkeypatch.setattr(
+        ApplicationContext, "_apply_pending_registrations", recording_apply
+    )
+
+    context = ApplicationContext(container_id="reconcile-step-probe")
+    try:
+        context.refresh()
+    finally:
+        pass
+
+    assert "reconcile" in order, order
+    # Between the drain and the apply: after the queue is emptied, before the
+    # drained registrations join the assembly.
+    assert order.index("drain:end") < order.index("reconcile") < order.index("apply"), order
+
+def test_the_reconciliation_survives_a_failing_apply(monkeypatch):
+    """A registration that raises must not take the report down with it.
+
+    When the reconciliation lived inside the drain, it ran before the loop, so an
+    exception while applying registrations still left the report emitted. Keeping
+    it a separate step is only equivalent if that stays true -- and the obvious
+    wrong order (apply, then reconcile) would skip the report on every failure.
+    """
+    from cullinan.core.application_context import ApplicationContext
+
+    events = []
+    original_reconcile = ApplicationContext._reconcile_declared_not_assembled
+
+    def recording_reconcile(self):
+        events.append("reconcile")
+        return original_reconcile(self)
+
+    def failing_apply(self, registrations):
+        events.append("apply")
+        raise RuntimeError("registration failed")
+
+    monkeypatch.setattr(
+        ApplicationContext, "_reconcile_declared_not_assembled", recording_reconcile
+    )
+    monkeypatch.setattr(
+        ApplicationContext, "_apply_pending_registrations", failing_apply
+    )
+
+    context = ApplicationContext(container_id="reconcile-before-apply")
+    with pytest.raises(RuntimeError, match="registration failed"):
+        context.refresh()
+
+    assert events == ["reconcile", "apply"], events
+

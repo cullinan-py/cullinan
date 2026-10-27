@@ -1,4 +1,18 @@
-last_updated: "2026-10-27"
+title: "装饰器"
+slug: "decorators"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: zh
+translation_pair: "docs/internals/decorators.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 
 # 装饰器
 

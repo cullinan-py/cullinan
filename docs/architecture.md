@@ -1,6 +1,21 @@
+title: "Architecture"
+slug: "architecture"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: en
+translation_pair: "docs/zh/architecture.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 # Cullinan Framework Architecture
 
-> **Version**: 0.96a7.post1
+> **Version**: 0.96a8
 > **Last Updated**: 2026-10-27
 > **Status**: Updated
 

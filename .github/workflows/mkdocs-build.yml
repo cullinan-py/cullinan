@@ -155,9 +155,38 @@ jobs:
           python -m pip install -e .
           npm install -g markdownlint-cli
 
-      - name: Lint markdown
+      - name: Lint markdown (advisory -- reports, never gates)
         run: |
-          markdownlint "docs/**/*.md" || true
+          # This step has never gated anything. `markdownlint ... || true` meant a
+          # lint failure still produced a green job, so the step's presence read
+          # as a check that did not exist -- the worst of both: no enforcement and
+          # an appearance of it.
+          #
+          # It stays advisory on purpose. Turning it into a gate needs the size of
+          # the existing debt, and that number can only be obtained by running
+          # markdownlint here: hiding it behind `|| true` is what kept us from
+          # knowing, and flipping it to a hard failure without that number would
+          # turn a silent non-gate into a red build.
+          #
+          # What changes now: the result is visible. Findings go to the job
+          # summary, so "0 findings" and "never ran" can no longer look the same.
+          set +e
+          markdownlint "docs/**/*.md" > markdownlint-report.txt 2>&1
+          status=$?
+          findings=$(grep -c "MD[0-9]" markdownlint-report.txt || true)
+          cat markdownlint-report.txt
+          {
+            echo "### Markdown lint (advisory)"
+            echo ""
+            echo "- exit status: \`${status}\` (0 = clean)"
+            echo "- findings: \`${findings}\`"
+            echo "- **this step does not fail the build**"
+            echo ""
+            echo '```'
+            tail -n 60 markdownlint-report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
 
       - name: Prepare gh-pages workspace
         if: steps.channel.outputs.should_deploy == 'true'

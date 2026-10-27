@@ -33,6 +33,12 @@ curl -i -X POST --data-binary @<(head -c 4096 /dev/zero) http://127.0.0.1:4084/u
   Both stop early — that is the property that matters — but a client that needs
   to distinguish "too large" from "malformed" has to handle both codes.
 
+  A code is not always available: a body far above the ceiling, or a chunked
+  upload that only just crosses it, is refused at the connection level, and the
+  caller sees a reset with no status line at all. Do not write a client that
+  treats `400` as the oversize signal — `docs/deployment.md` gives the measured
+  boundaries.
+
 ## What it does not cover
 
 A request to a path that does not exist still has its body read before the

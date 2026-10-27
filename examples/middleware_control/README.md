@@ -66,4 +66,4 @@ For the declarative entry on its own, see
 [`examples/middleware_pipeline/`](../middleware_pipeline/); for the compatibility
 protocol on its own, see
 [`examples/middleware_and_module/`](../middleware_and_module/). Background:
-[the middleware page](../../docs/wiki/middleware.md).
+[the middleware page](../../docs/internals/middleware.md).

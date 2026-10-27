@@ -1,6 +1,21 @@
+title: "框架架构"
+slug: "architecture"
+module: []
+tags: []
+author: "plumeink"
+reviewers: []
+status: updated
+locale: zh
+translation_pair: "docs/architecture.md"
+related_tests: []
+related_examples: []
+estimate_pd: null
+last_updated: "2026-10-28"
+pr_links: []
+
 # Cullinan 框架架构
 
-> **版本**：0.96a7.post1
+> **版本**：0.96a8
 > **最后更新**：2026-10-27
 > **状态**：已更新
 

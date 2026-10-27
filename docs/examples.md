@@ -10,7 +10,7 @@ translation_pair: "docs/zh/examples.md"
 related_tests: ["tests/integration/test_examples_public_guides.py"]
 related_examples: ["examples/minimal_app", "examples/controller_service_inject", "examples/middleware_and_module", "examples/middleware_pipeline", "examples/middleware_control", "examples/parameter_handling", "examples/testing_flow"]
 estimate_pd: 1.5
-last_updated: "2026-10-27"
+last_updated: "2026-10-28"
 pr_links: []
 
 # Examples and Guidance
@@ -50,6 +50,11 @@ legacy one-file demos.
 | `examples/testing_flow/` | Public-API test flow with ASGI dispatch | `python -m pytest examples/testing_flow/test_app.py -q` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/testing_flow) |
 | `examples/static_files_and_spa/` | Declarative `StaticFiles` mounts + SPA fallback (engine-neutral) | `python -m examples.static_files_and_spa` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/static_files_and_spa) |
 | `examples/assembly_snapshot/` | The assembly snapshot: `declared` / `assembled` / `dropped` for the four gateway surfaces + container in one call (advanced / boundary) | `python -m examples.assembly_snapshot` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/assembly_snapshot) |
+| `examples/graceful_shutdown/` | Graceful shutdown and readiness: how a deployment learns an instance is going away, and how the app answers "should I still receive traffic?" from state it already tracks | `python -m examples.graceful_shutdown` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/graceful_shutdown) |
+| `examples/packaging_demo/` | Running the container in frozen (Nuitka / PyInstaller) builds: the scan pipeline detects the packaging mode and picks the strategy chain | `python -m examples.packaging_demo` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/packaging_demo) |
+| `examples/request_body_limit/` | `configure(max_request_body_bytes=...)` refusing an oversized body before any handler runs, and the per-engine status difference that follows | `python -m examples.request_body_limit` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/request_body_limit) |
+| `examples/runtime_controls/` | Every knob a deployment usually needs, set in one file, so each one can be watched taking effect | `python -m examples.runtime_controls` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/runtime_controls) |
+| `examples/legacy/` | The 0.90 decorator surface kept runnable: if one of these stops working, the script stops running | `python examples/legacy/decorator_demo_090.py` | [View on GitHub](https://github.com/cullinan-py/cullinan/tree/main/examples/legacy) |
 
 ## Why the examples were restructured
 

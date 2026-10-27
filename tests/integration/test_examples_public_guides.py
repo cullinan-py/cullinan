@@ -767,7 +767,7 @@ def test_root_readme_keeps_default_path_on_top_level_api():
     # Pin the *current* release line the README's "Current series" section
     # advertises; asserting the previous line would stay green forever once the
     # README keeps it as historical context, making the guard vacuous.
-    assert "**v0.96a7.post1**" in readme
+    assert "**v0.96a8**" in readme
 
 
 def test_getting_started_stays_on_business_first_onboarding_path():
@@ -1115,19 +1115,27 @@ def test_current_version_markers_follow_v094a1_release_line():
     extension_guide = _read_doc_file("extension_development_guide.md")
     zh_extension_guide = _read_zh_doc_file("extension_development_guide.md")
 
-    for content in (
-        docs_home,
-        zh_docs_home,
-        architecture,
-        zh_architecture,
-        di_guide,
-        zh_di_guide,
-        di_quick,
-        zh_di_quick,
-        extension_guide,
-        zh_extension_guide,
+    import re
+
+    import cullinan
+
+    version = cullinan.__version__
+    for name, content in (
+        ("README.md", docs_home),
+        ("zh/README.md", zh_docs_home),
+        ("architecture.md", architecture),
+        ("zh/architecture.md", zh_architecture),
+        ("dependency_injection_guide.md", di_guide),
+        ("zh/dependency_injection_guide.md", zh_di_guide),
+        ("quick_reference_di.md", di_quick),
+        ("zh/quick_reference_di.md", zh_di_quick),
+        ("extension_development_guide.md", extension_guide),
+        ("zh/extension_development_guide.md", zh_extension_guide),
     ):
-        assert "0.96a7" in content
+        advertised = set(re.findall(r"0\.96a\d+(?:\.post\d+)?", content))
+        assert version in advertised, f"{name} does not advertise {version}: {advertised}"
+        stale = advertised - {version}
+        assert not stale, f"{name} advertises versions the package is not: {sorted(stale)}"
         assert "0.94a1" not in content
 
 

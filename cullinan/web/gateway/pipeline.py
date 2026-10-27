@@ -10,6 +10,7 @@ Author: plumeink
 
 import heapq
 import logging
+import sys
 import time
 from dataclasses import dataclass
 from typing import Any, Callable, Awaitable, Dict, List, Optional, Type, Union
@@ -66,6 +67,30 @@ class _MiddlewareEntry:
     before: Optional[OrderingAnchor] = None
     after: Optional[OrderingAnchor] = None
     priority: Optional[int] = None
+    #: ``path:line`` of the ``add()`` call that created this entry. Recorded so a
+    #: boot-time report can name the line that registered a pre-boot entry, not
+    #: only the middleware that was discarded -- without it, the reader has to
+    #: search the codebase for the call the message is about.
+    origin: Optional[str] = None
+
+
+def _registration_origin(depth: int = 2) -> Optional[str]:
+    """The caller ``depth`` frames up as ``path:line``, or None if it is gone.
+
+    Deliberately best-effort: a missing origin only costs a less specific
+    message, so nothing here is allowed to raise.
+
+    ``depth`` exists because the entry point is not always the frame holding the
+    answer: ``add_class()`` constructs the instance and then calls ``add()``, so
+    an origin read from inside ``add()`` would name *this file* -- which is worse
+    than no origin at all, because it looks like an answer.
+    """
+    try:
+        frame = sys._getframe(depth)
+    except (AttributeError, ValueError):
+        return None
+    filename = frame.f_code.co_filename
+    return f"{filename}:{frame.f_lineno}"
 
 
 class GatewayMiddleware:
@@ -157,6 +182,36 @@ class MiddlewarePipeline:
                 "Middleware ordering declarations are mutually exclusive: pass either "
                 "'priority' or 'before'/'after', not both."
             )
+        # ``_registration_origin(2)``: frame 0 is that helper, frame 1 is this
+        # method, frame 2 is whoever called ``add``.
+        self._append(
+            mw,
+            before=before,
+            after=after,
+            priority=priority,
+            origin=_registration_origin(2),
+        )
+
+    def _append(
+        self,
+        mw: GatewayMiddleware,
+        *,
+        before: Optional[OrderingAnchor] = None,
+        after: Optional[OrderingAnchor] = None,
+        priority: Optional[int] = None,
+        origin: Optional[str] = None,
+    ) -> None:
+        """Store one entry, with the origin its caller decided on.
+
+        Kept separate from ``add()`` so the public signature stays the one the
+        documentation describes: the entry point of a middleware is not a place
+        to grow keywords for the framework's own bookkeeping.
+        """
+        if priority is not None and (before is not None or after is not None):
+            raise ValueError(
+                "Middleware ordering declarations are mutually exclusive: pass either "
+                "'priority' or 'before'/'after', not both."
+            )
         self._entries.append(
             _MiddlewareEntry(
                 middleware=mw,
@@ -164,6 +219,7 @@ class MiddlewarePipeline:
                 before=before,
                 after=after,
                 priority=priority,
+                origin=origin,
             )
         )
         self._invalidate()
@@ -187,7 +243,9 @@ class MiddlewarePipeline:
         behaviour and must go through a deprecation window.
         """
         inst = mw_cls(**kwargs)
-        self.add(inst)
+        # Attribute the entry to the caller of ``add_class``, not to the frame
+        # inside the private helper.
+        self._append(inst, origin=_registration_origin(2))
         return inst
 
     async def execute(

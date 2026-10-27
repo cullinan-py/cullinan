@@ -7,6 +7,89 @@ in [`README.MD`](README.MD).
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## v0.96a8
+
+**v0.96a8** is the eighth alpha of the 0.96 line, and it is a debt round: every
+maintenance item that had a defect behind it was fixed rather than restated, and
+two gates that could pass without checking anything now check the thing they are
+named after.
+
+No public API symbol is added or removed, and no signature changes. What changes
+for a running application is what a diagnostic says, and where one reconciliation
+step runs.
+
+### Added
+
+- `check_tag_gate.py` reconciles the docs version banners before a tag: every
+  page that advertises a version must advertise the one in `cullinan/_version.py`,
+  and the pages expected to carry a banner are enumerated, with a count per page --
+  a total would let a page lose its banner while another still had one, and a page
+  that drops below its count is now a finding with its name in it. The Chinese pages
+  use a full-width
+  colon and different wording, so an English-only pattern would have covered half
+  the tree and reported green on the half it never read
+- The review and sync credentials carry `#tree=<40 hex>` and the gate compares it
+  with `HEAD^{tree}`. Bound to the tree, not the commit: `d69e66d` and the merge
+  commit that released it are different commits with the same tree, and a
+  commit-bound token would have rejected a valid approval. The sign-off
+  credential is exempt, because it binds to its evidence bundle. The gate says
+  what it does not prove -- format and scope, not authenticity
+- The boot boundary reports the line that registered a pre-boot pipeline entry
+  (`path:line`), in the report and in the refusal. The middleware class name
+  appears in a dependency's `site-packages`, not in the reader's own code, so it
+  was not something anyone could search for
+
+Two checks that did not exist before, both for things that were believed rather than shown:
+
+- Ten documented Python blocks are fragments on purpose (a method body shown
+  without its class, a before/after pair whose "before" is a comment about
+  output). They are an explicit set now, so an eleventh is a failure naming the
+  page and first line, and an entry that starts parsing is a failure too
+- The engine-native write confinement is pinned: `self.write` and `self.finish`
+  may appear only in `request_handler`, and route registration is checked to hand
+  the dispatcher the original function rather than the wrapper that calls it
+
+### Changed
+
+- `ApplicationContext.refresh()` now spells out three steps instead of one:
+  drain the pending queue, reconcile declarations against the assembly, then apply
+  what was drained. The reconciliation used to live inside the drain, immediately
+  after the queue was emptied; moving it out is only equivalent if it keeps that
+  position, because applying the drained registrations first would compare
+  declarations against an assembly that already contains them. The split also
+  means a registration that raises no longer takes the report down with it
+- The markdown lint step publishes its findings and exit status to the job
+  summary, and states that it does not fail the build. It still does not: making
+  it a gate needs the size of the existing debt, and suppressing the result is
+  what kept that number unknown
+
+### Fixed
+
+- The wheel no longer declares a top-level `overrides` module. `overrides/` is
+  the MkDocs theme override directory, but `packages.find` read it as a package,
+  so `top_level.txt` listed a module the wheel does not ship -- under a name that
+  belongs to a real distribution
+- A banner stating a minimum (`**Version**: 0.90a5+`) is no longer read as a
+  claim about the current version. A lookahead is not enough to filter it: the
+  greedy group backtracks and captures `0.90a` out of `0.90a5+`, which then looks
+  like a legitimate version
+
+### Documentation
+
+- Nineteen pages carry the metadata the rest already had. Six had none at all and
+  thirteen carried only `last_updated`, so a reader of the source could not tell
+  which locale a page belonged to or which page it pairs with. `estimate_pd` is
+  null where nothing was estimated -- inventing a number to make a field look
+  uniform would be worse than leaving it visibly unmeasured
+- `docs/examples.md` lists all sixteen runnable examples. It listed ten, so a
+  reader following only that page could not find the shutdown, packaging,
+  body-limit, runtime-knob or legacy demos at all
+- The body-limit example says what a client observes when a body is far over the
+  ceiling -- a reset with no status line -- and points at the page that measured
+  the boundaries, instead of leaving a reader to branch on `400`
+- The release-note template no longer counts. The rule says a symbol count cannot
+  stand in for a shape check, and then gave a count of its own, one that was
+  wrong
 ## v0.96a7.post1
 
 **v0.96a7.post1** is a patch on `v0.96a7`. It carries one behaviour fix and three
