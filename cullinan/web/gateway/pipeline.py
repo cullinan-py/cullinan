@@ -74,14 +74,23 @@ class _MiddlewareEntry:
     origin: Optional[str] = None
 
 
-def _registration_origin() -> Optional[str]:
-    """The caller of ``add()`` as ``path:line``, or None if the frame is gone.
+#: Sentinel meaning "the caller did not say where this registration came from".
+_UNSET = object()
+
+
+def _registration_origin(depth: int = 2) -> Optional[str]:
+    """The caller ``depth`` frames up as ``path:line``, or None if it is gone.
 
     Deliberately best-effort: a missing origin only costs a less specific
     message, so nothing here is allowed to raise.
+
+    ``depth`` exists because the entry point is not always the frame holding the
+    answer: ``add_class()`` constructs the instance and then calls ``add()``, so
+    an origin read from inside ``add()`` would name *this file* -- which is worse
+    than no origin at all, because it looks like an answer.
     """
     try:
-        frame = sys._getframe(2)
+        frame = sys._getframe(depth)
     except (AttributeError, ValueError):
         return None
     filename = frame.f_code.co_filename
@@ -152,6 +161,7 @@ class MiddlewarePipeline:
         before: Optional[OrderingAnchor] = None,
         after: Optional[OrderingAnchor] = None,
         priority: Optional[int] = None,
+        _origin: object = _UNSET,
     ) -> None:
         """Append a middleware to the pipeline.
 
@@ -177,6 +187,10 @@ class MiddlewarePipeline:
                 "Middleware ordering declarations are mutually exclusive: pass either "
                 "'priority' or 'before'/'after', not both."
             )
+        # Framework-internal callers pass ``_origin`` explicitly: the declarative
+        # path has no meaningful registration line, and its frame would otherwise
+        # be attributed to this module.
+        origin = _registration_origin(2) if _origin is _UNSET else _origin
         self._entries.append(
             _MiddlewareEntry(
                 middleware=mw,
@@ -184,7 +198,7 @@ class MiddlewarePipeline:
                 before=before,
                 after=after,
                 priority=priority,
-                origin=_registration_origin(),
+                origin=origin,
             )
         )
         self._invalidate()
@@ -208,7 +222,8 @@ class MiddlewarePipeline:
         behaviour and must go through a deprecation window.
         """
         inst = mw_cls(**kwargs)
-        self.add(inst)
+        # Attribute the entry to the caller of ``add_class``, not to this method.
+        self.add(inst, _origin=_registration_origin(2))
         return inst
 
     async def execute(
