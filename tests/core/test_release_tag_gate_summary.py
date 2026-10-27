@@ -71,8 +71,8 @@ def test_docs_banner_check_actually_gates():
     """The (e) item must feed ``fails``, not merely print a line."""
     body = SOURCE.split("# (e) docs version banners", 1)[1]
     assert "check(" in body, "(e) must be registered through check(...)"
-    assert "MIN_DOC_BANNERS" in body and "stale" in body, (
-        "(e) must fail on a stale banner and on an empty scan"
+    assert "banner_findings(" in body and "banners_clean" in body, (
+        "(e) must feed the scan result into check(...), not merely print it"
     )
 
 
@@ -127,7 +127,7 @@ def test_the_tree_bound_credential_is_accepted():
 
 
 def test_an_unbound_credential_is_refused_with_the_bound_form_suggested():
-    result = _run_gate("ARCH-0.96a7.post1-d69e66d", "KB-0.96a7.post1-d69e66d")
+    result = _run_gate("review-0.96a7.post1-d69e66d", "sync-0.96a7.post1-d69e66d")
     assert "FAIL (f)" in result.stdout
     assert "reissue" in result.stdout, "the message must say how to fix the credential"
     assert _head_tree() in result.stdout, "and must print the tree to bind to"
@@ -158,4 +158,44 @@ def test_the_scope_limit_is_stated_where_a_reader_will_see_it():
     assert "authenticity" in SOURCE, (
         "the docstring must say the check is format+scope, not authenticity"
     )
+
+def test_a_page_that_loses_its_banner_is_reported():
+    """The set is enumerated so a count cannot absorb a missing page."""
+    clean, detail = gate.banner_findings(
+        [("README.md", "1.0"), ("zh/README.md", "1.0")],
+        "1.0",
+        expected_pages={"README.md", "zh/README.md", "architecture.md"},
+    )
+    assert not clean
+    assert "architecture.md" in detail
+
+
+def test_a_page_that_gains_a_banner_is_reported():
+    """An unlisted page carrying a version is a claim nobody is reconciling."""
+    clean, detail = gate.banner_findings(
+        [("README.md", "1.0"), ("zh/README.md", "1.0"), ("new_page.md", "1.0")],
+        "1.0",
+        expected_pages={"README.md", "zh/README.md"},
+    )
+    assert not clean
+    assert "new_page.md" in detail
+
+
+def test_a_stale_version_is_reported_even_when_every_page_is_present():
+    clean, detail = gate.banner_findings(
+        [("README.md", "0.96a6"), ("zh/README.md", "1.0")],
+        "1.0",
+        expected_pages={"README.md", "zh/README.md"},
+    )
+    assert not clean
+    assert "README.md says 0.96a6" in detail
+
+
+def test_both_colon_widths_are_recognised(tmp_path):
+    """The Chinese pages use a full-width colon, and one uses the ASCII one."""
+    (tmp_path / "full.md").write_text("> **版本**：0.96a8\n", encoding="utf-8")
+    (tmp_path / "half.md").write_text("> **版本**: 0.96a8\n", encoding="utf-8")
+    (tmp_path / "cur.md").write_text("> **当前版本：0.96a8**\n", encoding="utf-8")
+    found = dict(gate.find_doc_banners(tmp_path))
+    assert found == {"full.md": "0.96a8", "half.md": "0.96a8", "cur.md": "0.96a8"}, found
 

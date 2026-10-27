@@ -17,8 +17,9 @@ confirmations:
         primary enforcement runs on every PR/push in CI.
   (e) docs channel reconciliation (locally verifiable part):
       - every docs page that advertises a current version advertises the SSOT
-        one, and at least MIN_DOC_BANNERS such banners exist (a check that finds
-        nothing would pass without comparing anything).
+        one, and the set of pages carrying a banner is exactly
+        EXPECTED_BANNER_PAGES (a count would tolerate a page losing its banner
+        while another still had one).
   (f) credential scope (locally verifiable part):
       - the review and sync credentials carry `#tree=<40 hex>` and it equals the tree
         of the commit being tagged. The sign-off credential is exempt: it binds to its
@@ -63,16 +64,28 @@ ROOT = Path(__file__).resolve().parent.parent
 #: positive. Only a bare version asserts "this is the version you are reading".
 DOC_BANNER_PATTERNS = (
     re.compile(r"\*\*Current version:\s*([0-9][0-9A-Za-z._-]*)\*\*"),
-    re.compile(r"\*\*当前版本：\s*([0-9][0-9A-Za-z._-]*)\*\*"),
+    re.compile(r"\*\*当前版本[：:]\s*([0-9][0-9A-Za-z._-]*)\*\*"),
     re.compile(r"\*\*Version\*\*:\s*([0-9][0-9A-Za-z._-]*)"),
-    re.compile(r"\*\*版本\*\*：\s*([0-9][0-9A-Za-z._-]*)"),
+    re.compile(r"\*\*版本\*\*[：:]\s*([0-9][0-9A-Za-z._-]*)"),
 )
 
-#: How many banners a release tree is expected to carry. Eleven banners exist
-#: today (six English, five Chinese); the floor sits below that so ordinary page
-#: churn does not trip it, but far enough above zero that deleting the banners
-#: cannot turn this into a check that passes by finding nothing.
-MIN_DOC_BANNERS = 8
+#: Pages that carry a version banner. Enumerated rather than counted: with a
+#: count, deleting the banner from some pages still passes as long as enough
+#: remain somewhere, which is the failure this is meant to catch. A page that
+#: starts or stops carrying one has to be listed here, and that edit is the
+#: reminder that the page belongs to the published version surface.
+EXPECTED_BANNER_PAGES = frozenset({
+    "README.md",
+    "zh/README.md",
+    "architecture.md",
+    "zh/architecture.md",
+    "dependency_injection_guide.md",
+    "zh/dependency_injection_guide.md",
+    "extension_development_guide.md",
+    "zh/extension_development_guide.md",
+    "quick_reference_di.md",
+    "zh/quick_reference_di.md",
+})
 
 #: A credential binds itself to the tree it was issued for by carrying
 #: ``#tree=<40 hex>``. Binding to the tree rather than the commit is deliberate:/n#: a merge commit and the commit it merges can share one tree, so a commit-bound
@@ -105,6 +118,28 @@ def find_doc_banners(docs_dir):
                     continue
                 found.append((page.relative_to(docs_dir).as_posix(), match.group(1)))
     return found
+
+
+def banner_findings(banners, expected_version, expected_pages=None):
+    """``(clean, detail)`` for a banner scan, comparing versions *and* pages.
+
+    Two separate failures, deliberately reported apart: a page advertising the
+    wrong version, and a page missing from (or added to) the expected set. The
+    second one is why the set is enumerated -- a count would report "11 found"
+    whether or not one of them was a duplicate on the same page.
+    """
+    pages = EXPECTED_BANNER_PAGES if expected_pages is None else expected_pages
+    stale = [(page, version) for page, version in banners if version != expected_version]
+    found_pages = {page for page, _version in banners}
+    missing = sorted(set(pages) - found_pages)
+    unexpected = sorted(found_pages - set(pages))
+    if missing:
+        return False, "no banner on " + ", ".join(missing)
+    if unexpected:
+        return False, "banner on an unlisted page: " + ", ".join(unexpected)
+    if stale:
+        return False, "; ".join(f"{page} says {version}" for page, version in stale)
+    return True, "aligned"
 
 
 def main():
@@ -176,26 +211,18 @@ def main():
     # (e) docs version banners. The docs pages carry the version as a *copy* --
     # they are not generated from the SSOT, so nothing made them move with it,
     # and until now nothing compared them either. This is that comparison: every
-    # banner found must name the SSOT version, and there must be at least
-    # MIN_DOC_BANNERS of them, so that removing the banners cannot turn the
-    # check into one that passes by finding nothing.
+    # banner found must name the SSOT version, and the set of pages carrying one
+    # must be exactly the expected set, so that a page cannot quietly lose its
+    # banner while the check still counts enough of them elsewhere.
     banners = find_doc_banners(ROOT / "docs")
-    stale = [(page, version) for page, version in banners if version != expected]
-    if not banners:
-        detail = "no banner found -- this would pass without comparing anything"
-    elif len(banners) < MIN_DOC_BANNERS:
-        detail = f"only {len(banners)} banner(s), expected at least {MIN_DOC_BANNERS}"
-    elif stale:
-        detail = "; ".join(f"{page} says {version}" for page, version in stale)
-    else:
-        detail = "aligned"
+    banners_clean, detail = banner_findings(banners, expected)
     # The label stays a literal: the summary/registration correspondence test
     # compares the two sets of labels, and a label carrying an interpolated value
     # would change shape from run to run and make that comparison meaningless.
     check(
         "(e) docs version banners aligned",
-        len(banners) >= MIN_DOC_BANNERS and not stale,
-        f"{len(banners)} found -- {detail}",
+        banners_clean,
+        f"{len(banners)} found on {len({page for page, _v in banners})} page(s) -- {detail}",
     )
 
     # (f) credential -> tree binding. Until now (b) and the sync credential were
