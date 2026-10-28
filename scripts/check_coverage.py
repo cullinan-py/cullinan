@@ -46,7 +46,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-DEFAULT_MIN = 70.0  #: 仅在 `pyproject.toml` 里读不到 `fail_under` 时使用的兜底
 SOURCE = "cullinan"
 
 
@@ -212,7 +211,7 @@ def main() -> int:
         "--min",
         type=float,
         default=None,
-        help=f"覆盖 pyproject.toml 里的 floor（缺省读该处；读不到才用 {DEFAULT_MIN}）",
+        help="覆盖 pyproject.toml 里的 floor（缺省读该处；读不到则**拒绝判定**）",
     )
     ap.add_argument("--source", default=SOURCE)
     ap.add_argument("--cwd", default=str(Path(__file__).resolve().parent.parent))
@@ -242,8 +241,17 @@ def main() -> int:
     elif pyproject_floor is not None:
         threshold = pyproject_floor
     else:
-        threshold = DEFAULT_MIN
-        print(f"[warn] {source} ⇒ 回退到内置默认 {DEFAULT_MIN}（这不是 pyproject 的值）", file=sys.stderr)
+        # 🔴 刻意**不**提供内置默认值。上一版这里写的是 `threshold = 70.0`，于是
+        # 「pyproject.toml 被删 / 段落被改名」会表现为 `[GREEN] 71.98% >= 70%` ——
+        # 拿掉唯一正本反而让门通过，这是最坏的一种假绿。
+        # 阈值只有一个正本；读不到就不判，并说明读不到什么。
+        print(
+            f"[RED] 读不到覆盖率的 floor（{source}）。本门不设内置默认值：\n"
+            f"      阈值只允许一个正本（pyproject.toml 的 [tool.coverage.report] fail_under），\n"
+            f"      在这里再写一个数字会让「唯一正本被删」表现为通过。",
+            file=sys.stderr,
+        )
+        return 2
 
     if not args.report_only:
         rc, out = measure(cwd, args.source)
