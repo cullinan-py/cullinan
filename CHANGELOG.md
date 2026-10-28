@@ -4,6 +4,14 @@ This file records the release history of Cullinan, newest first. It is a
 historical record: the version currently advertised by the project is tracked
 in [`README.MD`](README.MD).
 
+**What an entry may say.** An entry describes a change someone using the package
+can act on. It does not describe how the package's own checks are built: names of
+internal tooling, credentials, exemptions and allowlists belong to the code that
+implements them, where the reader who needs them will look. An entry written the
+other way is unreadable outside the project and ships to people who cannot use
+it. `scripts/check_changelog.py` reports the newest entry if it uses that
+vocabulary, and an older entry is left as written — history is not rewritten.
+
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 

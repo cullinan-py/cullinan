@@ -51,6 +51,34 @@ ALLOWED_SECTIONS = (
     "Documentation",
 )
 
+# Vocabulary that only means something to whoever maintains the release
+# machinery: what a gate checks, what a credential binds to, how an exemption
+# is scoped. It is unreadable outside the project, and this file ships with the
+# package, so an entry that uses it is talking to the wrong reader.
+#
+# The list is short and literal on purpose. A pattern like "gate" would also
+# match `gateway`, and a rule that fires on a legitimate word teaches people to
+# ignore it; one unambiguous term per line is worth more than a clever regex.
+# Checked on the newest entry and on `Unreleased` only -- history written before
+# this rule existed is left as written.
+MAINTENANCE_TERMS = (
+    "credential",
+    "sign-off",
+    "signoff",
+    "evidence bundle",
+    "exempt",
+    "#tree=",
+    "#sha256=",
+    "check_tag_gate",
+    "gate_pre_push",
+    "pre-push gate",
+    "identifier scan",
+    "internal reference",
+    "allowlist",
+    "pattern table",
+    "sign-off credential",
+)
+
 _VERSION_HEADING = re.compile(r"^##\s+v?(\S+)\s*$", re.MULTILINE)
 _SECTION_HEADING = re.compile(r"^###\s+(.+?)\s*$", re.MULTILINE)
 
@@ -215,6 +243,20 @@ def check(text: str, tags: Sequence[str], version: Optional[str]) -> List[str]:
                 f"at least one of: {', '.join(ALLOWED_SECTIONS)}"
             )
 
+    # An entry that names the machinery is not a smaller version of the right
+    # entry -- it is a different document. It reads as an internal note because
+    # that is what it is, and the reader it reaches is a user who cannot act on
+    # it. Reported with the offending terms so the fix is obvious.
+    for entry in must_be_typed:
+        lowered = entry.body.lower()
+        found = sorted({term for term in MAINTENANCE_TERMS if term.lower() in lowered})
+        if found:
+            problems.append(
+                f"v{entry.version} describes maintenance machinery "
+                f"({', '.join(found)}); a changelog entry states what changed for a user of the "
+                "package, not how the checks that guard it are built"
+            )
+
     return problems
 
 
@@ -275,6 +317,30 @@ _SAMPLE_EMPTY = """# Changelog
 ### Added
 """
 
+_SAMPLE_MAINTENANCE_TERMS = """# Changelog
+
+## v0.97
+
+### Changed
+
+- `check_tag_gate.py` now compares the review and sync credential against `#tree=<40 hex>`
+"""
+
+_SAMPLE_MAINTENANCE_LEGACY = """# Changelog
+
+## v0.97
+
+### Added
+
+- a thing
+
+## v0.96
+
+### Changed
+
+- `check_tag_gate.py` now compares the review and sync credential against `#tree=<40 hex>`
+"""
+
 
 def _self_test() -> int:
     failures = 0
@@ -297,6 +363,22 @@ def _self_test() -> int:
     expect("newest entry not typed", _SAMPLE_UNTYPED, ["0.96", "0.97"], "0.97", False)
     expect("unknown change type", _SAMPLE_BAD_TYPE, ["0.97"], "0.97", False)
     expect("empty section", _SAMPLE_EMPTY, ["0.97"], "0.97", False)
+
+    print("self-test: an entry that describes the machinery is reported, history is not")
+    expect(
+        "maintenance vocabulary in the newest entry",
+        _SAMPLE_MAINTENANCE_TERMS,
+        ["0.96", "0.97"],
+        "0.97",
+        False,
+    )
+    expect(
+        "the same vocabulary in an older entry is history",
+        _SAMPLE_MAINTENANCE_LEGACY,
+        ["0.96", "0.97"],
+        "0.97",
+        True,
+    )
     expect("changelog behind the release", _SAMPLE_HEALTHY, ["0.96", "0.97"], "0.98", False)
 
     print("self-test: continuity starts at the oldest recorded version")
