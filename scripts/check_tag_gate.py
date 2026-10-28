@@ -84,6 +84,17 @@ DOC_BANNER_PATTERNS = (
 #: remain somewhere, which is the failure this is meant to catch. A page that
 #: starts or stops carrying one has to be listed here, and that edit is the
 #: reminder that the page belongs to the published version surface.
+#:
+#: Four other pages under `docs/` also contain a version literal and are
+#: deliberately absent: `framework_semantics.md` (and its `zh/` pair) names the
+#: release that introduced a rule (`v0.96a2`, `v0.96a5`), and
+#: `migration_guide_v2.md` (and its pair) is organised by the release each
+#: behaviour changed in. Those literals are history, not a claim about the
+#: current release, so requiring them to match the SSOT would make them false.
+#: Checked when this note was written: `grep -rl '0\.96a9' docs/` returns exactly
+#: the ten keys below, and every remaining literal in `docs/` is of that
+#: historical kind -- the distinction is written down here so that the next
+#: reader does not have to re-derive it, or mistake the gap for an oversight.
 EXPECTED_BANNER_PAGES = {
     "README.md": 1,
     "zh/README.md": 1,
