@@ -9,53 +9,19 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ## v0.96a9
 
-**v0.96a9** is the ninth alpha of the 0.96 line. Almost all of it sits in the
-checks that decide whether the code is ready to ship, rather than in the library:
-a `pre-push` gate that runs its assertions instead of describing them, a local
-entry point for the coverage floor, and a scan that turns an internal identifier
-in a tracked file into a test failure. One refactor removes a rule that was
-stated in two places.
+**v0.96a9** is the ninth alpha of the 0.96 line. The one library change removes a
+guard that was enforced in two places; the remainder of the release concerns how
+the package records and checks its own version.
 
 No public API symbol is added or removed, and no signature changes.
 
-### Added
-
-- `scripts/gate_pre_push.py` runs ten assertions on `pre-push` -- the packaging
-  surface, the tracked tree, the `HEAD` tree, a real `sdist`, the full ref
-  history, and the archive export -- instead of leaving them as a document that
-  nobody re-runs. A gate that is not executed is a paragraph. Each assertion
-  reports `PASS`, `FAIL` or `NOT COVERED`, and `NOT COVERED` is never counted as
-  a pass
-- `scripts/install_pre_push_gate.py` installs that hook into a checkout. It
-  writes the token list through the hook template rather than interpolating it,
-  because a word list interpolated into a shell script stops being data the first
-  time a word contains a quote
-- `scripts/check_coverage.py` gives the coverage floor a local entry point. The
-  floor itself is unchanged and still lives in one place, `pyproject.toml`; this
-  reads it there rather than carrying a second copy. When the number cannot be
-  read the gate exits 2 -- an unmeasurable gate does not report a pass
-- `tests/regression/test_no_internal_identifiers.py` scans every tracked file for
-  five shapes of internal reference and fails the suite on a hit. It exists
-  because the alternative detector needs a word list from outside the repository
-  and its hook passes no `--strict`, so in its default configuration nothing
-  turned red. The patterns now live in the repository and run under plain
-  `pytest`. Two companion tests keep it honest: one feeds fabricated violations
-  to prove the scanner can fail, one asserts the exemption is exactly one
-  bracketed region so that exempting a file needs a decision rather than a quiet
-  edit
-
 ### Changed
 
-- `check_tag_gate.py` reconciles the docs version banners before a tag, and the
-  review and sync credentials now carry `#tree=<40 hex>` compared against
-  `HEAD^{tree}`. Bound to the tree, not the commit: two commits can share a tree,
-  and a commit-bound credential rejects a valid approval after an amend or a
-  merge
 - Three tests that restated the package version now derive it from
-  `cullinan/_version.py`. A test that pins a literal is a second master copy of
-  the number, and the failure mode is the quiet one: it keeps passing while the
-  thing it names drifts. Two of them read the file independently of importing it,
-  so the assertion can still fail
+  `cullinan/_version.py`. A test that pins a literal is a second copy of the
+  number, and it fails in the quiet direction: it keeps passing while the value
+  it names drifts. Two of them read the file independently of importing it, so
+  the assertion can still fail
 
 ### Fixed
 
