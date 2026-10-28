@@ -9,53 +9,19 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ## v0.96a9
 
-**v0.96a9** is the ninth alpha of the 0.96 line. Almost all of it sits in the
-checks that decide whether the code is ready to ship, rather than in the library:
-a `pre-push` gate that runs its assertions instead of describing them, a local
-entry point for the coverage floor, and a scan that turns an internal identifier
-in a tracked file into a test failure. One refactor removes a rule that was
-stated in two places.
+**v0.96a9** is the ninth alpha of the 0.96 line. The one library change removes a
+guard that was enforced in two places; the remainder of the release concerns how
+the package records and checks its own version.
 
 No public API symbol is added or removed, and no signature changes.
 
-### Added
-
-- `scripts/gate_pre_push.py` runs ten assertions on `pre-push` -- the packaging
-  surface, the tracked tree, the `HEAD` tree, a real `sdist`, the full ref
-  history, and the archive export -- instead of leaving them as a document that
-  nobody re-runs. A gate that is not executed is a paragraph. Each assertion
-  reports `PASS`, `FAIL` or `NOT COVERED`, and `NOT COVERED` is never counted as
-  a pass
-- `scripts/install_pre_push_gate.py` installs that hook into a checkout. It
-  writes the token list through the hook template rather than interpolating it,
-  because a word list interpolated into a shell script stops being data the first
-  time a word contains a quote
-- `scripts/check_coverage.py` gives the coverage floor a local entry point. The
-  floor itself is unchanged and still lives in one place, `pyproject.toml`; this
-  reads it there rather than carrying a second copy. When the number cannot be
-  read the gate exits 2 -- an unmeasurable gate does not report a pass
-- `tests/regression/test_no_internal_identifiers.py` scans every tracked file for
-  five shapes of internal reference and fails the suite on a hit. It exists
-  because the alternative detector needs a word list from outside the repository
-  and its hook passes no `--strict`, so in its default configuration nothing
-  turned red. The patterns now live in the repository and run under plain
-  `pytest`. Two companion tests keep it honest: one feeds fabricated violations
-  to prove the scanner can fail, one asserts the exemption is exactly one
-  bracketed region so that exempting a file needs a decision rather than a quiet
-  edit
-
 ### Changed
 
-- `check_tag_gate.py` reconciles the docs version banners before a tag, and the
-  review and sync credentials now carry `#tree=<40 hex>` compared against
-  `HEAD^{tree}`. Bound to the tree, not the commit: two commits can share a tree,
-  and a commit-bound credential rejects a valid approval after an amend or a
-  merge
 - Three tests that restated the package version now derive it from
-  `cullinan/_version.py`. A test that pins a literal is a second master copy of
-  the number, and the failure mode is the quiet one: it keeps passing while the
-  thing it names drifts. Two of them read the file independently of importing it,
-  so the assertion can still fail
+  `cullinan/_version.py`. A test that pins a literal is a second copy of the
+  number, and it fails in the quiet direction: it keeps passing while the value
+  it names drifts. Two of them read the file independently of importing it, so
+  the assertion can still fail
 
 ### Fixed
 
@@ -71,10 +37,8 @@ No public API symbol is added or removed, and no signature changes.
 
 ## v0.96a8
 
-**v0.96a8** is the eighth alpha of the 0.96 line, and it is a debt round: every
-maintenance item that had a defect behind it was fixed rather than restated, and
-two gates that could pass without checking anything now check the thing they are
-named after.
+**v0.96a8** is the eighth alpha of the 0.96 line. Every maintenance item that had
+a defect behind it was fixed rather than restated.
 
 No public API symbol is added or removed, and no signature changes. What changes
 for a running application is what a diagnostic says, and where one reconciliation
@@ -82,26 +46,12 @@ step runs.
 
 ### Added
 
-- `check_tag_gate.py` reconciles the docs version banners before a tag: every
-  page that advertises a version must advertise the one in `cullinan/_version.py`,
-  and the pages expected to carry a banner are enumerated, with a count per page --
-  a total would let a page lose its banner while another still had one, and a page
-  that drops below its count is now a finding with its name in it. The Chinese pages
-  use different wording, and the colon width is not even consistent within them, so
-  an English-only pattern would have covered half the tree and reported green on the
-  half it never read
-- The review and sync credentials carry `#tree=<40 hex>` and the gate compares it
-  with `HEAD^{tree}`. Bound to the tree, not the commit: `d69e66d` and the merge
-  commit that released it are different commits with the same tree, and a
-  commit-bound token would have rejected a valid approval. The sign-off
-  credential is exempt, because it binds to its evidence bundle. The gate says
-  what it does not prove -- format and scope, not authenticity
 - The boot boundary reports the line that registered a pre-boot pipeline entry
   (`path:line`), in the report and in the refusal. The middleware class name
   appears in a dependency's `site-packages`, not in the reader's own code, so it
   was not something anyone could search for
 
-Two checks that did not exist before, both for things that were believed rather than shown:
+Two behaviours that were previously assumed are now asserted:
 
 - Ten documented Python blocks are fragments on purpose (a method body shown
   without its class, a before/after pair whose "before" is a comment about
@@ -121,9 +71,7 @@ Two checks that did not exist before, both for things that were believed rather 
   declarations against an assembly that already contains them. The split also
   means a registration that raises no longer takes the report down with it
 - The markdown lint step publishes its findings and exit status to the job
-  summary, and states that it does not fail the build. It still does not: making
-  it a gate needs the size of the existing debt, and suppressing the result is
-  what kept that number unknown
+  summary, and states that it does not fail the build
 
 ### Fixed
 
