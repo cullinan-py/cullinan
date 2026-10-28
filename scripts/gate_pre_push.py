@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Pre-push mechanical gate: the M0..M9 assertions, executed instead of described.
 
-The assertions themselves are not defined here. They are defined once, in the
-isolation ruling's section on "required mechanical gates" (M0..M9), and this file
+The assertions themselves are not defined here. They are defined once, as a
+numbered table of required mechanical gates (M0..M9), and this file
 is the executable side of that table: one function per assertion, same numbering,
 same pass condition. A gate whose only existence is a written specification is a
 gate that never blocks anything, which is the failure mode this script is meant to
@@ -30,8 +30,7 @@ What each gate asserts (runnable form; numbers match the specification):
 
 M9 keeps its code here and takes its word list as data (`--tokens-file`). The
 words themselves live beside the ledgers, not in this repository: a public file
-that spells them out tells every reader that this project keeps an internal
-library, which is precisely what the isolation rule forbids. There is no built-in
+that spells them out would disclose them to every reader. There is no built-in
 default -- a default would have to name a path outside the repository, which is
 the same offence in a different costume.
 
@@ -106,11 +105,10 @@ ZERO_SHA = "0" * 40
 # the packaging export (M3/M9).
 ADD_FORBIDDEN = re.compile(r"^(?:\.workbuddy|build|dist|site)/")
 
-# Names of the internal knowledge base are *not* written here. They arrive as data
-# through `--tokens-file`, one per line, `#` starting a comment. Two reasons, and
-# the second is the one that matters: a public file that spells the names out makes
-# the internal library perceivable to every reader, which is exactly what the
-# isolation rule exists to prevent -- and a checker that stores the words it looks
+# The forbidden names are *not* written here. They arrive as data through
+# `--tokens-file`, one per line, `#` starting a comment. Two reasons, and the
+# second is the one that matters: a published file that spells the names out
+# discloses them to every reader -- and a checker that stores the words it looks
 # for will always be its own first finding.
 
 

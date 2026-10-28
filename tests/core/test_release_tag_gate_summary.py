@@ -122,7 +122,7 @@ def _run_gate(review: str, sync: str, sign_off: str = "P"):
 
 def test_the_tree_bound_credential_is_accepted():
     tree = _head_tree()
-    result = _run_gate(f"ARCH#tree={tree}", f"KB#tree={tree}")
+    result = _run_gate(f"review-a#tree={tree}", f"sync#tree={tree}")
     assert "PASS (f)" in result.stdout, result.stdout[-400:]
 
 
@@ -136,7 +136,7 @@ def test_an_unbound_credential_is_refused_with_the_bound_form_suggested():
 def test_a_credential_bound_to_another_tree_fails_for_that_reason():
     """V4: a stale credential must fail as "wrong tree", not "unrecognised"."""
     zero = "0" * 40
-    result = _run_gate(f"ARCH#tree={zero}", f"KB#tree={_head_tree()}")
+    result = _run_gate(f"review-a#tree={zero}", f"sync#tree={_head_tree()}")
     assert "FAIL (f)" in result.stdout
     assert "different tree" in result.stdout
     assert "reissue" not in result.stdout, (
@@ -148,7 +148,7 @@ def test_a_credential_bound_to_another_tree_fails_for_that_reason():
 def test_sign_off_is_exempt_from_the_tree_binding():
     """The sign-off credential binds to its evidence bundle, not to the tree."""
     tree = _head_tree()
-    result = _run_gate(f"ARCH#tree={tree}", f"KB#tree={tree}", sign_off="<bundle>#sha256=deadbeef")
+    result = _run_gate(f"review-a#tree={tree}", f"sync#tree={tree}", sign_off="<bundle>#sha256=deadbeef")
     assert "PASS (f)" in result.stdout
 
 
