@@ -3,6 +3,7 @@
 import importlib
 import json
 import os
+import re
 import subprocess
 import sys
 import textwrap
@@ -73,7 +74,10 @@ EXPECTED_TOP_LEVEL_EXPORTS = [
     "websocket_handler",
 ]
 
-EXPECTED_PACKAGE_VERSION = "0.96a8"
+# The version is deliberately *not* restated here. This module's job includes
+# proving the number has one source, so carrying a copy of it would make the
+# guard part of the defect it exists to catch. The derivation happens in the
+# test below, by parsing `cullinan/_version.py` independently of importing it.
 
 # ---------------------------------------------------------------------------
 # 1.0 public API freeze contract (symbol-name granularity).
@@ -389,9 +393,20 @@ def test_typed_marker_is_present_in_the_package_tree():
 def test_version_single_source_is_shared_by_public_modules_and_pyproject():
     pyproject_text = Path("pyproject.toml").read_text(encoding="utf-8")
 
-    assert version_api.__version__ == EXPECTED_PACKAGE_VERSION
-    assert cullinan.__version__ == EXPECTED_PACKAGE_VERSION
-    assert core_api.__version__ == EXPECTED_PACKAGE_VERSION
+    # Independently parsed, not imported: the point is that the literal lives in
+    # exactly one file. Restating it here (or importing it and comparing the
+    # import to itself) would make this assertion unable to fail.
+    match = re.search(
+        r'^__version__\s*=\s*"([^"]+)"',
+        Path("cullinan/_version.py").read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    assert match is not None, "cullinan/_version.py no longer declares __version__ as a literal"
+    ssot = match.group(1)
+
+    assert version_api.__version__ == ssot
+    assert cullinan.__version__ == ssot
+    assert core_api.__version__ == ssot
     assert 'dynamic = ["version"]' in pyproject_text
     assert 'version = { attr = "cullinan._version.__version__" }' in pyproject_text
     assert '"0.93.post1"' not in pyproject_text
