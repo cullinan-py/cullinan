@@ -8,6 +8,7 @@ the check existed. These exercise the decision function directly, so they stay
 fast and do not need a network or a second branch.
 """
 import importlib.util
+import re
 from pathlib import Path
 
 import pytest
@@ -57,7 +58,17 @@ def test_parse_version_on_unparseable_input():
 
 
 def test_local_version_matches_the_ssot():
-    assert checker.read_local_version() == "0.96a8"
+    # 版本号只有一份正本（`cullinan/_version.py`）。这里写死一个字面量，就等于
+    # 又存了一份 —— 每次发布都要记得改两处，而「记得」不是判据。
+    # 断言并未空转：它比的是两条独立路径（checker 的正则解析 vs 包导入）；
+    # 若正则被改坏、或文件里出现第二个赋值，两条路径就会分叉。
+    from cullinan._version import __version__
+
+    assert checker.read_local_version() == __version__
+    assert re.fullmatch(r"\d+\.\d+(?:a|b|rc)\d+", __version__), (
+        f"{__version__!r} is not an alpha/beta/rc release string; "
+        "if the release-line shape changed, change this criterion first"
+    )
 
 
 def test_bundled_self_test_passes():

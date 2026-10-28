@@ -10,13 +10,13 @@ translation_pair: "docs/quick_reference_di.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-28"
+last_updated: "2026-10-29"
 pr_links: []
 
 
 # Cullinan 依赖注入快速参考
 
-> **版本**: 0.96a8
+> **版本**: 0.96a9
 > **作者**: plumeink
 
 > **速查页：** 这页用于快速查看 DI 写法；完整指导请看

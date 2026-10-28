@@ -408,3 +408,22 @@ def test_declarative_registration_records_no_origin():
     assert added == 1
     assert pipeline._entries[-1].origin is None
 
+# --- ordering declarations -------------------------------------------------
+
+
+def test_ordering_declarations_are_mutually_exclusive_through_add():
+    """``priority`` and ``before``/``after`` cannot both be given.
+
+    The rule lives in ``_append()``, which every caller reaches, so this asserts
+    it is still reached from the public entry point rather than restated there.
+    """
+    pipeline = MiddlewarePipeline()
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        pipeline.add(_PlainMiddleware(), before="other", priority=1)
+
+
+def test_ordering_declarations_are_mutually_exclusive_on_the_private_path():
+    """``add_class`` short-circuits ``add()``, so the rule must hold there too."""
+    pipeline = MiddlewarePipeline()
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        pipeline._append(_PlainMiddleware(), after="other", priority=1)

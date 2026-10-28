@@ -52,21 +52,31 @@ ROOT = Path(__file__).resolve().parent.parent
 
 #: Banner shapes in use, both near the top of a page: the docs home pages write
 #: ``**Current version: X**`` / ``**当前版本：X**``, the guide pages write
-#: ``**Version**: X`` / ``**版本**：X``. Note the colon: the English pages use the
-#: ASCII one and the Chinese pages the full-width one, so an English-only pattern
-#: would silently cover half the tree.
+#: ``**Version**: X`` / ``**版本**：X``.
 #:
-#: ``+`` suffix is filtered in code, not with a lookahead: a pattern-level
-#: ``(?!\+)`` makes the greedy group backtrack and capture ``0.90a`` out of
-#: ``0.90a5+``, which then looks like a legitimate (if odd) version. A page that
-#: writes ``**Version**: 0.90a5+`` is stating the *oldest* release its feature
-#: set applies to, not the current one, and holding it to the SSOT is a false
-#: positive. Only a bare version asserts "this is the version you are reading".
+#: The colon is matched as ``[：:]`` rather than hard-coded, because the width is
+#: not a property of the language: most Chinese pages use the full-width one, but
+#: ``docs/zh/quick_reference_di.md`` uses the ASCII one. An English-only pattern
+#: covers half the tree and -- worse -- reports green on the half it never read.
+#:
+#: Two shapes are *excluded* rather than compared, because they make a different
+#: claim about the same words:
+#:
+#: * a ``v`` prefix (``**版本**：v0.90``) marks applicability -- "this page
+#:   describes how v0.90 behaves" -- which is a historical statement that must not
+#:   be dragged to the current release;
+#: * a ``+`` suffix (``**Version**: 0.90a5+``) gives the *oldest* release the
+#:   feature set applies to.
+#:
+#: Both are filtered in code, not with pattern-level lookarounds: a ``(?!\+)``
+#: makes the greedy group backtrack and capture ``0.90a`` out of ``0.90a5+``,
+#: which then looks like a legitimate (if odd) version. Only a bare version
+#: asserts "this is the version you are reading".
 DOC_BANNER_PATTERNS = (
-    re.compile(r"\*\*Current version:\s*([0-9][0-9A-Za-z._-]*)\*\*"),
-    re.compile(r"\*\*当前版本[：:]\s*([0-9][0-9A-Za-z._-]*)\*\*"),
-    re.compile(r"\*\*Version\*\*:\s*([0-9][0-9A-Za-z._-]*)"),
-    re.compile(r"\*\*版本\*\*[：:]\s*([0-9][0-9A-Za-z._-]*)"),
+    re.compile(r"\*\*Current version:\s*(v?[0-9][0-9A-Za-z._-]*)\*\*"),
+    re.compile(r"\*\*当前版本[：:]\s*(v?[0-9][0-9A-Za-z._-]*)\*\*"),
+    re.compile(r"\*\*Version\*\*:\s*(v?[0-9][0-9A-Za-z._-]*)"),
+    re.compile(r"\*\*版本\*\*[：:]\s*(v?[0-9][0-9A-Za-z._-]*)"),
 )
 
 #: Pages that carry a version banner. Enumerated rather than counted: with a
@@ -74,6 +84,17 @@ DOC_BANNER_PATTERNS = (
 #: remain somewhere, which is the failure this is meant to catch. A page that
 #: starts or stops carrying one has to be listed here, and that edit is the
 #: reminder that the page belongs to the published version surface.
+#:
+#: Four other pages under `docs/` also contain a version literal and are
+#: deliberately absent: `framework_semantics.md` (and its `zh/` pair) names the
+#: release that introduced a rule (`v0.96a2`, `v0.96a5`), and
+#: `migration_guide_v2.md` (and its pair) is organised by the release each
+#: behaviour changed in. Those literals are history, not a claim about the
+#: current release, so requiring them to match the SSOT would make them false.
+#: Checked when this note was written: `grep -rl '0\.96a9' docs/` returns exactly
+#: the ten keys below, and every remaining literal in `docs/` is of that
+#: historical kind -- the distinction is written down here so that the next
+#: reader does not have to re-derive it, or mistake the gap for an oversight.
 EXPECTED_BANNER_PAGES = {
     "README.md": 1,
     "zh/README.md": 1,
@@ -115,10 +136,14 @@ def find_doc_banners(docs_dir):
         text = page.read_text(encoding="utf-8", errors="replace")
         for pattern in DOC_BANNER_PATTERNS:
             for match in pattern.finditer(text):
-                end = match.end(1)
-                if end < len(text) and text[end] == "+":
+                version = match.group(1)
+                # ``v`` prefix and ``+`` suffix are applicability claims, not
+                # statements about the version being read -- see the note above.
+                if version[:1] in ("v", "V"):
                     continue
-                found.append((page.relative_to(docs_dir).as_posix(), match.group(1)))
+                if text[match.end(1):match.end(1) + 1] == "+":
+                    continue
+                found.append((page.relative_to(docs_dir).as_posix(), version))
     return found
 
 

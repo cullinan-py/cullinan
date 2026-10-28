@@ -10,13 +10,13 @@ translation_pair: "docs/zh/architecture.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-28"
+last_updated: "2026-10-29"
 pr_links: []
 
 # Cullinan Framework Architecture
 
-> **Version**: 0.96a8
-> **Last Updated**: 2026-10-27
+> **Version**: 0.96a9
+> **Last Updated**: 2026-10-29
 > **Status**: Updated
 
 > **This page explains framework structure, not the default startup tutorial.**  

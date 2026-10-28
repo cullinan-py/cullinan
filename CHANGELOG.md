@@ -7,6 +7,68 @@ in [`README.MD`](README.MD).
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## v0.96a9
+
+**v0.96a9** is the ninth alpha of the 0.96 line. Almost all of it sits in the
+checks that decide whether the code is ready to ship, rather than in the library:
+a `pre-push` gate that runs its assertions instead of describing them, a local
+entry point for the coverage floor, and a scan that turns an internal identifier
+in a tracked file into a test failure. One refactor removes a rule that was
+stated in two places.
+
+No public API symbol is added or removed, and no signature changes.
+
+### Added
+
+- `scripts/gate_pre_push.py` runs ten assertions on `pre-push` -- the packaging
+  surface, the tracked tree, the `HEAD` tree, a real `sdist`, the full ref
+  history, and the archive export -- instead of leaving them as a document that
+  nobody re-runs. A gate that is not executed is a paragraph. Each assertion
+  reports `PASS`, `FAIL` or `NOT COVERED`, and `NOT COVERED` is never counted as
+  a pass
+- `scripts/install_pre_push_gate.py` installs that hook into a checkout. It
+  writes the token list through the hook template rather than interpolating it,
+  because a word list interpolated into a shell script stops being data the first
+  time a word contains a quote
+- `scripts/check_coverage.py` gives the coverage floor a local entry point. The
+  floor itself is unchanged and still lives in one place, `pyproject.toml`; this
+  reads it there rather than carrying a second copy. When the number cannot be
+  read the gate exits 2 -- an unmeasurable gate does not report a pass
+- `tests/regression/test_no_internal_identifiers.py` scans every tracked file for
+  five shapes of internal reference and fails the suite on a hit. It exists
+  because the alternative detector needs a word list from outside the repository
+  and its hook passes no `--strict`, so in its default configuration nothing
+  turned red. The patterns now live in the repository and run under plain
+  `pytest`. Two companion tests keep it honest: one feeds fabricated violations
+  to prove the scanner can fail, one asserts the exemption is exactly one
+  bracketed region so that exempting a file needs a decision rather than a quiet
+  edit
+
+### Changed
+
+- `check_tag_gate.py` reconciles the docs version banners before a tag, and the
+  review and sync credentials now carry `#tree=<40 hex>` compared against
+  `HEAD^{tree}`. Bound to the tree, not the commit: two commits can share a tree,
+  and a commit-bound credential rejects a valid approval after an amend or a
+  merge
+- Three tests that restated the package version now derive it from
+  `cullinan/_version.py`. A test that pins a literal is a second master copy of
+  the number, and the failure mode is the quiet one: it keeps passing while the
+  thing it names drifts. Two of them read the file independently of importing it,
+  so the assertion can still fail
+
+### Fixed
+
+- `MiddlewarePipeline.add()` no longer restates the mutual-exclusion rule between
+  `priority` and `before`/`after`. Every path already arrives through `_append`,
+  which enforces it; a second copy is a rule stated twice and drifting once.
+  Behaviour is unchanged, including the message
+
+### Documentation
+
+- Every page that advertises a version now advertises `0.96a9`, and the pages
+  whose banner changed record the date they changed
+
 ## v0.96a8
 
 **v0.96a8** is the eighth alpha of the 0.96 line, and it is a debt round: every
@@ -25,9 +87,9 @@ step runs.
   and the pages expected to carry a banner are enumerated, with a count per page --
   a total would let a page lose its banner while another still had one, and a page
   that drops below its count is now a finding with its name in it. The Chinese pages
-  use a full-width
-  colon and different wording, so an English-only pattern would have covered half
-  the tree and reported green on the half it never read
+  use different wording, and the colon width is not even consistent within them, so
+  an English-only pattern would have covered half the tree and reported green on the
+  half it never read
 - The review and sync credentials carry `#tree=<40 hex>` and the gate compares it
   with `HEAD^{tree}`. Bound to the tree, not the commit: `d69e66d` and the merge
   commit that released it are different commits with the same tree, and a

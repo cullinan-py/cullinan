@@ -767,7 +767,12 @@ def test_root_readme_keeps_default_path_on_top_level_api():
     # Pin the *current* release line the README's "Current series" section
     # advertises; asserting the previous line would stay green forever once the
     # README keeps it as historical context, making the guard vacuous.
-    assert "**v0.96a8**" in readme
+    # The expected line is derived from the single source of truth rather than
+    # restated: a literal here is a second master copy, and a stale one fails
+    # in the same direction the comment above warns about.
+    from cullinan._version import __version__ as ssot_version
+
+    assert f"**v{ssot_version}**" in readme
 
 
 def test_getting_started_stays_on_business_first_onboarding_path():

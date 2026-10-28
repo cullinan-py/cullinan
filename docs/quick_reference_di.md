@@ -10,13 +10,13 @@ translation_pair: "docs/zh/quick_reference_di.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-28"
+last_updated: "2026-10-29"
 pr_links: []
 
 
 # Cullinan Dependency Injection Quick Reference
 
-> **Version**: 0.96a8
+> **Version**: 0.96a9
 > **Author**: plumeink
 
 > **Quick lookup page:** use this page as a compact DI recipe sheet; use

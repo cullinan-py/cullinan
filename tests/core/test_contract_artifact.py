@@ -82,6 +82,20 @@ def test_contract_artifact_declares_schema_and_provenance():
     assert "cullinan_version" in generated_from
 
 
+def test_contract_artifact_records_the_installed_version():
+    # The field was only ever checked for *presence*, so a file left behind by an
+    # earlier release passed every gate while naming a version that no longer
+    # exists. That is the quiet direction of failure: nothing compares the copy
+    # with its source, so the copy can be arbitrarily old.
+    import cullinan
+
+    payload = _load_artifact()
+    assert payload["generated_from"]["cullinan_version"] == cullinan.__version__, (
+        "the contract artifact names a different version than the package; "
+        "regenerate it with `python scripts/generate_contracts.py`"
+    )
+
+
 def test_contract_artifact_does_not_touch_public_api():
     # AC-7: the artifact is data only -- the top-level contract is unchanged.
     import cullinan
