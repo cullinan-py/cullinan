@@ -15,8 +15,8 @@ pr_links: []
 
 # Cullinan Framework Architecture
 
-> **Version**: 0.96a8
-> **Last Updated**: 2026-10-27
+> **Version**: 0.96a9
+> **Last Updated**: 2026-10-29
 > **Status**: Updated
 
 > **This page explains framework structure, not the default startup tutorial.**  

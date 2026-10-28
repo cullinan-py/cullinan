@@ -15,9 +15,9 @@ pr_links: []
 
 # Cullinan Extension Development Guide
 
-> **Version**: 0.96a8
+> **Version**: 0.96a9
 > **Author**: plumeink  
-> **Last Updated**: 2026-10-27
+> **Last Updated**: 2026-10-29
 
 > **Advanced topic:** this guide is for framework extension work, not the default
 > application learning path.
@@ -684,6 +684,6 @@ class TestMyMiddleware(ServiceTestCase):
 
 ---
 
-**Version**: 0.96a8
+**Version**: 0.96a9
 **Author**: plumeink  
 **Last Updated**: 2026-09-28
