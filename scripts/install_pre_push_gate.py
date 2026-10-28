@@ -133,8 +133,10 @@ exit 0
 
 
 class Installer:
-    def __init__(self, repo=None):
+    def __init__(self, repo=None, tokens_file=""):
         self.repo = repo
+        #: 词表路径（配置后 M9 才真的跑；空 = M9 恒 NOT COVERED，且汇总不冒充全绿）
+        self.tokens_file = tokens_file
         self.repo = self.repo or self._git(["rev-parse", "--show-toplevel"]).strip()
         self.hooks = self._hooks_dir()
 
@@ -216,6 +218,9 @@ class Installer:
                     backup=BACKUP_NAME,
                     snapshot=SNAPSHOT_NAME,
                     interpreter=sys.executable.replace("\\", "/"),
+                    # 🔴 漏传这个键会让 format() 抛 KeyError ⇒ 钩子永远装不上新版
+                    # ⇒ M9 在推送路径恒 NOT COVERED（实测 `KeyError: tokens_file`）
+                    tokens_file=(self.tokens_file or "").replace("\\", "/"),
                 ))
             _make_executable(hook)
             subprocess.run(["git", "config", "--local", "m0m9Gate.hooksDir", self.hooks],
@@ -269,9 +274,11 @@ def main(argv=None):
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--status", action="store_true")
     parser.add_argument("--uninstall", action="store_true")
+    parser.add_argument("--tokens-file", default="",
+                        help="word list for M9; without it M9 reports NOT COVERED on every push")
     args = parser.parse_args(argv)
 
-    installer = Installer(args.repo)
+    installer = Installer(args.repo, args.tokens_file)
     if args.status:
         print(installer.status())
         return 0
