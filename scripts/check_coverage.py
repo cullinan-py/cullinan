@@ -17,8 +17,9 @@ measured" -- wrong on both counts: the tool is `coverage` (already pinned in
 
 So this file exists to make the CI door openable with one local command, and to
 **read the floor from the same single source** (`pyproject.toml`) instead of
-carrying a second copy of the number. A duplicated threshold is the exact defect
-`S-18` describes: two master copies, and nobody can tell which one bound.
+carrying a second copy of the number. Two master copies of a threshold is the
+worst of both worlds: nobody can tell which one binds, and the day they diverge
+the gate passes on the looser number.
 
 Usage
 -----

@@ -140,7 +140,7 @@ def test_is_started_directly_uses_getframe():
 
 
 def test_console_logging_cleanup_restores_propagate(monkeypatch):
-    """Regression (D-2): cleanup must restore ``propagate``, not just clear handlers.
+    """Regression: cleanup must restore ``propagate``, not just clear handlers.
 
     ``scanner._ensure_console_logging`` sets
     ``logging.getLogger('cullinan').propagate = False``. A test that drives that
