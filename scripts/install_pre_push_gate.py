@@ -66,6 +66,11 @@ HOOK_TEMPLATE = """#!/bin/sh
 #
 # Bypass: `git push --no-verify`, or CULLINAN_GATE_PRE_PUSH=off,
 #         or CULLINAN_GATE_PRE_PUSH_NO_SDIST=1 to skip only M9.
+#
+# M9 needs a word list, which deliberately does not live in the repository. The
+# path below is supplied at install time and stored only here -- this file is in
+# the hooks directory, which git does not track. CULLINAN_GATE_TOKENS_FILE overrides
+# it per push. With no word list, M9 reports NOT COVERED and the run is PARTIAL.
 
 HOOKS_DIR=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -92,10 +97,21 @@ if [ "${{CULLINAN_GATE_PRE_PUSH:-on}}" != "off" ]; then
       if command -v "$candidate" >/dev/null 2>&1; then PY="$candidate"; break; fi
     done
   fi
+  TOKENS="${{CULLINAN_GATE_TOKENS_FILE:-{tokens_file}}}"
   EXTRA=""
   if [ "${{CULLINAN_GATE_PRE_PUSH_NO_SDIST:-0}}" = "1" ]; then EXTRA="--no-sdist"; fi
-  # shellcheck disable=SC2086
-  if ! "$PY" "$GATE" --refs-file "$REFBUF" $EXTRA; then
+  # Two spellings rather than a word-split variable: a word list path may contain
+  # spaces, and $@ belongs to the preserved hook below -- reassigning it here would
+  # hand that hook the wrong arguments.
+  GATE_RC=0
+  if [ -n "$TOKENS" ]; then
+    # shellcheck disable=SC2086
+    "$PY" "$GATE" --refs-file "$REFBUF" $EXTRA --tokens-file "$TOKENS" || GATE_RC=$?
+  else
+    # shellcheck disable=SC2086
+    "$PY" "$GATE" --refs-file "$REFBUF" $EXTRA || GATE_RC=$?
+  fi
+  if [ "$GATE_RC" -ne 0 ]; then
     echo "{marker}: push refused -- a mechanical gate failed above." >&2
     echo "{marker}: fix the finding, or bypass deliberately with --no-verify." >&2
     exit 1

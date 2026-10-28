@@ -24,8 +24,25 @@ What each gate asserts (runnable form; numbers match the specification):
       glob.
   M8  M1/M2/M3 hold in *every* worktree of this repository, not just this one --
       the worktree-copy line.
-  M9  the real sdist contains no internal-library name in its member paths, and
-      (stronger than the specification asks) none in its member contents either.
+  M9  the real sdist contains none of the words in the *given* name list in its
+      member paths, and (stronger than the specification asks) none in its member
+      contents either.
+
+M9 keeps its code here and takes its word list as data (`--tokens-file`). The
+words themselves live beside the ledgers, not in this repository: a public file
+that spells them out tells every reader that this project keeps an internal
+library, which is precisely what the isolation rule forbids. There is no built-in
+default -- a default would have to name a path outside the repository, which is
+the same offence in a different costume.
+
+`M9b` is the pairing condition: when no word list is supplied, M9 prints
+`M9: NOT COVERED (<reason>)` and the summary line reads PARTIAL, never green. An
+M9 that skips quietly while the run still looks clean is worse than no M9 at all,
+because it manufactures a pass nobody earned.
+
+`--strict` turns PARTIAL into a failing exit for callers that cannot tolerate an
+uncovered gate (CI). The hook does not pass it: a missing word list is a machine
+configuration gap, not a reason to block every push.
 
 M0..M9 is the *mechanical* subset only. The content scans over documented
 surfaces are separate assertions with their own owners and are deliberately not
@@ -38,13 +55,19 @@ Usage
     python scripts/gate_pre_push.py --refs-file f      # pre-push refs from a file
     python scripts/gate_pre_push.py --rev HEAD         # check a revision
     python scripts/gate_pre_push.py --only M3,M9       # subset (diagnosis)
+    python scripts/gate_pre_push.py --tokens-file f    # arm M9 with a word list
     python scripts/gate_pre_push.py --no-sdist         # skip M9 (reported, not hidden)
     python scripts/gate_pre_push.py --scan-archive p   # scan a built sdist, no rebuild
+    python scripts/gate_pre_push.py --strict           # PARTIAL exits non-zero too
     python scripts/gate_pre_push.py --selftest         # prove the scanners can fire
     python scripts/gate_pre_push.py --json             # machine-readable
 
 stdin is never read unless you ask for it with `--refs-stdin`: run by hand, an
 implicit read blocks on a pipe nobody closes.
+
+`--selftest` needs no word list: it feeds the scanner a synthetic word of its own,
+so the proof that the scanner can fire does not depend on the very file whose
+absence is being reported.
 
 Exit codes: 0 every gate passed (see "NOT COVERED" for skips), 1 at least one gate
 failed, 2 the gate could not decide (not a pass).
@@ -83,24 +106,54 @@ ZERO_SHA = "0" * 40
 # the packaging export (M3/M9).
 ADD_FORBIDDEN = re.compile(r"^(?:\.workbuddy|build|dist|site)/")
 
-# Names of the internal knowledge base. Taken from the specification's M9 row; kept
-# as one tuple so the path scan and the content scan cannot drift apart.
-INTERNAL_TOKENS = (
-    "知识库治理",
-    "知识库",
-    "Obsidian",
-    "obsidian",
-    "OneDrive",
-    "cullinan-vault",
-    ".workbuddy",
-    ".obsidian",
-)
-INTERNAL_PATTERN = re.compile("|".join(re.escape(token) for token in INTERNAL_TOKENS))
+# Names of the internal knowledge base are *not* written here. They arrive as data
+# through `--tokens-file`, one per line, `#` starting a comment. Two reasons, and
+# the second is the one that matters: a public file that spells the names out makes
+# the internal library perceivable to every reader, which is exactly what the
+# isolation rule exists to prevent -- and a checker that stores the words it looks
+# for will always be its own first finding.
+
+
+def load_tokens(path):
+    """Read the word list. Returns (tokens, problem).
+
+    A blank or comment-only list is a problem, not an empty list: a scan with no
+    words passes everything while looking armed, which is the failure mode this
+    whole file is about.
+    """
+    if not path:
+        return None, "no --tokens-file given"
+    if not os.path.isfile(path):
+        return None, "token file does not exist: {}".format(path)
+    tokens = []
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                tokens.append(stripped)
+    except OSError as exc:
+        return None, "token file is unreadable: {}".format(exc)
+    if not tokens:
+        return None, "token file lists no words (blank or comments only): {}".format(path)
+    return tokens, ""
+
+
+def token_pattern(tokens):
+    return re.compile("|".join(re.escape(token) for token in tokens))
+
 
 # A `.gitignore`-family file inside a distribution may legitimately name an ignored
 # directory -- that line is the reason the directory stays out of the repository.
 # Those lines are reported as WARN, not as a clean pass and not as a failure.
 IGNORE_FILE_NAMES = (".gitignore", ".gitignore_global", ".gitattributes", ".dockerignore")
+
+# The gate's own source must not travel in the distribution: if it did, the words
+# would ship with it and every rule here would be about the wrong surface. This is
+# checked rather than assumed, because the assumption rests on a single line in the
+# packaging configuration that anyone may change.
+GATE_SOURCE_PREFIX = "scripts/"
 
 
 class Result:
@@ -588,26 +641,42 @@ def build_sdist(rev, root, interpreter, workdir):
     return os.path.join(outdir, tarballs[0])
 
 
-def scan_archive(tar_path):
-    """Scan an sdist: member paths and member contents.
+def premise_problems(members):
+    """The gate's own premise: its source must not be inside the distribution.
 
-    Returns ``(path_hits, content_hits, warnings, members)``. Path hits are the
-    assertion M9 actually makes. Content hits are a stronger reading of the same
+    This is asserted rather than assumed. The assumption used to rest on one line of
+    the packaging configuration (`scripts*` in the finder's exclude list) that anyone
+    could delete without any gate noticing -- and if that line goes, the words the
+    scanner looks for travel to PyPI inside the gate that looks for them.
+    """
+    return [name for name in members
+            if name.startswith(GATE_SOURCE_PREFIX) or "/" + GATE_SOURCE_PREFIX in name]
+
+
+def scan_archive(tar_path, tokens):
+    """Scan an sdist: member paths and member contents, against `tokens`.
+
+    Returns ``(path_hits, content_hits, warnings, premise, members)``. Path hits are
+    the assertion M9 actually makes. Content hits are a stronger reading of the same
     risk. Warnings are mentions that are *not* leaks -- a `.gitignore`-family file
     may name an ignored directory, and that line is the reason the directory stays
     out of the repository, so treating it as a failure would punish the defence.
-    Keeping the three apart is what stops a warning from becoming a silent failure
-    or a silent pass.
+    Premise hits are members that should never be in a distribution at all. Keeping
+    the four apart is what stops a warning from becoming a silent failure, and a
+    broken premise from looking like a clean scan.
     """
     path_hits = []
     content_hits = []
     warnings = []
+    names = []
     members = 0
-    tokens = {token.strip("/") for token in INTERNAL_TOKENS}
+    pattern = token_pattern(tokens)
+    bare = {token.strip("/") for token in tokens}
     with tarfile.open(tar_path, "r:*") as tar:
         for member in tar.getmembers():
             members += 1
-            if INTERNAL_PATTERN.search(member.name):
+            names.append(member.name)
+            if pattern.search(member.name):
                 path_hits.append(member.name)
                 continue
             if not member.isfile() or member.size > 4 * 1024 * 1024:
@@ -622,28 +691,34 @@ def scan_archive(tar_path):
                 continue
             base = os.path.basename(member.name)
             for number, line in enumerate(text.splitlines(), 1):
-                if not INTERNAL_PATTERN.search(line):
+                if not pattern.search(line):
                     continue
                 stripped = line.strip()
                 head = stripped.split()[0].lstrip("!/") if stripped else ""
-                if base in IGNORE_FILE_NAMES and head.strip("/") in tokens:
+                if base in IGNORE_FILE_NAMES and head.strip("/") in bare:
                     warnings.append(
                         "WARN {}:{}: ignore-rule mention, not a leak".format(member.name, number))
                 else:
                     content_hits.append("{}:{}: {}".format(member.name, number, stripped[:120]))
-    return path_hits, content_hits, warnings, members
+    return path_hits, content_hits, warnings, premise_problems(names), members
 
 
-def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None):
+def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None, tokens_file=None):
     title = "sdist holds no internal name"
     if not allow_sdist:
-        return Result("M9", title, "SKIP", "--no-sdist given: NOT COVERED")
+        return Result("M9", title, "SKIP", "M9: NOT COVERED (--no-sdist given)")
+
+    # M9b: the word list is data, so its absence is a coverage gap and has to be
+    # named as one. Everything below stays unarmed until it is supplied.
+    tokens, tokens_problem = load_tokens(tokens_file)
+    if tokens is None:
+        return Result("M9", title, "SKIP", "M9: NOT COVERED ({})".format(tokens_problem))
 
     commits = target_commits(refs, fallback_rev=rev, cwd=root)
     if not commits:
         reason = ("every pushed ref is a deletion: no tree is published"
                   if refs else "no revision given and no refs on stdin")
-        return Result("M9", title, "SKIP", reason + ": NOT COVERED")
+        return Result("M9", title, "SKIP", "M9: NOT COVERED ({})".format(reason))
 
     interpreters = _interpreters(interpreter)
     usable = next((candidate for candidate in interpreters if _has_build_toolchain(candidate)),
@@ -651,18 +726,20 @@ def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None):
     if usable is None:
         return Result(
             "M9", title, "SKIP",
-            "no interpreter with build+setuptools among {}: NOT COVERED (residual risk)".format(
+            "M9: NOT COVERED (no interpreter with build+setuptools among {})".format(
                 ", ".join(interpreters)))
 
     rows = []
     real_hits = []
     warnings = []
+    premise = []
     for commit in commits:
         workdir = tempfile.mkdtemp(prefix="cullinan-m9-")
         try:
             tar_path = build_sdist(commit, root, usable, workdir)
-            path_hits, content_hits, warns, members = scan_archive(tar_path)
+            path_hits, content_hits, warns, broken, members = scan_archive(tar_path, tokens)
             warnings.extend(warns)
+            premise.extend(broken)
             name = os.path.basename(tar_path)
             if path_hits:
                 real_hits.extend(path_hits)
@@ -682,12 +759,18 @@ def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None):
         finally:
             shutil.rmtree(workdir, ignore_errors=True)
 
+    if premise:
+        return Result("M9", title, "FAIL",
+                      "the gate's own source shipped in the distribution: this premise is broken, "
+                      "so the scan below is about the wrong surface ({} member(s))".format(
+                          len(premise)), premise[:20] + rows)
     if real_hits:
         return Result("M9", title, "FAIL",
                       "{} hit(s) in the sdist".format(len(real_hits)),
                       real_hits[:20], )
     return Result("M9", title, "PASS",
-                  "{} build(s) via {}; 0 hit(s)".format(len(commits), usable),
+                  "{} build(s) via {} against {} word(s); 0 hit(s)".format(
+                      len(commits), usable, len(tokens)),
                   rows + warnings)
 
 
@@ -702,40 +785,48 @@ def selftest(root):
     A scanner that has never returned a hit is indistinguishable from a scanner
     that cannot. This runs offline, touches nothing in the repository, and restores
     the tree it used.
+
+    The words used here are synthetic on purpose. The scanner takes its word list as
+    data, so proving that it fires needs a word of its own -- not the real list,
+    whose absence is the very thing M9b reports. A self-test that needed the real
+    list would be unable to run in exactly the situation it is meant to diagnose.
     """
     failures = []
+    words = ["synthetic-word-alpha", "synthetic-word-beta"]
+    word_dir = words[0]
 
-    # 1. Archive scan: inject one member with an internal name, one with the token in
-    #    its body, and require both to be reported.
+    # 1. Archive scan: inject one member whose *name* carries a word, one whose
+    #    *body* does, and require both to be reported.
     with tempfile.TemporaryDirectory() as tmp:
         good = os.path.join(tmp, "good.txt")
         with open(good, "w", encoding="utf-8") as handle:
             handle.write("nothing to see\n")
-        name_dirty = os.path.join(tmp, "vault-doc.md")
+        name_dirty = os.path.join(tmp, "name-case.md")
         with open(name_dirty, "w", encoding="utf-8") as handle:
             handle.write("clean body\n")
         body_dirty = os.path.join(tmp, "notes.md")
         with open(body_dirty, "w", encoding="utf-8") as handle:
-            handle.write("see 知识库治理 for details\n")
+            handle.write("see {} for details\n".format(word_dir))
 
         clean_tar = os.path.join(tmp, "clean.tar.gz")
         with tarfile.open(clean_tar, "w:gz") as tar:
             tar.add(good, arcname="pkg/good.txt")
-        path_hits, content_hits, warns, members = scan_archive(clean_tar)
-        if path_hits or content_hits or warns:
-            failures.append("clean archive reported hits: {}{}{}".format(
-                path_hits, content_hits, warns))
+        path_hits, content_hits, warns, premise, members = scan_archive(clean_tar, words)
+        if path_hits or content_hits or warns or premise:
+            failures.append("clean archive reported hits: {}{}{}{}".format(
+                path_hits, content_hits, warns, premise))
         print("  {:32s} members={} hits={} (expect 0)".format(
-            "clean archive", members, len(path_hits) + len(content_hits) + len(warns)))
+            "clean archive", members,
+            len(path_hits) + len(content_hits) + len(warns) + len(premise)))
 
         dirty_tar = os.path.join(tmp, "dirty.tar.gz")
         with tarfile.open(dirty_tar, "w:gz") as tar:
             tar.add(good, arcname="pkg/good.txt")
-            tar.add(name_dirty, arcname="pkg/知识库治理/leak.md")
+            tar.add(name_dirty, arcname="pkg/{}/leak.md".format(word_dir))
             tar.add(body_dirty, arcname="pkg/notes.md")
-        path_hits, content_hits, _warns, _members = scan_archive(dirty_tar)
-        caught_name = any("知识库" in hit for hit in path_hits)
-        caught_body = any("知识库" in hit for hit in content_hits)
+        path_hits, content_hits, _warns, _premise, _members = scan_archive(dirty_tar, words)
+        caught_name = any(words[0] in hit for hit in path_hits)
+        caught_body = any(words[0] in hit for hit in content_hits)
         if not caught_name:
             failures.append("archive scan missed a member path")
         if not caught_body:
@@ -748,17 +839,48 @@ def selftest(root):
         ignore_tar = os.path.join(tmp, "ignore.tar.gz")
         ignore_file = os.path.join(tmp, ".gitignore")
         with open(ignore_file, "w", encoding="utf-8") as handle:
-            handle.write(".workbuddy/\n")
+            handle.write("{}/\n".format(word_dir))
         with tarfile.open(ignore_tar, "w:gz") as tar:
             tar.add(ignore_file, arcname="pkg/.gitignore")
-        path_hits, content_hits, warns, _m = scan_archive(ignore_tar)
+        path_hits, content_hits, warns, _p, _m = scan_archive(ignore_tar, words)
         if path_hits or content_hits or not warns:
             failures.append("ignore-rule mention was not classified as a warning")
         print("  {:32s} hits={} warns={} (expect 0 and >=1)".format(
             "ignore-rule archive", len(path_hits) + len(content_hits), len(warns)))
 
-    # 2. Worktree/path scanners: an injected `.workbuddy` path must be seen by the M1
-    #    and M2 filters. Pure regex here, so no repository state is touched.
+        # The premise assertion must fire on its own: if the gate's source ever
+        # travels in a distribution, the scan is about the wrong surface.
+        premise_tar = os.path.join(tmp, "premise.tar.gz")
+        with tarfile.open(premise_tar, "w:gz") as tar:
+            tar.add(good, arcname="{}/gate_pre_push.py".format(GATE_SOURCE_PREFIX.rstrip("/")))
+        _ph, _ch, _w, premise, _m = scan_archive(premise_tar, words)
+        if not premise:
+            failures.append("premise assertion did not fire on a distribution carrying the gate")
+        print("  {:32s} premise={} (expect >=1)".format("gate-in-sdist archive", len(premise)))
+
+    # 1b. M9b: a missing or blank word list must be a coverage gap, never an empty
+    #     scan that passes everything.
+    for label, path, expect_fragment in (
+        ("no word list", None, "no --tokens-file"),
+        ("missing file", os.path.join(tempfile.gettempdir(), "cullinan-absent-tokens.txt"),
+         "does not exist"),
+    ):
+        tokens, problem = load_tokens(path)
+        if tokens is not None or expect_fragment not in problem:
+            failures.append("word-list guard disagreed on {}".format(label))
+        print("  {:32s} tokens={} problem={!s:5s}".format(label, tokens, bool(problem)))
+
+    with tempfile.TemporaryDirectory() as tmp:
+        blank = os.path.join(tmp, "blank.txt")
+        with open(blank, "w", encoding="utf-8") as handle:
+            handle.write("# only a comment\n\n")
+        tokens, problem = load_tokens(blank)
+        if tokens is not None or "no words" not in problem:
+            failures.append("blank word list was accepted")
+        print("  {:32s} tokens={} problem={!s:5s}".format("blank word list", tokens, bool(problem)))
+
+    # 2. Worktree/path scanners: an injected ignored-directory path must be seen by
+    #    the M1 and M2 filters. Pure regex here, so no repository state is touched.
     m1_pattern = re.compile(r"^(?:\.workbuddy|.*/\.workbuddy)/")
     cases = [
         (".workbuddy/memory/x.md", True),
@@ -814,6 +936,10 @@ def main(argv=None):
     parser.add_argument("--no-sdist", action="store_true", help="skip M9 and say so")
     parser.add_argument("--python", default=None, help="interpreter used for the sdist build")
     parser.add_argument("--repo", default=None, help="repository root (default: git toplevel)")
+    parser.add_argument("--tokens-file", default=None, metavar="PATH",
+                        help="word list for M9, one per line; no default, M9 is NOT COVERED without it")
+    parser.add_argument("--strict", action="store_true",
+                        help="treat a NOT COVERED gate as a failure (CI wants this; the hook does not)")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--selftest", action="store_true", help="prove the scanners can fire")
     parser.add_argument("--scan-archive", default=None, metavar="PATH",
@@ -830,24 +956,30 @@ def main(argv=None):
         if not os.path.isfile(path):
             print("no such archive: {}".format(path), file=sys.stderr)
             return 2
+        tokens, tokens_problem = load_tokens(args.tokens_file)
+        if tokens is None:
+            print("M9: NOT COVERED ({})".format(tokens_problem), file=sys.stderr)
+            return 2
         try:
-            path_hits, content_hits, warnings, members = scan_archive(path)
+            path_hits, content_hits, warnings, premise, members = scan_archive(path, tokens)
         except (tarfile.TarError, OSError) as exc:
             print("cannot read {} as an archive: {}".format(path, exc), file=sys.stderr)
             return 2
-        verdict = "FAIL" if (path_hits or content_hits) else "PASS"
+        verdict = "FAIL" if (path_hits or content_hits or premise) else "PASS"
         if args.json:
             print(json.dumps({
                 "gate": "M9", "archive": path, "members": members,
                 "path_hits": path_hits, "content_hits": content_hits,
-                "warnings": warnings, "verdict": verdict,
+                "warnings": warnings, "premise": premise, "verdict": verdict,
             }, ensure_ascii=False, indent=2))
         else:
-            print("archive: {} ({} member(s))".format(path, members))
+            print("archive: {} ({} member(s)) against {} word(s)".format(
+                path, members, len(tokens)))
             print("[{}] M9 - sdist holds no internal name".format(verdict))
-            print("      {} path hit(s), {} content hit(s), {} warning(s)".format(
-                len(path_hits), len(content_hits), len(warnings)))
-            for line in path_hits + content_hits + warnings:
+            print("      {} path hit(s), {} content hit(s), {} warning(s), "
+                  "{} premise violation(s)".format(
+                      len(path_hits), len(content_hits), len(warnings), len(premise)))
+            for line in premise + path_hits + content_hits + warnings:
                 print("      " + line)
         return 1 if verdict == "FAIL" else 0
 
@@ -884,12 +1016,13 @@ def main(argv=None):
         # "not covered" hole this gate exists to close.
         build_rev = args.rev or (None if refs else "HEAD")
         results.append(gate_m9(root, refs, rev=build_rev, allow_sdist=not args.no_sdist,
-                               interpreter=args.python))
+                               interpreter=args.python, tokens_file=args.tokens_file))
 
     failed = [result for result in results if result.status == "FAIL"]
     skipped = [result for result in results if result.status == "SKIP"]
 
     if args.json:
+        verdict = "FAIL" if failed else ("PARTIAL" if skipped else "PASS")
         print(json.dumps(
             {
                 "gate_version": GATE_VERSION,
@@ -899,12 +1032,12 @@ def main(argv=None):
                 "results": [result.as_dict() for result in results],
                 "failed": [result.gate for result in failed],
                 "skipped": [result.gate for result in skipped],
-                "verdict": "FAIL" if failed else "PASS",
+                "verdict": verdict,
             },
             ensure_ascii=False,
             indent=2,
         ))
-        return 1 if failed else 0
+        return 1 if (failed or (args.strict and skipped)) else 0
 
     print("M0-M9 gate {} -- {}".format(GATE_VERSION, root))
     for result in results:
@@ -912,13 +1045,20 @@ def main(argv=None):
         print("      " + result.detail)
         for line in result.lines:
             print("      " + line)
-    if skipped:
-        print("NOT COVERED: {} -- a skip is not a pass".format(
-            ", ".join(result.gate for result in skipped)))
     if failed:
         print("RESULT: FAIL ({} of {} gate(s) failed)".format(len(failed), len(results)))
         return 1
-    print("RESULT: PASS ({} gate(s), {} not covered)".format(len(results), len(skipped)))
+    if skipped:
+        # M9b: a run with an uncovered gate may report what it did cover, but the
+        # summary line must never read as green. "PASS with N not covered" is the
+        # sentence that teaches people to skim.
+        print("NOT COVERED: {}".format(", ".join(result.gate for result in skipped)))
+        print("RESULT: PARTIAL -- {} of {} gate(s) passed, {} NOT COVERED (not a pass)".format(
+            len(results) - len(skipped), len(results),
+            ", ".join(result.gate for result in skipped)))
+        return 1 if args.strict else 0
+    print("RESULT: PASS ({} of {} gate(s) passed, 0 not covered)".format(
+        len(results), len(results)))
     return 0
 
 
