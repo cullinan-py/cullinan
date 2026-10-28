@@ -34,9 +34,9 @@ human. Pretending otherwise would make this test an alibi rather than a check.
 
 Scope
 -----
-`git ls-files` only -- the same surface the isolation rule defines. Untracked and
-ignored paths cannot reach a reader, and scanning them would drown the signal in
-editor caches and build output.
+`git ls-files` only -- exactly the set of files that can reach a reader. Untracked
+and ignored paths cannot, and scanning them would drown the signal in editor
+caches and build output.
 """
 
 from __future__ import annotations
@@ -66,6 +66,12 @@ PATTERNS: Dict[str, str] = {
         r"知识库|Obsidian|OneDrive|cullinan-vault|五方面同步|每轮必过门"
         r"|隔离门|推后裁定|僵尸六形态|留痕式变更|收口单|知识库治理"
     ),
+    # 英文形态的内部概念词。**这一类是第一版的盲区**：前四类只覆盖中文词、
+    # 岗位前缀和编号，于是同一份 docstring 里用英文写那两个词也不会命中 ——
+    # 而那两个词正是历史上泄漏里出现过的。加进来之后立刻在本文件的 Scope 段
+    # 抓到一处实例，说明盲区不是假想。
+    # 🔴 这段注释本身刻意**不举实例**：写一次实例，就等于在检测器里再放一条要抓的东西。
+    "internal-concept": r"internal knowledge base|internal library|isolation rule|isolation ruling",
     # 岗位缩写 + 分隔符。单独一个岗位词是日常用语，加分隔符才是台账指纹。
     "role-prefix": r"\b(ORCH|INSPECTOR|STRAT|KNOWLEDGE|DESIGN)\s*[#:]|\b(ARCH|QA|PM|KB)\s*#",
     # 带强前缀的台账编号。只用两位以上字母的前缀，避免单字母加短数字的普通写法。
