@@ -33,12 +33,18 @@ duplicated here.
 
 Usage
 -----
-    python scripts/gate_pre_push.py                    # as a hook: refs on stdin
-    python scripts/gate_pre_push.py --rev HEAD         # check a revision, no stdin
+    python scripts/gate_pre_push.py                    # check HEAD, no stdin read
+    python scripts/gate_pre_push.py --refs-stdin < refs # pre-push refs from stdin
+    python scripts/gate_pre_push.py --refs-file f      # pre-push refs from a file
+    python scripts/gate_pre_push.py --rev HEAD         # check a revision
     python scripts/gate_pre_push.py --only M3,M9       # subset (diagnosis)
     python scripts/gate_pre_push.py --no-sdist         # skip M9 (reported, not hidden)
+    python scripts/gate_pre_push.py --scan-archive p   # scan a built sdist, no rebuild
     python scripts/gate_pre_push.py --selftest         # prove the scanners can fire
     python scripts/gate_pre_push.py --json             # machine-readable
+
+stdin is never read unless you ask for it with `--refs-stdin`: run by hand, an
+implicit read blocks on a pipe nobody closes.
 
 Exit codes: 0 every gate passed (see "NOT COVERED" for skips), 1 at least one gate
 failed, 2 the gate could not decide (not a pass).
@@ -583,10 +589,21 @@ def build_sdist(rev, root, interpreter, workdir):
 
 
 def scan_archive(tar_path):
-    """Scan an sdist: member paths and member contents. Returns (path_hits, content_hits, members)."""
+    """Scan an sdist: member paths and member contents.
+
+    Returns ``(path_hits, content_hits, warnings, members)``. Path hits are the
+    assertion M9 actually makes. Content hits are a stronger reading of the same
+    risk. Warnings are mentions that are *not* leaks -- a `.gitignore`-family file
+    may name an ignored directory, and that line is the reason the directory stays
+    out of the repository, so treating it as a failure would punish the defence.
+    Keeping the three apart is what stops a warning from becoming a silent failure
+    or a silent pass.
+    """
     path_hits = []
     content_hits = []
+    warnings = []
     members = 0
+    tokens = {token.strip("/") for token in INTERNAL_TOKENS}
     with tarfile.open(tar_path, "r:*") as tar:
         for member in tar.getmembers():
             members += 1
@@ -607,13 +624,14 @@ def scan_archive(tar_path):
             for number, line in enumerate(text.splitlines(), 1):
                 if not INTERNAL_PATTERN.search(line):
                     continue
-                if base in IGNORE_FILE_NAMES and line.strip().split()[0].lstrip("!/") in {
-                        token.strip("/") for token in INTERNAL_TOKENS}:
-                    content_hits.append(
-                        "WARN {}:{}: ignore-rule mention".format(member.name, number))
+                stripped = line.strip()
+                head = stripped.split()[0].lstrip("!/") if stripped else ""
+                if base in IGNORE_FILE_NAMES and head.strip("/") in tokens:
+                    warnings.append(
+                        "WARN {}:{}: ignore-rule mention, not a leak".format(member.name, number))
                 else:
-                    content_hits.append("{}:{}: {}".format(member.name, number, line.strip()[:120]))
-    return path_hits, content_hits, members
+                    content_hits.append("{}:{}: {}".format(member.name, number, stripped[:120]))
+    return path_hits, content_hits, warnings, members
 
 
 def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None):
@@ -623,7 +641,9 @@ def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None):
 
     commits = target_commits(refs, fallback_rev=rev, cwd=root)
     if not commits:
-        return Result("M9", title, "SKIP", "no published commit to build (deletion-only push)")
+        reason = ("every pushed ref is a deletion: no tree is published"
+                  if refs else "no revision given and no refs on stdin")
+        return Result("M9", title, "SKIP", reason + ": NOT COVERED")
 
     interpreters = _interpreters(interpreter)
     usable = next((candidate for candidate in interpreters if _has_build_toolchain(candidate)),
@@ -636,11 +656,13 @@ def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None):
 
     rows = []
     real_hits = []
+    warnings = []
     for commit in commits:
         workdir = tempfile.mkdtemp(prefix="cullinan-m9-")
         try:
             tar_path = build_sdist(commit, root, usable, workdir)
-            path_hits, content_hits, members = scan_archive(tar_path)
+            path_hits, content_hits, warns, members = scan_archive(tar_path)
+            warnings.extend(warns)
             name = os.path.basename(tar_path)
             if path_hits:
                 real_hits.extend(path_hits)
@@ -665,7 +687,8 @@ def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None):
                       "{} hit(s) in the sdist".format(len(real_hits)),
                       real_hits[:20], )
     return Result("M9", title, "PASS",
-                  "{} build(s) via {}; 0 hit(s)".format(len(commits), usable), rows)
+                  "{} build(s) via {}; 0 hit(s)".format(len(commits), usable),
+                  rows + warnings)
 
 
 # --------------------------------------------------------------------------- #
@@ -698,18 +721,19 @@ def selftest(root):
         clean_tar = os.path.join(tmp, "clean.tar.gz")
         with tarfile.open(clean_tar, "w:gz") as tar:
             tar.add(good, arcname="pkg/good.txt")
-        path_hits, content_hits, members = scan_archive(clean_tar)
-        if path_hits or content_hits:
-            failures.append("clean archive reported hits: {}{}".format(path_hits, content_hits))
+        path_hits, content_hits, warns, members = scan_archive(clean_tar)
+        if path_hits or content_hits or warns:
+            failures.append("clean archive reported hits: {}{}{}".format(
+                path_hits, content_hits, warns))
         print("  {:32s} members={} hits={} (expect 0)".format(
-            "clean archive", members, len(path_hits) + len(content_hits)))
+            "clean archive", members, len(path_hits) + len(content_hits) + len(warns)))
 
         dirty_tar = os.path.join(tmp, "dirty.tar.gz")
         with tarfile.open(dirty_tar, "w:gz") as tar:
             tar.add(good, arcname="pkg/good.txt")
             tar.add(name_dirty, arcname="pkg/知识库治理/leak.md")
             tar.add(body_dirty, arcname="pkg/notes.md")
-        path_hits, content_hits, _ = scan_archive(dirty_tar)
+        path_hits, content_hits, _warns, _members = scan_archive(dirty_tar)
         caught_name = any("知识库" in hit for hit in path_hits)
         caught_body = any("知识库" in hit for hit in content_hits)
         if not caught_name:
@@ -718,6 +742,20 @@ def selftest(root):
             failures.append("archive scan missed a member body")
         print("  {:32s} path_hits={} content_hits={} (expect >=1 and >=1)".format(
             "dirty archive", len(path_hits), len(content_hits)))
+
+        # An ignore rule naming an ignored directory is a defence, not a leak: it has
+        # to be reported and it must not be counted as a failure.
+        ignore_tar = os.path.join(tmp, "ignore.tar.gz")
+        ignore_file = os.path.join(tmp, ".gitignore")
+        with open(ignore_file, "w", encoding="utf-8") as handle:
+            handle.write(".workbuddy/\n")
+        with tarfile.open(ignore_tar, "w:gz") as tar:
+            tar.add(ignore_file, arcname="pkg/.gitignore")
+        path_hits, content_hits, warns, _m = scan_archive(ignore_tar)
+        if path_hits or content_hits or not warns:
+            failures.append("ignore-rule mention was not classified as a warning")
+        print("  {:32s} hits={} warns={} (expect 0 and >=1)".format(
+            "ignore-rule archive", len(path_hits) + len(content_hits), len(warns)))
 
     # 2. Worktree/path scanners: an injected `.workbuddy` path must be seen by the M1
     #    and M2 filters. Pure regex here, so no repository state is touched.
@@ -770,13 +808,48 @@ def main(argv=None):
                         help="check this revision instead of reading pre-push stdin")
     parser.add_argument("--refs-file", default=None,
                         help="read pre-push ref lines from a file instead of stdin")
+    parser.add_argument("--refs-stdin", action="store_true",
+                        help="read pre-push ref lines from stdin (default: do not read stdin)")
     parser.add_argument("--only", default=None, help="comma separated gate ids, e.g. M3,M9")
     parser.add_argument("--no-sdist", action="store_true", help="skip M9 and say so")
     parser.add_argument("--python", default=None, help="interpreter used for the sdist build")
     parser.add_argument("--repo", default=None, help="repository root (default: git toplevel)")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--selftest", action="store_true", help="prove the scanners can fire")
+    parser.add_argument("--scan-archive", default=None, metavar="PATH",
+                        help="scan an already-built sdist tar archive instead of building one")
     args = parser.parse_args(argv)
+
+    if args.scan_archive:
+        # The M9 scanner is useful on its own: an artifact that was built elsewhere
+        # (CI, a release candidate, a file someone is about to upload) can be read
+        # with the same rules without rebuilding it. During this gate's own drill
+        # this was the only missing piece, and it had to be done by hand with tar
+        # and grep -- which is exactly the kind of manual step that gets skipped.
+        path = args.scan_archive
+        if not os.path.isfile(path):
+            print("no such archive: {}".format(path), file=sys.stderr)
+            return 2
+        try:
+            path_hits, content_hits, warnings, members = scan_archive(path)
+        except (tarfile.TarError, OSError) as exc:
+            print("cannot read {} as an archive: {}".format(path, exc), file=sys.stderr)
+            return 2
+        verdict = "FAIL" if (path_hits or content_hits) else "PASS"
+        if args.json:
+            print(json.dumps({
+                "gate": "M9", "archive": path, "members": members,
+                "path_hits": path_hits, "content_hits": content_hits,
+                "warnings": warnings, "verdict": verdict,
+            }, ensure_ascii=False, indent=2))
+        else:
+            print("archive: {} ({} member(s))".format(path, members))
+            print("[{}] M9 - sdist holds no internal name".format(verdict))
+            print("      {} path hit(s), {} content hit(s), {} warning(s)".format(
+                len(path_hits), len(content_hits), len(warnings)))
+            for line in path_hits + content_hits + warnings:
+                print("      " + line)
+        return 1 if verdict == "FAIL" else 0
 
     root = repo_root(args.repo)
     if args.selftest:
@@ -785,11 +858,14 @@ def main(argv=None):
     if args.refs_file:
         with open(args.refs_file, "r", encoding="utf-8", errors="replace") as handle:
             stdin_text = handle.read()
-    elif args.rev:
-        stdin_text = ""
-    elif sys.stdin is not None and not sys.stdin.isatty():
+    elif args.refs_stdin:
         stdin_text = sys.stdin.read()
     else:
+        # No implicit stdin read. Git hands a hook its refs on stdin, so an implicit
+        # read looks harmless -- but run by hand the same code blocks forever on a
+        # pipe that nobody closes, and a gate that hangs is indistinguishable from a
+        # gate that is broken. The installed hook passes `--refs-file`, so the refs
+        # still arrive where they matter.
         stdin_text = ""
     refs = parse_refs(stdin_text)
 
@@ -803,7 +879,11 @@ def main(argv=None):
             continue
         results.append(function(root, refs))
     if not wanted or "M9" in wanted:
-        results.append(gate_m9(root, refs, rev=args.rev, allow_sdist=not args.no_sdist,
+        # With no refs and no explicit revision there is still a tree to check: HEAD.
+        # Defaulting to it keeps M9 armed for a hand run; a skip here would be the
+        # "not covered" hole this gate exists to close.
+        build_rev = args.rev or (None if refs else "HEAD")
+        results.append(gate_m9(root, refs, rev=build_rev, allow_sdist=not args.no_sdist,
                                interpreter=args.python))
 
     failed = [result for result in results if result.status == "FAIL"]
