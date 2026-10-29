@@ -65,67 +65,23 @@ loaded for it needs one edit, described under Removed.
 - **A configuration guide in both languages, and a runnable example.**
   `docs/configuration.md` and `docs/zh/configuration.md` cover where the file is
   searched for, the precedence order, placeholder resolution, and what to do about
-  secrets in a packaged build. `examples/config_file/` is a runnable version declared
-  in `examples/features.json`, so "it is documented" and "it runs" are held by the
-  same gate rather than by two separate promises.
+  secrets in a packaged build. `examples/config_file/` is a working application you
+  can start with `python -m examples.config_file`.
+
+### Fixed
 
 - **The example and its description now agree.** The shipped `application.json` read
   `"${EXAMPLE_CHANNEL:#general}"` while the README said the channel falls back to
   `general`; resolving the real file produced `#general`, because a default is taken
-  literally and there is no sigil that means "comment". Neither statement was wrong on
-  its own, which is why nothing failed. A test now resolves the shipped file and
-  asserts the documented fallback, and a second one pins that a default is literal.
+  literally and there is no sigil that means "comment". The file now says what the
+  README says.
 
-### Fixed
-
-- **An example is now checked by importing it, not by reading it.** Every existing check
-  on `examples/` read the files: the directory is declared, the README exists, the
-  evidence strings appear in the source. None of them imported anything, so
-  `examples/config_file/root.py` could use a PEP 604 union in a signature without the
-  future import — readable, documented, declared — while `python -m examples.config_file`
-  raised `TypeError` on 3.9. The new check imports each declared example's entry module
-  in a subprocess.
-
-  Two false starts are worth recording, because both would have reported healthy examples
-  as broken. Pinning the entry module to `root` fails three examples that use `demo` or
-  `main`. Importing every module in the directory fails two more, because a sub-module may
-  name a type that only exists under `if TYPE_CHECKING` — correct code that cannot be
-  imported alone.
-
-
-- **A release runs the suite before it uploads anything.** The workflow that publishes
-  to PyPI checked that the tag named the right version and that the built wheel
-  imported; it never asked whether the code had been tested. It now runs the full suite,
-  writes a JUnit report, and judges that report — a process exit code cannot tell
-  "1200 tests passed" from "no tests were collected", and both are ways for a suite to
-  stop testing anything. The pre-release check gained the same item.
-
-  This came from a measurement rather than a worry: the commit tagged as the previous
-  release carries three check runs on GitHub — `deploy`, `deploy`, `docs` — and no test
-  run at all. The suite had passed on a different commit with the same tree, so the
-  result existed but was not attached to what shipped. Asking GitHub instead of running
-  the suite cannot fix that; running the suite where the release can see it can.
-
-
-- **The configuration example runs on the oldest interpreter the package supports.**
-  `examples/config_file/root.py` declared `profile: str | None` without
-  `from __future__ import annotations`. That is 3.10 syntax evaluated when the function
-  is defined, so on 3.9 the module raised `TypeError: unsupported operand type(s) for |`
-  at import and `python -m examples.config_file` did not start. Both were declared
-  supported and neither had ever been executed there.
-
-- **The dependency check no longer requires a 3.11 interpreter.** It imported
-  `tomllib` directly, which does not exist before 3.11, so the one job running 3.9
-  failed with `ModuleNotFoundError`. `tomli` is now a development dependency below
-  3.11 and the import falls back the way `support.config_file` already did.
-
-- **A test now enforces the declared floor instead of leaving it to the matrix.**
-  It parses every shipped module and reports `X | Y` unions in annotations without the
-  future import, and `match` statements. Both fail at *import* time, which is the
-  property that makes them worth catching statically. Builtin generics such as
-  `list[int]` are deliberately not flagged: they work on 3.9, and a check that fires on
-  correct code teaches people to ignore it.
-
+- **The configuration example starts on Python 3.9.** `examples/config_file/root.py`
+  declared `profile: str | None` without `from __future__ import annotations`. That is
+  3.10 syntax evaluated when the function is defined, so on 3.9 the module raised
+  `TypeError: unsupported operand type(s) for |` at import and `python -m
+  examples.config_file` did not start. Both were declared supported and neither had
+  been tried there.
 
 - **A packaged build reported the directory it unpacked itself into as the place to
   keep data.** Nuitka does not set `sys.frozen` in every mode, and detection hung on
@@ -138,6 +94,14 @@ loaded for it needs one edit, described under Removed.
   `get_executable_dir()` and `get_user_data_dir()` now return that directory; when no
   persistent location can be established the code says so instead of returning the
   temporary one.
+
+- **A release is built only after the suite passes on the tagged tree.** The version
+  you install is the version that was tested, rather than a version whose tests ran
+  somewhere else.
+
+- **Setting up for development on 3.9 works again.** `tomli` is now a development
+  dependency below 3.11, so tooling that reads `pyproject.toml` no longer fails on that
+  interpreter.
 
 ## v0.96a9
 
