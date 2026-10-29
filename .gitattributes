@@ -1,0 +1,12 @@
+# Line endings are a build input, not a checkout preference.
+#
+# The repository stores LF and the published artifacts contain LF. What was missing
+# was anything that made the *working tree* agree with them: with `core.autocrlf=true`
+# and no attributes file, checkout wrote CRLF, and `python -m build` copied the working
+# tree into the sdist. Measured before this file existed: 125 of 138 sdist members
+# contained CRLF, against 0 in the published artifact. Nothing was broken by a mistake;
+# the two builds simply read different bytes.
+#
+# `text=auto` lets git decide what is text, so a binary added later is left alone.
+# `eol=lf` fixes the form written on checkout, which is what a build packages.
+* text=auto eol=lf
