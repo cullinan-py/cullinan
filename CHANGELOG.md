@@ -15,7 +15,16 @@ vocabulary, and an older entry is left as written — history is not rewritten.
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
-## Unreleased
+## v0.96a10
+
+**v0.96a10** is the tenth alpha of the 0.96 line. Configuration moves out of `.env`
+and into a project file that is found where the application is deployed, and the last
+runtime dependency goes with it. The rest of the release is the packaging and test
+surface that change exposed.
+
+No public API symbol is added, removed or renamed, and no signature changes. What does
+change is where configuration comes from: an application that relied on `.env` being
+loaded for it needs one edit, described under Removed.
 
 ### Changed
 
@@ -83,7 +92,6 @@ release-note files (`RELEASE-v<version>.md`) where published.
   name a type that only exists under `if TYPE_CHECKING` — correct code that cannot be
   imported alone.
 
-### Fixed
 
 - **A release runs the suite before it uploads anything.** The workflow that publishes
   to PyPI checked that the tag named the right version and that the built wheel
@@ -98,7 +106,6 @@ release-note files (`RELEASE-v<version>.md`) where published.
   result existed but was not attached to what shipped. Asking GitHub instead of running
   the suite cannot fix that; running the suite where the release can see it can.
 
-### Fixed
 
 - **The configuration example runs on the oldest interpreter the package supports.**
   `examples/config_file/root.py` declared `profile: str | None` without
@@ -119,7 +126,6 @@ release-note files (`RELEASE-v<version>.md`) where published.
   `list[int]` are deliberately not flagged: they work on 3.9, and a check that fires on
   correct code teaches people to ignore it.
 
-### Fixed
 
 - **A packaged build reported the directory it unpacked itself into as the place to
   keep data.** Nuitka does not set `sys.frozen` in every mode, and detection hung on
