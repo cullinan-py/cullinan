@@ -379,36 +379,6 @@ def get_user_data_dir() -> Path:
     return Path.cwd()
 
 
-def find_env_file() -> Optional[Path]:
-    """Locate the ``.env`` a deployment is expected to carry.
-
-    ``Path.cwd()`` alone is not enough once the application is packaged: the
-    working directory is whatever the service manager happened to choose, while
-    the file normally sits beside the executable the operator launched. Both are
-    tried, user-controlled location first.
-
-    Returns:
-        Path: The env file found, or None when there is none
-    """
-    explicit = os.environ.get('APP_ENV_FILE')
-    if explicit:
-        candidate = Path(explicit)
-        if candidate.is_file():
-            return candidate
-        logger.warning(f"APP_ENV_FILE points at {candidate}, which is not a file; ignoring it")
-        return None
-
-    seen: set[Path] = set()
-    for directory in (Path.cwd(), get_original_executable_dir()):
-        candidate = directory / '.env'
-        if candidate in seen:
-            continue
-        seen.add(candidate)
-        if candidate.is_file():
-            return candidate
-    return None
-
-
 # =============================================================================
 # Path Resolution with Fallbacks
 # =============================================================================

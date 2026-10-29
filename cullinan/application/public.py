@@ -17,6 +17,7 @@ from cullinan.support.diagnostics import (
     legacy_root_module_entry_removed,
     require_application_entry,
 )
+from cullinan.support.config_file import apply_project_config
 from cullinan.transport.adapter.asgi_adapter import ASGIAdapter
 from cullinan.transport.adapter.runtime_selection import resolve_runtime_engine
 
@@ -88,6 +89,10 @@ def run(
 
     with public_api_context():
         with push_config_overrides(get_class_config(resolved_entry_method)):
+            # Configuration file first: the engine and the bind address may be
+            # named there, and a value the caller passes explicitly still wins
+            # because it is resolved after this.
+            apply_project_config()
             actual_engine = _resolve_engine(engine)
             resolved_host, resolved_port = _resolve_host_port(host, port)
             app = Application.run(resolved_entry_method, runtime_config=runtime_config)
@@ -123,6 +128,7 @@ def get_asgi_app(
 
     with public_api_context():
         with push_config_overrides(get_class_config(resolved_entry_method)):
+            apply_project_config()
             app = Application.run(resolved_entry_method, runtime_config=runtime_config)
             global_headers, _ = _finalize_public_runtime()
             adapter = ASGIAdapter(

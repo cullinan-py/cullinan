@@ -7,7 +7,6 @@ import logging
 import sys
 import threading
 
-from dotenv import load_dotenv
 
 # Import module scanning utilities (refactored for better maintainability)
 from cullinan.runtime.module_scanner import (
@@ -15,7 +14,7 @@ from cullinan.runtime.module_scanner import (
     is_nuitka_compiled,
     file_list_func
 )
-from cullinan.support.path_utils import find_env_file
+from cullinan.support.config_file import apply_project_config
 
 # Module-level logger
 logger = logging.getLogger(__name__)
@@ -340,18 +339,9 @@ def run(handlers=None):
                 pass
     else:
         logger.info(BANNER)
-    logger.info("loading env...")
-    load_dotenv()
-    load_dotenv(verbose=True)
-    # Same resolution as the application initialisation path: the working
-    # directory is not where a packaged deployment keeps its config, so the
-    # executable's directory is tried as well and the winner is logged.
-    env_path = find_env_file()
-    if env_path is not None:
-        load_dotenv(dotenv_path=env_path)
-        logger.info("env file: %s", str(env_path))
-    else:
-        logger.warning("no .env found (looked in %s and the executable directory)", os.getcwd())
+    logger.info("loading configuration...")
+    # Same resolution as the application initialisation path; see config_file.
+    apply_project_config()
 
     # Initialize IoC/DI 2.0
     logger.info("└---initializing IoC/DI 2.0...")

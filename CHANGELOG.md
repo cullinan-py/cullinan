@@ -17,6 +17,40 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ## Unreleased
 
+### Changed
+
+- **Configuration is read from a file.** `.env` was a flat `KEY=VALUE` list with no
+  nesting and no types, and in a packaged build it answered the wrong question: it
+  said nothing about where the file is or whether it ended up inside the artefact.
+  One configuration file per application replaces it — `application.json`, with
+  `application-<profile>.json` merged over it when `CULLINAN_PROFILE` is set. TOML and
+  YAML are read when the environment can parse them; JSON needs nothing, so no
+  runtime dependency is introduced.
+
+  Three properties are the point rather than the details:
+
+  - **the file is never looked for inside the installed package** — only beside the
+    launched executable and in the working directory, so a copy shipped in the bundle
+    cannot shadow the file the operator edited;
+  - **`${VAR}` and `${VAR:default}` are resolved from the environment after reading**,
+    so a file that is committed or shipped holds a pointer rather than a value. A
+    placeholder with neither is an error, because substituting `""` would turn a
+    missing setting into one that looks configured;
+  - **no cipher is included, deliberately.** A key shipped beside the ciphertext is not
+    encryption; `load_project_config(decryptor=...)` lets a deployment supply its own
+    and keep the key outside the artefact.
+
+  Precedence, highest first: `run(...)` argument, environment variable,
+  `configure(...)`, configuration file, built-in default.
+
+### Removed
+
+- **`python-dotenv` is no longer a dependency, and `.env` is no longer read.**
+  `dependencies` in `pyproject.toml` is empty. Deployments that relied on `.env`
+  being loaded by the application should move those keys into `application.json`, or
+  export them as environment variables — both keep working, and the second needs no
+  file at all.
+
 ### Fixed
 
 - **A packaged build reported the directory it unpacked itself into as the place to
@@ -30,10 +64,6 @@ release-note files (`RELEASE-v<version>.md`) where published.
   `get_executable_dir()` and `get_user_data_dir()` now return that directory; when no
   persistent location can be established the code says so instead of returning the
   temporary one.
-- **`.env` is looked for beside the executable as well as in the working
-  directory.** A service manager chooses the working directory; the operator puts the
-  file next to the binary. `APP_ENV_FILE` overrides both, and the path that was
-  actually loaded is named in the startup log.
 
 ## v0.96a9
 

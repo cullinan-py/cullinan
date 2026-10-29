@@ -9,7 +9,6 @@ ruff>=0.6
 coverage>=7
 build
 twine
-python-dotenv
 
 # Documentation toolchain (the docs gate builds the site with --strict)
 mkdocs>=1.6,<2
