@@ -95,8 +95,8 @@ loaded for it needs one edit, described under Removed.
   persistent location can be established the code says so instead of returning the
   temporary one.
 
-- **A release is built only after the suite passes on the tagged tree.** The version
-  you install is the version that was tested, rather than a version whose tests ran
+- **A release is built only after the tests pass on the tagged tree.** The version you
+  install is the version that was tested, rather than a version whose tests ran
   somewhere else.
 
 - **Setting up for development on 3.9 works again.** `tomli` is now a development
