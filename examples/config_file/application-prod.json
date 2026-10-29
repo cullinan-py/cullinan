@@ -1,0 +1,6 @@
+{
+  "server_port": 4086,
+  "greeting": {
+    "text": "hello from application-prod.json"
+  }
+}

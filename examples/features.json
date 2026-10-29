@@ -158,6 +158,17 @@
         "asgi_server"
       ],
       "docs": "deployment.md"
+    },
+    {
+      "feature": "Configuration from a file",
+      "example": "config_file",
+      "kind": "runnable",
+      "evidence": [
+        "load_project_config",
+        "CONFIG_FILE",
+        "profile"
+      ],
+      "docs": "configuration.md"
     }
   ]
 }

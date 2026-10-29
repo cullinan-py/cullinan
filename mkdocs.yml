@@ -24,6 +24,7 @@ nav:
     - Static Files & SPA: static_files_guide.md
     - Parameter System: parameter_system_guide.md
     - DI Quick Reference: quick_reference_di.md
+    - Configuration: configuration.md
     - Packaging: packaging.md
     - Deploying to Production: deployment.md
     - Testing: testing.md
@@ -156,6 +157,7 @@ plugins:
             Extension Development: 扩展开发
             Quick Start Extensions: 扩展快速入门
             Build & Run: 构建与运行
+            Configuration: 配置
             Packaging: 打包
             Testing: 测试
             Contributing: 贡献指南

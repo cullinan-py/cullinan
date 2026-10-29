@@ -51,6 +51,15 @@ release-note files (`RELEASE-v<version>.md`) where published.
   export them as environment variables — both keep working, and the second needs no
   file at all.
 
+### Documentation
+
+- **A configuration guide in both languages, and a runnable example.**
+  `docs/configuration.md` and `docs/zh/configuration.md` cover where the file is
+  searched for, the precedence order, placeholder resolution, and what to do about
+  secrets in a packaged build. `examples/config_file/` is a runnable version declared
+  in `examples/features.json`, so "it is documented" and "it runs" are held by the
+  same gate rather than by two separate promises.
+
 ### Fixed
 
 - **A packaged build reported the directory it unpacked itself into as the place to
