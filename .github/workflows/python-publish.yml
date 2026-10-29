@@ -24,6 +24,16 @@ name: Upload Python Package
 on:
   release:
     types: [published]
+  # A release that cannot be re-run is a release that can only be correct once.
+  # The upload is driven by the published event, and that event fires exactly once;
+  # an edit to the release does not fire it again. This input is the way back in
+  # when the job itself was the thing that failed -- it names the tag to publish,
+  # so the content published is still the tagged content and never the branch.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish, e.g. v0.96a10"
+        required: true
 
 permissions:
   contents: read
@@ -35,6 +45,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        # The suite runs in this job, and part of it reads history: one test asserts
+        # that the declaration baseline is an ancestor of HEAD. A default checkout is
+        # one commit deep, so that commit does not exist and the test fails -- the
+        # job then refuses to upload a release that is perfectly fine. Fetch the
+        # history the suite needs.
+        ref: ${{ inputs.tag || github.ref }}
+        fetch-depth: 0
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -55,7 +73,9 @@ jobs:
       # stopped being collected, which is worth an explanation before a release.
       run: python scripts/check_junit.py "$RUNNER_TEMP/junit.xml" --min-tests 1000
     - name: Verify the tag names the version the code carries
-      run: python scripts/check_release_tag_matches_version.py --tag "${GITHUB_REF_NAME}"
+      env:
+        RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      run: python scripts/check_release_tag_matches_version.py --tag "$RELEASE_TAG"
     - name: Build package
       run: python -m build --sdist --wheel --outdir dist/
     - name: Check metadata
@@ -75,13 +95,15 @@ jobs:
         print(f"{wheels[0].name} carries {', '.join(required)}")
         PY
     - name: Install the built wheel and read its version back
+      env:
+        RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
       run: |
         python -m venv "$RUNNER_TEMP/smoke"
         "$RUNNER_TEMP/smoke/bin/pip" install --quiet dist/*.whl
         "$RUNNER_TEMP/smoke/bin/python" - <<'PY'
         import os, sys
         import cullinan
-        expected = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+        expected = os.environ["RELEASE_TAG"].removeprefix("v")
         if cullinan.__version__ != expected:
             sys.exit(f"installed wheel reports {cullinan.__version__}, tag says {expected}")
         print(f"installed wheel imports and reports {cullinan.__version__}")
