@@ -15,7 +15,7 @@ pr_links: []
 
 # Cullinan Framework Architecture
 
-> **Version**: 0.96a9
+> **Version**: 0.96a10
 > **Last Updated**: 2026-10-29
 > **Status**: Updated
 
