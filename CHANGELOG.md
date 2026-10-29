@@ -69,6 +69,27 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Fixed
 
+- **The configuration example runs on the oldest interpreter the package supports.**
+  `examples/config_file/root.py` declared `profile: str | None` without
+  `from __future__ import annotations`. That is 3.10 syntax evaluated when the function
+  is defined, so on 3.9 the module raised `TypeError: unsupported operand type(s) for |`
+  at import and `python -m examples.config_file` did not start. Both were declared
+  supported and neither had ever been executed there.
+
+- **The dependency check no longer requires a 3.11 interpreter.** It imported
+  `tomllib` directly, which does not exist before 3.11, so the one job running 3.9
+  failed with `ModuleNotFoundError`. `tomli` is now a development dependency below
+  3.11 and the import falls back the way `support.config_file` already did.
+
+- **A test now enforces the declared floor instead of leaving it to the matrix.**
+  It parses every shipped module and reports `X | Y` unions in annotations without the
+  future import, and `match` statements. Both fail at *import* time, which is the
+  property that makes them worth catching statically. Builtin generics such as
+  `list[int]` are deliberately not flagged: they work on 3.9, and a check that fires on
+  correct code teaches people to ignore it.
+
+### Fixed
+
 - **A packaged build reported the directory it unpacked itself into as the place to
   keep data.** Nuitka does not set `sys.frozen` in every mode, and detection hung on
   that single flag, so the packaged branch was never reached and every path fell back

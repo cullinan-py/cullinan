@@ -9,6 +9,9 @@ ruff>=0.6
 coverage>=7
 build
 twine
+# `tomllib` arrived in 3.11; the test suite reads pyproject.toml, and config_file
+# reads .toml configuration. Both work on 3.9/3.10 only if this is present.
+tomli; python_version < "3.11"
 
 # Documentation toolchain (the docs gate builds the site with --strict)
 mkdocs>=1.6,<2

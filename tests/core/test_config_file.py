@@ -179,13 +179,21 @@ def test_yaml_without_pyyaml_names_the_missing_package(config_dir):
 
 
 def test_the_framework_has_no_runtime_dependencies():
-    """``python-dotenv`` used to be the one dependency; the config file replaced it."""
-    import tomllib
+    """``python-dotenv`` used to be the one dependency; the config file replaced it.
 
-    root = path_utils.get_base_path()
-    project = root / "pyproject.toml"
-    if not project.is_file():
-        pytest.skip("pyproject.toml is not next to the package in this layout")
+    The parser is imported the way ``config_file`` imports it, and ``tomli`` is in
+    requirements-dev for the interpreters that need it: ``tomllib`` is 3.11+, while
+    the package declares 3.9. A bare ``import tomllib`` here passed on the machine it
+    was written on and failed on the oldest interpreter the project supports, which is
+    the one place it matters.
+    """
+    try:
+        import tomllib
+    except ModuleNotFoundError:  # pragma: no cover - 3.9/3.10 only
+        import tomli as tomllib
+
+    project = path_utils.get_base_path() / "pyproject.toml"
+    assert project.is_file(), f"this test reads the declared dependencies: {project}"
 
     data = tomllib.loads(project.read_text(encoding="utf-8"))
     assert data["project"]["dependencies"] == [], (

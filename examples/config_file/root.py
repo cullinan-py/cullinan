@@ -6,6 +6,8 @@ searches the working directory and the directory of the launched executable --
 and never the installed package, so a bundled copy cannot shadow the operator's.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 from cullinan import application, configure
