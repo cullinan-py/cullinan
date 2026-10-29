@@ -86,10 +86,27 @@ def build_contract() -> dict:
     }
 
 
+def write_artifact(path: Path, serialized: str) -> None:
+    """Write the artifact with the repository's line ending, not the platform's.
+
+    ``Path.write_text`` translates ``"\\n"`` to the platform separator, so on
+    Windows the artifact came out with CRLF throughout while the committed blob
+    was LF: the file differed from the index the moment it was written, and the
+    difference was invisible on Linux. The repository decides this file's bytes
+    (``.gitattributes``), so the writer has to agree with it.
+
+    ``newline`` is passed to ``open`` rather than to ``write_text`` because the
+    latter only accepts it from Python 3.10, and this script has to run on the
+    declared floor of 3.9.
+    """
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(serialized)
+
+
 def main() -> int:
     contract = build_contract()
     serialized = json.dumps(contract, indent=2, ensure_ascii=False) + "\n"
-    ARTIFACT_PATH.write_text(serialized, encoding="utf-8")
+    write_artifact(ARTIFACT_PATH, serialized)
     print(f"Wrote {ARTIFACT_PATH}")
     for module_name, names in contract["stability_commitment"].items():
         print(f"  {module_name}: {len(names)}")
