@@ -60,6 +60,13 @@ release-note files (`RELEASE-v<version>.md`) where published.
   in `examples/features.json`, so "it is documented" and "it runs" are held by the
   same gate rather than by two separate promises.
 
+- **The example and its description now agree.** The shipped `application.json` read
+  `"${EXAMPLE_CHANNEL:#general}"` while the README said the channel falls back to
+  `general`; resolving the real file produced `#general`, because a default is taken
+  literally and there is no sigil that means "comment". Neither statement was wrong on
+  its own, which is why nothing failed. A test now resolves the shipped file and
+  asserts the documented fallback, and a second one pins that a default is literal.
+
 ### Fixed
 
 - **A packaged build reported the directory it unpacked itself into as the place to

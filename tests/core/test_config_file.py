@@ -191,3 +191,47 @@ def test_the_framework_has_no_runtime_dependencies():
     assert data["project"]["dependencies"] == [], (
         "a runtime dependency must be justified; an empty list is the current claim"
     )
+
+
+_EXAMPLE = Path(__file__).resolve().parents[2] / "examples" / "config_file" / "application.json"
+
+
+def test_the_shipped_example_falls_back_the_way_its_readme_says(monkeypatch):
+    """The example's documented fallback must be the one the shipped file produces.
+
+    Reading the real file is the point of this test. A hand-written sample can agree
+    with the README while the example that ships disagrees with both, and that is what
+    happened: the file said ``${EXAMPLE_CHANNEL:#general}`` and the README said the
+    channel falls back to ``general``. Nothing failed -- the loader did exactly what
+    ``${VAR:default}`` means, and ``#general`` is a legitimate default. The two
+    statements only disagreed when the shipped file was actually resolved.
+
+    So the anchor is the file, not a copy of it.
+    """
+    assert _EXAMPLE.is_file(), f"the example is what the page describes: {_EXAMPLE}"
+
+    monkeypatch.delenv("EXAMPLE_CHANNEL", raising=False)
+
+    resolved = config_file.load_project_config(path=_EXAMPLE)
+
+    assert resolved["greeting"]["channel"] == "general"
+
+
+def test_a_default_is_taken_literally_with_no_prefix_syntax(monkeypatch):
+    """``${VAR:x}`` yields ``x``; there is no sigil that means "comment" or "required".
+
+    Worth pinning because a ``#`` in a default reads like a comment marker to anyone
+    coming from shell or YAML, and a loader that agreed with that reading would make
+    the file mean something different from what it says.
+    """
+    monkeypatch.delenv("PLACEHOLDER_PROBE", raising=False)
+
+    document = {"value": "${PLACEHOLDER_PROBE:#not-a-comment}"}
+    path = Path(_EXAMPLE).with_name("placeholder-literal.json")
+    path.write_text(json.dumps(document), encoding="utf-8")
+    try:
+        resolved = config_file.load_project_config(path=path)
+    finally:
+        path.unlink()
+
+    assert resolved["value"] == "#not-a-comment"

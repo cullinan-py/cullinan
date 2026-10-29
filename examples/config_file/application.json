@@ -4,6 +4,6 @@
   "verbose": true,
   "greeting": {
     "text": "hello from application.json",
-    "channel": "${EXAMPLE_CHANNEL:#general}"
+    "channel": "${EXAMPLE_CHANNEL:general}"
   }
 }

@@ -20,7 +20,7 @@ It prints what the loader produced, then starts the application.
 | `application-prod.json` | merged **over** the base when a profile is named; `server_port` becomes 4086 and only `greeting.text` is overridden — `greeting.channel` survives, because nested tables merge rather than replace |
 | `root.py` | `describe()` reads the file; `main()` is the application |
 
-`application.json` contains `"channel": "${EXAMPLE_CHANNEL:#general}"`. That is a
+`application.json` contains `"channel": "${EXAMPLE_CHANNEL:general}"`. That is a
 reference, not a value: it is resolved from the environment after the file is read,
 and falls back to `general` when the variable is not set. A real deployment puts its
 secret there and keeps the secret out of the repository.

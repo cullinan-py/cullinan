@@ -91,7 +91,7 @@ Two features exist so it does not have to be:
 {
   "discord": {
     "token": "${DISCORD_TOKEN}",
-    "fallback_channel": "${DEFAULT_CHANNEL:#general}"
+    "fallback_channel": "${DEFAULT_CHANNEL:general}"
   }
 }
 ```

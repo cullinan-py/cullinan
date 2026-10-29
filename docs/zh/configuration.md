@@ -81,7 +81,7 @@ JSON 什么都不需要，所以它是永远可用的格式。
 {
   "discord": {
     "token": "${DISCORD_TOKEN}",
-    "fallback_channel": "${DEFAULT_CHANNEL:#general}"
+    "fallback_channel": "${DEFAULT_CHANNEL:general}"
   }
 }
 ```
