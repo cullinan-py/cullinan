@@ -110,6 +110,30 @@ def _head_tree() -> str:
     ).stdout.strip()
 
 
+def _tag_tree(version: str):
+    """The tree of ``v<version>``, or ``None`` when that tag does not exist."""
+    import subprocess
+    result = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "rev-parse", "--verify", "--quiet",
+         f"refs/tags/v{version}^{{commit}}^{{tree}}"],
+        capture_output=True, text=True,
+    )
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def _reference_tree() -> str:
+    """The tree the gate must compare against: the tag once it exists, else HEAD.
+
+    Written here independently of the script so the test says what the rule is,
+    rather than asking the script what it thinks the rule is.
+    """
+    import importlib.util as _u
+    spec = _u.spec_from_file_location("_ver", REPO_ROOT / "cullinan" / "_version.py")
+    module = _u.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return _tag_tree(module.__version__) or _head_tree()
+
+
 def _clean_junit(directory=None) -> str:
     """Write a minimal passing JUnit report and return its path."""
     import tempfile
@@ -138,7 +162,7 @@ def _run_gate(review: str, sync: str, sign_off: str = "P", junit: str | None = N
 
 
 def test_the_tree_bound_credential_is_accepted():
-    tree = _head_tree()
+    tree = _reference_tree()
     result = _run_gate(f"review-a#tree={tree}", f"sync#tree={tree}")
     assert "PASS (f)" in result.stdout, result.stdout[-400:]
 
@@ -147,13 +171,13 @@ def test_an_unbound_credential_is_refused_with_the_bound_form_suggested():
     result = _run_gate("review-0.96a7.post1-d69e66d", "sync-0.96a7.post1-d69e66d")
     assert "FAIL (f)" in result.stdout
     assert "reissue" in result.stdout, "the message must say how to fix the credential"
-    assert _head_tree() in result.stdout, "and must print the tree to bind to"
+    assert _reference_tree() in result.stdout, "and must print the tree to bind to"
 
 
 def test_a_credential_bound_to_another_tree_fails_for_that_reason():
     """V4: a stale credential must fail as "wrong tree", not "unrecognised"."""
     zero = "0" * 40
-    result = _run_gate(f"review-a#tree={zero}", f"sync#tree={_head_tree()}")
+    result = _run_gate(f"review-a#tree={zero}", f"sync#tree={_reference_tree()}")
     assert "FAIL (f)" in result.stdout
     assert "different tree" in result.stdout
     assert "reissue" not in result.stdout, (
@@ -164,9 +188,36 @@ def test_a_credential_bound_to_another_tree_fails_for_that_reason():
 
 def test_sign_off_is_exempt_from_the_tree_binding():
     """The sign-off credential binds to its evidence bundle, not to the tree."""
-    tree = _head_tree()
+    tree = _reference_tree()
     result = _run_gate(f"review-a#tree={tree}", f"sync#tree={tree}", sign_off="<bundle>#sha256=deadbeef")
     assert "PASS (f)" in result.stdout
+
+
+def test_the_tag_wins_over_head_once_it_exists():
+    """After tagging, HEAD moves and the tag does not.
+
+    Reading HEAD here made the check fail for every commit after the tag, against
+    credentials that were correct -- a gate that fires on nobody's mistake. When a tag
+    exists it is the fixed point, so a credential bound to the tag must pass and one
+    bound to HEAD must fail, saying which tree it wanted.
+    """
+    import importlib.util as _u
+    spec = _u.spec_from_file_location("_ver2", REPO_ROOT / "cullinan" / "_version.py")
+    module = _u.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    tag_tree = _tag_tree(module.__version__)
+    if tag_tree is None or tag_tree == _head_tree():
+        import pytest
+        pytest.skip("this checkout has no tag whose tree differs from HEAD")
+
+    passes = _run_gate(f"review-a#tree={tag_tree}", f"sync#tree={tag_tree}")
+    assert "PASS (f)" in passes.stdout, passes.stdout[-400:]
+    assert "tag v" in passes.stdout, "the detail must say which tree it compared against"
+
+    fails = _run_gate(f"review-a#tree={_head_tree()}", f"sync#tree={tag_tree}")
+    assert "FAIL (f)" in fails.stdout
+    assert "different tree" in fails.stdout
+    assert "tag v" in fails.stdout
 
 
 def test_the_scope_limit_is_stated_where_a_reader_will_see_it():

@@ -180,6 +180,23 @@ def banner_findings(banners, expected_version, expected_pages=None):
     return True, "aligned"
 
 
+def choose_reference_tree(tag_tree: str | None, head_tree: str, version: str | None) -> tuple[str, str]:
+    """Return the tree the credentials must name, and what that tree is.
+
+    Before the tag exists, the tree being tagged *is* ``HEAD``, so ``HEAD`` is the
+    right answer and the gate is normally run at exactly that moment.
+
+    After the tag exists it is not: the tag is the fixed point, ``HEAD`` moves. Reading
+    ``HEAD`` then makes this check fail for every later commit, against credentials that
+    are perfectly correct -- a structural false negative that fires on its own the first
+    time anybody runs the gate after tagging. The check's own name and its summary line
+    both say "the tagged tree", so the value has to come from the tag when there is one.
+    """
+    if tag_tree:
+        return tag_tree, f"tag v{version}"
+    return head_tree, "HEAD (no tag yet)"
+
+
 def main():
     parser = argparse.ArgumentParser(description="Pre-tag gate verification")
     parser.add_argument("--sign-off-token", required=True,
@@ -279,23 +296,37 @@ def main():
         ["git", "-C", str(ROOT), "rev-parse", "HEAD^{tree}"],
         capture_output=True, text=True, check=True,
     ).stdout.strip()
+    # A tag is a fixed point; HEAD is not. Prefer the tag once it exists.
+    tag_tree = None
+    if expected:
+        probe = subprocess.run(
+            ["git", "-C", str(ROOT), "rev-parse", "--verify", "--quiet",
+             f"refs/tags/v{expected}^{{commit}}^{{tree}}"],
+            capture_output=True, text=True,
+        )
+        if probe.returncode == 0:
+            tag_tree = probe.stdout.strip()
+    reference_tree, reference_label = choose_reference_tree(tag_tree, head_tree, expected)
     unbound = []
     mismatched = []
     for slot, token in (("(b) review", args.review_token), ("sync", args.sync_token)):
         match = TREE_BINDING.search(token)
         if match is None:
             unbound.append(slot)
-        elif match.group(1) != head_tree:
+        elif match.group(1) != reference_tree:
             mismatched.append(f"{slot} bound to {match.group(1)}")
     if unbound:
         detail = (
             f"no #tree=<40-hex> on: {', '.join(unbound)} -- reissue the token in the "
-            f"bound form ('...#tree={head_tree}')"
+            f"bound form ('...#tree={reference_tree}')"
         )
     elif mismatched:
-        detail = f"bound to a different tree than HEAD ({head_tree}): " + "; ".join(mismatched)
+        detail = (
+            f"bound to a different tree than {reference_label} ({reference_tree}): "
+            + "; ".join(mismatched)
+        )
     else:
-        detail = f"both bound to {head_tree}"
+        detail = f"both bound to {reference_label} ({reference_tree})"
     check(
         "(f) review and sync credentials bound to the tagged tree",
         not unbound and not mismatched,
