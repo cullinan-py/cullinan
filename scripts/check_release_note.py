@@ -28,11 +28,12 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from check_changelog import MAINTENANCE_TERMS  # noqa: E402  (one list, not two)
+from check_changelog import MAINTENANCE_TERMS, _version_key  # noqa: E402  (one list, not two)
 
 #: The sections the project's template requires, in the order it gives them.
 REQUIRED_SECTIONS = (
@@ -45,6 +46,7 @@ REQUIRED_SECTIONS = (
 
 _SECTION = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
+_NOTE_VERSION = re.compile(r"RELEASE-v(.+)\.md$")
 
 
 def check_text(text: str, name: str = "<note>") -> list[str]:
@@ -88,8 +90,22 @@ def check_text(text: str, name: str = "<note>") -> list[str]:
 
 
 def newest_note(root: Path) -> Path | None:
-    notes = sorted(root.glob("RELEASE-v*.md"))
-    notes = [note for note in notes if not note.name.endswith(".amended.md")]
+    """Return the note for the newest version, not the last name in sort order.
+
+    Sorting the file names as strings puts ``RELEASE-v0.96a9.md`` after
+    ``RELEASE-v0.96a10.md``, so from the tenth alpha onwards the check read the
+    previous release and reported on it -- the file it was asked to guard was
+    never opened, and the run still looked like a run. The version is parsed and
+    ordered the way a reader orders versions, using the same key the changelog
+    check uses so the two cannot disagree about which release is newest.
+    """
+    notes = [note for note in root.glob("RELEASE-v*.md") if not note.name.endswith(".amended.md")]
+
+    def sort_key(note: Path) -> tuple:
+        match = _NOTE_VERSION.search(note.name)
+        return _version_key(match.group(1)) if match else (0, 0, 0, "", 0, 0)
+
+    notes.sort(key=sort_key)
     return notes[-1] if notes else None
 
 
@@ -183,6 +199,21 @@ def _self_test() -> int:
     print("self-test: each defect is reported")
     expect("describes the machinery", _SAMPLE_MAINTENANCE, False)
     expect("a required section is missing", _SAMPLE_MISSING_SECTION, False)
+
+    print("self-test: the note read is the one for the newest version")
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        # The older note is the one that would fail every rule: if the picker
+        # takes it, the run says FAIL about the wrong release, and the note that
+        # shipped was never read.
+        (root / "RELEASE-v0.96a9.md").write_text(_SAMPLE_MAINTENANCE, encoding="utf-8")
+        (root / "RELEASE-v0.96a10.md").write_text(_SAMPLE_CLEAN, encoding="utf-8")
+        picked = newest_note(root)
+        if picked is None or picked.name != "RELEASE-v0.96a10.md":
+            failures += 1
+            print(f"  FAIL ordering: picked {picked.name if picked else 'nothing'}")
+        else:
+            print("  ok   ordering: RELEASE-v0.96a10.md over RELEASE-v0.96a9.md")
 
     print("SELFTEST:", "PASS" if not failures else f"FAIL {failures}")
     return 0 if not failures else 1
