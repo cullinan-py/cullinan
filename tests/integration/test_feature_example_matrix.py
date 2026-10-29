@@ -214,4 +214,76 @@ def test_each_kind_has_the_shape_it_promises():
                     "so a reader will try to run it as current guidance"
                 )
 
-    assert not problems, "examples do not match the shape their kind promises:/n" + "\n".join(problems)
+    assert not problems, "examples do not match the shape their kind promises:\n" + "\n".join(problems)
+
+
+#: Runs in a subprocess so that an example which does something on import -- start a
+#: server, read standard input, touch the network -- cannot hang the suite, and so that
+#: a module which mutates global state cannot leak into the next test.
+_IMPORT_PROBE = r'''
+import importlib, json, pathlib
+
+failures = []
+claimed = json.loads(pathlib.Path("examples/features.json").read_text(encoding="utf-8"))
+for feature in claimed["features"]:
+    if feature.get("kind") != "runnable":
+        continue
+    name = feature["example"]
+    directory = pathlib.Path("examples") / name
+    if not directory.is_dir():
+        failures.append([name, "declared runnable but the directory is missing"])
+        continue
+    if not (directory / "__main__.py").is_file():
+        failures.append([name, "runnable but there is no __main__.py, so it cannot be started"])
+        continue
+    # Import the entry module, not every module in the directory. Sub-modules may
+    # legitimately reference types that only exist under `if TYPE_CHECKING`, because a
+    # class-level annotation is not a runtime dependency -- importing
+    # `examples.controller_service_inject.controllers` on its own therefore fails while
+    # `python -m examples.controller_service_inject` starts a server. The entry module is
+    # the thing the README tells a reader to run, so it is the thing to import.
+    dotted = f"examples.{name}.__main__"
+    try:
+        importlib.import_module(dotted)
+    except Exception as exc:  # noqa: BLE001 - any failure is the finding
+        failures.append([dotted, f"{type(exc).__name__}: {exc}"])
+print(json.dumps(failures))
+'''
+
+
+def test_every_runnable_example_can_actually_be_imported():
+    """Reading an example is not running one, and the difference has bitten this repo.
+
+    ``examples/config_file/root.py`` used a PEP 604 union in a signature without the
+    future import. It was readable, it was documented, its evidence strings were in the
+    file -- and on 3.9 importing it raised ``TypeError``, so the command the README tells
+    people to run did not start. Every existing check passed, because every existing check
+    read the file instead of importing it.
+
+    Importing the entry module is the smallest thing that can fail when an example cannot
+    start, and it is what this asserts. Two observations shaped that choice of target:
+
+    * pinning the module name to ``root`` would have reported three healthy examples as
+      broken -- they use ``demo`` and ``main``;
+    * importing *every* module in each directory would have reported two more, because a
+      sub-module may name a type that only exists under ``if TYPE_CHECKING``, and a
+      class-level annotation is not a runtime dependency. Those two examples start
+      perfectly well.
+
+    ``__main__`` is what a README tells a reader to run, so it is the honest target.
+    """
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [sys.executable, "-c", _IMPORT_PROBE],
+        cwd=str(REPO_ROOT), capture_output=True, text=True, encoding="utf-8", timeout=300,
+    )
+
+    assert result.returncode == 0, f"the probe itself failed:\n{result.stderr[-800:]}"
+
+    payload = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "[]"
+    failures = json.loads(payload)
+    assert not failures, "these declared examples cannot be imported:\n" + "\n".join(
+        f"  {name}: {reason}" for name, reason in failures
+    )

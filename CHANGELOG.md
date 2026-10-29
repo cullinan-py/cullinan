@@ -69,6 +69,22 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Fixed
 
+- **An example is now checked by importing it, not by reading it.** Every existing check
+  on `examples/` read the files: the directory is declared, the README exists, the
+  evidence strings appear in the source. None of them imported anything, so
+  `examples/config_file/root.py` could use a PEP 604 union in a signature without the
+  future import — readable, documented, declared — while `python -m examples.config_file`
+  raised `TypeError` on 3.9. The new check imports each declared example's entry module
+  in a subprocess.
+
+  Two false starts are worth recording, because both would have reported healthy examples
+  as broken. Pinning the entry module to `root` fails three examples that use `demo` or
+  `main`. Importing every module in the directory fails two more, because a sub-module may
+  name a type that only exists under `if TYPE_CHECKING` — correct code that cannot be
+  imported alone.
+
+### Fixed
+
 - **A release runs the suite before it uploads anything.** The workflow that publishes
   to PyPI checked that the tag named the right version and that the built wheel
   imported; it never asked whether the code had been tested. It now runs the full suite,
