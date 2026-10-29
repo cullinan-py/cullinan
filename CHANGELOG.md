@@ -69,6 +69,21 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Fixed
 
+- **A release runs the suite before it uploads anything.** The workflow that publishes
+  to PyPI checked that the tag named the right version and that the built wheel
+  imported; it never asked whether the code had been tested. It now runs the full suite,
+  writes a JUnit report, and judges that report — a process exit code cannot tell
+  "1200 tests passed" from "no tests were collected", and both are ways for a suite to
+  stop testing anything. The pre-release check gained the same item.
+
+  This came from a measurement rather than a worry: the commit tagged as the previous
+  release carries three check runs on GitHub — `deploy`, `deploy`, `docs` — and no test
+  run at all. The suite had passed on a different commit with the same tree, so the
+  result existed but was not attached to what shipped. Asking GitHub instead of running
+  the suite cannot fix that; running the suite where the release can see it can.
+
+### Fixed
+
 - **The configuration example runs on the oldest interpreter the package supports.**
   `examples/config_file/root.py` declared `profile: str | None` without
   `from __future__ import annotations`. That is 3.10 syntax evaluated when the function

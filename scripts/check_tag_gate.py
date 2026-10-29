@@ -31,6 +31,15 @@ confirmations:
       credential carries an evidence-bundle hash, not a tree -- requiring a tree there
       would reject every valid sign-off.
 
+  (g) test evidence (locally verifiable part):
+      - a JUnit report from a full `pytest tests` run on this tree, judged by
+        scripts/check_junit.py. A report the gate cannot read, one holding zero tests,
+        one holding failures or errors, and one where everything was skipped are all
+        FAIL -- "no evidence" and "evidence of nothing" are not weaker kinds of pass.
+      LIMIT: it reads the report it is given. It cannot tell whether that report came
+      from this commit; that guarantee comes from running the suite here rather than
+      trusting a status, which is what the publish workflow now does.
+
 Usage:
   python scripts/check_tag_gate.py --sign-off-token <TOKEN> --review-token <TOKEN> --sync-token <TOKEN> [--version <VERSION>] [--meta-sync-range <base>..<head>]
 
@@ -184,6 +193,9 @@ def main():
     parser.add_argument("--meta-sync-range", default=None,
                         help="commit range (base..head) for the declaration backstop "
                              "(default: the commit being tagged)")
+    parser.add_argument("--junit", required=True,
+                        help="(g) JUnit XML from a full `pytest tests` run on the tree "
+                             "being tagged (`--junit-xml=<path>`)")
     args = parser.parse_args()
 
     fails = []
@@ -311,6 +323,18 @@ def main():
     except Exception as exc:  # noqa: BLE001 - gate must fail, not crash
         check("(d) declaration present on governed changes", False, repr(exc))
 
+    # (g) test evidence. Until this existed, every labelled check above read tokens,
+    # banners and files -- not one of them asked whether the code had been tested. A
+    # tree with a failing test in it would have passed all of (a) through (f).
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import check_junit
+
+        code, detail = check_junit.evaluate(Path(args.junit))
+        check("(g) full suite passed on this tree", code == 0, detail)
+    except Exception as exc:  # noqa: BLE001 - a gate must fail, not crash
+        check("(g) full suite passed on this tree", False, repr(exc))
+
     print()
     if fails:
         print(f"TAG GATE FAIL ({len(fails)} check(s) failed) -- do NOT run git tag")
@@ -328,6 +352,7 @@ def main():
     print("  (e) docs version banners: every banner names the SSOT version")
     print("  (f) credential scope: review + sync tokens bound to the tagged tree")
     print("      (format and scope only -- authenticity comes from the issuing process)")
+    print("  (g) test evidence: a full pytest run on this tree, reported green")
     return 0
 
 

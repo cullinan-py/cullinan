@@ -6,6 +6,8 @@ indistinguishable, from the outside, from a check that does not exist at all --
 which is exactly how an installed gate gets mistaken for a missing one. These
 tests pin the correspondence so the two cannot drift apart again.
 """
+from __future__ import annotations
+
 import importlib.util
 import re
 from pathlib import Path
@@ -108,14 +110,29 @@ def _head_tree() -> str:
     ).stdout.strip()
 
 
-def _run_gate(review: str, sync: str, sign_off: str = "P"):
+def _clean_junit(directory=None) -> str:
+    """Write a minimal passing JUnit report and return its path."""
+    import tempfile
+    from pathlib import Path as _Path
+
+    target = _Path(directory or tempfile.mkdtemp()) / "junit.xml"
+    target.write_text(
+        '<?xml version="1.0"?><testsuites><testsuite name="pytest" '
+        'tests="1300" failures="0" errors="0" skipped="2"/></testsuites>',
+        encoding="utf-8",
+    )
+    return str(target)
+
+
+def _run_gate(review: str, sync: str, sign_off: str = "P", junit: str | None = None):
     import subprocess
     import sys
     return subprocess.run(
         [sys.executable, str(GATE_PATH),
          "--sign-off-token", sign_off,
          "--review-token", review,
-         "--sync-token", sync],
+         "--sync-token", sync,
+         "--junit", junit if junit is not None else _clean_junit()],
         cwd=str(REPO_ROOT), capture_output=True, text=True, encoding="utf-8",
     )
 
@@ -225,4 +242,36 @@ def test_a_tag_prefixed_floor_is_still_skipped(tmp_path):
     """The ``+`` rule applies to the prefixed form too."""
     (tmp_path / "p.md").write_text("> **版本**: v0.90a5+\n", encoding="utf-8")
     assert gate.find_doc_banners(tmp_path) == []
+
+
+def test_a_report_showing_a_failure_stops_the_tag(tmp_path):
+    """Every other check reads tokens, banners and files. This one reads the tests.
+
+    A tree with a failing test used to pass (a) through (f) without difficulty: none of
+    them looked at test results at all.
+    """
+    report = tmp_path / "junit.xml"
+    report.write_text(
+        '<?xml version="1.0"?><testsuites><testsuite name="pytest" tests="1300" '
+        'failures="2" errors="0" skipped="2"><testcase classname="t" name="x">'
+        '<failure message="boom"/></testcase></testsuite></testsuites>',
+        encoding="utf-8",
+    )
+
+    result = _run_gate("review-a", "sync-a", junit=str(report))
+
+    assert "FAIL (g)" in result.stdout, result.stdout[-400:]
+    assert "TAG GATE FAIL" in result.stdout, result.stdout[-400:]
+    assert result.returncode != 0
+
+
+def test_a_missing_report_is_not_a_passing_run(tmp_path):
+    """No report is not the same as a clean one; the gate has to say so."""
+    absent = tmp_path / "never-written.xml"
+
+    result = _run_gate("review-a", "sync-a", junit=str(absent))
+
+    assert "FAIL (g)" in result.stdout, result.stdout[-400:]
+    assert "does not exist" in result.stdout, result.stdout[-400:]
+    assert result.returncode != 0
 

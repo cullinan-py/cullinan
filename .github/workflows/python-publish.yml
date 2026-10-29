@@ -9,6 +9,13 @@
 #   2. the built wheel actually imports and reports that version -- otherwise
 #      a packaging fault ships as a release.
 #
+# The suite runs here as well, before the build. That is not belt-and-braces: the
+# release this repository shipped before had a tag whose commit carried no test runs
+# at all. The suite had passed on a different commit with the same tree, so the
+# evidence existed but was not attached to what was released. Asking GitHub what ran
+# cannot fix that -- enumerating commits by tree is not something the checks API does.
+# Producing the evidence in the job that consumes it can, and does.
+#
 # For more information on publishing to package registries see
 # https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries
 
@@ -36,6 +43,17 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install build twine
+    - name: Install test dependencies
+      run: pip install -r requirements-dev.txt
+    - name: Run the suite, writing a report the next step can judge
+      run: python -m pytest tests -q --junit-xml="$RUNNER_TEMP/junit.xml"
+    - name: Refuse to publish unless that report says the suite passed
+      # The exit code above is one bit: it cannot distinguish "1200 passed" from "no
+      # tests collected under a configuration that silently matched nothing". The
+      # report can, so it is read rather than trusted. `--min-tests` is a floor far
+      # below the current count: reaching it means a whole area of the suite has
+      # stopped being collected, which is worth an explanation before a release.
+      run: python scripts/check_junit.py "$RUNNER_TEMP/junit.xml" --min-tests 1000
     - name: Verify the tag names the version the code carries
       run: python scripts/check_release_tag_matches_version.py --tag "${GITHUB_REF_NAME}"
     - name: Build package
