@@ -21,9 +21,9 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Operating System :: OS Independent",
 ]
-dependencies = [
-  "python-dotenv",
-]
+# No runtime dependencies: the configuration layer reads JSON with the
+# standard library, and optional formats only when the environment provides them.
+dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/cullinan-py/cullinan"

@@ -9,8 +9,6 @@ import sys
 import threading
 from typing import List, Optional
 
-from dotenv import load_dotenv
-from pathlib import Path
 
 # Tornado discovery is kept lazy so importing application-facing modules does not
 # eagerly pull a concrete server framework into the semantic layer.
@@ -28,6 +26,7 @@ from cullinan.core.semantic_rules import (
     warn_semantic_once,
 )
 from cullinan.support.exceptions import ConfigurationError, PackageDiscoveryError
+from cullinan.support.config_file import apply_project_config
 from cullinan.support.deprecation import resolve_removal_version
 
 # Module-level logger
@@ -532,11 +531,11 @@ def _init_framework():
         Tuple of (ctx, pending_count) — ApplicationContext and the count of
         processed pending registrations.
     """
-    logger.info("loading env...")
-    load_dotenv()
-    load_dotenv(verbose=True)
-    env_path = Path(os.getcwd()) / '.env'
-    load_dotenv(dotenv_path=env_path)
+    logger.info("loading configuration...")
+    # One file, resolved beside the launched executable and in the working
+    # directory. Which file was read is logged, so "my settings are ignored" is
+    # answerable from the startup log instead of by guesswork.
+    apply_project_config()
 
     # ========== IoC/DI 2.0: use ApplicationContext as the single entrypoint ==========
     logger.info("└---initializing IoC/DI 2.0 ApplicationContext...")

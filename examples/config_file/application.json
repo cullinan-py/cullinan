@@ -1,0 +1,9 @@
+{
+  "server_port": 4085,
+  "server_host": "127.0.0.1",
+  "verbose": true,
+  "greeting": {
+    "text": "hello from application.json",
+    "channel": "${EXAMPLE_CHANNEL:general}"
+  }
+}

@@ -10,7 +10,7 @@ translation_pair: "docs/zh/why-cullinan.md"
 related_tests: ["tests/integration/test_positioning_claims.py"]
 related_examples: ["examples/minimal_app", "examples/graceful_shutdown"]
 estimate_pd: 1.0
-last_updated: "2026-10-27"
+last_updated: "2026-10-29"
 pr_links: []
 
 # What Cullinan Is
@@ -98,7 +98,7 @@ must be present in that file.
     },
     {
       "id": "C9",
-      "claim": "Runtime dependencies are deliberately small: one package, python-dotenv, with the engines offered as extras.",
+      "claim": "Runtime dependencies are none. Configuration is read from a JSON file with the standard library (other formats only when the environment provides a parser), and the engines are offered as extras.",
       "evidence": ["pyproject.toml"],
       "symbols": []
     },

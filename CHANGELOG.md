@@ -4,8 +4,104 @@ This file records the release history of Cullinan, newest first. It is a
 historical record: the version currently advertised by the project is tracked
 in [`README.MD`](README.MD).
 
+**What an entry may say.** An entry describes a change someone using the package
+can act on. It does not describe how the package's own checks are built: names of
+internal tooling, credentials, exemptions and allowlists belong to the code that
+implements them, where the reader who needs them will look. An entry written the
+other way is unreadable outside the project and ships to people who cannot use
+it. `scripts/check_changelog.py` reports the newest entry if it uses that
+vocabulary, and an older entry is left as written — history is not rewritten.
+
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
+
+## v0.96a10
+
+**v0.96a10** is the tenth alpha of the 0.96 line. Configuration moves out of `.env`
+and into a project file that is found where the application is deployed, and the last
+runtime dependency goes with it. The rest of the release is the packaging and test
+surface that change exposed.
+
+No public API symbol is added, removed or renamed, and no signature changes. What does
+change is where configuration comes from: an application that relied on `.env` being
+loaded for it needs one edit, described under Removed.
+
+### Changed
+
+- **Configuration is read from a file.** `.env` was a flat `KEY=VALUE` list with no
+  nesting and no types, and in a packaged build it answered the wrong question: it
+  said nothing about where the file is or whether it ended up inside the artefact.
+  One configuration file per application replaces it — `application.json`, with
+  `application-<profile>.json` merged over it when `CULLINAN_PROFILE` is set. TOML and
+  YAML are read when the environment can parse them; JSON needs nothing, so no
+  runtime dependency is introduced.
+
+  Three properties are the point rather than the details:
+
+  - **the file is never looked for inside the installed package** — only beside the
+    launched executable and in the working directory, so a copy shipped in the bundle
+    cannot shadow the file the operator edited;
+  - **`${VAR}` and `${VAR:default}` are resolved from the environment after reading**,
+    so a file that is committed or shipped holds a pointer rather than a value. A
+    placeholder with neither is an error, because substituting `""` would turn a
+    missing setting into one that looks configured;
+  - **no cipher is included, deliberately.** A key shipped beside the ciphertext is not
+    encryption; `load_project_config(decryptor=...)` lets a deployment supply its own
+    and keep the key outside the artefact.
+
+  Precedence, highest first: `run(...)` argument, environment variable,
+  `configure(...)`, configuration file, built-in default.
+
+### Removed
+
+- **`python-dotenv` is no longer a dependency, and `.env` is no longer read.**
+  `dependencies` in `pyproject.toml` is empty. Deployments that relied on `.env`
+  being loaded by the application should move those keys into `application.json`, or
+  export them as environment variables — both keep working, and the second needs no
+  file at all.
+
+### Documentation
+
+- **A configuration guide in both languages, and a runnable example.**
+  `docs/configuration.md` and `docs/zh/configuration.md` cover where the file is
+  searched for, the precedence order, placeholder resolution, and what to do about
+  secrets in a packaged build. `examples/config_file/` is a working application you
+  can start with `python -m examples.config_file`.
+
+### Fixed
+
+- **The example and its description now agree.** The shipped `application.json` read
+  `"${EXAMPLE_CHANNEL:#general}"` while the README said the channel falls back to
+  `general`; resolving the real file produced `#general`, because a default is taken
+  literally and there is no sigil that means "comment". The file now says what the
+  README says.
+
+- **The configuration example starts on Python 3.9.** `examples/config_file/root.py`
+  declared `profile: str | None` without `from __future__ import annotations`. That is
+  3.10 syntax evaluated when the function is defined, so on 3.9 the module raised
+  `TypeError: unsupported operand type(s) for |` at import and `python -m
+  examples.config_file` did not start. Both were declared supported and neither had
+  been tried there.
+
+- **A packaged build reported the directory it unpacked itself into as the place to
+  keep data.** Nuitka does not set `sys.frozen` in every mode, and detection hung on
+  that single flag, so the packaged branch was never reached and every path fell back
+  to the development answer: logs, configuration and cache written into a temporary
+  directory that is removed when the process exits. Detection now accepts several
+  independent markers instead of one flag, onefile is recognised from behaviour
+  rather than from a directory name, and `get_original_executable_dir()` returns the
+  directory of the executable that was launched. Under a packer,
+  `get_executable_dir()` and `get_user_data_dir()` now return that directory; when no
+  persistent location can be established the code says so instead of returning the
+  temporary one.
+
+- **A release is built only after the tests pass on the tagged tree.** The version you
+  install is the version that was tested, rather than a version whose tests ran
+  somewhere else.
+
+- **Setting up for development on 3.9 works again.** `tomli` is now a development
+  dependency below 3.11, so tooling that reads `pyproject.toml` no longer fails on that
+  interpreter.
 
 ## v0.96a9
 

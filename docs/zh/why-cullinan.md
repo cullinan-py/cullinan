@@ -10,7 +10,7 @@ translation_pair: "docs/why-cullinan.md"
 related_tests: ["tests/integration/test_positioning_claims.py"]
 related_examples: ["examples/minimal_app", "examples/graceful_shutdown"]
 estimate_pd: 1.0
-last_updated: "2026-10-27"
+last_updated: "2026-10-29"
 pr_links: []
 
 # Cullinan 是什么
@@ -89,7 +89,7 @@ Cullinan 是一个**声明式**的 Python Web 框架：你标记一个入口方�
     },
     {
       "id": "C9",
-      "claim": "运行时依赖刻意保持很小：一个包 python-dotenv，两个引擎作为可选 extra 提供。",
+      "claim": "运行时依赖为零。配置由标准库读取 JSON 文件（其它格式仅在环境自带解析器时可用），两个引擎作为可选 extra 提供。",
       "evidence": ["pyproject.toml"],
       "symbols": []
     },

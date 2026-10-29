@@ -7,8 +7,6 @@ import logging
 import sys
 import threading
 
-from dotenv import load_dotenv
-from pathlib import Path
 
 # Import module scanning utilities (refactored for better maintainability)
 from cullinan.runtime.module_scanner import (
@@ -16,6 +14,7 @@ from cullinan.runtime.module_scanner import (
     is_nuitka_compiled,
     file_list_func
 )
+from cullinan.support.config_file import apply_project_config
 
 # Module-level logger
 logger = logging.getLogger(__name__)
@@ -340,11 +339,9 @@ def run(handlers=None):
                 pass
     else:
         logger.info(BANNER)
-    logger.info("loading env...")
-    load_dotenv()
-    load_dotenv(verbose=True)
-    env_path = Path(os.getcwd()) / '.env'
-    load_dotenv(dotenv_path=env_path)
+    logger.info("loading configuration...")
+    # Same resolution as the application initialisation path; see config_file.
+    apply_project_config()
 
     # Initialize IoC/DI 2.0
     logger.info("└---initializing IoC/DI 2.0...")

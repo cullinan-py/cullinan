@@ -146,3 +146,25 @@ def test_generator_reproduces_committed_commitment():
 
     assert regenerated["stability_commitment"] == payload["stability_commitment"]
     assert regenerated["not_in_commitment"] == payload["not_in_commitment"]
+
+
+def test_generator_writes_the_repository_line_ending(tmp_path):
+    # A generated file that is committed belongs to the repository, not to the
+    # machine that regenerated it. ``write_text`` translates "\n" to the platform
+    # separator, so on Windows this artifact used to come out with CRLF while the
+    # committed blob was LF -- it differed from the index as soon as it was
+    # written, and the difference was invisible on Linux. This asserts the writer
+    # agrees with ``.gitattributes``; on a Windows interpreter the previous
+    # implementation fails here.
+    spec = importlib.util.spec_from_file_location(
+        "generate_contracts_newline", REPO_ROOT / "scripts" / "generate_contracts.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    target = tmp_path / "_contracts.json"
+    module.write_artifact(target, '{\n  "a": 1\n}\n')
+
+    raw = target.read_bytes()
+    assert b"\r\n" not in raw, "the artifact was written with the platform line ending"
+    assert raw.endswith(b"\n")
