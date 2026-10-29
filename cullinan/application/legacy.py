@@ -10,7 +10,6 @@ import threading
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from pathlib import Path
 
 # Tornado discovery is kept lazy so importing application-facing modules does not
 # eagerly pull a concrete server framework into the semantic layer.
@@ -28,6 +27,7 @@ from cullinan.core.semantic_rules import (
     warn_semantic_once,
 )
 from cullinan.support.exceptions import ConfigurationError, PackageDiscoveryError
+from cullinan.support.path_utils import find_env_file
 from cullinan.support.deprecation import resolve_removal_version
 
 # Module-level logger
@@ -535,8 +535,16 @@ def _init_framework():
     logger.info("loading env...")
     load_dotenv()
     load_dotenv(verbose=True)
-    env_path = Path(os.getcwd()) / '.env'
-    load_dotenv(dotenv_path=env_path)
+    # The working directory is not where a packaged deployment keeps its config;
+    # the file usually sits beside the executable that was launched. Resolving it
+    # here -- and logging which file won -- turns "settings silently absent" into
+    # a line in the startup log.
+    env_path = find_env_file()
+    if env_path is not None:
+        load_dotenv(dotenv_path=env_path)
+        logger.info("env file: %s", str(env_path))
+    else:
+        logger.warning("no .env found (looked in %s and the executable directory)", os.getcwd())
 
     # ========== IoC/DI 2.0: use ApplicationContext as the single entrypoint ==========
     logger.info("└---initializing IoC/DI 2.0 ApplicationContext...")

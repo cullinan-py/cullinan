@@ -23,13 +23,89 @@ logger = logging.getLogger(__name__)
 # Packaging Environment Detection
 # =============================================================================
 
+_ONEFILE_ENV_MARKERS = (
+    'NUITKA_ONEFILE_PARENT',
+    'NUITKA_ONEFILE_BINARY',
+    'NUITKA_ONEFILE_TEMP',
+)
+
+
+def _is_within(child: Path, parent: Path) -> bool:
+    """Whether ``child`` sits inside ``parent``; false when either cannot be resolved."""
+    try:
+        child = Path(child).resolve()
+        parent = Path(parent).resolve()
+    except OSError:
+        return False
+    if child == parent:
+        return True
+    try:
+        return child.is_relative_to(parent)
+    except AttributeError:  # pragma: no cover - Python < 3.9
+        return parent in child.parents
+
+
+def _nuitka_evidence() -> tuple[bool, str]:
+    """``(is_nuitka, evidence)`` -- and the evidence string is part of the contract.
+
+    A single ``sys.frozen`` check cannot answer this. Nuitka does not set it in
+    every mode, and when it is absent the whole packaging branch becomes
+    unreachable rather than merely wrong. So several independent markers are
+    tried, and whichever one fires is reported: "why do you think this is
+    compiled?" is the first question anyone asks when the paths look wrong.
+
+    The module-global marker only exists when *this* file was compiled, which is
+    the normal case for ``--include-package=cullinan`` but not guaranteed; the
+    environment markers cover the case where it was not.
+    """
+    if '__compiled__' in globals():
+        return True, "module global '__compiled__'"
+    if hasattr(sys, '__compiled__'):
+        return True, "sys.__compiled__"
+    for name in _ONEFILE_ENV_MARKERS:
+        if os.environ.get(name):
+            return True, f"env {name}={os.environ.get(name)!r}"
+    if getattr(sys, 'frozen', False) and not hasattr(sys, '_MEIPASS'):
+        return True, "sys.frozen without sys._MEIPASS"
+    return False, ""
+
+
+def _onefile_evidence() -> tuple[bool, str]:
+    """``(is_onefile, evidence)`` for either packer, without reading path strings.
+
+    ``'onefile' in path`` was the old test. It works only while the extraction
+    directory happens to be named that way, which is an implementation detail of
+    the packer rather than something the program controls. What actually
+    distinguishes onefile is behavioural: the binary being executed is a copy
+    unpacked next to the code, so the running executable is not the one the user
+    launched.
+    """
+    for name in ('NUITKA_ONEFILE_PARENT', 'NUITKA_ONEFILE_TEMP'):
+        if os.environ.get(name):
+            return True, f"env {name}"
+    if hasattr(sys, '_MEIPASS'):
+        return True, "sys._MEIPASS"
+
+    launched = sys.argv[0] if sys.argv else ''
+    if launched:
+        launched_dir = Path(launched).absolute().parent
+        exe_dir = Path(sys.executable).absolute().parent
+        if launched_dir != exe_dir and _is_within(exe_dir, get_base_path()):
+            return True, f"running executable {exe_dir} is unpacked inside the code directory"
+    return False, ""
+
+
 def is_frozen() -> bool:
     """Check if running in any frozen/packaged environment.
 
     Returns:
         bool: True if frozen (Nuitka/PyInstaller), False in development
     """
-    return getattr(sys, 'frozen', False)
+    return (
+        bool(getattr(sys, 'frozen', False))
+        or hasattr(sys, '_MEIPASS')
+        or _nuitka_evidence()[0]
+    )
 
 
 def is_pyinstaller_frozen() -> bool:
@@ -38,46 +114,46 @@ def is_pyinstaller_frozen() -> bool:
     Returns:
         bool: True if PyInstaller frozen, False otherwise
     """
-    return is_frozen() and hasattr(sys, '_MEIPASS')
+    return hasattr(sys, '_MEIPASS')
 
 
 def is_nuitka_compiled() -> bool:
     """Check if running in Nuitka compiled environment.
 
+    Deliberately independent of :func:`is_frozen`. The previous version ended
+    with ``is_frozen() and not hasattr(sys, '_MEIPASS')``, which made this
+    function ask itself the question it was supposed to answer -- and, because
+    ``get_packaging_mode`` returned early on ``not is_frozen()``, it was never
+    even called in the case that mattered.
+
     Returns:
         bool: True if Nuitka compiled, False otherwise
     """
-    # Nuitka sets __compiled__ attribute or sys.__compiled__
-    return '__compiled__' in globals() or hasattr(sys, '__compiled__') or (
-        is_frozen() and not hasattr(sys, '_MEIPASS')
-    )
+    return _nuitka_evidence()[0]
 
 
 def get_packaging_mode() -> str:
     """Get current packaging mode.
 
+    Order matters: the specific packers are asked first, and ``development`` is
+    the answer only when nothing claims the process. The old version decided
+    ``development`` from a single flag before any packer was consulted, so a
+    packer that does not set that flag was indistinguishable from plain Python.
+
     Returns:
         str: 'development', 'nuitka_onefile', 'nuitka_standalone',
              'pyinstaller_onefile', 'pyinstaller_onedir'
     """
-    if not is_frozen():
-        return 'development'
-
     if is_pyinstaller_frozen():
-        meipass = getattr(sys, '_MEIPASS', '')
-        # Check if running from temp directory (onefile characteristic)
-        if '_MEI' in meipass or 'Temp' in meipass or 'tmp' in meipass:
-            return 'pyinstaller_onefile'
-        return 'pyinstaller_onedir'
+        return 'pyinstaller_onefile' if _onefile_evidence()[0] else 'pyinstaller_onedir'
 
     if is_nuitka_compiled():
-        exe_dir = os.path.dirname(sys.executable)
-        # Nuitka onefile extracts to temp with 'onefile' in path
-        if 'onefile' in exe_dir.lower() or '_MEI' in exe_dir:
-            return 'nuitka_onefile'
-        return 'nuitka_standalone'
+        return 'nuitka_onefile' if _onefile_evidence()[0] else 'nuitka_standalone'
 
-    return 'unknown'
+    if is_frozen():
+        return 'unknown'
+
+    return 'development'
 
 
 # =============================================================================
@@ -104,14 +180,12 @@ def get_base_path() -> Path:
         return base
 
     if is_nuitka_compiled():
-        # Nuitka onefile also extracts to temp directory
-        # In onefile mode, the extraction directory is the parent of sys.executable
-        if 'onefile' in os.path.dirname(sys.executable).lower():
-            # Onefile mode: use the extraction directory
-            base = Path(os.path.dirname(sys.executable))
-        else:
-            # Standalone mode: use executable directory
-            base = Path(sys.executable).parent
+        # Onefile and standalone answer the same way here, and the reason is the
+        # point: this function reports where the *code* is. In onefile the packer
+        # unpacked it next to the running executable (a temp directory, correctly);
+        # in standalone it sits beside the executable too. The location that must
+        # survive restarts is a different question -- see get_original_executable_dir.
+        base = Path(sys.executable).resolve().parent
         logger.debug(f"Base path (Nuitka): {base}")
         return base
 
@@ -198,16 +272,71 @@ def get_module_file_path(module_name: str, relative_to_cullinan: bool = True) ->
     return None
 
 
+def get_original_executable_dir() -> Path:
+    """Directory of the executable the user actually launched.
+
+    In onefile the process runs an unpacked copy, so ``sys.executable`` points
+    into a temp directory that is deleted on exit. Anything that has to survive a
+    restart -- logs, a config file beside the binary, cached data -- cannot be
+    derived from it, and a path derived that way looks plausible right up until
+    the file is gone.
+
+    ``sys.argv[0]`` is not automatically the answer either: a launcher may rewrite
+    it to the unpacked path as well. So candidates are accepted only after
+    checking that they are *not* inside the code directory, and the winner is
+    logged -- a wrong guess should be visible in the startup log rather than
+    discovered when the logs are missing.
+
+    Order: ``APP_EXE_DIR`` (explicit override) -> ``NUITKA_ONEFILE_BINARY`` ->
+    ``sys.argv[0]`` -> ``sys.executable`` -> working directory, with a warning.
+
+    Returns:
+        Path: Directory containing the launched executable
+    """
+    override = os.environ.get('APP_EXE_DIR')
+    if override:
+        logger.debug(f"Original executable directory (APP_EXE_DIR): {override}")
+        return Path(override)
+
+    unpacked = get_base_path()
+    candidates: list[tuple[str, Path]] = []
+
+    onefile_binary = os.environ.get('NUITKA_ONEFILE_BINARY')
+    if onefile_binary:
+        candidates.append(('NUITKA_ONEFILE_BINARY', Path(onefile_binary).absolute().parent))
+    if sys.argv and sys.argv[0]:
+        candidates.append(('sys.argv[0]', Path(sys.argv[0]).absolute().parent))
+    if sys.executable:
+        candidates.append(('sys.executable', Path(sys.executable).absolute().parent))
+
+    for label, candidate in candidates:
+        if _is_within(candidate, unpacked):
+            logger.debug(f"Ignoring {label} ({candidate}): it is inside the code directory")
+            continue
+        logger.debug(f"Original executable directory ({label}): {candidate}")
+        return candidate
+
+    fallback = Path.cwd()
+    logger.warning(
+        "Could not locate the directory the executable was launched from "
+        f"(packaging mode: {get_packaging_mode()}). Falling back to the working "
+        f"directory {fallback}; set APP_EXE_DIR to make this explicit."
+    )
+    return fallback
+
+
 def get_executable_dir() -> Path:
     """Get directory containing the executable or main script.
+
+    Under a packer this is the directory of the executable the user launched, not
+    the unpacked copy -- see :func:`get_original_executable_dir` for why that
+    distinction matters.
 
     Returns:
         Path: Directory containing executable (frozen) or main script (development)
     """
     if is_frozen():
-        exe_dir = Path(sys.executable).parent
-        logger.debug(f"Executable directory (frozen): {exe_dir}")
-        return exe_dir
+        return get_original_executable_dir()
 
     # Development: return directory of main script
     main_file = sys.argv[0] if sys.argv else __file__
@@ -221,19 +350,63 @@ def get_user_data_dir() -> Path:
 
     This directory is outside the application bundle and persists across updates.
 
+    Under a packer the answer is never the unpacked directory: it is deleted when
+    the process exits, so anything written there disappears exactly when someone
+    needs it. When no persistent location can be established the working directory
+    is returned **with a warning** -- the silent temp path was the old failure.
+
     Returns:
         Path: User data directory
     """
+    data_dir = os.environ.get('APP_DATA_DIR')
+    if data_dir:
+        return Path(data_dir)
+
     if is_frozen():
-        # For frozen apps, use executable directory
-        # Users can override this with environment variable
-        data_dir = os.environ.get('APP_DATA_DIR')
-        if data_dir:
-            return Path(data_dir)
-        return get_executable_dir()
+        resolved = get_original_executable_dir()
+        unpacked = get_base_path()
+        if not _is_within(resolved, unpacked):
+            return resolved
+        fallback = Path.cwd()
+        logger.warning(
+            "frozen application: no persistent data directory found, falling back to "
+            f"{fallback}. Data written here may not survive a restart. Set APP_DATA_DIR "
+            "to choose the location explicitly."
+        )
+        return fallback
 
     # Development: use current working directory
     return Path.cwd()
+
+
+def find_env_file() -> Optional[Path]:
+    """Locate the ``.env`` a deployment is expected to carry.
+
+    ``Path.cwd()`` alone is not enough once the application is packaged: the
+    working directory is whatever the service manager happened to choose, while
+    the file normally sits beside the executable the operator launched. Both are
+    tried, user-controlled location first.
+
+    Returns:
+        Path: The env file found, or None when there is none
+    """
+    explicit = os.environ.get('APP_ENV_FILE')
+    if explicit:
+        candidate = Path(explicit)
+        if candidate.is_file():
+            return candidate
+        logger.warning(f"APP_ENV_FILE points at {candidate}, which is not a file; ignoring it")
+        return None
+
+    seen: set[Path] = set()
+    for directory in (Path.cwd(), get_original_executable_dir()):
+        candidate = directory / '.env'
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if candidate.is_file():
+            return candidate
+    return None
 
 
 # =============================================================================
@@ -251,12 +424,18 @@ def find_file_with_fallbacks(filename: str, search_paths: list[Path] = None) -> 
         Path: First existing path, or None if not found
     """
     if search_paths is None:
-        # Default search paths
+        # Ordered by where a user would actually put a file. The two places a
+        # person controls -- beside the executable they launched, and the
+        # directory they started it from -- come first; the unpacked code
+        # directory is where the packer put things, and the package directory is
+        # the last resort. Leading with the unpacked directory (as this used to)
+        # means a stale copy inside the bundle wins over the config next to the
+        # binary.
         search_paths = [
-            get_cullinan_package_path(),
-            get_base_path(),
-            get_executable_dir(),
+            get_original_executable_dir(),
             Path.cwd(),
+            get_base_path(),
+            get_cullinan_package_path(),
         ]
 
     for search_path in search_paths:
@@ -318,9 +497,13 @@ def get_path_info() -> dict:
         'is_frozen': is_frozen(),
         'is_pyinstaller': is_pyinstaller_frozen(),
         'is_nuitka': is_nuitka_compiled(),
+        'detection_evidence': _nuitka_evidence()[1] or 'not compiled',
+        'onefile_evidence': _onefile_evidence()[1] or 'not packed as onefile',
+        'is_onefile': _onefile_evidence()[0],
         'base_path': str(get_base_path()),
         'cullinan_package_path': str(get_cullinan_package_path()),
         'executable_dir': str(get_executable_dir()),
+        'original_executable_dir': str(get_original_executable_dir()),
         'user_data_dir': str(get_user_data_dir()),
         'cwd': str(Path.cwd()),
         'sys.executable': sys.executable,
@@ -346,5 +529,20 @@ def log_path_info():
 # Initialization
 # =============================================================================
 
-# Log path info on module import (debug level)
-logger.debug(f"Packaging mode: {get_packaging_mode()}")
+# One line at import, so the packaging decision reaches the startup log of a
+# deployed build. Debug in development, where it is noise; INFO when packaged,
+# because "which mode did it think it was in" is the first question anyone asks
+# when a path looks wrong -- and previously that answer was invisible in
+# production while the wrong path was not.
+_packaging_mode = get_packaging_mode()
+if _packaging_mode == 'development':
+    logger.debug("Packaging mode: development")
+else:
+    logger.info(
+        "Packaging mode: %s (%s); code=%s executable=%s data=%s",
+        _packaging_mode,
+        _nuitka_evidence()[1] or _onefile_evidence()[1] or 'unknown',
+        get_base_path(),
+        get_executable_dir(),
+        get_user_data_dir(),
+    )

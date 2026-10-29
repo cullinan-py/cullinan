@@ -15,6 +15,26 @@ vocabulary, and an older entry is left as written — history is not rewritten.
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## Unreleased
+
+### Fixed
+
+- **A packaged build reported the directory it unpacked itself into as the place to
+  keep data.** Nuitka does not set `sys.frozen` in every mode, and detection hung on
+  that single flag, so the packaged branch was never reached and every path fell back
+  to the development answer: logs, configuration and cache written into a temporary
+  directory that is removed when the process exits. Detection now accepts several
+  independent markers instead of one flag, onefile is recognised from behaviour
+  rather than from a directory name, and `get_original_executable_dir()` returns the
+  directory of the executable that was launched. Under a packer,
+  `get_executable_dir()` and `get_user_data_dir()` now return that directory; when no
+  persistent location can be established the code says so instead of returning the
+  temporary one.
+- **`.env` is looked for beside the executable as well as in the working
+  directory.** A service manager chooses the working directory; the operator puts the
+  file next to the binary. `APP_ENV_FILE` overrides both, and the path that was
+  actually loaded is named in the startup log.
+
 ## v0.96a9
 
 **v0.96a9** is the ninth alpha of the 0.96 line. The one library change removes a
