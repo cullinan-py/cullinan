@@ -2,8 +2,8 @@
   "schema_version": 2,
   "generated_from": {
     "tool": "scripts/generate_contracts.py",
-    "cullinan_version": "0.96a10",
-    "generated_at": "2026-10-30T13:57:22+00:00"
+    "cullinan_version": "0.96a11",
+    "generated_at": "2026-10-30T17:55:24+00:00"
   },
   "stability_commitment": {
     "cullinan": [

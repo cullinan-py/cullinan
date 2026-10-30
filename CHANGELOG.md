@@ -15,7 +15,19 @@ vocabulary, and an older entry is left as written — history is not rewritten.
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
-## Unreleased
+## v0.96a11
+
+**v0.96a11** is the eleventh alpha of the 0.96 line. Its subject is the configuration and
+serving surface that used to accept a setting and do nothing with it: an application can
+now terminate TLS itself on either engine, a running server can be asked to stop from
+code rather than only by a signal, and a value that cannot be honoured is reported
+instead of discarded. Start-up names the engine that is actually running and the layer
+that chose it, because the alternative was reading the source to find out which of four
+answers won.
+
+The public surface grows in three places — four new options on `configure()`,
+`Application.request_shutdown()`, and `configure_options()` — and one combination is
+refused at start-up rather than served in a shape nobody asked for.
 
 ### Changed
 
