@@ -128,7 +128,7 @@ def _live_pinned() -> dict:
     }
 
 
-def _validate_pinned(payload: dict, live: dict | None = None) -> None:
+def _validate_pinned(payload: dict, live=None) -> None:
     """Raise ``AssertionError`` if a pinned symbol, or what it answers, drifted.
 
     Two failures are reported apart on purpose: a symbol that vanished, and a symbol
