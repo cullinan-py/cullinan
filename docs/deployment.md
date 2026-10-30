@@ -393,6 +393,11 @@ Terminating at a proxy instead is a normal choice and needs none of this: the fr
 then sees plain HTTP from a trusted hop, and the forwarded headers section above is the
 part that matters.
 
+TLS in the application is **not available with `asgi_server="hypercorn"`** in this
+version: that branch does not pass the options to the server, so the combination is
+refused at start-up rather than allowed to serve plaintext from a listener configured
+for TLS. Use `asgi_server="uvicorn"`, or terminate at a proxy.
+
 An example that starts with these options, from files or from the environment, is
 `examples/tls_termination/`.
 

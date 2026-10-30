@@ -274,6 +274,22 @@ class ASGIAdapter(WebAdapter):
                 # report, which is exactly how it stayed wrong for a release.
                 _finalize_draining_for_active_application()
         elif server == 'hypercorn':
+            # Refused rather than ignored. The hypercorn branch does not take the TLS
+            # options -- wiring them would be an untested path, and *not* wiring them
+            # would leave an application that configured certificates serving plain
+            # HTTP: the listener would look encrypted to whoever read the config and
+            # be plaintext on the wire. That is the failure mode this release exists
+            # to remove, so the combination stops here.
+            if resolve_tls_settings() is not None:
+                raise ValueError(
+                    "TLS in the application is not supported with asgi_server='hypercorn' "
+                    "yet: this branch does not pass ssl_certfile/ssl_keyfile/ssl_client_ca "
+                    "to hypercorn, and starting anyway would serve plain HTTP from a "
+                    "listener configured for TLS. Two ways forward: set "
+                    "asgi_server='uvicorn' (which does support it), or terminate TLS at a "
+                    "reverse proxy and leave these options unset. This is a known "
+                    "limitation of this version, not a mistake in your configuration."
+                )
             try:
                 from hypercorn.config import Config
                 from hypercorn.asyncio import serve

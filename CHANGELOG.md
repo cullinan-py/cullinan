@@ -92,6 +92,14 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Changed
 
+- **`asgi_server="hypercorn"` with the TLS options is refused at start-up.** That branch
+  does not pass `ssl_certfile`/`ssl_keyfile`/`ssl_client_ca` to hypercorn, so starting
+  anyway would serve plaintext from a listener configured for TLS — the "looks
+  configured, does nothing" failure this release is about. The message says the branch
+  does not support it, offers the two ways forward (`asgi_server="uvicorn"`, or terminate
+  at a reverse proxy), and states that it is a known limitation rather than a
+  configuration mistake.
+
 - **A misspelt option for `configure()` now says what was probably meant.** The
   call is still refused — accepting an unknown keyword with a warning would turn a
   typo into a switch that looks set and changes nothing — but the message now names

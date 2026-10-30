@@ -256,3 +256,33 @@ def test_half_a_key_pair_is_refused_instead_of_serving_plain_http():
     finally:
         for name, value in previous.items():
             setattr(get_config(), name, value)
+
+
+def test_hypercorn_with_tls_is_refused_rather_than_serving_plain_http():
+    """The engine that cannot do it says so, instead of ignoring the options.
+
+    The hypercorn branch does not pass the TLS settings on. Starting anyway would give
+    a listener that reads as encrypted in the configuration and is plaintext on the
+    wire -- the same "looks configured, does nothing" failure this round is about. So
+    the combination stops at start-up, and the message has to carry the three things a
+    reader needs: that the branch does not support it, the two ways forward, and that
+    this is a known limitation rather than their mistake.
+    """
+    previous = {name: getattr(get_config(), name) for name in TLS_FIELDS}
+    _set_tls(ssl_certfile=SERVER_CERT, ssl_keyfile=SERVER_KEY)
+    try:
+        adapter = ASGIAdapter(_dispatcher())
+        with pytest.raises(ValueError) as caught:
+            adapter.run(host="127.0.0.1", port=_free_port(), server="hypercorn")
+    finally:
+        for name, value in previous.items():
+            setattr(get_config(), name, value)
+
+    message = str(caught.value)
+    assert "hypercorn" in message, "the message has to name the branch that cannot do it"
+    assert "not supported" in message.lower(), "say that it is unsupported, not that it failed"
+    assert "uvicorn" in message, "one way forward is the backend that does support it"
+    assert "reverse proxy" in message, "the other way forward is terminating at a proxy"
+    assert "known limitation" in message.lower(), (
+        "a reader must be able to tell a limitation from a configuration mistake"
+    )
