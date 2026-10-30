@@ -2,14 +2,17 @@ import ast
 import asyncio
 import doctest
 import hashlib
+import http.client
 import importlib
 import json
 import os
 import re
 import socket
+import ssl
 import subprocess
 import sys
 import textwrap
+import time
 import warnings
 from pathlib import Path
 from typing import NamedTuple
@@ -677,6 +680,105 @@ def test_the_programmatic_shutdown_example_stops_a_server_and_exits():
         "the example never reported asking a running server to stop, so it demonstrated "
         f"nothing:\n{output[-2000:]}"
     )
+
+
+_TLS_FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "tls"
+
+
+def _free_tcp_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.bind(("127.0.0.1", 0))
+        return probe.getsockname()[1]
+
+
+def _poll_example(port: int, *, use_tls: bool, deadline: float):
+    """Return ``(status, body)`` once the example answers, or ``(None, b"")``.
+
+    ``http.client`` is used rather than ``urllib`` on purpose: it never consults
+    ``HTTP_PROXY``, and a loopback probe that goes through a proxy measures the proxy
+    (which is how a 502 from a proxy once made a different test look like a drain bug).
+    """
+    context = None
+    if use_tls:
+        context = ssl.create_default_context(cafile=str(_TLS_FIXTURES / "ca.crt"))
+    while time.monotonic() < deadline:
+        try:
+            if use_tls:
+                connection = http.client.HTTPSConnection(
+                    "127.0.0.1", port, context=context, timeout=2.0
+                )
+            else:
+                connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2.0)
+            try:
+                connection.request("GET", "/api/hello")
+                response = connection.getresponse()
+                body = response.read()
+                if response.status:
+                    return response.status, body
+            finally:
+                connection.close()
+        except (OSError, ssl.SSLError):
+            time.sleep(0.1)
+    return None, b""
+
+
+def _run_tls_example(*, tls: bool) -> tuple[int, bytes]:
+    """Start the example and talk to it; the process is killed once it has answered."""
+    port = _free_tcp_port()
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = os.pathsep.join(
+        [str(Path.cwd()), environment.get("PYTHONPATH", "")]
+    ).rstrip(os.pathsep)
+    environment["PYTHONUNBUFFERED"] = "1"
+    environment["TLS_PORT"] = str(port)
+    environment.pop("CULLINAN_ENGINE", None)
+    if tls:
+        environment["TLS_CERTFILE"] = str(_TLS_FIXTURES / "server.crt")
+        environment["TLS_KEYFILE"] = str(_TLS_FIXTURES / "server.key")
+    else:
+        environment.pop("TLS_CERTFILE", None)
+        environment.pop("TLS_KEYFILE", None)
+        environment.pop("TLS_CLIENT_CA", None)
+
+    process = subprocess.Popen(
+        [sys.executable, "-u", "-m", "examples.tls_termination"],
+        cwd=str(Path.cwd()),
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    try:
+        status, body = _poll_example(port, use_tls=tls, deadline=time.monotonic() + 60.0)
+    finally:
+        process.kill()
+        output = process.communicate(timeout=20)[0]
+    assert status is not None, (
+        f"the TLS example never answered over {'https' if tls else 'http'} on 127.0.0.1:{port}:\n"
+        f"{output[-2000:]}"
+    )
+    return status, body
+
+
+def test_the_tls_example_serves_https_when_given_certificates():
+    """The example is the runnable half of the TLS options, so it has to run.
+
+    An example that is only compiled rots -- `examples/config_file/root.py` shipped a
+    3.10-only union and could not start, and nobody found out from the suite. This
+    starts it with the fixture certificate and speaks TLS to it.
+    """
+    status, body = _run_tls_example(tls=True)
+
+    assert status == 200, f"the example answered {status} over HTTPS"
+    assert b'"tls": true' in body, f"the example did not report TLS as on: {body[:200]!r}"
+
+
+def test_the_tls_example_still_starts_without_certificates():
+    """The other half of the example's claim: no certificates, plain HTTP, still runs."""
+    status, body = _run_tls_example(tls=False)
+
+    assert status == 200, f"the example answered {status} over plain HTTP"
+    assert b'"tls": false' in body, f"the example did not report TLS as off: {body[:200]!r}"
 
 
 def test_static_files_example_serves_assets_and_spa_fallback():
