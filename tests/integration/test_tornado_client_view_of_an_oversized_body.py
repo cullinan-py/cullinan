@@ -122,6 +122,21 @@ def _exchange(
     return received, error
 
 
+#: The exceptions that mean "the peer went away while we were using the socket".
+#:
+#: ``ConnectionResetError`` is the peer's RST, ``ConnectionAbortedError`` is the local
+#: abort Windows reports for the same event, and ``BrokenPipeError`` is what POSIX
+#: raises when the write is the operation that notices. All three are the refusal
+#: arriving; ``TimeoutError`` is not -- it means neither an answer nor a close, which
+#: is a *hang*, and accepting it would let a server that never reacts pass as a server
+#: that refused.
+PEER_WENT_AWAY = (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)
+
+
+def _peer_went_away(error: BaseException | None) -> bool:
+    return isinstance(error, PEER_WENT_AWAY)
+
+
 @pytest.fixture(scope="module")
 def oversized_tornado_server():
     """A real Tornado server with a 1 KiB ceiling, on a port nobody else holds.
@@ -186,8 +201,10 @@ def test_a_client_still_writing_is_left_without_a_status_line(oversized_tornado_
         f"a status line was readable while the client was still writing "
         f"({received[:120]!r}); the page says this case carries none"
     )
-    assert error is not None or received == b"", (
-        f"the exchange neither failed nor came back empty: received={received[:120]!r}"
+    assert _peer_went_away(error), (
+        f"expected the connection to be reset or aborted, got "
+        f"{type(error).__name__ if error else None} (received={received[:120]!r}); a "
+        "socket timeout is a hang, not this outcome"
     )
 
 
@@ -212,8 +229,10 @@ def test_a_client_that_reads_late_loses_the_status_line(oversized_tornado_server
         f"a status line survived a 20 ms delay before reading ({received[:120]!r}); the "
         "page says this case carries none"
     )
-    assert error is not None or received == b"", (
-        f"the exchange neither failed nor came back empty: received={received[:120]!r}"
+    assert _peer_went_away(error), (
+        f"expected the connection to be reset or aborted, got "
+        f"{type(error).__name__ if error else None} (received={received[:120]!r}); a "
+        "socket timeout is a hang, not this outcome"
     )
 
 
@@ -238,7 +257,7 @@ def test_a_very_large_single_write_is_a_race(oversized_tornado_server):
         )
         assert body == b"", f"the 400 carries an empty body, got {body!r}"
     else:
-        assert isinstance(error, (ConnectionResetError, ConnectionAbortedError)), (
+        assert _peer_went_away(error), (
             f"nothing was read and the connection did not reset or abort (error={error!r}); "
             "the page describes this outcome as a reset"
         )
@@ -256,6 +275,26 @@ def test_a_chunked_upload_is_aborted_without_a_status_line(oversized_tornado_ser
         f"a status line was readable for a chunked upload 1.5x over the ceiling "
         f"({received[:120]!r}); the page says this case carries none"
     )
-    assert error is not None or received == b"", (
-        f"the exchange neither failed nor came back empty: received={received[:120]!r}"
+    assert _peer_went_away(error), (
+        f"expected the connection to be reset or aborted, got "
+        f"{type(error).__name__ if error else None} (received={received[:120]!r}); a "
+        "socket timeout is a hang, not this outcome"
     )
+
+def test_the_verdict_rejects_a_timeout():
+    """The narrowed verdict, on its own: a timeout is not "the peer went away".
+
+    The previous assertion accepted anything that was not an empty read --
+    ``error is not None`` -- and a socket timeout satisfies that. A timeout is the
+    shape of a *hang*: no answer and no close. A refused upload never looks like that,
+    so letting it pass would have made this file green against a server that had
+    stopped reacting altogether.
+    """
+    for error in (ConnectionResetError(), ConnectionAbortedError(), BrokenPipeError()):
+        assert _peer_went_away(error), f"{type(error).__name__} is the peer going away"
+
+    assert not _peer_went_away(TimeoutError()), (
+        "a timeout means neither an answer nor a close, which is a hang rather than a "
+        "refusal"
+    )
+    assert not _peer_went_away(None)
