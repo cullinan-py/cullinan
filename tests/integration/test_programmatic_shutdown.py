@@ -96,6 +96,24 @@ def test_an_in_flight_request_finishes_and_the_next_one_is_refused(engine):
 
     Both engines, because "graceful shutdown" that only works on one of them is
     half a feature -- and this repository has shipped that mistake before.
+
+    The two engines are held to *different* proofs on purpose, because the page
+    already documents that they behave differently here. `docs/deployment.md:90`
+    says uvicorn "closes the listener as the *first* step of its shutdown and then
+    calls ``shutdown()`` on every open connection, so there is **no window in which
+    you can reach it on purpose**". A request that lands during the drain is then
+    answered `503` only if it was already on its way; otherwise uvicorn aborts the
+    connection (a reset, or ``RemoteDisconnected`` on the client side -- the same
+    fact reported by a different errno). Asserting `503` there would make this file
+    assert a property the documentation denies, and it is what made the ASGI case
+    fail roughly one run in ten under load while the clean-machine run passed 7/7.
+
+    Tornado keeps the strict expectation: it leaves the listener open and answers
+    `503`, measured over fifteen runs of the audit without a single miss.
+
+    What is *not* relaxed on either engine is ``inflight == 200`` -- an in-flight
+    request finishing is the whole point of REQ-003, and a drain that cuts it is the
+    defect this case exists to catch.
     """
     results = _run_harness(engine)
 
@@ -107,10 +125,19 @@ def test_an_in_flight_request_finishes_and_the_next_one_is_refused(engine):
         f"{engine}: the request that was already running got {results['inflight']} "
         "instead of finishing -- the drain cut it"
     )
-    assert results["during_drain"] == 503, (
-        f"{engine}: a request that arrived after the stop was asked for got "
-        f"{results['during_drain']}, not 503"
-    )
+    if engine == "tornado":
+        assert results["during_drain"] == 503, (
+            f"tornado: a request that arrived after the stop was asked for got "
+            f"{results['during_drain']}, not 503; this engine keeps the listener open "
+            "and answers through it"
+        )
+    else:
+        assert results["during_drain"] in (503, "error:RemoteDisconnected", "error:ConnectionResetError"), (
+            "asgi: a request that arrived during the drain got "
+            f"{results['during_drain']!r}. uvicorn closes the listener first, so either "
+            "it was already on its way (503) or the connection went away under it -- "
+            "both are the documented outcome, and neither is a 2xx"
+        )
     assert results["elapsed"] < 60, (
         f"{engine}: the process took {results['elapsed']:.1f}s to leave; the drain "
         "was bounded by 20s"
