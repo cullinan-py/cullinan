@@ -114,7 +114,9 @@ Two consequences worth knowing:
 - A file that is already committed stays committed. The rule stops the next `git
   add .`; it does not rewrite history. Deleting the file is not the same as
   removing it: until the deletion is committed — and, for a value that was pushed,
-  until history is rewritten — the copy is still there to be fetched.
+  until history is rewritten — the copy is still there to be fetched. The check
+  reads the file on disk and the staged copy; it does not read the commits, so an
+  old value that is already committed is outside what it can tell you about.
 
 **Do not `print` it either.** `get_config()` hands back resolved values, so a
 `print` or a debug log of the whole document writes the secret into a terminal, a

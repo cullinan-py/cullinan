@@ -76,8 +76,13 @@ What it does not cover, stated so nobody assumes otherwise
 * B1 secrets in ``.py`` constants, ``.env`` files or CI definitions. That needs
   a whole-repository scanner with its own false-positive budget; use
   ``gitleaks`` or ``trufflehog``, which are built for it.
-* B2 git history. Only the working tree and the index are read, so a value
-  committed and later removed is not found here.
+* B2 git history. Only the working tree and the index are read, never HEAD. A
+  value that was committed and then removed from the index is therefore invisible
+  here, even though the commit still carries it -- rewriting history is a
+  different job with different stakes, and this check does not do it. The two
+  things that *are* covered must not be confused with it: a staged copy with
+  nothing on disk, and a staged copy that disagrees with the file on disk, are
+  both read.
 * B3 YAML is read line by line -- the standard library has no YAML parser. A
   single-line ``key: value`` is seen; multi-line block scalars are reported as
   uncertain rather than guessed at, and anchors, aliases and flow mappings are
@@ -220,6 +225,20 @@ VALUE_PATTERNS = (
 
 #: The single-key mapping ``load_config(decryptor=...)`` unwraps (R1).
 ENCRYPTED_MARKER = "encrypted"
+
+#: How a `source` value reads in a human-facing line. Kept next to the scanner
+#: rather than only in the payload because a bare "index" in a report reads as
+#: jargon; `gate_pre_push.py` carries the same table for its own rows and a test
+#: holds the two in step.
+SOURCE_LABELS = {
+    "index": "staged copy",
+    "worktree": "working tree",
+    "both": "both copies",
+}
+
+
+def source_label(name) -> str:
+    return SOURCE_LABELS.get(name, "unknown copy")
 
 #: Leaf names that carry no meaning of their own, so the meaning has to be read
 #: from the container: ``{"credentials": {"value": ...}}`` is a credential, while
@@ -821,11 +840,17 @@ def print_human(payload) -> None:
 
     The value itself is never printed -- only its length. A report that repeats
     what it found has moved the secret into the log.
+
+    The line also names which copy the value was found in, and that is not
+    decoration: a hit from the staged copy is invisible in the file on disk, so a
+    reader who opens the file, sees a reference and no value would reasonably
+    conclude the report is wrong. Saying "staged copy" tells them where to look.
     """
     for hit in payload["hits"]:
         print(
-            "HIT {}:{}:{} ({} character(s) not shown)".format(
-                hit["path"], hit["key_path"], hit["reason"], hit["value_len"]
+            "HIT {}:{}:{} ({} character(s) not shown; {})".format(
+                hit["path"], hit["key_path"], hit["reason"], hit["value_len"],
+                source_label(hit.get("source")),
             ),
             file=sys.stderr,
         )

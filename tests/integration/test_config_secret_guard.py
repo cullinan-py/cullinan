@@ -435,10 +435,7 @@ def test_the_same_value_in_both_copies_is_reported_once(tmp_path):
 
 
 def test_a_file_taken_out_of_the_index_is_still_read_from_disk(tmp_path):
-    """After ``git rm --cached`` the file stops being tracked but stays on disk,
-    where the loader still reads it. A scan driven by the index alone would go
-    quiet here.
-    """
+    """Untracked but present is still a file the loader reads."""
     run_git(tmp_path, "init", "-q")
     write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
     run_git(tmp_path, "add", "-f", "--", "application.json")
@@ -450,6 +447,54 @@ def test_a_file_taken_out_of_the_index_is_still_read_from_disk(tmp_path):
     result = run_checker("--root", str(tmp_path), "--json")
 
     assert result.returncode == 1, "an untracked but present file stopped being read"
+
+
+def test_the_human_report_says_which_copy_holds_the_value(tmp_path):
+    """The two copies produce the same verdict and must not produce the same line.
+
+    A hit that lives only in the staged copy is invisible in the file on disk. A
+    reader who runs the check, opens the file, sees a reference and no value, and
+    gets the same sentence either way would reasonably conclude the report is
+    wrong -- and the next thing they do is stop trusting it. The verdict is
+    identical in both cases; only the line says where to look.
+    """
+    only_worktree = tmp_path / "only_worktree"
+    only_worktree.mkdir()
+    run_git(only_worktree, "init", "-q")
+    write(only_worktree, "application.json", '{"token": "${TOKEN}"}')
+    run_git(only_worktree, "add", "-f", "--", "application.json")
+    write(only_worktree, "application.json", '{"token": "' + PLANTED + '"}')
+
+    only_index = tmp_path / "only_index"
+    only_index.mkdir()
+    run_git(only_index, "init", "-q")
+    write(only_index, "application.json", '{"token": "' + PLANTED + '"}')
+    run_git(only_index, "add", "-f", "--", "application.json")
+    write(only_index, "application.json", '{"token": "${TOKEN}"}')
+
+    def hit_lines(root):
+        return [
+            line for line in run_checker("--root", str(root)).stderr.splitlines()
+            if line.startswith("HIT ")
+        ]
+
+    worktree_line = hit_lines(only_worktree)
+    index_line = hit_lines(only_index)
+
+    assert worktree_line and index_line, (worktree_line, index_line)
+    assert worktree_line[0] != index_line[0], (
+        "both copies produced the same sentence, so a reader cannot tell whether to "
+        "open the file or the index: " + worktree_line[0]
+    )
+    assert "working tree" in worktree_line[0], worktree_line[0]
+    assert "staged copy" in index_line[0], index_line[0]
+
+
+def test_the_source_labels_agree_between_the_checker_and_the_gate():
+    """The gate repeats the table so it does not import the checker. Hold them equal."""
+    assert gate.SOURCE_LABELS == ccs.SOURCE_LABELS
+    assert ccs.source_label("index") == "staged copy"
+    assert ccs.source_label(None) == "unknown copy"
 
 
 # --------------------------------------------------------------------------- #

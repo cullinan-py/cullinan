@@ -797,6 +797,17 @@ def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None, tokens_fil
 CONFIG_SECRET_CHECKER = os.path.join("scripts", "check_config_secrets.py")
 
 
+#: How the checker's `source` value reads in this gate's rows. The same table
+#: lives in `check_config_secrets.py`; a test holds the two in step, because a
+#: gate that reports a hit the reader cannot locate is a gate they will distrust
+#: rather than act on.
+SOURCE_LABELS = {
+    "index": "staged copy",
+    "worktree": "working tree",
+    "both": "both copies",
+}
+
+
 def gate_m10(root, _refs=None):
     """No plaintext value in an `application*` configuration file.
 
@@ -856,8 +867,9 @@ def gate_m10(root, _refs=None):
         return Result("M10", title, "PASS", detail, warnings)
 
     if proc.returncode == 1:
-        rows = ["{}:{}:{} ({} character(s) not shown)".format(
-            hit.get("path"), hit.get("key_path"), hit.get("reason"), hit.get("value_len"))
+        rows = ["{}:{}:{} ({} character(s) not shown; {})".format(
+            hit.get("path"), hit.get("key_path"), hit.get("reason"), hit.get("value_len"),
+            SOURCE_LABELS.get(hit.get("source"), "unknown copy"))
             for hit in hits]
         return Result("M10", title, "FAIL",
                       "{} plaintext value(s) in {} scanned file(s)".format(len(hits), scanned),
