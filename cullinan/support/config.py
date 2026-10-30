@@ -6,7 +6,7 @@ import difflib
 import logging
 import os
 import sys
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 
 logger = logging.getLogger(__name__)
@@ -518,6 +518,56 @@ def push_config_overrides(overrides: Optional[Dict[str, Any]]) -> Iterator[Culli
         _config.from_dict(original)
 
 
+def _configure_option_names() -> Tuple[str, ...]:
+    """The names ``configure()`` accepts, read from its own signature.
+
+    Derived rather than listed: a second list of option names is a second truth,
+    and it drifts the first time an option is added. ``**unknown`` is the refusal
+    catcher, not an option, so it is excluded -- a suggestion must never be
+    "pass something else unknown".
+    """
+    import inspect
+
+    return tuple(
+        name
+        for name, parameter in inspect.signature(configure).parameters.items()
+        if parameter.kind is not inspect.Parameter.VAR_KEYWORD
+    )
+
+
+def _unknown_option_error(unknown: Dict[str, Any]) -> TypeError:
+    """Build the refusal for keyword arguments ``configure()`` does not take.
+
+    The refusal itself is deliberate and stays: accepting an unknown option with
+    a warning would turn a misspelling into a switch that silently does nothing,
+    which is exactly the failure the rest of this module is being fixed for. What
+    was missing is the reading aid -- Python's own message names the keyword but
+    not the one that was meant, so ``drain_timout`` read as "this version does not
+    have it" rather than "this is a typo".
+
+    The type stays ``TypeError``: a caller that already catches the built-in
+    refusal keeps working, and no new exception type is introduced for it.
+    """
+    accepted = _configure_option_names()
+    described = []
+    for name in sorted(unknown):
+        suggestion = difflib.get_close_matches(name, list(accepted), n=1)
+        if suggestion:
+            described.append(f"'{name}' (did you mean '{suggestion[0]}'?)")
+        else:
+            described.append(f"'{name}'")
+    joined = ", ".join(described)
+    return TypeError(
+        f"configure() received an option that is not a known option: {joined}. "
+        f"The options configure() accepts are its own parameters: "
+        f"{', '.join(accepted)}. "
+        "Keys in a configuration file are CullinanConfig's field names instead, and "
+        "the two sets are not the same list. See "
+        "docs/configuration.md#options-in-code for the accepted options and the "
+        "order the layers are applied in."
+    )
+
+
 def configure(
     root_module: Optional[Any] = None,
     user_packages: Optional[List[str]] = None,
@@ -539,6 +589,7 @@ def configure(
     builtin_middleware: Optional[List[Any]] = None,
     strict_assembly: bool = False,
     strict_assembly_excludes: Optional[List[str]] = None,
+    **unknown: Any,
 ):
     """Configure the Cullinan framework.
 
@@ -605,6 +656,14 @@ def configure(
             but they no longer make ``strict_assembly`` fail. ``None`` (the
             default) means no intentional exclusions; pass an empty list for the
             same meaning explicitly.
+        **unknown: Anything else is refused with a ``TypeError`` that names the
+            option, the closest name this function does accept, and the
+            documentation section listing them
+            (``docs/configuration.md#options-in-code``). Accepting it with a
+            warning was considered and rejected: a misspelt option would then be
+            a switch that silently does nothing, which is the failure this
+            surface exists to prevent. The exception type stays ``TypeError``, so
+            callers that already catch the built-in refusal keep working.
 
     Example:
         >>> from cullinan import configure
@@ -634,6 +693,11 @@ def configure(
         def main(): ...
     """
     global _config
+
+    # Refused before anything is assigned: a call with a misspelt option must not
+    # change half the configuration and then stop.
+    if unknown:
+        raise _unknown_option_error(unknown)
 
     if root_module is not None:
         from cullinan.support.diagnostics import legacy_root_module_entry_removed

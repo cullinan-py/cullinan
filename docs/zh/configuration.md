@@ -10,7 +10,7 @@ translation_pair: "docs/configuration.md"
 related_tests: ["tests/core/test_config_file.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/config_file"]
 estimate_pd: null
-last_updated: "2026-10-31"
+last_updated: "2026-10-30"
 
 # 配置
 
@@ -87,7 +87,7 @@ JSON 什么都不需要，所以它是永远可用的格式。
 
 显式指定的路径不存在是错误。在有人指名了文件之后回落到默认值，会把一个拼写错误藏到上线。
 
-## 优先级
+## 优先级 {#precedence}
 
 从高到低：
 
@@ -105,6 +105,31 @@ JSON 什么都不需要，所以它是永远可用的格式。
 
 `run(...)` 对它接受的这两个名字优先于文件；环境变量在取值时才读，所以优先于两者。
 其余每个名字都只有一个决定者：有文件就用文件，没有就用代码里写的值，再没有就用默认值。
+
+## 代码里的选项 {#options-in-code}
+
+`@configure(...)` 有**自己**的一组选项 —— 也就是 `configure()` 的形参 —— 它和配置文件
+可写的键**不是同一份清单**。由此有两点：
+
+- `configure()` 没有的选项会被**拒绝**：`TypeError` 里点名这个参数、给出它**接受**的
+  最接近的名字，并指到本节。我们考虑过"接受并告警"，但否掉了：那样一个拼写错误会变成
+  一个看起来设了、实际什么都不改的开关 —— 而这正是本页反复在说的那类故障。异常类型仍是
+  `TypeError`，已经捕获它的调用方不受影响；
+- 同一个设置在两处都写时，**文件赢** —— 见[优先级](#precedence)。这才让"改一个文件就能回退"成立，
+  也正因为如此，跨越 0.96 线的回退单元是「**pin 加配置**」，不是「pin」
+  （见[迁移指南](migration_guide_v2.md#10-rolling-back-across-this-line)）。
+
+想知道**装上的那一版**到底接受哪些选项，直接问它：
+
+```python
+import inspect
+
+from cullinan import configure
+
+print(sorted(inspect.signature(configure).parameters))
+```
+
+错误信息读的就是同一处来源，所以两者不会各说一套。
 
 ## 别把密钥放进文件
 

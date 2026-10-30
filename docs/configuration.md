@@ -10,7 +10,7 @@ translation_pair: "docs/zh/configuration.md"
 related_tests: ["tests/core/test_config_file.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/config_file"]
 estimate_pd: null
-last_updated: "2026-10-31"
+last_updated: "2026-10-30"
 
 # Configuration
 
@@ -125,6 +125,37 @@ matches what the code does.
 variable is read at use time, so it wins over both. Every other name has one
 decider: the file if it is there, otherwise the value written in code, otherwise
 the default.
+
+## Options in code
+
+`@configure(...)` takes its own set of options — the parameters of `configure()`
+— and that is **not** the same list as the keys a file may contain. Two
+consequences follow:
+
+- an option `configure()` does not have is **refused**, with a `TypeError` that
+  names it, offers the closest name it *does* accept, and points at this section.
+  Accepting a misspelling with a warning was considered and rejected: the switch
+  would look set and change nothing, which is the failure this page keeps coming
+  back to. The exception type is still `TypeError`, so a caller that already
+  catches it keeps working;
+- when a setting is named in both places, the file wins — see
+  [Precedence](#precedence). That is what makes "roll back by editing one file"
+  true, and it is why the rollback unit across the 0.96 line is a pin **and** a
+  configuration, not the pin alone
+  ([migration guide](migration_guide_v2.md#10-rolling-back-across-this-line)).
+
+To see the exact list for the installed version, ask it:
+
+```python
+import inspect
+
+from cullinan import configure
+
+print(sorted(inspect.signature(configure).parameters))
+```
+
+That is the same source the error message reads, so the message and the list
+cannot drift apart.
 
 ## Keep secrets out of the file
 

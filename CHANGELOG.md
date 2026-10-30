@@ -60,6 +60,14 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Changed
 
+- **A misspelt option for `configure()` now says what was probably meant.** The
+  call is still refused — accepting an unknown keyword with a warning would turn a
+  typo into a switch that looks set and changes nothing — but the message now names
+  the option, offers the closest name `configure()` does accept, and points at the
+  section that lists them. The exception type is still `TypeError`, so a caller
+  that already catches it keeps working. The suggestions are read from the
+  function's own signature, so they cannot drift away from the options that exist.
+
 - **The configuration page described an order the code never implemented.** It listed
   `configure(...)` above the project file. The file is applied *after* the values
   declared in code, so a key present in both takes the file's value — and still does.

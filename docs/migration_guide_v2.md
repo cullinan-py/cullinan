@@ -10,7 +10,7 @@ translation_pair: "docs/zh/migration_guide_v2.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-28"
+last_updated: "2026-10-30"
 pr_links: []
 
 
@@ -367,7 +367,7 @@ The `@websocket_handler` API is unchanged. When running in ASGI mode, WebSocket 
 
 The `cullinan.web.params` system (`Path`, `Query`, `Body`, `Header`) is unchanged and works identically in v0.93. Parameters are now resolved by the `Dispatcher` instead of Tornado handlers.
 
-### 10. Rolling back across this line
+### 10. Rolling back across this line {#10-rolling-back-across-this-line}
 
 A version pin is not a complete rollback. Two `configure()` keywords were added
 inside the 0.96 alpha line, so an application that uses them cannot go back to an
@@ -383,6 +383,13 @@ fails at import time with `TypeError: configure() got an unexpected keyword
 argument ...`. The keyword is **rejected**, not ignored — nothing silently
 disappears — but it does mean the rollback unit is *pin **and** configuration*,
 not pin alone.
+
+That refusal now also says which option was probably meant, and where the list
+lives: an unknown keyword names the option, offers the closest name the installed
+version *does* accept, and points at
+[the options in code](configuration.md#options-in-code). The value of that on a
+rollback is one less guess: a misspelt option reads as a typo instead of as a
+feature this version lacks.
 
 If a rollback has to stay cheap, ask the installed version what it accepts instead
 of asking the pin which number it is:
