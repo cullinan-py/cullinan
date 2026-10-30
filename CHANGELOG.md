@@ -77,6 +77,15 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Fixed
 
+- **An oversized upload is refused before the body is read, on ASGI too.** The
+  ceiling was enforced while reading, so a client that sent slowly was answered
+  only after it had finished sending, and one that never finished was never
+  answered. `Content-Length` arrives with the headers, so a body that declares
+  itself too large is now answered `413` at once, without reading a byte of it. A
+  chunked upload declares nothing and keeps the previous behaviour: it is stopped
+  when the received size crosses the ceiling. The response still carries exactly
+  one `Content-Length` header.
+
 - **A configuration switch that was declared, documented and ignored.** Nine
   `CullinanConfig` fields had no path from a configuration source into the object:
   `openapi_enabled` and its three companions, `debug`, `enable_middleware_pipeline`,

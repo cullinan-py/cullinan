@@ -303,6 +303,28 @@ async def _send_error_body(
     await send({'type': 'http.response.body', 'body': body})
 
 
+def _declared_content_length(scope: Scope) -> Optional[int]:
+    """The body size the request declares, when it declares one.
+
+    ``Content-Length`` is the client saying how much it is about to send, and it
+    arrives with the headers -- before a single byte of the body. That is the
+    whole reason this exists: a body that has not started arriving yet can still
+    be refused, which is the difference between an answer and a wait. Returns
+    ``None`` for a chunked request (no declaration) and for a value that cannot be
+    read as a number, because neither is evidence of an oversize body.
+    """
+    for name, value in scope.get('headers') or []:
+        raw_name = name.encode('latin-1') if isinstance(name, str) else name
+        if raw_name.lower() != b'content-length':
+            continue
+        raw_value = value.encode('latin-1') if isinstance(value, str) else value
+        try:
+            return int(raw_value.decode('latin-1').strip())
+        except (UnicodeDecodeError, ValueError):
+            return None
+    return None
+
+
 async def _read_body(receive: Receive, limit: Optional[int]) -> tuple[bytes, bool]:
     """Read the request body, stopping once ``limit`` is exceeded.
 
@@ -340,8 +362,26 @@ async def _handle_http(
         if runtime is not None:
             runtime.begin_request()
         binding = bind_runtime_request_context(runtime)
-        # 1. Read full body (bounded, if a bound is configured)
+        # 1. Refuse a declared oversize body before reading it.
+        #
+        # The ceiling exists so a body nobody wants is not paid for. Reading until
+        # the limit is crossed answered a *slow* client only after it had finished
+        # sending -- which for a client that never finishes is no answer at all.
+        # ``Content-Length`` is known up front, so the request can be answered at
+        # once. A chunked request declares nothing; it still takes the bounded
+        # read below, because there is no earlier point at which its size is known.
         limit = resolve_max_request_body_bytes()
+        declared_length = _declared_content_length(scope)
+        if limit is not None and declared_length is not None and declared_length > limit:
+            await _send_error_body(
+                send,
+                413,
+                b'{"error":"Payload Too Large","reason":"request body exceeded max_request_body_bytes"}',
+                extra_headers=[[b'connection', b'close']],
+            )
+            return
+
+        # 2. Read full body (bounded, if a bound is configured)
         body, too_large = await _read_body(receive, limit)
         if too_large:
             await _send_error_body(
@@ -352,15 +392,15 @@ async def _handle_http(
             )
             return
 
-        # 2. Build WebRequest from ASGI scope
+        # 3. Build WebRequest from ASGI scope
         request = await adapter.create_request_adapter().build_request(scope, body)
         if runtime is not None:
             request.attributes['runtime'] = runtime
 
-        # 3. Dispatch
+        # 4. Dispatch
         response = await adapter.dispatcher.dispatch(request)
 
-        # 4. Send response via ASGI
+        # 5. Send response via ASGI
         await adapter.create_response_writer().write_response(response, send)
 
     except Exception as exc:

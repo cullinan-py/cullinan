@@ -86,6 +86,14 @@ upload crosses the ceiling depends on the engine *and* on whether the client is
 still writing when the server refuses, and one of those outcomes carries no
 status code at all.
 
+The refusal itself happens before the body is accepted, on both engines. A
+request whose `Content-Length` already exceeds the ceiling is answered `413`
+without reading it — a client that sends slowly, or never finishes, still gets its
+answer at once. A chunked upload declares no size, so it is stopped when the bytes
+received cross the ceiling. Tornado refuses at `max_body_size` before the
+framework sees the request at all; what the client can read of that refusal is the
+part that depends on timing.
+
 ## Where the file is looked for
 
 In order:
