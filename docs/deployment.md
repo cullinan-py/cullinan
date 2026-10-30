@@ -356,6 +356,46 @@ Set it if the deployment accepts uploads from anywhere: without a ceiling, a
 1 MiB body posted to a path that does not exist is read in full before the
 `404`.
 
+## TLS
+
+The application can terminate TLS itself; the four options are the same on both
+engines, so turning it on is not a backend decision:
+
+```python
+@configure(
+    user_packages=["your_app"],
+    ssl_certfile="/etc/tls/server.crt",
+    ssl_keyfile="/etc/tls/server.key",
+    ssl_client_ca="/etc/tls/ca.crt",      # optional: asks for a client certificate
+    ssl_verify_client=True,               # default; see below
+)
+@application
+def main(): ...
+```
+
+| Option | Meaning |
+|---|---|
+| `ssl_certfile` | the server certificate, PEM |
+| `ssl_keyfile` | its private key — **both or neither** |
+| `ssl_client_ca` | a CA bundle; giving it means client certificates are requested |
+| `ssl_verify_client` | whether those certificates are checked (`True` by default) |
+
+**Half a key pair is a start-up error, not a fallback to HTTP.** A listener that was
+asked to be encrypted and quietly served plaintext is worse than one that refuses to
+start: the failure would look like success until someone read the scheme.
+
+**`ssl_verify_client=False` requests a certificate and accepts any.** It exists for a
+migration where the client population cannot all be issued certificates at once. It is
+not recommended, it is not a substitute for `ssl_client_ca`, and it should not survive
+the migration.
+
+Terminating at a proxy instead is a normal choice and needs none of this: the framework
+then sees plain HTTP from a trusted hop, and the forwarded headers section above is the
+part that matters.
+
+An example that starts with these options, from files or from the environment, is
+`examples/tls_termination/`.
+
 ## Static files
 
 Two valid deployments:

@@ -269,6 +269,40 @@ def main(): ...
 
 部署对公网接受上传时请设它 —— 不设上限时，一个 1 MiB 的 body 打到一个**不存在的路径**，会被完整缓冲后才回 `404`。
 
+## TLS
+
+应用可以自己终结 TLS；四个选项在两个引擎上完全一样，所以打开它不是后端决策：
+
+```python
+@configure(
+    user_packages=["your_app"],
+    ssl_certfile="/etc/tls/server.crt",
+    ssl_keyfile="/etc/tls/server.key",
+    ssl_client_ca="/etc/tls/ca.crt",      # 可选：要求客户端证书
+    ssl_verify_client=True,               # 默认值，见下
+)
+@application
+def main(): ...
+```
+
+| 选项 | 含义 |
+|---|---|
+| `ssl_certfile` | 服务端证书（PEM） |
+| `ssl_keyfile` | 私钥 —— **两个一起给，或者都不给** |
+| `ssl_client_ca` | CA 包；给了它就要求客户端证书 |
+| `ssl_verify_client` | 是否**校验**这些证书（默认 `True`） |
+
+**只给半个密钥对是启动期错误，不是回落 HTTP。** 一个被要求加密、却悄悄以明文提供服务的监听器，
+比一个拒绝启动的更糟：故障看起来像成功，直到有人去看 scheme。
+
+**`ssl_verify_client=False` 是"要证书但不校验"**，用于"客户端一时发不全证书"的迁移期。它**不推荐**，
+不能替代 `ssl_client_ca`，也不该在迁移结束后继续留着。
+
+在代理上终结 TLS 是正常选择，那就一个选项都不用设：框架看到的是来自可信一跳的明文 HTTP，
+这时起作用的是上面的转发头一节。
+
+带这四个选项、可从文件或环境变量启动的示例在 `examples/tls_termination/`。
+
 ## 静态文件
 
 两种可行部署：

@@ -48,17 +48,17 @@ JSON 什么都不需要，所以它是永远可用的格式。
 ## 哪些键可以写
 
 可写的键就是 `CullinanConfig` 的字段名，并且由该类**派生**而不是在这里再列一份——
-第二份清单就是第二个真相，某次着急加字段时它必然漂移。一共 28 个，分五组：
+第二份清单就是第二个真相，某次着急加字段时它必然漂移。一共 32 个，分五组：
 
 | 组 | 键 |
 |---|---|
 | 发现与扫描 | `user_packages`、`project_root`、`exclude_packages`、`auto_scan`、`explicit_modules` |
-| 服务 | `server_engine`、`asgi_server`、`server_host`、`server_port`、`drain_timeout`、`max_request_body_bytes` |
+| 服务 | `server_engine`、`asgi_server`、`server_host`、`server_port`、`drain_timeout`、`max_request_body_bytes`、`ssl_certfile`、`ssl_keyfile`、`ssl_client_ca`、`ssl_verify_client` |
 | 路由 | `route_trailing_slash`、`route_case_sensitive`、`enable_middleware_pipeline` |
 | OpenAPI | `openapi_enabled`、`openapi_title`、`openapi_version`、`openapi_description` |
 | 运行期与装配 | `verbose`、`debug`、`startup_error_policy`、`static_files`、`middlewares`、`builtin_middleware`、`context_features`、`strict_assembly`、`strict_assembly_excludes` |
 
-`root_module` 是第 28 个字段，只为既有装饰器还能导入而保留；在启动时传它是错误，不是设置。
+`root_module` 是第 32 个字段，只为既有装饰器还能导入而保留；在启动时传它是错误，不是设置。
 
 集合之外的键在**加载时就会被报出来**——给出键名、它来自哪个文件，拼写接近时还会给出
 大概想写的那个名字——并且**不会被应用**。键不允许"被收下又不生效"：一个拼写错误和一个

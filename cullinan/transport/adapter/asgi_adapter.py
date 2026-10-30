@@ -28,6 +28,7 @@ from cullinan.application.model import (
 from cullinan.web.gateway.dispatcher import Dispatcher
 from cullinan.web.gateway.web_core import WebRequest, WebResponse
 from .base import WebAdapter, resolve_max_request_body_bytes
+from .tls import resolve_tls_settings, uvicorn_ssl_options
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +227,12 @@ class ASGIAdapter(WebAdapter):
                 if key not in ('server', 'log_level', 'timeout_graceful_shutdown')
             }
             config_kwargs.setdefault('timeout_graceful_shutdown', drain_timeout)
+            # TLS is resolved here, not in ``run()``'s caller: a half-configured key
+            # pair must stop the process before uvicorn starts listening, and the
+            # configuration file can set these without going through ``configure()``.
+            tls_settings = resolve_tls_settings()
+            if tls_settings is not None:
+                config_kwargs.update(uvicorn_ssl_options(tls_settings))
             config = uvicorn.Config(
                 self._asgi_app,
                 host=host,

@@ -55,12 +55,12 @@ of silently loading nothing. JSON needs nothing, so it is the format that always
 The accepted set is the field names of `CullinanConfig`, and the framework
 derives it from that class instead of listing it a second time -- a list here
 would be a second truth, and it would drift the first time someone added a field
-in a hurry. There are 28, in five groups:
+in a hurry. There are 32, in five groups:
 
 | Group | Keys |
 |---|---|
 | discovery | `user_packages`, `project_root`, `exclude_packages`, `auto_scan`, `explicit_modules` |
-| server | `server_engine`, `asgi_server`, `server_host`, `server_port`, `drain_timeout`, `max_request_body_bytes` |
+| server | `server_engine`, `asgi_server`, `server_host`, `server_port`, `drain_timeout`, `max_request_body_bytes`, `ssl_certfile`, `ssl_keyfile`, `ssl_client_ca`, `ssl_verify_client` |
 | routing | `route_trailing_slash`, `route_case_sensitive`, `enable_middleware_pipeline` |
 | OpenAPI | `openapi_enabled`, `openapi_title`, `openapi_version`, `openapi_description` |
 | runtime / assembly | `verbose`, `debug`, `startup_error_policy`, `static_files`, `middlewares`, `builtin_middleware`, `context_features`, `strict_assembly`, `strict_assembly_excludes` |

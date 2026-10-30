@@ -163,6 +163,18 @@ class CullinanConfig:
         # engine, instead of requiring the advanced Application entry.
         self.drain_timeout: Optional[float] = None
 
+        # Application-level TLS. ``ssl_certfile`` and ``ssl_keyfile`` are the two
+        # halves of the server's key pair and must be given together: a listener
+        # configured for TLS that quietly served plain HTTP instead would be a
+        # downgrade nobody asked for, so half a pair is refused at start-up rather
+        # than ignored. ``ssl_client_ca`` turns on client certificates (mTLS);
+        # ``ssl_verify_client`` decides whether those certificates are *checked*
+        # while still being *requested*, which is a narrow and rarely wanted case.
+        self.ssl_certfile: Optional[str] = None
+        self.ssl_keyfile: Optional[str] = None
+        self.ssl_client_ca: Optional[str] = None
+        self.ssl_verify_client: bool = True
+
         # Whether to enable the gateway middleware pipeline
         self.enable_middleware_pipeline: bool = True
 
@@ -318,6 +330,26 @@ class CullinanConfig:
             value = config['drain_timeout']
             self.drain_timeout = float(value) if value is not None else None
 
+        if 'ssl_certfile' in config:
+            self.ssl_certfile = config['ssl_certfile'] or None
+        if 'ssl_keyfile' in config:
+            self.ssl_keyfile = config['ssl_keyfile'] or None
+        if 'ssl_client_ca' in config:
+            self.ssl_client_ca = config['ssl_client_ca'] or None
+        if 'ssl_verify_client' in config:
+            value = config['ssl_verify_client']
+            if isinstance(value, str):
+                lowered = value.strip().lower()
+                if lowered in ('1', 'true', 'yes', 'on'):
+                    value = True
+                elif lowered in ('0', 'false', 'no', 'off'):
+                    value = False
+                else:
+                    raise ValueError(
+                        f"ssl_verify_client: {value!r} is not a boolean; write true/false"
+                    )
+            self.ssl_verify_client = bool(value)
+
         if 'static_files' in config:
             value = config['static_files']
             self.static_files = list(value) if value else []
@@ -443,6 +475,10 @@ class CullinanConfig:
             'server_port': self.server_port,
             'drain_timeout': self.drain_timeout,
             'max_request_body_bytes': self.max_request_body_bytes,
+            'ssl_certfile': self.ssl_certfile,
+            'ssl_keyfile': self.ssl_keyfile,
+            'ssl_client_ca': self.ssl_client_ca,
+            'ssl_verify_client': self.ssl_verify_client,
             'explicit_modules': self.explicit_modules,
             'static_files': list(self.static_files),
             'middlewares': list(self.middlewares),
@@ -582,6 +618,10 @@ def configure(
     server_port: Optional[int] = None,
     drain_timeout: Optional[float] = None,
     max_request_body_bytes: Optional[int] = None,
+    ssl_certfile: Optional[str] = None,
+    ssl_keyfile: Optional[str] = None,
+    ssl_client_ca: Optional[str] = None,
+    ssl_verify_client: Optional[bool] = None,
     explicit_modules: Optional[List[str]] = None,
     static_files: Optional[List[Any]] = None,
     *,
@@ -725,6 +765,29 @@ def configure(
         if drain_timeout <= 0:
             raise ValueError("drain_timeout must be greater than zero")
         _config.drain_timeout = float(drain_timeout)
+
+    # TLS is validated before anything is assigned: half a key pair has to fail
+    # here, where the caller can see which option is missing, rather than fall back
+    # to plain HTTP and leave the operator believing the connection was encrypted.
+    effective_certfile = ssl_certfile if ssl_certfile is not None else _config.ssl_certfile
+    effective_keyfile = ssl_keyfile if ssl_keyfile is not None else _config.ssl_keyfile
+    if bool(effective_certfile) != bool(effective_keyfile):
+        given, missing = (
+            ("ssl_certfile", "ssl_keyfile") if effective_certfile else ("ssl_keyfile", "ssl_certfile")
+        )
+        raise ValueError(
+            f"{given} was given without {missing}: a TLS listener needs both halves of the key "
+            "pair. Serving plain HTTP instead would silently downgrade a connection that was "
+            "asked to be encrypted."
+        )
+    if ssl_certfile is not None:
+        _config.ssl_certfile = ssl_certfile or None
+    if ssl_keyfile is not None:
+        _config.ssl_keyfile = ssl_keyfile or None
+    if ssl_client_ca is not None:
+        _config.ssl_client_ca = ssl_client_ca or None
+    if ssl_verify_client is not None:
+        _config.ssl_verify_client = bool(ssl_verify_client)
 
     if project_root is not None:
         _config.set_project_root(project_root)

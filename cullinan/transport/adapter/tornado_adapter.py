@@ -28,6 +28,7 @@ from cullinan.application.model import (
 from cullinan.web.gateway.dispatcher import Dispatcher
 from cullinan.web.gateway.web_core import WebRequest, WebResponse
 from .base import WebAdapter, resolve_max_request_body_bytes
+from .tls import resolve_tls_settings, tornado_ssl_options
 
 logger = logging.getLogger(__name__)
 
@@ -188,15 +189,22 @@ class _CullinanTornadoHandler(tornado.web.RequestHandler):
 
 
 def server_options() -> dict:
-    """Keyword arguments for ``HTTPServer``, given the configured ceiling.
+    """Keyword arguments for ``HTTPServer``, given the configured ceiling and TLS.
 
     ``max_body_size`` is the only thing that makes Tornado stop reading; without
     it the handler-level check can only reject a body that has already been
-    accepted in full. Exposed separately so the wiring is testable without
-    starting a server.
+    accepted in full. ``ssl_options`` is added when the configuration asks for
+    TLS -- see :mod:`cullinan.transport.adapter.tls` for the pairing rule.
+    Exposed separately so the wiring is testable without starting a server.
     """
+    options: dict = {}
     limit = resolve_max_request_body_bytes()
-    return {'max_body_size': limit} if limit is not None else {}
+    if limit is not None:
+        options['max_body_size'] = limit
+    tls_settings = resolve_tls_settings()
+    if tls_settings is not None:
+        options['ssl_options'] = tornado_ssl_options(tls_settings)
+    return options
 
 
 class TornadoAdapter(WebAdapter):

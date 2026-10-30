@@ -36,6 +36,18 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Added
 
+- **TLS can be terminated by the application, on both engines.** Four options —
+  `ssl_certfile`, `ssl_keyfile`, `ssl_client_ca` and `ssl_verify_client` — go to
+  whichever backend is running, so turning TLS on is not a backend decision. Giving
+  only one half of the key pair is a start-up error rather than a fallback to plain
+  HTTP: a listener that was asked to be encrypted and quietly served plaintext is
+  worse than one that refuses to start. A client CA turns on client certificates, and
+  they are checked by default; `ssl_verify_client=False` asks for a certificate
+  without checking it, documented as a migration aid rather than a mode to stay in.
+  The tests perform real handshakes on both engines — trust, distrust, a missing
+  client certificate, and the half-configuration refusal — against certificates
+  committed in `tests/fixtures/tls/`, so no `openssl` binary is needed at test time.
+
 - **Start-up prints which engine is running and which layer chose it.** Four layers
   can name the engine — the `run()` argument, `CULLINAN_ENGINE`, the configuration
   file's `server_engine`, and `configure(server_engine=...)` — and when two of them
