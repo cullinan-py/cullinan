@@ -10,7 +10,7 @@ translation_pair: "docs/zh/api_reference.md"
 related_tests: []
 related_examples: []
 estimate_pd: 1.5
-last_updated: "2026-10-27"
+last_updated: "2026-10-31"
 pr_links: []
 
 # API Reference
@@ -101,6 +101,12 @@ importing the framework, and without reading this page:
 - file: `cullinan/_contracts.json` (shipped in the wheel)
 - `stability_commitment` — the symbol-name list of each of the four contract
   modules (`cullinan`, `cullinan.application`, `cullinan.web`, `cullinan.core`)
+- `stability_shapes` — what each of those names points at (`function`, `class`,
+  `module`, `other`), so a name that keeps its spelling and changes its referent is
+  visible here
+- `pinned_symbols` — for the callables whose *contents* are promised,
+  `cullinan.support.config.configure_options` and the option names it accepts; the
+  recorded set is what a shrink is compared against
 - `not_in_commitment` — the facades that are deliberately outside the
   commitment, e.g. `cullinan.web.gateway`
 - `schema_version` and `generated_from` — schema and provenance metadata

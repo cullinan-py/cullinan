@@ -117,6 +117,51 @@ def _validate_shapes(payload: dict, live_shapes: dict) -> None:
             )
 
 
+def _live_pinned() -> dict:
+    from cullinan.support.config import configure_options
+
+    return {
+        "cullinan.support.config.configure_options": {
+            "shape": _shape_of(configure_options),
+            "accepted": list(configure_options()),
+        }
+    }
+
+
+def _validate_pinned(payload: dict, live: dict | None = None) -> None:
+    """Raise ``AssertionError`` if a pinned symbol, or what it answers, drifted.
+
+    Two failures are reported apart on purpose: a symbol that vanished, and a symbol
+    that stayed while the set of names it accepts shrank. The second is the one a
+    signature-based check cannot see -- it reads the same signature the implementation
+    reads -- which is why the answer is recorded in the artifact and compared here.
+    """
+    recorded = payload.get("pinned_symbols")
+    assert recorded is not None, (
+        "the artifact records no pinned_symbols; without it a callable can keep its "
+        "name and its shape while the names it accepts quietly shrink, and every check "
+        "that derives that set from the same signature stays green"
+    )
+    live = _live_pinned() if live is None else live
+
+    assert set(recorded) == set(live), (
+        f"pinned symbols differ: recorded but not live {sorted(set(recorded) - set(live))}, "
+        f"live but not recorded {sorted(set(live) - set(recorded))}"
+    )
+    for key, expected in live.items():
+        entry = recorded[key]
+        assert "accepted" in entry, f"{key}: the artifact records no accepted names"
+        assert entry["shape"] == expected["shape"], (
+            f"{key} now points at a {expected['shape']}, and the contract recorded a "
+            f"{entry['shape']}"
+        )
+        gone = sorted(set(entry["accepted"]) - set(expected["accepted"]))
+        new = sorted(set(expected["accepted"]) - set(entry["accepted"]))
+        assert not gone and not new, (
+            f"{key} accepts a different set of names: gone {gone}, new {new}"
+        )
+
+
 def test_contract_artifact_is_packaged_and_importable():
     # AC-2: proves package-data wiring -- a missing entry would silently drop
     # the file from the wheel.
@@ -168,11 +213,12 @@ def test_the_module_decorator_split_is_recorded_as_a_shape():
 def test_contract_artifact_declares_schema_and_provenance():
     # AC-6: stdlib-json readable + required metadata fields.
     payload = _load_artifact()
-    assert payload["schema_version"] == 2, (
-        "schema 2 is the first version that records a shape; a lower number "
-        "means the gate cannot see a referent change"
+    assert payload["schema_version"] == 3, (
+        "schema 3 is the first version that records what a pinned callable answers; a "
+        "lower number means a shrinking accepted set is invisible to the gate"
     )
     assert "stability_shapes" in payload
+    assert "pinned_symbols" in payload
     generated_from = payload["generated_from"]
     assert "tool" in generated_from
     assert "cullinan_version" in generated_from
@@ -262,6 +308,72 @@ def test_contract_validation_detects_a_shape_change_in_the_package(monkeypatch):
     assert "cullinan.web.get_api" in str(caught.value)
 
 
+def test_contract_artifact_pins_what_configure_options_accepts():
+    """The record a shrinking option set has to disagree with.
+
+    ``configure_options()`` and the checks around it read the same signature, so a
+    name that disappears from ``configure()`` disappears from the answer too and
+    every one of those checks stays green. The committed artifact is the copy that
+    does not move by itself.
+    """
+    payload = _load_artifact()
+    _validate_pinned(payload)
+
+    entry = payload["pinned_symbols"]["cullinan.support.config.configure_options"]
+    assert entry["shape"] == "function", entry["shape"]
+    assert len(entry["accepted"]) == 23, (
+        f"the artifact pins {len(entry['accepted'])} accepted options; this release has "
+        "23. Adding or removing one is a deliberate act: regenerate the artifact and "
+        "update this number in the same change, so the diff records the decision."
+    )
+
+
+def test_a_contract_without_pinned_symbols_is_red():
+    """A missing field is not "nothing to check" -- it is the hole this closes."""
+    payload = _load_artifact()
+    legacy = json.loads(json.dumps(payload))
+    legacy.pop("pinned_symbols")
+
+    with pytest.raises(AssertionError) as caught:
+        _validate_pinned(legacy)
+    assert "pinned_symbols" in str(caught.value)
+
+
+def test_contract_validation_detects_a_shrunk_accepted_set_in_the_artifact():
+    """A name dropped from the record must be reported by name."""
+    payload = _load_artifact()
+    mutated = json.loads(json.dumps(payload))
+    entry = mutated["pinned_symbols"]["cullinan.support.config.configure_options"]
+    entry["accepted"] = [name for name in entry["accepted"] if name != "drain_timeout"]
+
+    with pytest.raises(AssertionError) as caught:
+        _validate_pinned(mutated)
+    assert "drain_timeout" in str(caught.value)
+
+
+def test_contract_validation_detects_a_shrunk_accepted_set_in_the_package(monkeypatch):
+    """The direction that used to be invisible: the package shrinks, the record stays."""
+    import cullinan.support.config as config_api
+
+    payload = _load_artifact()
+    real = config_api.configure_options
+    monkeypatch.setattr(
+        config_api,
+        "configure_options",
+        lambda: tuple(name for name in real() if name != "drain_timeout"),
+    )
+    live = {
+        "cullinan.support.config.configure_options": {
+            "shape": "function",
+            "accepted": list(config_api.configure_options()),
+        }
+    }
+
+    with pytest.raises(AssertionError) as caught:
+        _validate_pinned(payload, live)
+    assert "drain_timeout" in str(caught.value)
+
+
 def test_a_schema_one_artifact_is_red_rather_than_skipped():
     """An old artifact must fail, not pass quietly.
 
@@ -290,6 +402,7 @@ def test_generator_reproduces_committed_commitment():
 
     assert regenerated["stability_commitment"] == payload["stability_commitment"]
     assert regenerated["stability_shapes"] == payload["stability_shapes"]
+    assert regenerated["pinned_symbols"] == payload["pinned_symbols"]
     assert regenerated["not_in_commitment"] == payload["not_in_commitment"]
 
 

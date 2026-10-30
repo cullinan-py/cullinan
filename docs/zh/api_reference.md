@@ -10,7 +10,7 @@ translation_pair: "docs/api_reference.md"
 related_tests: []
 related_examples: []
 estimate_pd: 1.5
-last_updated: "2026-10-27"
+last_updated: "2026-10-31"
 pr_links: []
 
 # API 参考
@@ -71,6 +71,8 @@ pr_links: []
 
 - 文件：`cullinan/_contracts.json`（随 wheel 一起发布）
 - `stability_commitment` —— 四个契约模块（`cullinan`、`cullinan.application`、`cullinan.web`、`cullinan.core`）各自的符号名清单
+- `stability_shapes` —— 这些名字**各自指向什么**（`function`、`class`、`module`、`other`）：名字拼写没变、指向变了的情况在这里可见
+- `pinned_symbols` —— 内容本身被承诺的可调用对象：`cullinan.support.config.configure_options` 以及它接受的选项名清单；记录下来的集合就是"缩小"时用来对比的基准
 - `not_in_commitment` —— 明确排除在承诺面之外的门面，例如 `cullinan.web.gateway`
 - `schema_version` 与 `generated_from` —— schema 版本与生成溯源信息
 

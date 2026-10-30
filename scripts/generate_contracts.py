@@ -18,6 +18,11 @@ not a promise about what it is: ``cullinan.web.controller`` was a decorator and
 became a submodule while keeping its spelling and its place in ``__all__``. Every
 gate stayed green and the break arrived at a consumer's ``import``. The shape is
 the part of the promise a name cannot express, so it is recorded next to it.
+
+Schema 3 added ``pinned_symbols`` for the same reason one level in: a callable can
+keep its name and its shape while the set of names it accepts quietly shrinks, and
+a check that derives that set from the same signature sees nothing. The recorded
+answer is the comparison point, so the shrink becomes a diff.
 """
 
 from __future__ import annotations
@@ -33,7 +38,19 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+
+#: Symbols whose *contents* are pinned, not only their presence.
+#:
+#: ``configure_options()`` answers "what does this version accept", and the checks
+#: that guard it derive from the same signature it reads -- so a check that borrows
+#: the implementation it checks can never disagree with it. Recording the accepted
+#: names in the artifact moves the comparison to a file under version control: a
+#: name that disappears now shows up as a diff, and a diff is something a reviewer
+#: reads. The provider is named explicitly rather than discovered, because "call
+#: every exported function and see what it returns" is not a rule anyone can review.
+PINNED_PROVIDER = "cullinan.support.config"
+PINNED_CALLABLES = ("configure_options",)
 
 #: The closed vocabulary a shape may take. Closed on purpose: if every symbol
 #: could report ``other``, the check would be satisfied by degrading itself.
@@ -74,6 +91,25 @@ def shape_of(target: object) -> str:
     if inspect.isroutine(target):
         return "function"
     return "other"
+
+
+def build_pinned() -> dict:
+    """Record what the pinned callables answer, not just that they exist.
+
+    Each entry carries the callable's shape and, for a callable that reports a set
+    of names, the set it reports. Both are re-derived from the live package on every
+    regeneration; the point of recording them is that the committed artifact is what
+    a change gets compared against.
+    """
+    module = importlib.import_module(PINNED_PROVIDER)
+    pinned = {}
+    for name in PINNED_CALLABLES:
+        target = getattr(module, name)
+        pinned[f"{PINNED_PROVIDER}.{name}"] = {
+            "shape": shape_of(target),
+            "accepted": list(target()),
+        }
+    return pinned
 
 
 def build_contract() -> dict:
@@ -120,6 +156,7 @@ def build_contract() -> dict:
         },
         "stability_commitment": commitment,
         "stability_shapes": shapes,
+        "pinned_symbols": build_pinned(),
         "not_in_commitment": not_in_commitment,
     }
 

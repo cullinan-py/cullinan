@@ -1,9 +1,9 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "generated_from": {
     "tool": "scripts/generate_contracts.py",
     "cullinan_version": "0.96a11",
-    "generated_at": "2026-10-30T17:55:24+00:00"
+    "generated_at": "2026-10-30T18:09:28+00:00"
   },
   "stability_commitment": {
     "cullinan": [
@@ -375,6 +375,36 @@
       "InjectionRegistry": "class",
       "get_injection_registry": "function",
       "reset_injection_registry": "function"
+    }
+  },
+  "pinned_symbols": {
+    "cullinan.support.config.configure_options": {
+      "shape": "function",
+      "accepted": [
+        "asgi_server",
+        "auto_scan",
+        "builtin_middleware",
+        "drain_timeout",
+        "exclude_packages",
+        "explicit_modules",
+        "max_request_body_bytes",
+        "middlewares",
+        "project_root",
+        "root_module",
+        "server_engine",
+        "server_host",
+        "server_port",
+        "ssl_certfile",
+        "ssl_client_ca",
+        "ssl_keyfile",
+        "ssl_verify_client",
+        "startup_error_policy",
+        "static_files",
+        "strict_assembly",
+        "strict_assembly_excludes",
+        "user_packages",
+        "verbose"
+      ]
     }
   },
   "not_in_commitment": {
