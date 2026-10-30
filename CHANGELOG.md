@@ -121,14 +121,16 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Documentation
 
-- **The request-body page said a large one-shot upload loses its status code; it does
-  not.** Measured against a 1 KiB ceiling: a 2 KiB body and a 64 KiB body, each sent in
-  a single write, both returned a readable `400` — the reset arrives on the next read,
-  by which time the response has been read. What actually denies a client the status
-  line is being *still writing* when the refusal lands, so the table is keyed on that
-  condition instead of on how far over the ceiling the body is. The three cases now run
-  as a test against a live Tornado server, so "measured" has an executor rather than
-  being a note that decays.
+- **The request-body page now states what a client observes, with counts.** There are
+  two ways to lose the answer, not one: the client was still writing when the refusal
+  landed, or a single write far exceeded what the connection could buffer. Measured on
+  Windows against a 1 KiB ceiling — a 4 MiB body sent in one write was refused with no
+  readable status line 9 times out of 13; 64 KiB written in one go was readable 13 out
+  of 13, and the same 64 KiB read 20 ms later was readable 0 out of 13. The page
+  carries the counts and their `n`, keeps the one rule they support (the dividing line
+  is timing, not the ratio), and tells callers to treat neither "got a `400`" nor "got
+  no status line" as the oversize signal. The shapes run as a test against a live
+  Tornado server, so "measured" has an executor rather than being a note that decays.
 
 - **The configuration page now says which variable chooses the engine, and which one
   only looks like it.** The engine comes from `CULLINAN_ENGINE`; `SERVER_ENGINE` is

@@ -300,32 +300,50 @@ layer refuses, and that differs by engine:
 | Tornado | `400 Bad Request` with an empty body, raised by Tornado's protocol layer (`max_body_size`) before the framework sees the request |
 
 That table is the server's answer. What the **client** sees is a different
-question, and it turns on one thing: was the client still writing when the
-refusal landed?
+question, and there are two ways to lose the answer — not one:
 
 | Client behaviour | What it observes |
 |---|---|
-| Finished writing before the refusal landed | `400` with an empty body — the reset arrives afterwards, by which time the response has been read |
-| Still writing when the refusal landed | the connection is reset or aborted (`ConnectionResetError` / `ConnectionAbortedError`; WSAECONNRESET on Windows) — **no status line** |
+| Finished writing, **and reads the response before the reset is processed** | `400` with an empty body |
+| Finished writing, but reads late — 20 ms is enough | the connection is reset (`ConnectionResetError`; WSAECONNRESET on Windows) — **no status line** |
+| Still writing when the refusal landed | the connection is reset or aborted (`ConnectionResetError` / `ConnectionAbortedError`) — **no status line** |
 | Streams it in chunks (`Transfer-Encoding: chunked`) | the connection is aborted — **no status line** |
+| Sends a body far larger than the connection can buffer, in one write | a race: either the `400` is readable, or the reset arrives first — **no status line** |
 
-The dividing line is not the ratio but the race. Measured against a 1 KiB ceiling
-on Windows: a 2 KiB body and a 64 KiB body, each sent in a single write, both
-returned a readable `400` — the second one's reset arrived on the next read, too
-late to hide it. The same 64 KiB sent in 1 KiB pieces, and a chunked upload only
-1.5× over, ended with no status line at all. A large body is not by itself what
-denies you the status code; writing it slowly is.
+Counted on Windows against a 1 KiB ceiling (`n` = attempts, not an estimate):
 
-Those three cases run as a test against a live server
+| Shape | `400` readable | No status line | n |
+|---|---|---|---|
+| 2 KiB, one write | 13 | 0 | 13 |
+| 64 KiB, one write, read immediately | 13 | 0 | 13 |
+| 64 KiB, one write, read after 20 ms | 0 | 13 | 13 |
+| 64 KiB, 64 pieces of 1 KiB, 10 ms apart | 0 | 13 | 13 |
+| chunked, 1.5× over the ceiling, two chunks | 0 | 13 | 13 |
+| 4 MiB, one write | 4 | 9 | 13 |
+| 400 KiB, one write, against a 256 KiB ceiling | 9 | 1 | 10 |
+
+Two ways to lose the status line, and neither is "the body was too far over the
+ceiling": **the write never finished**, or **a single write far exceeds what the
+connection can buffer**. The second is the surprising one — the client is not
+slow, `send` reports success, and the answer is gone anyway, because the server's
+refusal and the client's write cross on the wire. The first row of the table is
+also a race in its own right: the `400` is delivered, and reading it is what
+turns it into something you can see.
+
+What survives from the older rule is the part the counts support: **the dividing
+line is not the ratio, it is timing.**
+
+Those shapes run as a test against a live server
 (`tests/integration/test_tornado_client_view_of_an_oversized_body.py`), because
 "measured" written in a page is a claim, and a claim with no executor is what
 drifts.
 
 Two consequences for callers:
 
-- **Do not use "received a `400`" as the oversize signal.** The reliable signal
-  is that the request did not complete normally; on an upload path, treat a
-  reset or an abort as a possible oversized body.
+- **Do not use "received a `400`" as the oversize signal** — and do not use "no
+  status line" as one either. The reliable signal is that the request did not
+  complete normally; on an upload path, treat a reset or an abort as a possible
+  oversized body.
 - **Measure the payload before sending it** when the size is yours to know. A
   server that has already refused cannot give you a status code it never sends.
 
