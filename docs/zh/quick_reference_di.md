@@ -10,7 +10,7 @@ translation_pair: "docs/quick_reference_di.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-29"
+last_updated: "2026-10-31"
 pr_links: []
 
 
