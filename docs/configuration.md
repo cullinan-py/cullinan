@@ -115,8 +115,8 @@ Two consequences worth knowing:
   add .`; it does not rewrite history. Deleting the file is not the same as
   removing it: until the deletion is committed — and, for a value that was pushed,
   until history is rewritten — the copy is still there to be fetched. The check
-  reads the file on disk and the staged copy; it does not read the commits, so an
-  old value that is already committed is outside what it can tell you about.
+  itself reads the **working tree and the index**; it does not read **`HEAD`**, so a
+  value that was committed and later removed from the index is out of scope here.
 
 **Do not `print` it either.** `get_config()` hands back resolved values, so a
 `print` or a debug log of the whole document writes the secret into a terminal, a

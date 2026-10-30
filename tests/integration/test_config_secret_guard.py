@@ -1035,6 +1035,28 @@ def test_both_guides_carry_the_three_warnings():
     )
 
 
+def test_both_guides_state_that_head_is_not_read():
+    """The third boundary, pinned because it looks like a defect when it is not.
+
+    The check reads two copies and not a third: a value that was committed and
+    then removed from the index is out of scope. Both pages say so with the word
+    `HEAD` rather than "the commits", because the reader who hits that boundary is
+    thinking in git terms and the code says the same thing. Without it, the first
+    person to find the gap reports it as a hole in the two-copy fix that closed
+    the neighbouring cases.
+    """
+    english = (REPO_ROOT / "docs" / "configuration.md").read_text(encoding="utf-8")
+    chinese = (REPO_ROOT / "docs" / "zh" / "configuration.md").read_text(encoding="utf-8")
+
+    assert "does not read **`HEAD`**" in english, (
+        "the English page no longer says the check does not read HEAD"
+    )
+    assert "不读 `HEAD`" in chinese, (
+        "the Chinese page no longer says the check does not read HEAD"
+    )
+    assert "out of scope" in english and "不在本检查范围" in chinese
+
+
 def test_the_anchor_check_is_not_vacuous():
     assert missing_anchors("", ANCHORS_EN) == list(ANCHORS_EN)
     assert missing_anchors(ANCHORS_EN[0], ANCHORS_EN) == list(ANCHORS_EN[1:])
