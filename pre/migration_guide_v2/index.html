@@ -94,10 +94,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a10"
+      data-current-version="0.96a12"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a10"
+      data-pre-version="0.96a12"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -3598,6 +3598,12 @@ fails at import time with <code>TypeError: configure() got an unexpected keyword
 argument ...</code>. The keyword is <strong>rejected</strong>, not ignored — nothing silently
 disappears — but it does mean the rollback unit is <em>pin <strong>and</strong> configuration</em>,
 not pin alone.</p>
+<p>That refusal now also says which option was probably meant, and where the list
+lives: an unknown keyword names the option, offers the closest name the installed
+version <em>does</em> accept, and points at
+<a href="../configuration/#options-in-code">the options in code</a>. The value of that on a
+rollback is one less guess: a misspelt option reads as a typo instead of as a
+feature this version lacks.</p>
 <p>If a rollback has to stay cheap, ask the installed version what it accepts instead
 of asking the pin which number it is:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
@@ -3606,6 +3612,19 @@ of asking the pin which number it is:</p>
 
 <span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">configure</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">))</span>
 </code></pre></div>
+<p>That works, and it reads a private detail: the signature is how <code>configure()</code> is
+implemented, not a promise. There is a supported way to ask the same question, and it
+also lets the <em>call</em> stay the same across versions:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.support.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure_options</span>
+
+<span class="n">wanted</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"server_port"</span><span class="p">:</span> <span class="mi">9090</span><span class="p">,</span> <span class="s2">"drain_timeout"</span><span class="p">:</span> <span class="mf">15.0</span><span class="p">}</span>
+<span class="n">configure</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">wanted</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">configure_options</span><span class="p">()})</span>
+</code></pre></div>
+<p>One call, one place for the settings, and the options the installed version does not
+have are dropped instead of failing at import — which is what makes the pin alone the
+unit of rollback. <code>configure_options()</code> reads the same signature the refusal message
+does, so the two cannot disagree.</p>
 <p>Keep the settings in one place per version and pass only the names that list
 contains; then a pin change is the whole change. The alternative — a single
 <code>@configure(...)</code> call carrying both keywords — makes the rollback a code edit,
@@ -3738,7 +3757,7 @@ release.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a10", "pre_is_available": true, "pre_label": "0.96a10", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a12", "pre_is_available": true, "pre_label": "0.96a12", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

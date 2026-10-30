@@ -96,10 +96,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a10"
+      data-current-version="0.96a12"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a10"
+      data-pre-version="0.96a12"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1144,10 +1144,27 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="关闭序列">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        从自己的代码里请求关闭
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
         探针：就绪与存活是两个问题
@@ -1158,7 +1175,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       
         两个引擎目前不共享什么
@@ -1169,7 +1186,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       
         反向代理与转发头
@@ -1191,10 +1208,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
+  <a href="#request-body-size" class="md-nav__link">
     <span class="md-ellipsis">
       
         请求体大小
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TLS
       
     </span>
   </a>
@@ -2611,10 +2639,27 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="关闭序列">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        从自己的代码里请求关闭
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
         探针：就绪与存活是两个问题
@@ -2625,7 +2670,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       
         两个引擎目前不共享什么
@@ -2636,7 +2681,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       
         反向代理与转发头
@@ -2658,10 +2703,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
+  <a href="#request-body-size" class="md-nav__link">
     <span class="md-ellipsis">
       
         请求体大小
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TLS
       
     </span>
   </a>
@@ -2743,7 +2799,9 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
 </code></pre></div>
 <p><code>server_engine</code> 接受 <code>"auto"</code>、<code>"tornado"</code>、<code>"asgi"</code>。环境变量 <code>CULLINAN_ENGINE</code> 效果相同，
-在容器里通常是更好的选择：同一个镜像不必重建就能跑任一后端。</p>
+在容器里通常是更好的选择：同一个镜像不必重建就能跑任一后端。
+<strong><code>SERVER_ENGINE</code> 不是框架读的变量</strong>，尽管 <code>SERVER_HOST</code> 与 <code>SERVER_PORT</code> 是 —— 见
+<a href="../configuration/#precedence">配置</a>。设错的那个，你拿到的是 <code>auto</code> 选出来的引擎，而且不会报错。</p>
 <h2 id="_5">关闭序列<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>收到停止信号（<code>SIGTERM</code>；另有 <code>SIGINT</code>，Windows 上还有 <code>SIGBREAK</code>）后，进程按<strong>这个顺序</strong>做四件事：</p>
 <ol>
@@ -2789,7 +2847,44 @@
 <li><strong>它是被执行的，不是建议值。</strong> <code>drain_timeout=1.0</code> 配一个需要 6s 的请求：两个引擎都在约 1.1–1.4s 退出（上限 + 收尾开销，不是固定的分引擎数字），慢请求被切断。而且<strong>切断的表现不同</strong>：ASGI 回 <code>500</code>（服务器取消任务），Tornado 直接断连。需要慢请求跑完，就把上限调大。</li>
 <li><strong>结果会报告。</strong> <code>ApplicationContext.shutdown()</code> 与 <code>ashutdown()</code> 在时限内排空完成时返回 <code>True</code>，超时返回 <code>False</code>。⚠️ 一个坑：在运行中的事件循环里从线程调用同步形式，它<strong>拒绝阻塞循环</strong>、打警告、返回 <code>False</code>，<strong>但容器照样被关闭</strong> —— 所以 <code>False</code> 的含义是"没有等"，不是"什么都没发生"。</li>
 </ol>
-<h2 id="_6">探针：就绪与存活是两个问题<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h3 id="_6">从自己的代码里请求关闭<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>信号并不总是你能发出的东西。Windows 上 <code>terminate()</code> 就是 <code>TerminateProcess</code>：
+进程直接消失、不经排空；而 <code>SIGBREAK</code> 只能送到拥有控制台的进程。监管程序、管理路由、
+测试仍然需要能请求一个<strong>正在跑</strong>的服务停下来 —— 而 <code>run()</code> 是阻塞的，你手上并没有那个对象。</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.application</span><span class="w"> </span><span class="kn">import</span> <span class="n">Application</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Application</span><span class="o">.</span><span class="n">current</span><span class="p">()</span>          <span class="c1"># run() 阻塞期间也能拿到</span>
+<span class="k">if</span> <span class="n">app</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">asked</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">request_shutdown</span><span class="p">()</span>   <span class="c1"># True：已经向一个正在跑的服务提出了请求</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>返回值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>True</code></td>
+<td>已向正在运行的服务请求停止；上面那条关闭序列开始执行</td>
+</tr>
+<tr>
+<td><code>False</code></td>
+<td>没有可请求的对象 —— 服务还没起，或已经停了</td>
+</tr>
+</tbody>
+</table>
+<p><code>request_shutdown()</code> 走的是<strong>同一条</strong>排水路径（信号走的也是它），所以不存在第二条需要
+单独维护的关闭逻辑。它在<strong>任何线程</strong>调用都安全：请求会被调度到拥有该服务的那个 loop 上
+（Tornado 用线程安全回调，uvicorn 用 <code>should_exit</code>），这也是它在 loop 空闲时同样有效的原因。
+它<strong>不会</strong>用抛异常来表达"没事可做" —— 答案是 <code>False</code>：监管程序的退出路径不能把一个已经
+完成的关闭变成一次崩溃。</p>
+<p>连续请求两次不是错误，也不会排两次水：第二次仍然回答 <code>True</code>（服务确实被要求停止、并且仍会
+停），但<strong>宣告与等待只发生一次</strong>。<code>False</code> 只有一种含义 —— 没有可请求的对象。</p>
+<p>可运行版本是 <code>python -m examples.graceful_shutdown.stop_after</code>：它等到应用真的在服务之后，
+从一个<strong>不负责服务请求</strong>的线程请求停止。</p>
+<h2 id="_7">探针：就绪与存活是两个问题<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p>框架不替你注册健康/就绪路由，只给你<strong>状态</strong>与<strong>转折点</strong>：</p>
 <table>
 <thead>
@@ -2825,7 +2920,7 @@
 </code></pre></div>
 <p><strong>存活探针要分开，并且回答 <code>True</code>。</strong> 优雅关闭期间进程是健康的，而且它<strong>本来就该</strong>停止接流量；读排空状态的存活探针会把健康关闭报成崩溃。</p>
 <p>两个探针的可运行版本就在 <code>examples/graceful_shutdown/</code> 包里：<code>python -m examples.graceful_shutdown</code> 起服务，路由在 <code>root.py</code>。</p>
-<h2 id="_7">两个引擎目前<strong>不共享</strong>什么<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_8">两个引擎目前<strong>不共享</strong>什么<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <p>正常流量的请求路径、响应体、状态码，两个引擎一致。下面这些<strong>不一致</strong>，写出来是为了让你能提前规划，而不是上线后才发现：</p>
 <ul>
 <li><code>server</code> 响应头（<code>uvicorn</code> 与 <code>TornadoServer</code>），它由服务器设置，不由框架设置；</li>
@@ -2834,7 +2929,7 @@
 <li>超过 <code>max_request_body_bytes</code> 时的状态码：ASGI 是 <code>413</code>，Tornado 是 <code>400</code>（见下面的「请求体大小」章节）—— <strong>两者都在上限处停止读取</strong>，这才是关键。</li>
 </ul>
 <p><strong>正常流量</strong>上两个引擎一致：状态码、响应体、<code>405</code> 上的 <code>Allow</code>、对未知路径 <code>OPTIONS</code> 的 <code>404</code>。上面这些差异写出来，是为了让你能提前规划，而不是上线后才发现。</p>
-<h2 id="_8">反向代理与转发头<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_9">反向代理与转发头<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <p>在代理后面，客户端地址与 scheme 出现在<strong>头部</strong>而不是连接里。只在你<strong>自己控制的代理</strong>设置它们时才信任：</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan.web.gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebRuntimeConfig</span>
 
@@ -2876,7 +2971,7 @@ INFO:     Finished server process [2550]
 <p>Tornado 没有这一步：它停掉自己持有的循环然后返回，进程以 <code>0</code> 退出。</p>
 <p><strong>判断有没有排空完成，看日志，不要看退出码。</strong> 要求必须是 <code>0</code> 的监督进程，会把一次健康的 uvicorn
 关闭报成崩溃；要求必须是 <code>143</code> 的，会把一次健康的 Tornado 关闭报成崩溃。</p>
-<h2 id="_9">请求体大小<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h2 id="request-body-size">请求体大小<a class="headerlink" href="#request-body-size" title="Permanent link">&para;</a></h2>
 <p>框架在知道"哪个路由会处理它"之前就要把 body 读完，所以上限只能在<strong>入口处</strong>执行：</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">application</span><span class="p">,</span> <span class="n">configure</span>
 
@@ -2904,7 +2999,7 @@ INFO:     Finished server process [2550]
 </tr>
 </tbody>
 </table>
-<p><strong>这张表是"服务端的回答"。客户端实际看到什么，是另一个问题</strong>，而且在 Tornado 上取决于「服务端拒绝时，客户端是不是还在写」：</p>
+<p><strong>这张表是"服务端的回答"。客户端实际看到什么，是另一个问题</strong>，而丢掉这个回答的路有<strong>两条</strong>，不是一条：</p>
 <table>
 <thead>
 <tr>
@@ -2914,27 +3009,155 @@ INFO:     Finished server process [2550]
 </thead>
 <tbody>
 <tr>
-<td>一次性发完，小幅超限</td>
+<td>已经写完，<strong>并且在重置被处理之前把响应读走</strong></td>
 <td><code>400</code> + 空体</td>
 </tr>
 <tr>
-<td>一次性发完，大幅超限</td>
-<td>连接被重置（<code>ConnectionResetError</code>；Windows 上是 WSAECONNRESET）——<strong>没有状态行</strong></td>
+<td>已经写完，但读得晚 —— <strong>停 20 ms 就够站到错的那一侧</strong></td>
+<td>要么读到 <code>400</code>，要么连接被重置（<code>ConnectionResetError</code>；Windows 上是 WSAECONNRESET）、<strong>没有状态行</strong></td>
+</tr>
+<tr>
+<td>拒绝落地时仍在写</td>
+<td>要么读到 <code>400</code>，要么连接被重置或中止（<code>ConnectionResetError</code> / <code>ConnectionAbortedError</code>）、<strong>没有状态行</strong></td>
 </tr>
 <tr>
 <td>分块/流式上传（<code>Transfer-Encoding: chunked</code>）</td>
-<td>连接被中止 —— <strong>没有状态行</strong></td>
+<td>要么读到 <code>400</code>，要么连接被中止、<strong>没有状态行</strong></td>
+</tr>
+<tr>
+<td><strong>一次写出的体远超连接可缓冲的量</strong></td>
+<td>一场竞速：要么 <code>400</code> 可读，要么重置先到 —— <strong>没有状态行</strong></td>
 </tr>
 </tbody>
 </table>
-<p>分界不在超限倍数，而在时序：<strong>已经写完的客户端还能读到那个 <code>400</code>；还没写完的，socket 会在它脚下被关掉。</strong> 以 1 KiB 上限实测：一次性发送超到约 16 倍仍返回 <code>400</code>；超到 64 倍、以及分块上传只超 1.5 倍，都以连接重置收场。</p>
+<p><strong>状态行能不能活下来，不由形态单独决定。</strong> 下表里丢掉状态行的那三行，在 Linux 跑同一形态时都完整读到了
+<code>400</code> —— 所以第二列描述的是<strong>两种可能</strong>，不是一种。</p>
+<p>以 1 KiB 上限在 Windows 上计数（<code>n</code> = 次数，不是"通常"）：</p>
+<table>
+<thead>
+<tr>
+<th>形态</th>
+<th>读到 <code>400</code></th>
+<th>无状态行</th>
+<th>n</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2 KiB 一次写完</td>
+<td>13</td>
+<td>0</td>
+<td>13</td>
+</tr>
+<tr>
+<td>64 KiB 一次写完，立刻读</td>
+<td>13</td>
+<td>0</td>
+<td>13</td>
+</tr>
+<tr>
+<td>64 KiB 一次写完，<strong>读前停 20 ms</strong></td>
+<td>0</td>
+<td>13</td>
+<td>13</td>
+</tr>
+<tr>
+<td>64 KiB 分 64 片、每片间隔 10 ms</td>
+<td>0</td>
+<td>13</td>
+<td>13</td>
+</tr>
+<tr>
+<td>分块上传，超上限 1.5 倍，分两片</td>
+<td>0</td>
+<td>13</td>
+<td>13</td>
+</tr>
+<tr>
+<td>4 MiB 一次写完</td>
+<td>4</td>
+<td>9</td>
+<td>13</td>
+</tr>
+<tr>
+<td>400 KiB 一次写完，上限 256 KiB</td>
+<td>9</td>
+<td>1</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+<p>同样这三行在 Linux 跑器（<code>ubuntu-latest</code>）上各跑一次，<strong>每次都读到完整的 <code>400</code></strong> —— 每种形态只跑了一次，
+所以它证明的是"结果不是形态的属性"，<strong>不是</strong>反过来的比率。上表两列都只是单机取样，<strong>都不是规格</strong>。</p>
+<p>丢掉状态码有两条路，<strong>没有一条是"超得太多"</strong>：<strong>写失败了、客户端根本没读到</strong>，或者
+<strong>重置在客户端读之前就被处理掉</strong> —— 可能因为它写完停了一下，也可能因为它自己的写一直占着 socket
+直到那一刻。第二条最反直觉 —— 客户端并不慢、<code>send</code> 报成功，回答照样没了，因为服务端的拒绝与
+客户端的写在链路上交叉。连"在重置被处理之前把响应读走"那一行本身也是一场竞速：<code>400</code> 确实被
+发出去了，<strong>读</strong>这一步才把它变成你能看见的东西。</p>
+<p>旧规则的措辞里，只有被计数支持的那半句留了下来：<strong>分界不在倍数，而在时序。</strong> 这些计数是单机样本，
+不是发生率：同一 4 MiB 形态的另一次测量是 13 次里 1 次可读；另有一次下游消费者的独立观测 ——
+另一台机器、另一套客户端栈、同一版本 —— 同一形态的结局相反：拒绝在那里完全读不到。两个都是真的，
+也都不是更好的那个测量。同一场竞速被两个人各测一次，看起来就是这样：结果不是形态的属性，
+所以一张计数表记的是<strong>某台主机上发生过什么</strong>，不是<strong>你那儿会发生什么</strong>。也正因如此，
+本页任何一个比例都不该被读成阈值。</p>
+<p>这些形态由一条<strong>活服务</strong>用例执行
+（<code>tests/integration/test_tornado_client_view_of_an_oversized_body.py</code>）：写在页面上的
+"实测"只是一个主张，而<strong>没有执行者的主张</strong>正是会漂移的那种。</p>
 <p>由此两条对调用方的要求：</p>
 <ul>
-<li><strong>不要用「收到了 <code>400</code>」作为超限判据。</strong> 可靠的信号是「请求没有正常完成」；在上传路径上，把连接重置或中止当作<strong>可能</strong>的超限。</li>
+<li><strong>不要用「收到了 <code>400</code>」作为超限判据</strong>，也不要用「没有状态行」当判据。可靠的信号是「请求没有正常完成」；在上传路径上，把连接重置或中止当作<strong>可能</strong>的超限。</li>
 <li><strong>能量出体积就在发送前量。</strong> 服务端既然已经拒绝，就不会再给你一个它从未发出的状态码。</li>
 </ul>
 <p>两者都是早停 —— 这才是关键性质；但它们<strong>不是同一个状态码</strong>，把它写成一致等于让你上线后自己发现。</p>
 <p>部署对公网接受上传时请设它 —— 不设上限时，一个 1 MiB 的 body 打到一个<strong>不存在的路径</strong>，会被完整缓冲后才回 <code>404</code>。</p>
+<h2 id="tls">TLS<a class="headerlink" href="#tls" title="Permanent link">&para;</a></h2>
+<p>应用可以自己终结 TLS；四个选项在两个引擎上完全一样，所以打开它不是后端决策：</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@configure</span><span class="p">(</span>
+    <span class="n">user_packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"your_app"</span><span class="p">],</span>
+    <span class="n">ssl_certfile</span><span class="o">=</span><span class="s2">"/etc/tls/server.crt"</span><span class="p">,</span>
+    <span class="n">ssl_keyfile</span><span class="o">=</span><span class="s2">"/etc/tls/server.key"</span><span class="p">,</span>
+    <span class="n">ssl_client_ca</span><span class="o">=</span><span class="s2">"/etc/tls/ca.crt"</span><span class="p">,</span>      <span class="c1"># 可选：要求客户端证书</span>
+    <span class="n">ssl_verify_client</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>               <span class="c1"># 默认值，见下</span>
+<span class="p">)</span>
+<span class="nd">@application</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ssl_certfile</code></td>
+<td>服务端证书（PEM）</td>
+</tr>
+<tr>
+<td><code>ssl_keyfile</code></td>
+<td>私钥 —— <strong>两个一起给，或者都不给</strong></td>
+</tr>
+<tr>
+<td><code>ssl_client_ca</code></td>
+<td>CA 包；给了它就要求客户端证书</td>
+</tr>
+<tr>
+<td><code>ssl_verify_client</code></td>
+<td>是否<strong>校验</strong>这些证书（默认 <code>True</code>）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>只给半个密钥对是启动期错误，不是回落 HTTP。</strong> 一个被要求加密、却悄悄以明文提供服务的监听器，
+比一个拒绝启动的更糟：故障看起来像成功，直到有人去看 scheme。</p>
+<p><strong><code>ssl_verify_client=False</code> 是"要证书但不校验"</strong>，用于"客户端一时发不全证书"的迁移期。它<strong>不推荐</strong>，
+不能替代 <code>ssl_client_ca</code>，也不该在迁移结束后继续留着。</p>
+<p>在代理上终结 TLS 是正常选择，那就一个选项都不用设：框架看到的是来自可信一跳的明文 HTTP，
+这时起作用的是上面的转发头一节。</p>
+<p><strong><code>asgi_server="hypercorn"</code> 在本版本不支持应用内 TLS</strong>：那个分支不会把选项传给服务端，所以这个组合
+在<strong>启动期被拒绝</strong>，而不是让它以一个"配置了 TLS"的监听器提供明文。改用 <code>asgi_server="uvicorn"</code>，
+或在代理上终结。</p>
+<p>带这四个选项、可从文件或环境变量启动的示例在 <code>examples/tls_termination/</code>。</p>
 <h2 id="_10">静态文件<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <p>两种可行部署：</p>
 <ul>
@@ -3028,7 +3251,7 @@ INFO:     Finished server process [2550]
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a10", "pre_is_available": true, "pre_label": "0.96a10", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a12", "pre_is_available": true, "pre_label": "0.96a12", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>

@@ -94,10 +94,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a10"
+      data-current-version="0.96a12"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a10"
+      data-pre-version="0.96a12"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1539,6 +1539,17 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;from_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cullinan.CullinanConfig.field_names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;field_names
       
     </span>
   </a>
@@ -4283,6 +4294,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#cullinan.CullinanConfig.field_names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;field_names
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cullinan.CullinanConfig.to_dict" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6162,12 +6184,115 @@
 
 
 <a href="#cullinan.CullinanConfig.from_dict" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_dict</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_dict</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
         <p>Load configuration from a dictionary.</p>
+<p>Every declared field is accepted here -- :meth:<code>field_names</code> derives the
+accepted set from the instance itself, so a field added to <code>__init__</code>
+is reachable without a second edit and a field that is <em>not</em> accepted is
+reported instead of dropped.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>config</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Key/value pairs to apply.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>source</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Where the mapping came from, used in the report for a key
+this class does not accept (a file name, for example). Without
+it the report can only name the key, and the reader has to guess
+which of several sources produced it.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>CullinanConfig</code></td>            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>self</code>, so callers can chain.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="cullinan.CullinanConfig.field_names" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">field_names</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#cullinan.CullinanConfig.field_names" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">field_names</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Every key :meth:<code>from_dict</code> accepts, derived from the class itself.</p>
+<p>Derived rather than listed: a second list is a second truth, and the two
+drift the moment someone adds a field in a hurry. <code>__init__</code> is the
+single place a field is declared, so it is the single place this reads.</p>
 
 
     </div>
@@ -12985,7 +13110,7 @@ result = converter.convert("1,2,3", list)  # -&gt; ["1", "2", "3"]</p>
 
 
 <a href="#cullinan.configure" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">configure</span><span class="p">(</span><span class="n">root_module</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">user_packages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">project_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">auto_scan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exclude_packages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">startup_error_policy</span><span class="o">=</span><span class="s1">'strict'</span><span class="p">,</span> <span class="n">server_engine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">asgi_server</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">server_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">server_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">drain_timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_request_body_bytes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">explicit_modules</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static_files</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">middlewares</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">builtin_middleware</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">strict_assembly</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">strict_assembly_excludes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">configure</span><span class="p">(</span><span class="n">root_module</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">user_packages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">project_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">auto_scan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exclude_packages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">startup_error_policy</span><span class="o">=</span><span class="s1">'strict'</span><span class="p">,</span> <span class="n">server_engine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">asgi_server</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">server_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">server_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">drain_timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_request_body_bytes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ssl_certfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ssl_keyfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ssl_client_ca</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ssl_verify_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">explicit_modules</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static_files</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">middlewares</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">builtin_middleware</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">strict_assembly</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">strict_assembly_excludes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">unknown</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -13303,6 +13428,29 @@ same meaning explicitly.</p>
             </td>
             <td>
                   <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>**unknown</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Anything else is refused with a <code>TypeError</code> that names the
+option, the closest name this function does accept, and the
+documentation section listing them
+(<code>docs/configuration.md#options-in-code</code>). Accepting it with a
+warning was considered and rejected: a misspelt option would then be
+a switch that silently does nothing, which is the failure this
+surface exists to prevent. The exception type stays <code>TypeError</code>, so
+callers that already catch the built-in refusal keep working.</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
             </td>
           </tr>
       </tbody>
@@ -14189,7 +14337,7 @@ class LoggingMiddleware(Middleware):
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a10", "pre_is_available": true, "pre_label": "0.96a10", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a12", "pre_is_available": true, "pre_label": "0.96a12", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../../assets/javascripts/bundle.e71a0d61.min.js"></script>

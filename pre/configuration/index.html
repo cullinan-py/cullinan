@@ -94,10 +94,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a10"
+      data-current-version="0.96a12"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a10"
+      data-pre-version="0.96a12"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1047,6 +1047,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#which-keys-a-file-may-contain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which keys a file may contain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-the-file-is-looked-for" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1062,6 +1073,17 @@
     <span class="md-ellipsis">
       
         Precedence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options-in-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options in code
       
     </span>
   </a>
@@ -2562,6 +2584,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#which-keys-a-file-may-contain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which keys a file may contain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-the-file-is-looked-for" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2577,6 +2610,17 @@
     <span class="md-ellipsis">
       
         Precedence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options-in-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options in code
       
     </span>
   </a>
@@ -2713,6 +2757,65 @@ dependencies</strong>; JSON is read with the standard library.</p>
 environment can parse them — TOML needs Python 3.11+ (or <code>tomli</code>), YAML needs
 <code>pyyaml</code>. When the parser is missing, the error names the package to install instead
 of silently loading nothing. JSON needs nothing, so it is the format that always works.</p>
+<h2 id="which-keys-a-file-may-contain">Which keys a file may contain<a class="headerlink" href="#which-keys-a-file-may-contain" title="Permanent link">&para;</a></h2>
+<p>The accepted set is the field names of <code>CullinanConfig</code>, and the framework
+derives it from that class instead of listing it a second time -- a list here
+would be a second truth, and it would drift the first time someone added a field
+in a hurry. There are 32, in five groups:</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Keys</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>discovery</td>
+<td><code>user_packages</code>, <code>project_root</code>, <code>exclude_packages</code>, <code>auto_scan</code>, <code>explicit_modules</code></td>
+</tr>
+<tr>
+<td>server</td>
+<td><code>server_engine</code>, <code>asgi_server</code>, <code>server_host</code>, <code>server_port</code>, <code>drain_timeout</code>, <code>max_request_body_bytes</code>, <code>ssl_certfile</code>, <code>ssl_keyfile</code>, <code>ssl_client_ca</code>, <code>ssl_verify_client</code></td>
+</tr>
+<tr>
+<td>routing</td>
+<td><code>route_trailing_slash</code>, <code>route_case_sensitive</code>, <code>enable_middleware_pipeline</code></td>
+</tr>
+<tr>
+<td>OpenAPI</td>
+<td><code>openapi_enabled</code>, <code>openapi_title</code>, <code>openapi_version</code>, <code>openapi_description</code></td>
+</tr>
+<tr>
+<td>runtime / assembly</td>
+<td><code>verbose</code>, <code>debug</code>, <code>startup_error_policy</code>, <code>static_files</code>, <code>middlewares</code>, <code>builtin_middleware</code>, <code>context_features</code>, <code>strict_assembly</code>, <code>strict_assembly_excludes</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>root_module</code> is a 28th field kept so existing decorators keep importing; passing
+it at start-up is an error, not a setting.</p>
+<p>A key outside this set is <strong>reported when the file is loaded</strong> -- naming the key,
+the file it came from and, when the spelling is close, the name that was probably
+meant -- and it is not applied. A key cannot be accepted and ignored: a typo and
+a working switch used to look identical, and the difference only showed up in the
+behaviour the switch was supposed to change. <code>openapi_enabled: false</code> was one of
+nine keys in that state.</p>
+<p>A boolean may be written as <code>true</code>/<code>false</code> (JSON, TOML, YAML), or as
+<code>1</code>/<code>0</code>, <code>yes</code>/<code>no</code>, <code>on</code>/<code>off</code> in quotes. Anything else is refused with the key
+named, because <code>bool("false")</code> is <code>True</code> -- guessing is how a switch becomes
+silent again.</p>
+<p><code>max_request_body_bytes</code> is described in
+<a href="../deployment/#request-body-size">deployment</a>: what a client observes when an
+upload crosses the ceiling depends on the engine <em>and</em> on whether the client is
+still writing when the server refuses, and one of those outcomes carries no
+status code at all.</p>
+<p>The refusal itself happens before the body is accepted, on both engines. A
+request whose <code>Content-Length</code> already exceeds the ceiling is answered <code>413</code>
+without reading it — a client that sends slowly, or never finishes, still gets its
+answer at once. A chunked upload declares no size, so it is stopped when the bytes
+received cross the ceiling. Tornado refuses at <code>max_body_size</code> before the
+framework sees the request at all; what the client can read of that refusal is the
+part that depends on timing.</p>
 <h2 id="where-the-file-is-looked-for">Where the file is looked for<a class="headerlink" href="#where-the-file-is-looked-for" title="Permanent link">&para;</a></h2>
 <p>In order:</p>
 <ol>
@@ -2752,13 +2855,13 @@ someone named a file would hide a typo until production.</p>
 </tr>
 <tr>
 <td>3</td>
-<td><code>configure(...)</code></td>
-<td><code>@configure(server_port=9090)</code></td>
+<td>configuration file</td>
+<td><code>{"server_port": 9090}</code></td>
 </tr>
 <tr>
 <td>4</td>
-<td>configuration file</td>
-<td><code>{"server_port": 9090}</code></td>
+<td><code>configure(...)</code></td>
+<td><code>@configure(server_port=9090)</code></td>
 </tr>
 <tr>
 <td>5</td>
@@ -2767,11 +2870,98 @@ someone named a file would hide a typo until production.</p>
 </tr>
 </tbody>
 </table>
-<p>A value written in code wins over the file because the file is applied first; an
-environment variable wins over both because it is read when the value is used.</p>
+<p>The file sits above the values declared in code because it is applied <em>after</em>
+them: one binary, several deployments, and the deployment answers for its own
+addresses. That order is what makes "roll back by editing one file" possible, and
+an earlier revision of this page described the opposite one -- the table now
+matches what the code does, and a test holds it (<code>configure(server_port=A)</code> plus a
+file saying <code>B</code> must serve on <code>B</code>; with no file it must serve on <code>A</code>), so the page
+cannot drift back to the order it used to describe.</p>
+<p><code>run(...)</code> overrides the file for the two names it accepts, and an environment
+variable is read at use time, so it wins over both. Every other name has one
+decider: the file if it is there, otherwise the value written in code, otherwise
+the default.</p>
+<p>The environment variables this framework reads are a short list —
+<code>CULLINAN_CONFIG</code>, <code>CULLINAN_PROFILE</code>, <code>CULLINAN_ENGINE</code>, <code>SERVER_HOST</code>,
+<code>SERVER_PORT</code> — and the engine is not the one a reader expects: it is chosen with
+<strong><code>CULLINAN_ENGINE</code></strong>. <strong><code>SERVER_ENGINE</code> is not a variable this framework reads.</strong>
+<code>SERVER_HOST</code> and <code>SERVER_PORT</code> are, which is what makes the mistake natural: a
+deployment that sets <code>SERVER_ENGINE=tornado</code> gets whatever <code>auto</code> picks, with no
+error at all — so two runs that were meant to compare engines can both be the same
+engine, and the difference observed between them is then imagined.</p>
+<p>Start-up prints the engine and the layer that chose it, so the question is
+answered by the log rather than by reading the source:</p>
+<div class="highlight"><pre><span></span><code>└---Web engine: tornado (decided by: environment (CULLINAN_ENGINE))
+</code></pre></div>
+<p>The other three forms it can take are <code>run(engine='tornado')</code>,
+<code>configuration file (server_engine)</code> and <code>built-in default (auto)</code>.</p>
+<h2 id="options-in-code">Options in code<a class="headerlink" href="#options-in-code" title="Permanent link">&para;</a></h2>
+<p><code>@configure(...)</code> takes its own set of options — the parameters of <code>configure()</code>
+— and that is <strong>not</strong> the same list as the keys a file may contain. Two
+consequences follow:</p>
+<ul>
+<li>an option <code>configure()</code> does not have is <strong>refused</strong>, with a <code>TypeError</code> that
+  names it, offers the closest name it <em>does</em> accept, and points at this section.
+  Accepting a misspelling with a warning was considered and rejected: the switch
+  would look set and change nothing, which is the failure this page keeps coming
+  back to. The exception type is still <code>TypeError</code>, so a caller that already
+  catches it keeps working;</li>
+<li>when a setting is named in both places, the file wins — see
+  <a href="#precedence">Precedence</a>. That is what makes "roll back by editing one file"
+  true, and it is why the rollback unit across the 0.96 line is a pin <strong>and</strong> a
+  configuration, not the pin alone
+  (<a href="../migration_guide_v2/#10-rolling-back-across-this-line">migration guide</a>).</li>
+</ul>
+<p>To see the exact list for the installed version, ask it:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">configure</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">))</span>
+</code></pre></div>
+<p>That is the same source the error message reads, so the message and the list
+cannot drift apart. The supported way to ask the same question — and the one that
+also makes a single call work against two installed versions — is
+<code>configure_options()</code>, shown in the
+<a href="../migration_guide_v2/#10-rolling-back-across-this-line">migration guide</a>.</p>
 <h2 id="keep-secrets-out-of-the-file">Keep secrets out of the file<a class="headerlink" href="#keep-secrets-out-of-the-file" title="Permanent link">&para;</a></h2>
 <p>A file that is committed, or shipped beside a binary, is not a place for a secret.
-Two features exist so it does not have to be:</p>
+<strong>Do not write a value into the file.</strong> What belongs there is safe to paste into an
+issue tracker, because sooner or later it ends up in one.</p>
+<p><strong>The file is ignored by default.</strong> <code>application*.json</code>, <code>application*.toml</code>,
+<code>application*.yaml</code> and <code>application*.yml</code> are in <code>.gitignore</code>, so a plain
+<code>git add .</code> does not commit a file that carries a value. The template form —
+<code>application*.example.json</code> and the <code>.toml</code> / <code>.yaml</code> / <code>.yml</code> equivalents — stays
+trackable: that is the shape meant to be committed, and it holds references instead
+of values. An ignore rule is a default rather than a wall (<code>git add -f</code> walks past
+it), so a repository check reads every <code>application*</code> file <strong>twice</strong> — the copy on
+disk and the copy in the index — and reports a plaintext value in either one. They
+are not the same copy and either can carry a value: the index copy is what a push
+would send, and an edit on disk that has not been staged is the next thing that
+will be. It reports a value under a sensitive key, or a value whose shape is a
+known credential form (a PEM private-key header, an AWS access-key id, a GitHub
+token), whatever the key is called.</p>
+<p>JSON and TOML are read as documents where the interpreter can parse them — TOML
+needs Python 3.11+. Otherwise the file is read line by line and the fallback is
+reported, never silent, which is also how a YAML file is always read: a value
+written as a multi-line block is reported as undecided rather than quietly passed.</p>
+<p>Two consequences worth knowing:</p>
+<ul>
+<li>Naming a file through <code>CULLINAN_CONFIG</code> puts it outside every rule here — the
+  name can be anything. Keep that file out of version control yourself.</li>
+<li>A file that is already committed stays committed. The rule stops the next <code>git
+  add .</code>; it does not rewrite history. Deleting the file is not the same as
+  removing it: until the deletion is committed — and, for a value that was pushed,
+  until history is rewritten — the copy is still there to be fetched. The check
+  itself reads the <strong>working tree and the index</strong>; it does not read <strong><code>HEAD</code></strong>, so a
+  value that was committed and later removed from the index is out of scope here.</li>
+</ul>
+<p><strong>Do not <code>print</code> it either.</strong> <code>get_config()</code> hands back resolved values, so a
+<code>print</code> or a debug log of the whole document writes the secret into a terminal, a
+log file or a CI transcript — a second copy, with none of the protections the first
+one had. Print the setting you mean, not the document.</p>
+<p>The alternative is to write a reference where a value would go, which two features
+support:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">"discord"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">"token"</span><span class="p">:</span><span class="w"> </span><span class="s2">"${DISCORD_TOKEN}"</span><span class="p">,</span>
@@ -2948,7 +3138,7 @@ a placeholder it cannot resolve, and an explicit path that does not exist.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a10", "pre_is_available": true, "pre_label": "0.96a10", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"channel": "pre", "current": "0.96a12", "pre_is_available": true, "pre_label": "0.96a12", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>

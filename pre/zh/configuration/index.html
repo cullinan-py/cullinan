@@ -96,10 +96,10 @@
     <div
       class="md-version-switcher"
       data-current-channel="pre"
-      data-current-version="0.96a10"
+      data-current-version="0.96a12"
       data-stable-version="0.95"
       data-stable-url="/cullinan/"
-      data-pre-version="0.96a10"
+      data-pre-version="0.96a12"
       data-pre-url="/cullinan/pre/"
       data-pre-available="True"
     >
@@ -1052,7 +1052,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        文件从哪里找
+        哪些键可以写
       
     </span>
   </a>
@@ -1063,7 +1063,29 @@
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
+        文件从哪里找
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
         优先级
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options-in-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        代码里的选项
       
     </span>
   </a>
@@ -2567,7 +2589,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        文件从哪里找
+        哪些键可以写
       
     </span>
   </a>
@@ -2578,7 +2600,29 @@
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
+        文件从哪里找
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
         优先级
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options-in-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        代码里的选项
       
     </span>
   </a>
@@ -2710,7 +2754,55 @@ Cullinan 现在<strong>没有任何运行时依赖</strong>；JSON 由标准库�
 <p><code>.toml</code>、<code>.yaml</code>、<code>.yml</code> 也支持，但仅当解释器或环境能解析它们——TOML 需要 Python 3.11+
 （或 <code>tomli</code>），YAML 需要 <code>pyyaml</code>。解析器缺失时会明确报出该装哪个包，而不是静默地什么都不加载。
 JSON 什么都不需要，所以它是永远可用的格式。</p>
-<h2 id="_3">文件从哪里找<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h2 id="_3">哪些键可以写<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>可写的键就是 <code>CullinanConfig</code> 的字段名，并且由该类<strong>派生</strong>而不是在这里再列一份——
+第二份清单就是第二个真相，某次着急加字段时它必然漂移。一共 32 个，分五组：</p>
+<table>
+<thead>
+<tr>
+<th>组</th>
+<th>键</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>发现与扫描</td>
+<td><code>user_packages</code>、<code>project_root</code>、<code>exclude_packages</code>、<code>auto_scan</code>、<code>explicit_modules</code></td>
+</tr>
+<tr>
+<td>服务</td>
+<td><code>server_engine</code>、<code>asgi_server</code>、<code>server_host</code>、<code>server_port</code>、<code>drain_timeout</code>、<code>max_request_body_bytes</code>、<code>ssl_certfile</code>、<code>ssl_keyfile</code>、<code>ssl_client_ca</code>、<code>ssl_verify_client</code></td>
+</tr>
+<tr>
+<td>路由</td>
+<td><code>route_trailing_slash</code>、<code>route_case_sensitive</code>、<code>enable_middleware_pipeline</code></td>
+</tr>
+<tr>
+<td>OpenAPI</td>
+<td><code>openapi_enabled</code>、<code>openapi_title</code>、<code>openapi_version</code>、<code>openapi_description</code></td>
+</tr>
+<tr>
+<td>运行期与装配</td>
+<td><code>verbose</code>、<code>debug</code>、<code>startup_error_policy</code>、<code>static_files</code>、<code>middlewares</code>、<code>builtin_middleware</code>、<code>context_features</code>、<code>strict_assembly</code>、<code>strict_assembly_excludes</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>root_module</code> 是第 32 个字段，只为既有装饰器还能导入而保留；在启动时传它是错误，不是设置。</p>
+<p>集合之外的键在<strong>加载时就会被报出来</strong>——给出键名、它来自哪个文件，拼写接近时还会给出
+大概想写的那个名字——并且<strong>不会被应用</strong>。键不允许"被收下又不生效"：一个拼写错误和一个
+真正生效的开关，过去在行为被测出来之前长得一模一样，而 <code>openapi_enabled: false</code>
+正是处于那种状态的九个键之一。</p>
+<p>布尔值可以写成 <code>true</code>/<code>false</code>（JSON、TOML、YAML），也可以写成带引号的
+<code>1</code>/<code>0</code>、<code>yes</code>/<code>no</code>、<code>on</code>/<code>off</code>。其它写法会带着键名被拒绝——因为 <code>bool("false")</code> 是
+<code>True</code>，靠猜就会把开关重新变回静默的。</p>
+<p><code>max_request_body_bytes</code> 的说明在<a href="../deployment/#request-body-size">部署</a>页的「请求体大小」一节：上传越过上限时客户端
+看到什么，取决于引擎，<strong>也</strong>取决于服务端拒绝的那一刻客户端是否还在写，而其中一种结果
+<strong>根本没有状态码</strong>。</p>
+<p>拒绝本身发生在<strong>收下请求体之前</strong>，两个引擎都是。<code>Content-Length</code> 已经超过上限的请求会被
+直接回 <code>413</code>、<strong>不读体</strong> —— 发得慢的客户端、甚至永远发不完的客户端，都能立刻拿到回答。
+分块上传（chunked）不声明大小，所以在<strong>已收字节越过上限</strong>时停止。Tornado 在框架看到请求
+之前就由 <code>max_body_size</code> 拒绝；客户端能从那次拒绝里读到什么，才是取决于时机的那部分。</p>
+<h2 id="_4">文件从哪里找<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>按顺序：</p>
 <ol>
 <li><code>CULLINAN_CONFIG</code> 指定的路径，或 <code>load_project_config(path=...)</code> 传入的路径</li>
@@ -2723,7 +2815,7 @@ JSON 什么都不需要，所以它是永远可用的格式。</p>
 还会<strong>遮蔽</strong>你放在可执行体旁边、刚刚改过的那份。只搜索上面两个位置，并有测试钉住这一点。</p>
 </div>
 <p>显式指定的路径不存在是错误。在有人指名了文件之后回落到默认值，会把一个拼写错误藏到上线。</p>
-<h2 id="_4">优先级<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="precedence">优先级<a class="headerlink" href="#precedence" title="Permanent link">&para;</a></h2>
 <p>从高到低：</p>
 <table>
 <thead>
@@ -2746,13 +2838,13 @@ JSON 什么都不需要，所以它是永远可用的格式。</p>
 </tr>
 <tr>
 <td>3</td>
-<td><code>configure(...)</code></td>
-<td><code>@configure(server_port=9090)</code></td>
+<td>配置文件</td>
+<td><code>{"server_port": 9090}</code></td>
 </tr>
 <tr>
 <td>4</td>
-<td>配置文件</td>
-<td><code>{"server_port": 9090}</code></td>
+<td><code>configure(...)</code></td>
+<td><code>@configure(server_port=9090)</code></td>
 </tr>
 <tr>
 <td>5</td>
@@ -2761,9 +2853,73 @@ JSON 什么都不需要，所以它是永远可用的格式。</p>
 </tr>
 </tbody>
 </table>
-<p>代码里写的值优先于文件，因为文件先被应用；环境变量优先于两者，因为它在取值时才读取。</p>
+<p>文件排在代码里声明的值之上，是因为它<strong>后</strong>被应用：一个二进制、几套部署，而部署自己
+说了算它的地址。这个顺序正是"改一个文件就能回退"成立的前提；本页早先的版本写的是相反
+的顺序——现在这张表与代码一致，并且<strong>有测试钉住它</strong>（<code>configure(server_port=A)</code> 加一个写着
+<code>B</code> 的文件 ⇒ 必须监听 <code>B</code>；没有文件 ⇒ 必须监听 <code>A</code>），所以本页无法漂回它从前描述的那个顺序。</p>
+<p><code>run(...)</code> 对它接受的这两个名字优先于文件；环境变量在取值时才读，所以优先于两者。
+其余每个名字都只有一个决定者：有文件就用文件，没有就用代码里写的值，再没有就用默认值。</p>
+<p>框架读的环境变量是一份短清单 —— <code>CULLINAN_CONFIG</code>、<code>CULLINAN_PROFILE</code>、
+<code>CULLINAN_ENGINE</code>、<code>SERVER_HOST</code>、<code>SERVER_PORT</code> —— 而引擎并不是读者以为的那个：
+选引擎要用 <strong><code>CULLINAN_ENGINE</code></strong>。<strong><code>SERVER_ENGINE</code> 不是框架读的变量。</strong>
+<code>SERVER_HOST</code> 与 <code>SERVER_PORT</code> 是，这正是这个错误如此自然的原因：设了
+<code>SERVER_ENGINE=tornado</code> 的部署拿到的是 <code>auto</code> 选出来的引擎，而且<strong>完全不报错</strong> ——
+于是两次本意是"对比引擎"的运行可能跑的是同一个引擎，而它们之间观察到的差异就成了想象出来的。</p>
+<p>启动时会打印<strong>引擎</strong>和<strong>决定它的那一层</strong>，所以这个问题由日志回答，不用去读源码：</p>
+<div class="highlight"><pre><span></span><code>└---Web engine: tornado (decided by: environment (CULLINAN_ENGINE))
+</code></pre></div>
+<p>另外三种可能的取值是 <code>run(engine='tornado')</code>、<code>configuration file (server_engine)</code>
+与 <code>built-in default (auto)</code>。</p>
+<h2 id="options-in-code">代码里的选项<a class="headerlink" href="#options-in-code" title="Permanent link">&para;</a></h2>
+<p><code>@configure(...)</code> 有<strong>自己</strong>的一组选项 —— 也就是 <code>configure()</code> 的形参 —— 它和配置文件
+可写的键<strong>不是同一份清单</strong>。由此有两点：</p>
+<ul>
+<li><code>configure()</code> 没有的选项会被<strong>拒绝</strong>：<code>TypeError</code> 里点名这个参数、给出它<strong>接受</strong>的
+  最接近的名字，并指到本节。我们考虑过"接受并告警"，但否掉了：那样一个拼写错误会变成
+  一个看起来设了、实际什么都不改的开关 —— 而这正是本页反复在说的那类故障。异常类型仍是
+  <code>TypeError</code>，已经捕获它的调用方不受影响；</li>
+<li>同一个设置在两处都写时，<strong>文件赢</strong> —— 见<a href="#precedence">优先级</a>。这才让"改一个文件就能回退"成立，
+  也正因为如此，跨越 0.96 线的回退单元是「<strong>pin 加配置</strong>」，不是「pin」
+  （见<a href="../migration_guide_v2/#10-rolling-back-across-this-line">迁移指南</a>）。</li>
+</ul>
+<p>想知道<strong>装上的那一版</strong>到底接受哪些选项，直接问它：</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">cullinan</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">configure</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">))</span>
+</code></pre></div>
+<p>错误信息读的就是同一处来源，所以两者不会各说一套。同一个问题还有<strong>受支持的</strong>问法 ——
+而且它能让同一份调用在两个装上的版本上都成立 —— 见<a href="../migration_guide_v2/#10-rolling-back-across-this-line">迁移指南</a>
+里的 <code>configure_options()</code>。</p>
 <h2 id="_5">别把密钥放进文件<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>一个会被提交、或随二进制一起分发的文件，不是放密钥的地方。为此外提供两个能力，让文件不必承担这件事：</p>
+<p>一个会被提交、或随二进制一起分发的文件，不是放密钥的地方。<strong>不要把一个值写进文件。</strong>
+写在里面的内容应当经得起被贴进 issue——因为迟早会有一次被贴进去。</p>
+<p><strong>该文件默认被忽略。</strong> <code>application*.json</code>、<code>application*.toml</code>、<code>application*.yaml</code>
+与 <code>application*.yml</code> 已加入 <code>.gitignore</code>，所以一次普通的 <code>git add .</code> 不会把带值的文件
+提进仓库。模板形态——<code>application*.example.json</code> 以及对应的 <code>.toml</code> / <code>.yaml</code> / <code>.yml</code>
+——仍然可被追踪：那才是用来提交的形态，里面存的是引用而不是值。忽略规则是默认值而不是
+一堵墙（<code>git add -f</code> 可以绕过），因此仓库侧的检查会把每一个 <code>application*</code> 文件<strong>读两遍</strong>
+——磁盘上的一份、索引里的一份——任一份里有明文值都会报警。这两份不是同一份，而且任一份都
+能把值带进仓库：索引里那份是推送会发出去的内容，磁盘上尚未暂存的修改则是下一份会进历史的内容。
+它会对敏感键名下的明文值报警，也会对<strong>值本身是已知凭据形态</strong>的（PEM 私钥头、AWS access
+key id、GitHub token）报警——后者与键名叫什么无关。</p>
+<p>JSON 与 TOML <strong>在解释器能解析时</strong>按文档读取（TOML 需要 Python 3.11+）；否则按行扫描，
+并<strong>报出这次降级</strong>——不会静默。YAML 恒按行读取，写成多行块的值会被记为「无法判定」，
+而不是被静默放过。</p>
+<p>有两点需要知道：</p>
+<ul>
+<li>用 <code>CULLINAN_CONFIG</code> 指名的文件不受这里任何一条规则覆盖——它的名字可以是任意字符串。
+  这样的文件请自己保证不进版本库。</li>
+<li>已经被提交的文件仍然在历史里。规则挡住的是下一次 <code>git add .</code>，它不改写历史。
+  删掉文件也不等于把它移出了版本库：在删除被提交之前（对于已经推送过的值，还要重写历史），
+  那份副本仍然可以被取到。本检查读的是<strong>工作树与索引</strong>，<strong>不读 <code>HEAD</code></strong>——
+  曾经提交、后来从索引移除的值不在本检查范围；把它从历史里去掉是另一件事。</li>
+</ul>
+<p><strong>也不要 <code>print</code> 它。</strong> <code>get_config()</code> 交回的是已解析的值，所以把整份文档 <code>print</code>
+出来或打进调试日志，等于把密钥写进终端、日志文件或 CI 输出——那是第二份副本，却没有
+第一份拥有的任何保护。打你要看的那个设置，不要打整份文档。</p>
+<p>替代做法是在本该写值的地方写引用，为此提供两个能力：</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">"discord"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">"token"</span><span class="p">:</span><span class="w"> </span><span class="s2">"${DISCORD_TOKEN}"</span><span class="p">,</span>
@@ -2930,7 +3086,7 @@ HSM——并始终留在产物之外。</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a10", "pre_is_available": true, "pre_label": "0.96a10", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": {"channel": "pre", "current": "0.96a12", "pre_is_available": true, "pre_label": "0.96a12", "pre_url": "/cullinan/pre/", "stable_label": 0.95, "stable_url": "/cullinan/"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
