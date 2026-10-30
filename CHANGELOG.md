@@ -114,6 +114,15 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Documentation
 
+- **The request-body page said a large one-shot upload loses its status code; it does
+  not.** Measured against a 1 KiB ceiling: a 2 KiB body and a 64 KiB body, each sent in
+  a single write, both returned a readable `400` — the reset arrives on the next read,
+  by which time the response has been read. What actually denies a client the status
+  line is being *still writing* when the refusal lands, so the table is keyed on that
+  condition instead of on how far over the ceiling the body is. The three cases now run
+  as a test against a live Tornado server, so "measured" has an executor rather than
+  being a note that decays.
+
 - **The configuration page now says which variable chooses the engine, and which one
   only looks like it.** The engine comes from `CULLINAN_ENGINE`; `SERVER_ENGINE` is
   not read by anything, even though `SERVER_HOST` and `SERVER_PORT` are — so a

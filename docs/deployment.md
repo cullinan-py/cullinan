@@ -295,20 +295,26 @@ layer refuses, and that differs by engine:
 | Tornado | `400 Bad Request` with an empty body, raised by Tornado's protocol layer (`max_body_size`) before the framework sees the request |
 
 That table is the server's answer. What the **client** sees is a different
-question, and on Tornado it depends on whether the client is still writing when
-the server refuses:
+question, and it turns on one thing: was the client still writing when the
+refusal landed?
 
 | Client behaviour | What it observes |
 |---|---|
-| Sends the whole body in one write, moderately over the ceiling | `400` with an empty body |
-| Sends the whole body in one write, far over the ceiling | the connection is reset (`ConnectionResetError`; WSAECONNRESET on Windows) — **no status line** |
+| Finished writing before the refusal landed | `400` with an empty body — the reset arrives afterwards, by which time the response has been read |
+| Still writing when the refusal landed | the connection is reset or aborted (`ConnectionResetError` / `ConnectionAbortedError`; WSAECONNRESET on Windows) — **no status line** |
 | Streams it in chunks (`Transfer-Encoding: chunked`) | the connection is aborted — **no status line** |
 
-The dividing line is not the ratio but the race: a client that has finished
-writing can still read the `400`, one that has not gets its socket closed
-underneath it. Measured against a 1 KiB ceiling: one-shot bodies up to about
-16× over still returned `400`; a body 64× over, and a chunked upload only 1.5×
-over, both ended in a reset.
+The dividing line is not the ratio but the race. Measured against a 1 KiB ceiling
+on Windows: a 2 KiB body and a 64 KiB body, each sent in a single write, both
+returned a readable `400` — the second one's reset arrived on the next read, too
+late to hide it. The same 64 KiB sent in 1 KiB pieces, and a chunked upload only
+1.5× over, ended with no status line at all. A large body is not by itself what
+denies you the status code; writing it slowly is.
+
+Those three cases run as a test against a live server
+(`tests/integration/test_tornado_client_view_of_an_oversized_body.py`), because
+"measured" written in a page is a claim, and a claim with no executor is what
+drifts.
 
 Two consequences for callers:
 

@@ -9,8 +9,14 @@ The ceiling is opt-in (``@configure(max_request_body_bytes=...)``), because
 changing the default would break every existing upload; what is not optional is
 that once you ask for a ceiling, both engines stop reading at the limit. What the
 client sees differs: the ASGI adapter answers `413`, while Tornado refuses at its
-own protocol layer with `400` before the framework is involved — measured, not
-assumed.
+own protocol layer with `400` before the framework is involved.
+
+This file holds the unit-level wiring (the ceiling reaches the adapter, and it
+reaches Tornado's `HTTPServer`). What a *client* observes on Tornado -- including
+the cases where no status line arrives at all -- is measured against a live server
+in ``tests/integration/test_tornado_client_view_of_an_oversized_body.py``. The
+split is deliberate: "measured" belongs to the file that runs a socket, not to the
+one that asserts a keyword argument.
 """
 
 from __future__ import annotations

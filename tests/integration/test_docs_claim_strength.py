@@ -96,6 +96,9 @@ def test_the_check_notices_a_deleted_observation():
     section = _section(text, BODY_SECTION_HEADING["docs/deployment.md"])
     assert "no status line" in section
 
-    weakened = text.replace("— **no status line**", "").replace("**no status line**", "")
+    # Delete the caveat itself rather than one formatting of it: the row may be
+    # reworded, and a check that only recognises the current wording would go
+    # green the moment someone rephrased it.
+    weakened = text.replace("no status line", "")
     missing = missing_observations(weakened, "docs/deployment.md")
     assert "no status line" in missing, "removing the caveat must be reported"
