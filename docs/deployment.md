@@ -322,6 +322,10 @@ Counted on Windows against a 1 KiB ceiling (`n` = attempts, not an estimate):
 | 4 MiB, one write | 4 | 9 | 13 |
 | 400 KiB, one write, against a 256 KiB ceiling | 9 | 1 | 10 |
 
+**The counts are one machine's sample, not a rate**: a second measurement of the same
+4 MiB shape read one of thirteen. What the table supports is that the loss happens —
+not how often.
+
 Two ways to lose the status line, and neither is "the body was too far over the
 ceiling": **the write never finished**, or **a single write far exceeds what the
 connection can buffer**. The second is the surprising one — the client is not
