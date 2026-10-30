@@ -224,6 +224,92 @@ def test_the_scan_surface_includes_a_file_git_ignores(tmp_path):
     )
 
 
+def test_a_name_differing_only_in_case_is_still_read(tmp_path):
+    """``application.JSON`` is a file the loader reads, so the case cannot decide.
+
+    On a case-insensitive file system the loader's lookup for ``application.json``
+    resolves to this file, so it can carry a value like any other spelling. A name
+    match that is case-sensitive leaves exactly the spellings nobody thought to
+    write down unscanned.
+    """
+    write(tmp_path, "application.JSON", '{"token": "' + PLANTED + '"}')
+
+    result = run_checker("--root", str(tmp_path), "--json")
+
+    assert result.returncode == 1, "the upper-case spelling was never read"
+    assert payload_of(result)["scanned"] == 1
+
+
+def test_the_name_match_is_case_insensitive():
+    assert ccs.matches_config_name("application.JSON")
+    assert ccs.matches_config_name("APPLICATION.Yaml")
+    assert not ccs.matches_config_name("application.json.bak")
+    assert not ccs.matches_config_name("my-application.json")
+
+
+def test_a_staged_file_that_is_gone_from_disk_cannot_be_cleared(tmp_path):
+    """The state a repository is left in by the first thing anyone tries.
+
+    Someone commits a configuration file by accident, notices, and deletes it --
+    without staging the deletion. The working tree is then clean of the file and
+    the index is not, so the blob is still what a push would carry. A scan that
+    takes its file list from the index and then drops every entry it cannot find
+    on disk reports a clean repository at exactly the moment it is needed.
+    """
+    run_git(tmp_path, "init", "-q")
+    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    run_git(tmp_path, "add", "-f", "--", "application.json")
+    (tmp_path / "application.json").unlink()
+
+    staged = run_git(tmp_path, "ls-files")
+    assert "application.json" in staged.stdout, (
+        "the probe file must be in the index for this test to mean anything"
+    )
+
+    result = run_checker("--root", str(tmp_path), "--json")
+
+    assert result.returncode == 2, (
+        "a staged file that is gone from disk was reported as clean; its blob is "
+        "exactly what a push would send"
+    )
+    payload = payload_of(result)
+    assert payload["hits"] == []
+    assert [item["path"] for item in payload["undecided"]] == ["application.json"]
+    assert "index" in payload["undecided"][0]["reason"]
+
+
+def test_a_staged_file_is_not_cleared_by_the_ignored_file_exemption(tmp_path):
+    """Staged and unreadable is "could not decide", not "clean".
+
+    A file that is ignored *and* unreadable is downgraded to a warning, because an
+    ignored file cannot be committed. Once it is staged that reason stops holding:
+    the staged copy is what a push would send, and nothing here can say what is in
+    it.
+
+    Two things produce the right answer today, and this test asserts the answer
+    rather than either mechanism. The second one is worth naming because it is not
+    this checker's own doing: git's ``check-ignore`` treats an indexed path as not
+    ignored, so the exemption does not reach a staged file in the first place. The
+    ``in_index`` condition in the scanner says the same thing in the code, and is
+    what keeps the invariant true if that git behaviour ever changes.
+    """
+    run_git(tmp_path, "init", "-q")
+    (tmp_path / ".gitignore").write_text("application*.json\n", encoding="utf-8")
+    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    run_git(tmp_path, "add", "-f", "--", "application.json")
+    # Still on disk, still in the index, and broken by an edit that was never
+    # staged -- so it reaches the exemption path rather than the missing-file one.
+    write(tmp_path, "application.json", '{"token": ')
+
+    result = run_checker("--root", str(tmp_path), "--json")
+
+    assert result.returncode == 2, (
+        "an ignored, unreadable, staged file was reported as clean; its staged copy "
+        "is what a push would send"
+    )
+    assert payload_of(result)["undecided"]
+
+
 # --------------------------------------------------------------------------- #
 # 3. The checker fires where it must
 # --------------------------------------------------------------------------- #

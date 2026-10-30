@@ -95,14 +95,19 @@ issue tracker, because sooner or later it ends up in one.
 trackable: that is the shape meant to be committed, and it holds references instead
 of values. An ignore rule is a default rather than a wall (`git add -f` walks past
 it), so a repository check reads every `application*` file that is **on disk or in
-the index** and reports a plaintext value under a sensitive key.
+the index** and reports a plaintext value under a sensitive key. JSON and TOML are
+read as documents; a YAML file is read line by line, because the standard library
+has no YAML parser — a value written as a multi-line block is reported as
+undecided rather than silently passed.
 
 Two consequences worth knowing:
 
 - Naming a file through `CULLINAN_CONFIG` puts it outside every rule here — the
   name can be anything. Keep that file out of version control yourself.
 - A file that is already committed stays committed. The rule stops the next `git
-  add .`; it does not rewrite history.
+  add .`; it does not rewrite history. Deleting the file is not the same as
+  removing it: until the deletion is committed — and, for a value that was pushed,
+  until history is rewritten — the copy is still there to be fetched.
 
 **Do not `print` it either.** `get_config()` hands back resolved values, so a
 `print` or a debug log of the whole document writes the secret into a terminal, a

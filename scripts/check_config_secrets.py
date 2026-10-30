@@ -189,8 +189,10 @@ SENSITIVE_KEYWORDS = (
 PLACEHOLDER_FULL = re.compile(r"\$\{[A-Za-z_][A-Za-z0-9_]*(?::[^}]*)?\}$")
 
 #: Shapes that are a credential by construction, so the key name is irrelevant.
-#: The AWS expression is the one ``git-secrets --register-aws`` uses, kept
-#: verbatim so the two tools agree; the GitHub prefixes are fixed by GitHub.
+#: The AWS expression is the one `git-secrets --register-aws` registers -- the
+#: pattern string was copied from it. That is a statement about the string, and
+#: not about what either tool detects: no sample has been run against it, so no
+#: claim of equivalent coverage is made. The GitHub prefixes are fixed by GitHub.
 VALUE_PATTERNS = (
     ("pem-private-key", re.compile(r"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----")),
     (
@@ -274,8 +276,17 @@ class FileReport:
 
 
 def matches_config_name(name: str) -> bool:
-    """True when ``name`` is a configuration file name the loader would read."""
-    return any(fnmatch.fnmatchcase(name, pattern) for pattern in CONFIG_NAME_GLOBS)
+    """True when ``name`` is a configuration file name the loader would read.
+
+    Compared case-insensitively, because the loader's lookup is:
+    ``directory / 'application' + '.json'`` resolves against whatever the file
+    system considers equal, and on Windows and macOS that includes
+    ``application.JSON``. A name the loader can read is a name that can carry a
+    value, so the case it happens to be written in cannot be the thing that
+    decides whether anyone looks.
+    """
+    lowered = name.casefold()
+    return any(fnmatch.fnmatchcase(lowered, pattern) for pattern in CONFIG_NAME_GLOBS)
 
 
 def _pruned(name: str) -> bool:
@@ -304,13 +315,19 @@ def index_names(root: Path, notes: Optional[List[str]] = None) -> List[str]:
     return [name for name in text.split("\0") if name and matches_config_name(name)]
 
 
-def iter_targets(root, explicit=None, notes=None):
+def iter_targets(root, explicit=None, notes=None, indexed=None):
     """The files to scan. ``explicit`` wins when given (the testing surface).
 
     Recursing the whole working tree instead of asking git for the unignored set
     is the point, not an implementation detail: the file a ``.gitignore`` rule
     has just started ignoring is exactly the one worth reading, and
     ``git ls-files --others --exclude-standard`` cannot see it.
+
+    ``indexed``, when given, is filled with the resolved paths that came from the
+    index, so the caller can tell a file that is merely unreadable from one whose
+    content is already staged. That distinction matters: deleting a file from the
+    working tree is what someone does after committing a secret by accident, and
+    the staged copy is still there to be pushed.
     """
     if explicit is not None:
         return [Path(item).resolve() for item in explicit]
@@ -332,8 +349,16 @@ def iter_targets(root, explicit=None, notes=None):
 
     for name in index_names(root, notes):
         path = (root / name).resolve()
-        if path in seen or not path.is_file():
+        if indexed is not None:
+            indexed.add(path)
+        if path in seen:
             continue
+        # Deliberately NOT `and path.is_file()`. A name that is in the index and
+        # gone from the working tree is not a name to skip -- it is the exact
+        # state a repository is left in by `rm application.json` after the secret
+        # was committed, and the removal has not been staged. The blob is still
+        # there to push. The file is scanned like any other; not being on disk
+        # turns into "could not decide" inside `scan_file`, which is a failure.
         seen.add(path)
         targets.append(path)
 
@@ -513,19 +538,32 @@ def scan_yaml_lines(path) -> Tuple[List[Finding], str, List[str]]:
     return scan_lines(text), "", [note]
 
 
-def scan_file(path, root=None, allow_git=True) -> FileReport:
+def scan_file(path, root=None, allow_git=True, in_index=False) -> FileReport:
     """Read one file and collect its findings, warnings and read failure.
 
     ``allow_git`` is off in ``--paths`` mode: a test corpus must behave the same
     way whether or not it happens to sit inside a repository, so a file that
     cannot be parsed there is treated as a file that could enter it.
+
+    ``in_index`` says the name is in the git index. It changes two things, both
+    for the same reason -- a staged file can reach the repository even when there
+    is nothing on disk to read:
+
+    * a missing file is reported as *staged but gone* rather than as a missing
+      path, and it stays a problem, because its blob is exactly what a push
+      would carry;
+    * the "unreadable but ignored, so not counted" exemption is not applied. That
+      exemption is true only for a file that is not in the index: an ignored file
+      cannot be committed, but an ignored file that is *already staged* can.
     """
     path = Path(path)
     display = display_path(path, root)
     suffix = path.suffix.lower()
 
     if not path.is_file():
-        return FileReport(display, [], "not a readable file", [], False)
+        reason = ("in the index but not on disk: the staged copy is what a push "
+                  "would carry" if in_index else "not a readable file")
+        return FileReport(display, [], reason, [], False)
 
     if suffix == ".json":
         findings, problem, warnings = scan_json(path)
@@ -538,8 +576,17 @@ def scan_file(path, root=None, allow_git=True) -> FileReport:
         findings = scan_lines(text) if not problem else []
         warnings = ["{}: line-scan only (unrecognised suffix)".format(path.name)]
 
-    if problem and allow_git and root is not None and is_ignored(path, root):
-        # An ignored file cannot reach the repository, and it may be mid-edit.
+    if problem and not in_index and allow_git and root is not None and is_ignored(path, root):
+        # An ignored file that is *not* staged cannot reach the repository, and it
+        # may be mid-edit.
+        #
+        # `not in_index` is a second line of defence, not the working one: git's
+        # own `check-ignore` already treats an indexed path as not ignored, so the
+        # `is_ignored` call below returns False for anything staged and this guard
+        # never changes the outcome today. It is here so that the invariant --
+        # "the exemption is only true for a file that cannot be committed" -- is
+        # written down where the code is, rather than resting on that behaviour of
+        # git staying the same.
         warnings = warnings + ["{}: unreadable but ignored, so not counted as a finding: {}".format(
             display, problem)]
         problem = ""
@@ -827,8 +874,10 @@ def main(argv=None) -> int:
         payload_root = base
     else:
         payload_root = repo_root(args.root)
-        targets = iter_targets(payload_root, notes=notes)
-        reports = [scan_file(path, root=payload_root) for path in targets]
+        indexed = set()
+        targets = iter_targets(payload_root, notes=notes, indexed=indexed)
+        reports = [scan_file(path, root=payload_root, in_index=path.resolve() in indexed)
+                   for path in targets]
 
     code, payload = decide(reports, root=payload_root, strict=args.strict,
                            extra_warnings=notes)
