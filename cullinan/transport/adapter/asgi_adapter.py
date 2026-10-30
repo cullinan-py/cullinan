@@ -233,9 +233,28 @@ class ASGIAdapter(WebAdapter):
                 log_level=kwargs.get('log_level', 'info'),
                 **config_kwargs,
             )
+            server_instance = _CullinanUvicornServer(config)
+
+            def _request_shutdown() -> bool:
+                """Ask uvicorn to stop, the same way a signal does.
+
+                Two steps, in this order and for the same reason as the signal
+                path: announce the drain first, so the readiness predicate has
+                already flipped when the next request arrives, then set
+                ``should_exit``. That attribute is polled by uvicorn's main loop,
+                so setting it from another thread is the supported request to
+                stop -- there is no async entry point an outside caller could
+                await.
+                """
+                _begin_draining_for_active_application()
+                server_instance.should_exit = True
+                return True
+
+            self._register_shutdown_requester(_request_shutdown)
             try:
-                _CullinanUvicornServer(config).run()
+                server_instance.run()
             finally:
+                self._register_shutdown_requester(None)
                 # The drain is over (or was abandoned); make the application say
                 # so. Without this the process exits while ``phase`` still reads
                 # "draining" -- a state nobody can observe afterwards except in a

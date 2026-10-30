@@ -10,7 +10,7 @@ translation_pair: "docs/deployment.md"
 related_tests: ["tests/integration/test_deployment_guide_symbols.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/graceful_shutdown"]
 estimate_pd: 2.0
-last_updated: "2026-10-27"
+last_updated: "2026-10-30"
 pr_links: []
 
 # 生产部署
@@ -92,6 +92,34 @@ main()
 
 1. **它是被执行的，不是建议值。** `drain_timeout=1.0` 配一个需要 6s 的请求：两个引擎都在约 1.1–1.4s 退出（上限 + 收尾开销，不是固定的分引擎数字），慢请求被切断。而且**切断的表现不同**：ASGI 回 `500`（服务器取消任务），Tornado 直接断连。需要慢请求跑完，就把上限调大。
 2. **结果会报告。** `ApplicationContext.shutdown()` 与 `ashutdown()` 在时限内排空完成时返回 `True`，超时返回 `False`。⚠️ 一个坑：在运行中的事件循环里从线程调用同步形式，它**拒绝阻塞循环**、打警告、返回 `False`，**但容器照样被关闭** —— 所以 `False` 的含义是"没有等"，不是"什么都没发生"。
+
+### 从自己的代码里请求关闭
+
+信号并不总是你能发出的东西。Windows 上 `terminate()` 就是 `TerminateProcess`：
+进程直接消失、不经排空；而 `SIGBREAK` 只能送到拥有控制台的进程。监管程序、管理路由、
+测试仍然需要能请求一个**正在跑**的服务停下来 —— 而 `run()` 是阻塞的，你手上并没有那个对象。
+
+```python
+from cullinan.application import Application
+
+app = Application.current()          # run() 阻塞期间也能拿到
+if app is not None:
+    asked = app.request_shutdown()   # True：已经向一个正在跑的服务提出了请求
+```
+
+| 返回值 | 含义 |
+|---|---|
+| `True` | 已向正在运行的服务请求停止；上面那条关闭序列开始执行 |
+| `False` | 没有可请求的对象 —— 服务还没起，或已经停了 |
+
+`request_shutdown()` 走的是**同一条**排水路径（信号走的也是它），所以不存在第二条需要
+单独维护的关闭逻辑。它在**任何线程**调用都安全：请求会被调度到拥有该服务的那个 loop 上
+（Tornado 用线程安全回调，uvicorn 用 `should_exit`），这也是它在 loop 空闲时同样有效的原因。
+它**不会**用抛异常来表达"没事可做" —— 答案是 `False`：监管程序的退出路径不能把一个已经
+完成的关闭变成一次崩溃。
+
+可运行版本是 `python -m examples.graceful_shutdown.stop_after`：它等到应用真的在服务之后，
+从一个**不负责服务请求**的线程请求停止。
 
 ## 探针：就绪与存活是两个问题
 

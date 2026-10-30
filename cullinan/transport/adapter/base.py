@@ -8,7 +8,7 @@ Author: plumeink
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from .driver import DriverCapabilities, DriverRequestAdapter, DriverResponseWriter, WebDriver
 from cullinan.web.gateway.dispatcher import Dispatcher
@@ -52,6 +52,42 @@ class WebAdapter(WebDriver, ABC):
     def __init__(self, dispatcher: Dispatcher, runtime: Optional[Any] = None) -> None:
         super().__init__(runtime=runtime)
         self._dispatcher = dispatcher
+        self._shutdown_requester: Optional[Callable[[], bool]] = None
+
+    def _register_shutdown_requester(self, requester: Optional[Callable[[], bool]]) -> None:
+        """Publish (or withdraw) this engine's programmatic shutdown hook.
+
+        Called from ``run()``: before the blocking call it publishes the hook,
+        after it returns it withdraws it, so "is a server running?" has one
+        answer that the adapter itself maintains. The hook is also registered on
+        the runtime, which is what ``Application.request_shutdown()`` reaches --
+        a caller asking an application to stop does not hold the adapter.
+        """
+        self._shutdown_requester = requester
+        runtime = self.runtime
+        setter = getattr(runtime, "set_shutdown_requester", None)
+        if setter is None:
+            return
+        try:
+            setter(requester)
+        except Exception:  # noqa: BLE001 - publishing must not stop a server
+            logger.debug("Could not publish the shutdown hook on the runtime", exc_info=True)
+
+    def request_shutdown(self) -> bool:
+        """Ask this adapter's running server to stop gracefully.
+
+        ``False`` when this adapter is not serving, so a supervisor can tell
+        "already stopped" from "asked". Safe to call from any thread, and from
+        inside the loop as well -- the concrete hook is what makes it so.
+        """
+        requester = self._shutdown_requester
+        if requester is None:
+            return False
+        try:
+            return bool(requester())
+        except Exception:  # noqa: BLE001 - a shutdown request must not raise
+            logger.exception("Could not ask the %s to shut down", self.get_engine_name())
+            return False
 
     @property
     def dispatcher(self) -> Dispatcher:

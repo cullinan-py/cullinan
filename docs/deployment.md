@@ -10,7 +10,7 @@ translation_pair: "docs/zh/deployment.md"
 related_tests: ["tests/integration/test_deployment_guide_symbols.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/graceful_shutdown"]
 estimate_pd: 2.0
-last_updated: "2026-10-27"
+last_updated: "2026-10-30"
 pr_links: []
 
 # Deploying to Production
@@ -129,6 +129,38 @@ Three things worth knowing about the bound:
    synchronous form refuses to block that loop, logs a warning, returns `False`,
    **and still closes the container** — so `False` means "did not wait", not
    "nothing happened".
+
+### Stopping from your own code
+
+A signal is not always something you can send. On Windows `terminate()` is
+`TerminateProcess`: the process disappears without draining, and `SIGBREAK` only
+reaches a process that owns a console. A supervisor, an admin route, or a test
+still needs a way to ask a **running** server to stop — and `run()` blocks, so the
+object to ask is not the one you are holding.
+
+```python
+from cullinan.application import Application
+
+app = Application.current()          # reachable while run() is blocking
+if app is not None:
+    asked = app.request_shutdown()   # True: a server was asked to drain
+```
+
+| Value | Meaning |
+|---|---|
+| `True` | a running server was asked to stop; the sequence above begins |
+| `False` | there was nothing to ask — the server had not started or had already stopped |
+
+`request_shutdown()` runs the **same** drain a signal runs, so there is no second
+shutdown path to keep correct. It is safe from any thread: the request is
+scheduled onto the loop that owns the server (a threaded callback on Tornado,
+`should_exit` on uvicorn), which is also why it works while the loop is idle. It
+never raises to say "nothing to do" — `False` is the answer, because a
+supervisor's exit path must not turn a finished shutdown into a crash.
+
+The runnable version is `python -m examples.graceful_shutdown.stop_after`, which
+waits until the application is serving and then asks it to stop from a thread
+that is not serving requests.
 
 ## Probes: readiness and liveness are different questions
 

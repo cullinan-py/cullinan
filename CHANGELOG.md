@@ -36,6 +36,19 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Added
 
+- **A running server can be asked to stop from code, not only by a signal.**
+  `Application.request_shutdown()` performs the same drain a stop signal performs —
+  stop accepting, answer what still arrives with `503`, wait for in-flight requests
+  up to `drain_timeout`, then stop — and it does so from any thread. On Windows this
+  was the missing half: `terminate()` is `TerminateProcess`, so a process asked to
+  stop that way simply disappears, and there was no other way to reach the drain.
+  `run()` blocks, so the call is made on `Application.current()`, which is reachable
+  while the server runs. It returns `True` when a running server was asked and
+  `False` when there was nothing to ask, rather than raising: a supervisor's exit
+  path must not turn a finished shutdown into a crash. Measured on both engines with
+  a request in flight: that request finishes with `200`, the next one is answered
+  `503`. `examples/graceful_shutdown/stop_after.py` is the runnable version.
+
 - **The stability contract records what each name points at, not just its spelling.**
   `cullinan/_contracts.json` (now schema 2) gains `stability_shapes`: every symbol in
   the four committed `__all__` lists is recorded as `function`, `class`, `module` or

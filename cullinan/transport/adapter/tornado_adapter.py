@@ -314,11 +314,29 @@ class TornadoAdapter(WebAdapter):
         # Signal handling
         self._install_signal_handlers()
 
+        loop = tornado.ioloop.IOLoop.current()
+
+        def _request_shutdown() -> bool:
+            """Hand the drain to the loop from whatever thread is asking.
+
+            ``add_callback`` is the thread-safe entry point here: since Tornado 5
+            it dispatches through ``call_soon_threadsafe`` when it is called from
+            another thread, and directly when it is called on the loop. (The
+            separate ``add_callback_threadsafe`` name was removed -- it is not
+            present in 6.5.10, which is what this project runs against.) That is
+            also why the drain itself is not called inline: it awaits, and a
+            caller outside the loop cannot.
+            """
+            loop.add_callback(self._shutdown_gracefully)
+            return True
+
+        self._register_shutdown_requester(_request_shutdown)
         try:
-            tornado.ioloop.IOLoop.current().start()
+            loop.start()
         except KeyboardInterrupt:
             logger.info('KeyboardInterrupt received, shutting down...')
         finally:
+            self._register_shutdown_requester(None)
             self._cleanup()
 
     async def shutdown(self) -> None:

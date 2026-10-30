@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, List, Optional
@@ -13,6 +14,8 @@ from .invocation import ExceptionResolver, ReturnValueHandler
 from .pipeline import MiddlewarePipeline
 from .router import Router
 from .web_core import HeaderPolicy
+
+logger = logging.getLogger(__name__)
 
 
 class WebRuntimeState:
@@ -70,6 +73,41 @@ class WebRuntime:
         self._request_lock = threading.RLock()
         self._close_callbacks: List[Callable[["WebRuntime"], None]] = []
         self.application: Optional[Any] = None
+        #: The transport's "stop this server" hook, published by an adapter while
+        #: it is serving and withdrawn when it stops. ``None`` means no server is
+        #: running under this runtime, which is why a request to shut down can be
+        #: answered with ``False`` instead of raising.
+        self._shutdown_requester: Optional[Callable[[], bool]] = None
+
+    def set_shutdown_requester(self, requester: Optional[Callable[[], bool]]) -> None:
+        """Publish (or withdraw) the engine's programmatic shutdown hook.
+
+        The adapter owns the engine-specific part -- a Tornado ``IOLoop``, a
+        uvicorn ``Server`` -- and registers it here when the server starts, so
+        the application can be asked to stop without the caller holding the
+        adapter. ``None`` withdraws it: after ``run()`` returns there is nothing
+        left to stop, and reporting otherwise would be a lie a supervisor acts
+        on.
+        """
+        with self._request_lock:
+            self._shutdown_requester = requester
+
+    def request_shutdown(self) -> bool:
+        """Ask the running server to stop gracefully.
+
+        Returns ``True`` when a running server was actually asked, ``False`` when
+        there is nothing to ask. The call is safe from any thread: the hook it
+        delegates to is the engine's threaded entry point, not the loop itself.
+        """
+        with self._request_lock:
+            requester = self._shutdown_requester
+        if requester is None:
+            return False
+        try:
+            return bool(requester())
+        except Exception:  # noqa: BLE001 - a shutdown request must not raise
+            logger.exception("Could not ask the running server to shut down")
+            return False
 
     def validate(self) -> None:
         self.state = WebRuntimeState.VALIDATING

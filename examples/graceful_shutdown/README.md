@@ -85,3 +85,42 @@ yourself.
 The point of the exercise is that the framework's own state turned to "not
 ready" at the signal rather than after the wait — the status code you happen to
 observe depends on who still has a connection open.
+
+## Ask for the shutdown from your own code
+
+A signal is not always available. On Windows `terminate()` is
+`TerminateProcess`: the process disappears and nothing is drained, and
+`SIGBREAK` only exists for a console the process owns. A supervisor, an admin
+route or a test needs to ask a *running* server to stop, and `run()` blocks — so
+the object to ask has to be reachable from somewhere else.
+
+```bash
+python -m examples.graceful_shutdown.stop_after
+```
+
+That script waits until the application is serving, then calls
+`Application.current().request_shutdown()` from a thread that is not the one
+serving requests, three seconds later:
+
+```python
+from cullinan.application import Application
+
+asked = Application.current().request_shutdown()   # True: a server was asked
+```
+
+| Surface | Answers |
+|---|---|
+| `Application.request_shutdown()` | ask the running server to stop gracefully; `True` when there was a server to ask, `False` when there was not |
+
+Three properties worth knowing:
+
+- **It is the same drain the signal triggers.** Stop accepting, answer what still
+  arrives with `503`, wait for in-flight requests up to `drain_timeout`, then
+  stop. There is no second shutdown path to keep correct.
+- **`False` is information, not failure.** Called before the server starts or
+  after it stopped, it reports that there was nothing to ask. It does not raise,
+  so a supervisor's exit path cannot turn a finished shutdown into a crash.
+- **Any thread.** The call is scheduled onto the loop it belongs to (a threaded
+  callback on Tornado, `should_exit` on uvicorn), so a supervision thread can make
+  it while the loop is idle.
+
