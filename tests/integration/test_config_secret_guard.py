@@ -300,6 +300,29 @@ def test_a_staged_copy_that_is_gone_from_disk_says_how_to_clear_it(tmp_path):
     assert "git rm --cached application.json" in warnings
 
 
+def test_the_ways_out_say_that_neither_rewrites_history(tmp_path):
+    """A command that clears the block is not the same as a command that cleans up.
+
+    Following either suggestion makes this check pass, and neither touches the
+    object already in history. A message that offers a way past a gate without
+    saying what it does not do is worse than no message: it produces a person who
+    believes the problem is handled. The guide says the same thing in prose, but
+    the reader who needs it is looking at the message.
+    """
+    run_git(tmp_path, "init", "-q")
+    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    run_git(tmp_path, "add", "-f", "--", "application.json")
+    (tmp_path / "application.json").unlink()
+
+    result = run_checker("--root", str(tmp_path), "--json")
+    warnings = " ".join(payload_of(result)["warnings"])
+
+    assert "history" in warnings, (
+        "the message offers two commands that make the check pass and says nothing "
+        "about the copy they leave behind: " + warnings
+    )
+
+
 def test_a_staged_copy_that_cannot_be_decoded_is_undecided(tmp_path):
     """Two copies, and neither one can be read: that is not a clean bill of health.
 

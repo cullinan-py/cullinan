@@ -723,7 +723,8 @@ def scan_file(path, root=None, allow_git=True, in_index=False) -> FileReport:
         warnings.append(
             "{}: judged from the staged copy, which is what a push would carry. "
             "Submit the deletion with 'git rm {}', or stop tracking it and keep the "
-            "file with 'git rm --cached {}'".format(display, display, display))
+            "file with 'git rm --cached {}' (neither removes the copy already in "
+            "history)".format(display, display, display))
 
     if problem and not in_index and allow_git and root is not None and is_ignored(path, root):
         # An ignored file that is not staged cannot reach the repository, and it
