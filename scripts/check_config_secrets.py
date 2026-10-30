@@ -32,8 +32,31 @@ hint.
       ``${A}${B}``). UNCERTAIN: the loader substitutes into such a string, so it
       may resolve to a value, but the environment is not visible from here. This
       is the only honest third answer, and it does not block.
-  R7  the key name, lowercased with ``_`` and ``-`` removed, contains one of the
-      sensitive stems. HIT.
+  R7  the key name says it is a secret. Three ways, because a key path can carry
+      the meaning anywhere along it:
+        a. the last segment, lowercased with ``_`` and ``-`` removed, contains one
+           of the sensitive stems. HIT (``plaintext-under-sensitive-key``).
+        b. the last segment is a **neutral payload name** -- ``value``, ``data``,
+           ``text`` -- and some **ancestor** segment contains a sensitive stem, and
+           the value is not a plain URL. The meaning lives in the container there
+           (``credentials.value``), so the leaf name alone cannot clear it. HIT
+           (``plaintext-under-neutral-leaf-of-sensitive-container``).
+        c. the same shape but the value is a URL with no userinfo: an address is
+           not a credential. CLEAN.
+        d. the value is a URL whose authority carries userinfo
+           (``https://user:pass@host``), whatever the key is called. HIT
+           (``url-carries-userinfo``).
+        e. otherwise CLEAN.
+
+      Rule (b) exists because neither obvious reading is right. Matching the last
+      segment only misses an entire shape -- a sensitive container holding the
+      secret under a name that means nothing -- and that set of names can be
+      listed. Matching the whole path instead fires on ``credentials.endpoint``,
+      ``credentials.base_url``, ``credentials.username``, ``credentials.ttl``: a
+      set that cannot be listed, because every ordinary setting anyone adds lands
+      in it. Since a hit blocks a push, an unlistable false-positive set is the
+      expensive mistake, and a short allow-list of names that genuinely carry no
+      meaning buys the miss back.
 
 What it deliberately does not decide
 ------------------------------------
@@ -177,8 +200,36 @@ VALUE_PATTERNS = (
     ("github-token", re.compile(r"gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,}")),
 )
 
-#: The single-key mapping ``load_project_config(decryptor=...)`` unwraps (R1).
+#: The single-key mapping ``load_config(decryptor=...)`` unwraps (R1).
 ENCRYPTED_MARKER = "encrypted"
+
+#: Leaf names that carry no meaning of their own, so the meaning has to be read
+#: from the container: ``{"credentials": {"value": ...}}`` is a credential, while
+#: ``{"greeting": {"text": ...}}`` is a greeting. This is an **allow-list kept
+#: short on purpose** -- it is the only list here that can be exhaustive, because
+#: a name either says nothing or it does not. Its length is bounded: if it ever
+#: needs to grow past a dozen entries the approach has stopped working and the
+#: judgement belongs somewhere else.
+NEUTRAL_LEAVES = (
+    "value",
+    "val",
+    "data",
+    "content",
+    "text",
+    "string",
+    "raw",
+    "body",
+    "payload",
+)
+
+#: A URL with no userinfo is an address, not a credential.
+PLAIN_URL = re.compile(r"^[a-z][a-z0-9+.\-]*://[^/@\s]+(?:[/?#]\S*)?$")
+
+#: A URL whose authority carries userinfo (``https://user:pass@host``). Treated as
+#: a credential because the credential is in the string. This is a judgement made
+#: here, not a comparison against another scanner: no sample has been run against
+#: one, so no claim of agreement with any of them is made anywhere.
+URL_WITH_USERINFO = re.compile(r"^[a-z][a-z0-9+.\-]*://[^/\s]*@[^/\s]+(?:[/?#]\S*)?$")
 
 #: One ``key: value`` / ``key = value`` line. This is all the YAML and the
 #: pre-3.11 TOML fallback can see, and it is why B3/B4 are written down above.
@@ -337,6 +388,10 @@ def iter_string_leaves(node, key_path=()):
         yield key_path, node
 
 
+def _carries_sensitive_stem(normalized_name: str) -> bool:
+    return any(keyword in normalized_name for keyword in SENSITIVE_KEYWORDS)
+
+
 def classify(key_path, value):
     """Walk R2..R7 for one leaf. Returns a ``Finding`` or ``None`` (CLEAN)."""
     if not isinstance(value, str):
@@ -354,11 +409,22 @@ def classify(key_path, value):
         return Finding("uncertain", key_path, "partial-placeholder", len(value))  # R6
 
     segments = _named_segments(key_path)
-    key = normalize_key(segments[-1]) if segments else ""
-    for keyword in SENSITIVE_KEYWORDS:
-        if keyword in key:
-            return Finding("hit", key_path, "plaintext-under-sensitive-key", len(value))  # R7
-    return None
+    leaf = normalize_key(segments[-1]) if segments else ""
+    ancestors = [normalize_key(name) for name in segments[:-1]]
+
+    if _carries_sensitive_stem(leaf):
+        return Finding("hit", key_path, "plaintext-under-sensitive-key", len(value))  # R7-a
+
+    if leaf in NEUTRAL_LEAVES and any(_carries_sensitive_stem(name) for name in ancestors):
+        if PLAIN_URL.match(value):
+            return None  # R7-c
+        return Finding("hit", key_path, "plaintext-under-neutral-leaf-of-sensitive-container",
+                       len(value))  # R7-b
+
+    if URL_WITH_USERINFO.match(value):
+        return Finding("hit", key_path, "url-carries-userinfo", len(value))  # R7-d
+
+    return None  # R7-e
 
 
 # --------------------------------------------------------------------------- #
@@ -628,6 +694,25 @@ def selftest() -> int:
         _selftest_expect(
             failures, "a single reference", "CLEAN",
             [scan_file(clean, root=base, allow_git=False)], base)
+
+        # R7-b/R7-c are a pair: the first proves the neutral-leaf miss is closed,
+        # the second proves closing it did not start firing on ordinary settings
+        # that happen to live under a container with a sensitive name.
+        container = base / "application-container.json"
+        container.write_text('{"credentials": {"value": "sk-live-DEADBEEF"}}', encoding="utf-8")
+        _code, payload = _selftest_expect(
+            failures, "a neutral leaf under a sensitive container", "HIT",
+            [scan_file(container, root=base, allow_git=False)], base)
+        if not any(hit["reason"] == "plaintext-under-neutral-leaf-of-sensitive-container"
+                   for hit in payload["hits"]):
+            failures.append("the neutral-leaf shape was not named as the reason")
+
+        benign = base / "application-benign.json"
+        benign.write_text('{"credentials": {"endpoint": "https://api.example.com"}}',
+                          encoding="utf-8")
+        _selftest_expect(
+            failures, "a benign leaf under the same container", "CLEAN",
+            [scan_file(benign, root=base, allow_git=False)], base)
 
         shaped = base / "application-prod.json"
         shaped.write_text('{"x": "AKIAIOSFODNN7EXAMPLE"}', encoding="utf-8")

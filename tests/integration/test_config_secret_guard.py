@@ -310,6 +310,151 @@ def test_the_checker_can_prove_it_fires():
 
 
 # --------------------------------------------------------------------------- #
+# 3b. Which segment of the key path decides whether a value is a secret
+# --------------------------------------------------------------------------- #
+#
+# A key path can carry the meaning anywhere along it, and the first version of this
+# check read only the last segment. That missed an entire shape -- a sensitive
+# container holding the value under a name that says nothing -- because the leaf
+# name alone cannot clear it: `credentials.value` is a credential and
+# `greeting.text` is a greeting, and the difference is one segment up.
+#
+# The obvious repair, matching the whole path, was rejected: it fires on
+# `credentials.endpoint`, `credentials.base_url`, `credentials.username`,
+# `credentials.ttl` -- every ordinary setting anyone adds under a container that
+# happens to be called `credentials`. That set cannot be listed in advance, and a
+# hit blocks a push, so the expensive mistake is the false positive.
+#
+# What is implemented instead reads the container only when the leaf name is one of
+# a short allow-list of names that genuinely carry no meaning. That list can be
+# complete, which is why it is the one used. The two tests below exist as a pair on
+# purpose: one fails if the miss comes back, the other fails if closing the miss
+# starts firing on ordinary settings.
+
+
+def test_a_neutral_leaf_under_a_sensitive_container_is_caught(tmp_path):
+    """Closing the miss. Red if the rule goes back to reading only the last segment."""
+    target = write(tmp_path, "application.json", '{"credentials": {"value": "sk-live-DEADBEEF"}}')
+    result = run_checker("--paths", str(target), "--json")
+
+    assert result.returncode == 1, "a value under a neutral leaf was not reported"
+    hits = payload_of(result)["hits"]
+    assert [(hit["key_path"], hit["reason"]) for hit in hits] == [
+        ("credentials.value", "plaintext-under-neutral-leaf-of-sensitive-container")
+    ]
+
+
+def test_a_benign_leaf_under_a_sensitive_container_stays_clean(tmp_path):
+    """Not over-firing. Red if the rule is widened to match the whole key path."""
+    target = write(
+        tmp_path, "application.json", '{"credentials": {"endpoint": "https://api.example.com"}}'
+    )
+    result = run_checker("--paths", str(target), "--json")
+
+    assert result.returncode == 0, (
+        "an address under a container called `credentials` was reported, which makes "
+        "every ordinary setting under such a container block a push"
+    )
+    assert payload_of(result)["hits"] == []
+
+
+#: Ordinary settings that live under a container with a sensitive name, carrying a
+#: value that is *not* a URL. The URL case above is cleared by the plain-URL rule
+#: whether or not the neutral-leaf gate exists, so it cannot tell the two designs
+#: apart; these two can. That distinction is the whole reason the gate exists.
+BENIGN_NON_URL_LEAVES = (
+    '{"credentials": {"username": "svc-account"}}',
+    '{"credentials": {"region": "eu-west-1"}}',
+)
+
+
+@pytest.mark.parametrize("body", BENIGN_NON_URL_LEAVES)
+def test_a_benign_leaf_with_a_non_url_value_stays_clean(tmp_path, body):
+    """The case that actually separates the two designs.
+
+    Widening the rule to the whole key path fires on these, because the container is
+    called `credentials` and nothing else is consulted. That is the false positive
+    the neutral-leaf gate exists to prevent -- and unlike a URL, there is no
+    plain-URL exemption in the way to mask it.
+    """
+    target = write(tmp_path, "application.json", body)
+    result = run_checker("--paths", str(target), "--json")
+
+    assert result.returncode == 0, (
+        "{} was reported; every ordinary setting under a container named "
+        "`credentials` would then block a push".format(body)
+    )
+    assert payload_of(result)["hits"] == []
+
+
+def test_a_plain_url_is_an_address_not_a_credential(tmp_path):
+    """The same neutral leaf, so the container is sensitive; the value decides."""
+    target = write(
+        tmp_path, "application.json", '{"credentials": {"value": "https://api.example.com"}}'
+    )
+    result = run_checker("--paths", str(target), "--json")
+
+    assert result.returncode == 0
+    assert payload_of(result)["hits"] == []
+
+
+def test_a_url_carrying_userinfo_is_reported(tmp_path):
+    """The credential is in the string itself, so the key name is irrelevant."""
+    target = write(tmp_path, "application.json", '{"proxy": "https://user:pass@host:8080/x"}')
+    result = run_checker("--paths", str(target), "--json")
+
+    assert result.returncode == 1
+    assert [hit["reason"] for hit in payload_of(result)["hits"]] == ["url-carries-userinfo"]
+
+
+def test_a_plain_url_under_an_innocent_key_is_not_reported(tmp_path):
+    """Without this, the userinfo rule could be 'pass' by firing on every URL."""
+    target = write(tmp_path, "application.json", '{"homepage": "https://example.com/a@b"}')
+    result = run_checker("--paths", str(target), "--json")
+
+    assert result.returncode == 0, "an @ in the path is not userinfo"
+    assert payload_of(result)["hits"] == []
+
+
+#: The documented shapes that must not change when the key-path rule changes, one
+#: per rule that is supposed to answer before it does.
+UNCHANGED_SHAPES = (
+    ('{"token": "sk-live-DEADBEEF"}', 1, "plaintext-under-sensitive-key"),
+    ('{"token": "${DISCORD_TOKEN}"}', 0, None),
+    ('{"token": {"encrypted": "AES256:x"}}', 0, None),
+    ('{"db_password": "abc"}', 1, "plaintext-under-sensitive-key"),
+    ('{"X-Api-Key": "abc"}', 1, "plaintext-under-sensitive-key"),
+)
+
+
+@pytest.mark.parametrize("body,expected,reason", UNCHANGED_SHAPES)
+def test_the_rules_that_answer_before_the_key_path_still_answer(tmp_path, body, expected, reason):
+    """Changing one rule must not quietly change the ones in front of it."""
+    target = write(tmp_path, "application.json", body)
+    result = run_checker("--paths", str(target), "--json")
+
+    assert result.returncode == expected, "{} changed its verdict".format(body)
+    hits = payload_of(result)["hits"]
+    assert [hit["reason"] for hit in hits] == ([reason] if reason else []), body
+
+
+def test_the_neutral_leaf_list_stays_short():
+    """A tripwire, not a style rule.
+
+    The allow-list is the only part of this design that can be complete, and it
+    stays complete only while it holds names that genuinely say nothing. One that
+    keeps growing means it is chasing the false positives the other approach would
+    have produced -- at which point the approach has stopped working and the
+    decision belongs somewhere else, not in a longer tuple.
+    """
+    assert len(ccs.NEUTRAL_LEAVES) <= 12, (
+        "the neutral-leaf list has grown to {} entries; it is chasing false positives "
+        "rather than describing leaf names that carry no meaning".format(
+            len(ccs.NEUTRAL_LEAVES))
+    )
+
+
+# --------------------------------------------------------------------------- #
 # 4. The checker stays quiet where it must
 # --------------------------------------------------------------------------- #
 
