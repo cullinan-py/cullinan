@@ -15,6 +15,25 @@ vocabulary, and an older entry is left as written — history is not rewritten.
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## Unreleased
+
+### Changed
+
+- **A configuration file no longer enters the repository by accident.** The files
+  Cullinan reads — `application.json`, `application-prod.json`, `application.local.json`
+  and their `.toml` / `.yaml` / `.yml` forms — are now ignored by git, so a plain
+  `git add .` leaves them out. Configuration that is *meant* to be committed is named
+  as a template, `application*.example.json` (or the matching `.toml` / `.yaml` /
+  `.yml` suffix), and a template holds `${VAR}` references where a value would go.
+
+  Two consequences are worth knowing before the next commit. A file that is already
+  committed stays committed: the rule stops the next `git add .`, it does not rewrite
+  history. And `git add -f` still works, because an ignore rule is a default rather
+  than a wall — so configuration files are also read from disk and from the index,
+  and a push carrying a plaintext value under a sensitive key is refused. There is no
+  switch to turn that off; `git push --no-verify` remains the visible bypass it always
+  was.
+
 ## v0.96a10
 
 **v0.96a10** is the tenth alpha of the 0.96 line. Configuration moves out of `.env`

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install (or remove) the M0..M9 pre-push hook.
+"""Install (or remove) the M0..M10 pre-push hook.
 
 Read this before running it, because the hook does not live where it looks like it
 lives.
@@ -20,14 +20,35 @@ What it does *not* do
 --------------------
 It never overwrites an existing `pre-push`. An existing hook is preserved verbatim
 and the new hook chains to it, so a guard that was already there (a remote-write
-guard, for instance) keeps running after the M0..M9 gate passes. The preserved copy
+guard, for instance) keeps running after the M0..M10 gate passes. The preserved copy
 stays in the hooks directory, which git does not track: nothing about it enters the
 repository.
 
+Re-install after the gate gains a gate
+-------------------------------------
+The hook prefers the repository's `scripts/gate_pre_push.py` and falls back to the
+snapshot written here, so a worktree that carries the gate always runs the current
+one. The snapshot does not update itself: after a change that adds or alters a gate,
+run this installer again, or the fallback path runs the older gate while looking
+installed. `--status` reports the version of each copy so the drift is visible
+rather than inferred.
+
+Recognising an older hook
+-------------------------
+The marker used to spell out the gate count (`M0-M9 GATE`), which made every added
+gate turn the installed hook into an apparently foreign one: `--remove` refused to
+touch it, and a re-install would have preserved it as somebody else's. The marker is
+now a stable identifier that carries no numbering, and the gate count lives in
+`GATE_VERSION`. The markers written by earlier versions are listed in
+`LEGACY_MARKERS` and are still recognised as this installer's, so an installed hook
+is *upgraded* rather than orphaned.
+
 Files written (all outside the repository, all reversible):
 
-    <hooks>/pre-push                      the dispatcher (marker: M0-M9 GATE)
+    <hooks>/pre-push                      the dispatcher (see `MARKER`)
     <hooks>/pre-push.pre-m0m9.bak         the hook that was there before, if any
+                                          (the name is kept verbatim: renaming it
+                                          would orphan a backup already written)
     <hooks>/gate_pre_push.py              a snapshot, used by worktrees whose tree
                                           does not yet carry scripts/gate_pre_push.py
 
@@ -48,14 +69,27 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import re
 import shutil
 import stat
 import subprocess
 import sys
 
-MARKER = "M0-M9 GATE"
+#: Stable identity of the hook this installer writes. It carries no gate count on
+#: purpose: a marker that spells the numbering out turns every added gate into a
+#: hook nobody recognises.
+MARKER = "CULLINAN PRE-PUSH GATE"
+
+#: Markers written by earlier versions. They still mean "this hook is ours", so a
+#: hook installed under one is upgraded rather than preserved as foreign.
+LEGACY_MARKERS = ("M0-M9 GATE",)
+
 BACKUP_NAME = "pre-push.pre-m0m9.bak"
 SNAPSHOT_NAME = "gate_pre_push.py"
+
+#: The gate's own version line, read out of both copies so `--status` can say
+#: whether the snapshot is *older* than the gate, not merely different from it.
+_GATE_VERSION = re.compile(r'^GATE_VERSION\s*=\s*["\']([^"\']+)["\']', re.M)
 
 HOOK_TEMPLATE = """#!/bin/sh
 # {marker} -- dispatcher installed by scripts/install_pre_push_gate.py.
@@ -132,6 +166,31 @@ exit 0
 """
 
 
+def hook_identity(text):
+    """Whose hook is this? ``'ours'``, ``'ours-legacy'`` or ``'foreign'``.
+
+    Keeping the legacy answer visible as its own value is what lets `install`
+    upgrade an old hook in place (no second backup, no "refusing to choose
+    between two backups") and `--uninstall` still remove the hook it wrote two
+    versions ago.
+    """
+    if MARKER in text:
+        return "ours"
+    if any(legacy in text for legacy in LEGACY_MARKERS):
+        return "ours-legacy"
+    return "foreign"
+
+
+def gate_version_of(path):
+    """``GATE_VERSION`` from a copy of the gate, or ``''`` when it cannot be read."""
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as handle:
+            match = _GATE_VERSION.search(handle.read())
+    except OSError:
+        return ""
+    return match.group(1) if match else ""
+
+
 class Installer:
     def __init__(self, repo=None, tokens_file=""):
         self.repo = repo
@@ -175,11 +234,15 @@ class Installer:
                 rows.append("{:10s}: absent".format(label))
         if os.path.isfile(hook):
             with open(hook, "r", encoding="utf-8", errors="replace") as handle:
-                rows.append("ours      : {}".format(MARKER in handle.read()))
+                identity = hook_identity(handle.read())
+            rows.append("ours      : {}".format(identity != "foreign"))
+            rows.append("identity  : {}".format(identity))
         source = self.source_script()
         if os.path.isfile(snapshot) and os.path.isfile(source):
             rows.append("snapshot matches scripts/gate_pre_push.py: {}".format(
                 _sha256(snapshot) == _sha256(source)))
+            rows.append("gate version: snapshot {} vs repository {}".format(
+                gate_version_of(snapshot) or "?", gate_version_of(source) or "?"))
         return "\n".join(rows)
 
     def install(self, dry_run=False):
@@ -194,8 +257,8 @@ class Installer:
         actions = []
         if os.path.isfile(hook):
             with open(hook, "r", encoding="utf-8", errors="replace") as handle:
-                is_ours = MARKER in handle.read()
-            if not is_ours:
+                identity = hook_identity(handle.read())
+            if identity == "foreign":
                 if os.path.isfile(backup):
                     actions.append("WARNING: {} already exists and pre-push is foreign; "
                                    "refusing to choose between two backups".format(backup))
@@ -204,6 +267,9 @@ class Installer:
                 if not dry_run:
                     shutil.copy2(hook, backup)
                     _make_executable(backup)
+            elif identity == "ours-legacy":
+                actions.append("upgrade the hook installed under an earlier marker "
+                               "({}); backup left untouched".format(", ".join(LEGACY_MARKERS)))
             else:
                 actions.append("refresh existing gate hook (backup left untouched)")
 
@@ -237,8 +303,10 @@ class Installer:
         if not os.path.isfile(hook):
             return "nothing to do: no pre-push hook at {}".format(hook)
         with open(hook, "r", encoding="utf-8", errors="replace") as handle:
-            if MARKER not in handle.read():
-                return ("refusing to remove {}: it is not the {} hook".format(hook, MARKER))
+            identity = hook_identity(handle.read())
+        if identity == "foreign":
+            return ("refusing to remove {}: it is not the hook this installer writes "
+                    "({})".format(hook, MARKER))
         os.remove(hook)
         notes.append("removed {}".format(hook))
         if os.path.isfile(backup):

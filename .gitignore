@@ -114,6 +114,28 @@ site/
 .env.local
 .env.*.local
 
+# --- project configuration: value-carrying files stay out of git ---
+# The set below mirrors what the loader actually reads: CONFIG_BASENAME
+# ('application') + CONFIG_SUFFIXES ('.json','.toml','.yaml','.yml') +
+# 'application-{profile}' (see cullinan/support/config_file.py). A file the
+# loader would read is a file that can carry a value, so it is ignored.
+application*.json
+application*.toml
+application*.yaml
+application*.yml
+
+# Templates hold references, not values; they are the only form meant to be tracked.
+!application*.example.json
+!application*.example.toml
+!application*.example.yaml
+!application*.example.yml
+
+# examples/config_file is a runnable example (python -m examples.config_file) and is
+# named by docs/CHANGELOG/tests; it is tracked today and stays tracked. It carries
+# references only (${EXAMPLE_CHANNEL:general}), which is why the exemption is safe.
+!examples/config_file/application.json
+!examples/config_file/application-prod.json
+
 # Package manager
 poetry.lock
 Pipfile.lock

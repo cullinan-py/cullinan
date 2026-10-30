@@ -10,7 +10,7 @@ translation_pair: "docs/configuration.md"
 related_tests: ["tests/core/test_config_file.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/config_file"]
 estimate_pd: null
-last_updated: "2026-10-29"
+last_updated: "2026-10-30"
 
 # 配置
 
@@ -75,7 +75,27 @@ JSON 什么都不需要，所以它是永远可用的格式。
 
 ## 别把密钥放进文件
 
-一个会被提交、或随二进制一起分发的文件，不是放密钥的地方。为此外提供两个能力，让文件不必承担这件事：
+一个会被提交、或随二进制一起分发的文件，不是放密钥的地方。**不要把一个值写进文件。**
+写在里面的内容应当经得起被贴进 issue——因为迟早会有一次被贴进去。
+
+**该文件默认被忽略。** `application*.json`、`application*.toml`、`application*.yaml`
+与 `application*.yml` 已加入 `.gitignore`，所以一次普通的 `git add .` 不会把带值的文件
+提进仓库。模板形态——`application*.example.json` 以及对应的 `.toml` / `.yaml` / `.yml`
+——仍然可被追踪：那才是用来提交的形态，里面存的是引用而不是值。忽略规则是默认值而不是
+一堵墙（`git add -f` 可以绕过），因此仓库侧的检查会读取**磁盘上或索引里**的每一个
+`application*` 文件，并对敏感键名下的明文值报警。
+
+有两点需要知道：
+
+- 用 `CULLINAN_CONFIG` 指名的文件不受这里任何一条规则覆盖——它的名字可以是任意字符串。
+  这样的文件请自己保证不进版本库。
+- 已经被提交的文件仍然在历史里。规则挡住的是下一次 `git add .`，它不改写历史。
+
+**也不要 `print` 它。** `get_config()` 交回的是已解析的值，所以把整份文档 `print`
+出来或打进调试日志，等于把密钥写进终端、日志文件或 CI 输出——那是第二份副本，却没有
+第一份拥有的任何保护。打你要看的那个设置，不要打整份文档。
+
+替代做法是在本该写值的地方写引用，为此提供两个能力：
 
 ```json
 {

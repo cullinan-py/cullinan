@@ -10,7 +10,7 @@ translation_pair: "docs/zh/configuration.md"
 related_tests: ["tests/core/test_config_file.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/config_file"]
 estimate_pd: null
-last_updated: "2026-10-29"
+last_updated: "2026-10-30"
 
 # Configuration
 
@@ -85,7 +85,32 @@ environment variable wins over both because it is read when the value is used.
 ## Keep secrets out of the file
 
 A file that is committed, or shipped beside a binary, is not a place for a secret.
-Two features exist so it does not have to be:
+**Do not write a value into the file.** What belongs there is safe to paste into an
+issue tracker, because sooner or later it ends up in one.
+
+**The file is ignored by default.** `application*.json`, `application*.toml`,
+`application*.yaml` and `application*.yml` are in `.gitignore`, so a plain
+`git add .` does not commit a file that carries a value. The template form —
+`application*.example.json` and the `.toml` / `.yaml` / `.yml` equivalents — stays
+trackable: that is the shape meant to be committed, and it holds references instead
+of values. An ignore rule is a default rather than a wall (`git add -f` walks past
+it), so a repository check reads every `application*` file that is **on disk or in
+the index** and reports a plaintext value under a sensitive key.
+
+Two consequences worth knowing:
+
+- Naming a file through `CULLINAN_CONFIG` puts it outside every rule here — the
+  name can be anything. Keep that file out of version control yourself.
+- A file that is already committed stays committed. The rule stops the next `git
+  add .`; it does not rewrite history.
+
+**Do not `print` it either.** `get_config()` hands back resolved values, so a
+`print` or a debug log of the whole document writes the secret into a terminal, a
+log file or a CI transcript — a second copy, with none of the protections the first
+one had. Print the setting you mean, not the document.
+
+The alternative is to write a reference where a value would go, which two features
+support:
 
 ```json
 {
