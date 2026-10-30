@@ -640,25 +640,26 @@ def test_the_programmatic_shutdown_example_stops_a_server_and_exits():
     come back on its own -- the drain is the thing the file demonstrates, so a run
     that hung would be the defect it is meant to prevent.
 
+    The port comes from the OS. The example's default is 4082, and a test that
+    pointed at a fixed number would either collide with a real process or skip, and a
+    skip counts as no coverage at all -- which is the same as never having run it.
+    One honest limit: the example's bind port and its probe share one source
+    (``root.PORT``), so this test cannot notice a broken read of the variable; that
+    was measured by hand (`Uvicorn running on ...:4777` with the variable set).
+
     One engine rather than two: the engine-neutral evidence is the pair of live
     servers in ``test_programmatic_shutdown.py``. This test guards the example.
     """
-    port = 4082  # pinned by examples/graceful_shutdown/root.py
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            probe.bind(("127.0.0.1", port))
-        except OSError as error:
-            pytest.skip(
-                f"port {port} is already in use ({error}); the example pins it, so this "
-                "run cannot start"
-            )
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
 
     environment = dict(os.environ)
     environment["PYTHONPATH"] = os.pathsep.join(
         [str(Path.cwd()), environment.get("PYTHONPATH", "")]
     ).rstrip(os.pathsep)
     environment["PYTHONUNBUFFERED"] = "1"
+    environment["GRACEFUL_SHUTDOWN_PORT"] = str(port)
     environment.pop("CULLINAN_ENGINE", None)
 
     completed = subprocess.run(

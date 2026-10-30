@@ -30,6 +30,9 @@ The application itself:
 python -m examples.graceful_shutdown
 ```
 
+Both entry points listen on `4082` unless `GRACEFUL_SHUTDOWN_PORT` says otherwise,
+which is what to set when that number is already taken on your machine.
+
 ## Endpoints
 
 | Path | Meaning |

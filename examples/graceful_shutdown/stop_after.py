@@ -26,11 +26,9 @@ import urllib.request
 
 from cullinan.application import Application
 
-from .root import main
+from .root import PORT, main
 
-#: The port ``root.py`` configures, and how long the server is left serving
-#: before the stop is asked for.
-PORT = 4082
+#: How long the server is left serving before the stop is asked for.
 DELAY_SECONDS = 3.0
 
 
