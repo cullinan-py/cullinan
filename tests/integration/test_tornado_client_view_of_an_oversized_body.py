@@ -13,11 +13,12 @@ This file is the executor for that note: a live Tornado server, a raw socket, an
 the three send shapes the page describes. Nothing is mocked, so a change to the
 protocol layer or to the ceiling's wiring shows up here.
 
-**The variable is timing, not ratio.** Writing this file corrected the page: a
-64x body sent in a single ``sendall`` is *also* answered with a readable ``400``
-on this machine, because the client had finished writing before the refusal
-landed. What decides the outcome is whether the client is still writing, so that
-is what the three cases below vary -- and that is what the table now says.
+**Timing decides, and there are two ways to lose the answer.** Writing this file
+corrected the page twice. A 64x body sent in one ``sendall`` is answered with a
+readable ``400`` because the client had finished writing -- unless it reads 20 ms
+later, when the reset has already taken the answer away. And a body far larger than
+the connection can buffer is lost even though nothing about the client is slow. The
+shapes below cover both paths; the counts live on the page, with their ``n``.
 """
 
 from __future__ import annotations
@@ -78,14 +79,17 @@ def _exchange(
     pieces: list[bytes],
     *,
     delay: float = 0.0,
+    read_delay: float = 0.0,
 ) -> tuple[bytes, BaseException | None]:
     """Send ``headers`` then ``pieces``, and read whatever comes back.
 
-    ``delay`` is the whole point of the second and third cases: with a pause
-    between pieces the client is still writing when the server refuses, which is
-    the condition the page names. A refused upload can close the connection while
-    the client is mid-write, so an ``OSError`` there is a measurement, not a test
-    error.
+    ``delay`` is the point of the "still writing" cases: with a pause between pieces
+    the client is still sending when the server refuses. ``read_delay`` is the point
+    of the "read late" case: the refusal was written, and whether the client ever
+    sees it depends on getting to the socket before the reset does.
+
+    A refused upload can close the connection while the client is mid-write, so an
+    ``OSError`` there is a measurement, not a test error.
     """
     received = b""
     error: BaseException | None = None
@@ -99,6 +103,8 @@ def _exchange(
                 sock.sendall(piece)
         except OSError as exc:
             error = exc
+        if read_delay:
+            time.sleep(read_delay)
         try:
             while True:
                 chunk = sock.recv(65536)
@@ -183,6 +189,59 @@ def test_a_client_still_writing_is_left_without_a_status_line(oversized_tornado_
     assert error is not None or received == b"", (
         f"the exchange neither failed nor came back empty: received={received[:120]!r}"
     )
+
+
+def test_a_client_that_reads_late_loses_the_status_line(oversized_tornado_server):
+    """The refusal is written, and then taken away by the reset before it is read.
+
+    This is the least intuitive of the shapes: the client has finished writing, the
+    server answered, and the answer is still gone. Measured 13 times out of 13 with a
+    20 ms pause between the last write and the first read, so "I finished sending, so
+    I will see the status" is not a rule -- it is a race the client usually wins by
+    reading immediately.
+    """
+    port = oversized_tornado_server
+    received, error = _exchange(
+        port,
+        _declared_headers(port, CEILING * 64),
+        [b"x" * (CEILING * 64)],
+        read_delay=0.02,
+    )
+
+    assert b"HTTP/1.1" not in received, (
+        f"a status line survived a 20 ms delay before reading ({received[:120]!r}); the "
+        "page says this case carries none"
+    )
+    assert error is not None or received == b"", (
+        f"the exchange neither failed nor came back empty: received={received[:120]!r}"
+    )
+
+
+def test_a_very_large_single_write_is_a_race(oversized_tornado_server):
+    """4 MiB in one write: the client is not slow, and the answer may still be lost.
+
+    This is the case that killed the tidy rule "a large body is fine, writing slowly
+    is what costs you the status line". Two independent samples disagree only in the
+    ratio: 9 of 13 here, 12 of 13 in the audit, both with the `400` readable the rest
+    of the time. A probability is not an assertion, so what is pinned here is the
+    *shape* of every outcome: either a `400` and nothing else, or a reset with no
+    status line at all -- never another status, never a body, never a hang.
+    """
+    port = oversized_tornado_server
+    received, error = _exchange(port, _declared_headers(port, CEILING * 4096), [b"x" * (CEILING * 4096)])
+
+    status_line, _, body = received.partition(b"\r\n\r\n")
+    if received:
+        assert b"HTTP/1.1 400" in status_line, (
+            f"a 4 MiB one-write upload produced {status_line!r}; Tornado refuses with a "
+            "400 and nothing else, so either the page or the engine changed"
+        )
+        assert body == b"", f"the 400 carries an empty body, got {body!r}"
+    else:
+        assert isinstance(error, (ConnectionResetError, ConnectionAbortedError)), (
+            f"nothing was read and the connection did not reset or abort (error={error!r}); "
+            "the page describes this outcome as a reset"
+        )
 
 
 def test_a_chunked_upload_is_aborted_without_a_status_line(oversized_tornado_server):
