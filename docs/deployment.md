@@ -331,9 +331,9 @@ also a race in its own right: the `400` is delivered, and reading it is what
 turns it into something you can see.
 
 What survives from the older rule is the part the counts support: **the dividing
-line is not the ratio, it is timing.** The counts are one machine's sample, not a
-rate: a second measurement of the same 4 MiB shape read one of thirteen. What the
-table supports is that the loss happens — not how often.
+line is not the ratio, it is timing.** The counts are one machine's sample, not a rate:
+a second measurement of the same 4 MiB shape read one of thirteen. What the table
+supports is that the loss happens — not how often.
 
 Those shapes run as a test against a live server
 (`tests/integration/test_tornado_client_view_of_an_oversized_body.py`), because
