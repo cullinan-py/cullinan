@@ -278,6 +278,46 @@ def test_a_staged_file_that_is_gone_from_disk_cannot_be_cleared(tmp_path):
     assert "index" in payload["undecided"][0]["reason"]
 
 
+def test_the_undecided_message_says_how_to_clear_it(tmp_path):
+    """A blocker with no stated exit is a blocker people route around.
+
+    There is no bypass switch for this check, so the two ways out have to be in the
+    message itself. They are not interchangeable -- one deletes the file and one
+    keeps it -- so both are named, with the path filled in.
+    """
+    run_git(tmp_path, "init", "-q")
+    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    run_git(tmp_path, "add", "-f", "--", "application.json")
+    (tmp_path / "application.json").unlink()
+
+    result = run_checker("--root", str(tmp_path), "--json")
+    reason = payload_of(result)["undecided"][0]["reason"]
+
+    assert "git rm application.json" in reason
+    assert "git rm --cached application.json" in reason
+
+
+def test_a_file_taken_out_of_the_index_is_still_read_from_disk(tmp_path):
+    """The other half of the same invariant: check surface ⊇ loader surface.
+
+    After ``git rm --cached`` the file stops being tracked but stays on disk, and
+    the loader still reads it where it is deployed. A scan driven by the index
+    alone would go quiet here, so the working-tree half has to keep covering it.
+    """
+    run_git(tmp_path, "init", "-q")
+    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    run_git(tmp_path, "add", "-f", "--", "application.json")
+    run_git(tmp_path, "rm", "--cached", "-q", "--", "application.json")
+
+    assert (tmp_path / "application.json").is_file(), "the file must still be on disk"
+    assert "application.json" not in run_git(tmp_path, "ls-files").stdout
+
+    result = run_checker("--root", str(tmp_path), "--json")
+
+    assert result.returncode == 1, "an untracked but present file stopped being read"
+    assert payload_of(result)["hits"]
+
+
 def test_a_staged_file_is_not_cleared_by_the_ignored_file_exemption(tmp_path):
     """Staged and unreadable is "could not decide", not "clean".
 

@@ -10,7 +10,7 @@ translation_pair: "docs/configuration.md"
 related_tests: ["tests/core/test_config_file.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/config_file"]
 estimate_pd: null
-last_updated: "2026-10-30"
+last_updated: "2026-10-31"
 
 # 配置
 
@@ -82,9 +82,14 @@ JSON 什么都不需要，所以它是永远可用的格式。
 与 `application*.yml` 已加入 `.gitignore`，所以一次普通的 `git add .` 不会把带值的文件
 提进仓库。模板形态——`application*.example.json` 以及对应的 `.toml` / `.yaml` / `.yml`
 ——仍然可被追踪：那才是用来提交的形态，里面存的是引用而不是值。忽略规则是默认值而不是
-一堵墙（`git add -f` 可以绕过），因此仓库侧的检查会读取**磁盘上或索引里**的每一个
-`application*` 文件，并对敏感键名下的明文值报警。JSON 与 TOML 按文档解析；YAML 只能
-逐行读，因为标准库没有 YAML 解析器——写成多行块的值会被记为「无法判定」，而不是被静默放过。
+一堵墙（`git add -f` 可以绕过），因此仓库侧的检查会读取**磁盘上**每一个 `application*`
+文件，并对敏感键名下的明文值报警——**值本身是已知凭据形态**的（PEM 私钥头、AWS access
+key id、GitHub token）无论键名叫什么都会报。**索引里还在、磁盘上已删**的文件会被报为
+「**无法判定**」：待推送的正是暂存的那份，而本检查不读取它。
+
+JSON 与 TOML **在解释器能解析时**按文档读取（TOML 需要 Python 3.11+）；否则按行扫描，
+并**报出这次降级**——不会静默。YAML 恒按行读取，写成多行块的值会被记为「无法判定」，
+而不是被静默放过。
 
 有两点需要知道：
 

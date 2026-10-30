@@ -10,7 +10,7 @@ translation_pair: "docs/zh/configuration.md"
 related_tests: ["tests/core/test_config_file.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/config_file"]
 estimate_pd: null
-last_updated: "2026-10-30"
+last_updated: "2026-10-31"
 
 # Configuration
 
@@ -94,11 +94,17 @@ issue tracker, because sooner or later it ends up in one.
 `application*.example.json` and the `.toml` / `.yaml` / `.yml` equivalents — stays
 trackable: that is the shape meant to be committed, and it holds references instead
 of values. An ignore rule is a default rather than a wall (`git add -f` walks past
-it), so a repository check reads every `application*` file that is **on disk or in
-the index** and reports a plaintext value under a sensitive key. JSON and TOML are
-read as documents; a YAML file is read line by line, because the standard library
-has no YAML parser — a value written as a multi-line block is reported as
-undecided rather than silently passed.
+it), so a repository check reads every `application*` file that is **on disk**, and
+reports a plaintext value under a sensitive key — or a value whose shape is a known
+credential form (a PEM private-key header, an AWS access-key id, a GitHub token),
+whatever the key is called. A file that is still in the index but no longer on disk
+is reported as **undecided**: the staged copy is what a push would carry, and this
+check does not read it.
+
+JSON and TOML are read as documents where the interpreter can parse them — TOML
+needs Python 3.11+. Otherwise the file is read line by line and the fallback is
+reported, never silent, which is also how a YAML file is always read: a value
+written as a multi-line block is reported as undecided rather than quietly passed.
 
 Two consequences worth knowing:
 

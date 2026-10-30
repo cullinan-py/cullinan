@@ -561,8 +561,19 @@ def scan_file(path, root=None, allow_git=True, in_index=False) -> FileReport:
     suffix = path.suffix.lower()
 
     if not path.is_file():
-        reason = ("in the index but not on disk: the staged copy is what a push "
-                  "would carry" if in_index else "not a readable file")
+        if in_index:
+            # The classification needs no extra git call: "in the index and not on
+            # disk" is exactly what `git ls-files --deleted` reports, and `in_index`
+            # already came from `git ls-files`. The message names both ways out,
+            # because a block with no stated exit is a block people route around --
+            # the `git rm` and `git rm --cached` forms are not interchangeable and
+            # saying only one of them sends half the readers the wrong way.
+            reason = (
+                "in the index but not on disk (the staged copy is what a push would "
+                "carry); submit the deletion with 'git rm {0}', or stop tracking it "
+                "and keep the file with 'git rm --cached {0}'".format(display))
+        else:
+            reason = "not a readable file"
         return FileReport(display, [], reason, [], False)
 
     if suffix == ".json":
