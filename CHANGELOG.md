@@ -102,12 +102,10 @@ refused at start-up rather than served in a shape nobody asked for.
   membership and every count, and the first thing that noticed was a consumer's
   `import` raising `TypeError: 'module' object is not callable`.
 
-- **The contract pins what `configure_options()` answers.** `cullinan/_contracts.json`
-  (now schema 3) gains `pinned_symbols`: the option names `configure()` accepts in this
-  version, recorded next to the callable's shape. The set was promised and unverified —
-  the function reports the names and the checks around it read the same signature, so a
-  name could disappear with every one of them staying green. The recorded copy is the
-  one thing that disagrees, and disagreeing shows up as a diff in a committed file.
+- **The contract records which options `configure()` accepts.** `cullinan/_contracts.json`
+  (now schema 3) gains `pinned_symbols`: the option names this version accepts, alongside
+  the callable's shape. Read it to know exactly what your version supports, without
+  calling the function to find out.
 
 ### Changed
 
