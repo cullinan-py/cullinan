@@ -127,7 +127,9 @@ The file sits above the values declared in code because it is applied *after*
 them: one binary, several deployments, and the deployment answers for its own
 addresses. That order is what makes "roll back by editing one file" possible, and
 an earlier revision of this page described the opposite one -- the table now
-matches what the code does.
+matches what the code does, and a test holds it (`configure(server_port=A)` plus a
+file saying `B` must serve on `B`; with no file it must serve on `A`), so the page
+cannot drift back to the order it used to describe.
 
 `run(...)` overrides the file for the two names it accepts, and an environment
 variable is read at use time, so it wins over both. Every other name has one
