@@ -152,6 +152,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import hashlib
 import os
 import re
 import subprocess
@@ -225,6 +226,27 @@ VALUE_PATTERNS = (
 
 #: The single-key mapping ``load_config(decryptor=...)`` unwraps (R1).
 ENCRYPTED_MARKER = "encrypted"
+
+#: A second surface, on purpose: test fixtures may commit a private key so the TLS
+#: handshake suite can run on a machine with no ``openssl``, and "committed on
+#: purpose" is a claim that has to be **pinned**. Without a pin, replacing
+#: ``tests/fixtures/tls/server.key`` with a real production key leaves every rule
+#: above clean, because none of them looks at that directory: the scan is by
+#: configuration file name, and a ``.key`` is not one.
+#:
+#: The rule is therefore: a PEM private-key block under ``FIXTURE_ROOT`` is a
+#: **hit** unless the file's sha256 is one of the fingerprints below.
+#:
+#: Regenerating the fixtures stays allowed, but it becomes a deliberate act --
+#: update this table in the same commit and the diff says what changed. That is
+#: the opposite of a silent swap, which is the failure this rule exists for.
+FIXTURE_ROOT = "tests/fixtures"
+FIXTURE_PEM_SUFFIXES = (".key", ".pem", ".crt")
+FIXTURE_KEY_FINGERPRINTS = {
+    "9f54852ad678c4c70416afe13310099370c57e82b80639c46f9f5aa423260b99": "tests/fixtures/tls/ca.key",
+    "c8fd50ed2364ea3b0ce89cadbd5dc1e26398724a1cfc6f2341d73ca4d4d48c09": "tests/fixtures/tls/client.key",
+    "4088ffe8cd631fc0c873c8cedbb95b147f46cc99183aff6d8a0abe867c851a4c": "tests/fixtures/tls/server.key",
+}
 
 #: How a `source` value reads in a human-facing line. Kept next to the scanner
 #: rather than only in the payload because a bare "index" in a report reads as
@@ -762,6 +784,50 @@ def scan_file(path, root=None, allow_git=True, in_index=False) -> FileReport:
     return FileReport(display, ordered, problem, warnings, False)
 
 
+def iter_fixture_pem_targets(root) -> List[Path]:
+    """Fixture files that *could* carry a private key, whatever their content.
+
+    Suffix-based rather than name-based: a fixture key is not named
+    ``application*``, which is exactly why the configuration rules never saw it.
+    """
+    base = Path(root).resolve() / FIXTURE_ROOT
+    if not base.is_dir():
+        return []
+    targets = []
+    for dirpath, dirnames, filenames in os.walk(base):
+        dirnames[:] = sorted(name for name in dirnames if not _pruned(name))
+        for name in sorted(filenames):
+            if name.lower().endswith(FIXTURE_PEM_SUFFIXES):
+                targets.append(Path(dirpath) / name)
+    return targets
+
+
+def scan_fixture_pem(path, root) -> FileReport:
+    """A fixture file: a private key is a hit unless those exact bytes are pinned."""
+    path = Path(path)
+    display = display_path(path, root)
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:
+        return FileReport(display, [], f"could not read ({exc})", [], False)
+
+    if not VALUE_PATTERNS[0][1].search(raw.decode("utf-8", "replace")):
+        # Public material only (a certificate, a CSR). Nothing to decide.
+        return FileReport(display, [], "", [], False)
+
+    digest = hashlib.sha256(raw).hexdigest()
+    if digest in FIXTURE_KEY_FINGERPRINTS:
+        return FileReport(display, [], "", [], False)
+
+    reason = (
+        "a private key under the test fixtures is not one of the pinned ones "
+        f"(sha256 {digest}). If this is a deliberate regeneration, update "
+        "FIXTURE_KEY_FINGERPRINTS in this script in the same commit; if it is not, "
+        "a real key has been put where a test fixture belongs"
+    )
+    return FileReport(display, [Finding("hit", "<file>", reason, len(raw))], "", [], False)
+
+
 def display_path(path, root) -> str:
     path = Path(path)
     if root is not None:
@@ -1053,6 +1119,11 @@ def main(argv=None) -> int:
         targets = iter_targets(payload_root, notes=notes, indexed=indexed)
         reports = [scan_file(path, root=payload_root, in_index=path.resolve() in indexed)
                    for path in targets]
+        # The fixture surface is walked separately: those files are not configuration
+        # files, so `iter_targets` above cannot see them, and the whole point of the
+        # second pass is that a private key can live there.
+        reports.extend(scan_fixture_pem(path, payload_root)
+                       for path in iter_fixture_pem_targets(payload_root))
 
     code, payload = decide(reports, root=payload_root, strict=args.strict,
                            extra_warnings=notes)
