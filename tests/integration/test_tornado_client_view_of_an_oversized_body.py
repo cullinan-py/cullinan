@@ -142,6 +142,56 @@ def _peer_went_away(error: BaseException | None) -> bool:
     return isinstance(error, PEER_WENT_AWAY)
 
 
+#: The refusal Tornado sends when it stops reading an oversized body: a status line,
+#: an empty header block, no body.
+COMPLETE_400 = b"HTTP/1.1 400 Bad Request\r\n\r\n"
+
+
+def _complete_400(received: bytes) -> tuple[bool, str | None]:
+    """Did a *complete* 400 arrive, and if not, which half is missing?
+
+    The two failures are different findings and have to be reported apart. A header
+    block that never finished means the response was cut -- the client read part of an
+    answer. A header block that finished with another status line means the server
+    answered something else entirely. A prefix test conflates them, and worse, passes
+    on ``HTTP/1.1 400 Bad Re``, which is a truncated response rather than an answer.
+    """
+    if not received:
+        return False, "no bytes arrived at all"
+    header_block, separator, _body = received.partition(b"\r\n\r\n")
+    if not separator:
+        return False, f"the header block is incomplete ({received[:40]!r})"
+    first_line = header_block.split(b"\r\n", 1)[0]
+    if first_line != b"HTTP/1.1 400 Bad Request":
+        return False, f"the status line is {first_line!r}, which is not a 400 Bad Request"
+    return True, None
+
+
+def test_the_400_verdict_rejects_a_truncated_or_absent_response():
+    """The verdict, on its own: four shapes a substring test would accept.
+
+    ``b"HTTP/1.1 400" in received`` is true for a 13-byte truncation and for a
+    21-byte one, so the two cases that matter most -- a response cut mid-header, and a
+    response that never came -- would have been measured as "a 400 arrived". Anyone who
+    puts the substring test back finds out here.
+    """
+    cases = [
+        (COMPLETE_400, True, None),
+        (b"HTTP/1.1 400", False, "incomplete"),
+        (b"HTTP/1.1 400 Bad Re", False, "incomplete"),
+        (b"HTTP/1.1 413 Content Too Large\r\n\r\n", False, "not a 400"),
+        (b"", False, "no bytes"),
+    ]
+
+    for payload, expected_complete, expected_fragment in cases:
+        complete, missing = _complete_400(payload)
+        assert complete is expected_complete, (payload, complete, missing)
+        if expected_fragment is None:
+            assert missing is None, (payload, missing)
+        else:
+            assert missing is not None and expected_fragment in missing, (payload, missing)
+
+
 @pytest.fixture(scope="module")
 def oversized_tornado_server():
     """A real Tornado server with a 1 KiB ceiling, on a port nobody else holds.
@@ -183,11 +233,11 @@ def test_a_client_that_finished_writing_can_read_the_400(oversized_tornado_serve
     port = oversized_tornado_server
     received, error = _exchange(port, _declared_headers(port, CEILING * 2), [b"x" * (CEILING * 2)])
 
-    status_line, _, body = received.partition(b"\r\n\r\n")
-    assert b"HTTP/1.1 400" in status_line, (
-        f"expected Tornado's 400 for a body twice the ceiling; got {status_line!r} "
-        f"(error={error!r})"
+    complete, missing = _complete_400(received)
+    assert complete, (
+        f"expected Tornado's 400 for a body twice the ceiling; {missing} (error={error!r})"
     )
+    _, _, body = received.partition(b"\r\n\r\n")
     assert body == b"", f"the documented 400 carries an empty body, got {body!r}"
 
 
@@ -255,17 +305,12 @@ def test_a_very_large_single_write_is_a_race(oversized_tornado_server):
     received, error = _exchange(port, _declared_headers(port, CEILING * 4096), [b"x" * (CEILING * 4096)])
 
     if received:
-        header_block, separator, body = received.partition(b"\r\n\r\n")
-        assert separator, (
-            f"only a partial response was read ({received[:120]!r}); a status line counts "
-            "as read only when its header block is complete -- a prefix match would pass "
-            "on a truncated 'HTTP/1.1 400 Bad Re'"
+        complete, missing = _complete_400(received)
+        assert complete, (
+            f"a 4 MiB one-write upload produced a response that is not a complete 400: "
+            f"{missing}"
         )
-        first_line = header_block.split(b"\r\n", 1)[0]
-        assert first_line == b"HTTP/1.1 400 Bad Request", (
-            f"a 4 MiB one-write upload produced {first_line!r}; Tornado refuses with a "
-            "400 and nothing else, so either the page or the engine changed"
-        )
+        _, _, body = received.partition(b"\r\n\r\n")
         assert body == b"", f"the 400 carries an empty body, got {body!r}"
     else:
         assert _peer_went_away(error), (
