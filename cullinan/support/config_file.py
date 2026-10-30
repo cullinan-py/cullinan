@@ -280,9 +280,19 @@ def apply_project_config(
 ) -> Dict[str, Any]:
     """Load the file and fold it into the global configuration.
 
-    Values written in code -- ``configure(...)`` -- still win, because this runs
-    before them and they overwrite what they name. Environment variables win over
-    both, because they are read at use time.
+    **The order, stated as it is.** The file is applied *after* the values
+    declared in code: both call sites in ``cullinan/application/public.py`` run
+    this inside the block that installs the ``configure(...)`` values, so a key
+    present in both takes the file's value. One binary, several deployments, and
+    the deployment chooses its own addresses. The configuration page describes
+    the same order.
+
+    Environment variables win over both, because they are read at use time.
+
+    A key the configuration does not accept is reported with the file it came
+    from, rather than being read and discarded: the discarded kind is
+    indistinguishable from "took effect" until the behaviour it was meant to
+    change is measured.
 
     Returns:
         dict: What was loaded, so a caller can log or assert on it.
@@ -291,5 +301,6 @@ def apply_project_config(
 
     data = load_project_config(path=path, profile=profile, decryptor=decryptor)
     if data:
-        get_config().from_dict(data)
+        base = discover_config_file(path, profile)
+        get_config().from_dict(data, source=str(base) if base is not None else None)
     return data

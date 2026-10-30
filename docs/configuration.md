@@ -50,6 +50,42 @@ environment can parse them — TOML needs Python 3.11+ (or `tomli`), YAML needs
 `pyyaml`. When the parser is missing, the error names the package to install instead
 of silently loading nothing. JSON needs nothing, so it is the format that always works.
 
+## Which keys a file may contain
+
+The accepted set is the field names of `CullinanConfig`, and the framework
+derives it from that class instead of listing it a second time -- a list here
+would be a second truth, and it would drift the first time someone added a field
+in a hurry. There are 28, in five groups:
+
+| Group | Keys |
+|---|---|
+| discovery | `user_packages`, `project_root`, `exclude_packages`, `auto_scan`, `explicit_modules` |
+| server | `server_engine`, `asgi_server`, `server_host`, `server_port`, `drain_timeout`, `max_request_body_bytes` |
+| routing | `route_trailing_slash`, `route_case_sensitive`, `enable_middleware_pipeline` |
+| OpenAPI | `openapi_enabled`, `openapi_title`, `openapi_version`, `openapi_description` |
+| runtime / assembly | `verbose`, `debug`, `startup_error_policy`, `static_files`, `middlewares`, `builtin_middleware`, `context_features`, `strict_assembly`, `strict_assembly_excludes` |
+
+`root_module` is a 28th field kept so existing decorators keep importing; passing
+it at start-up is an error, not a setting.
+
+A key outside this set is **reported when the file is loaded** -- naming the key,
+the file it came from and, when the spelling is close, the name that was probably
+meant -- and it is not applied. A key cannot be accepted and ignored: a typo and
+a working switch used to look identical, and the difference only showed up in the
+behaviour the switch was supposed to change. `openapi_enabled: false` was one of
+nine keys in that state.
+
+A boolean may be written as `true`/`false` (JSON, TOML, YAML), or as
+`1`/`0`, `yes`/`no`, `on`/`off` in quotes. Anything else is refused with the key
+named, because `bool("false")` is `True` -- guessing is how a switch becomes
+silent again.
+
+`max_request_body_bytes` is described in
+[deployment](deployment.md#request-body-size): what a client observes when an
+upload crosses the ceiling depends on the engine *and* on whether the client is
+still writing when the server refuses, and one of those outcomes carries no
+status code at all.
+
 ## Where the file is looked for
 
 In order:
@@ -75,12 +111,20 @@ Highest first:
 |---|---|---|
 | 1 | argument to `run()` | `run(main, port=9090)` |
 | 2 | environment variable | `SERVER_PORT=9090` |
-| 3 | `configure(...)` | `@configure(server_port=9090)` |
-| 4 | configuration file | `{"server_port": 9090}` |
+| 3 | configuration file | `{"server_port": 9090}` |
+| 4 | `configure(...)` | `@configure(server_port=9090)` |
 | 5 | built-in default | `4080` |
 
-A value written in code wins over the file because the file is applied first; an
-environment variable wins over both because it is read when the value is used.
+The file sits above the values declared in code because it is applied *after*
+them: one binary, several deployments, and the deployment answers for its own
+addresses. That order is what makes "roll back by editing one file" possible, and
+an earlier revision of this page described the opposite one -- the table now
+matches what the code does.
+
+`run(...)` overrides the file for the two names it accepts, and an environment
+variable is read at use time, so it wins over both. Every other name has one
+decider: the file if it is there, otherwise the value written in code, otherwise
+the default.
 
 ## Keep secrets out of the file
 

@@ -34,6 +34,33 @@ release-note files (`RELEASE-v<version>.md`) where published.
   switch to turn that off; `git push --no-verify` remains the visible bypass it always
   was.
 
+### Changed
+
+- **The configuration page described an order the code never implemented.** It listed
+  `configure(...)` above the project file. The file is applied *after* the values
+  declared in code, so a key present in both takes the file's value — and still does.
+  The page now states that order and why it is the useful one (one binary, several
+  deployments, and the deployment answers for its own addresses), and it lists the
+  keys a file may contain.
+
+### Fixed
+
+- **A configuration switch that was declared, documented and ignored.** Nine
+  `CullinanConfig` fields had no path from a configuration source into the object:
+  `openapi_enabled` and its three companions, `debug`, `enable_middleware_pipeline`,
+  the two `route_*` flags and `context_features`. A project file that set
+  `"openapi_enabled": false` was read, accepted and dropped, so `/openapi.json` stayed
+  published while the operator believed it was off. All 28 fields now round-trip
+  through `from_dict`/`to_dict`, and a key outside that set is reported with the file
+  it came from — including the name that was probably meant — instead of being
+  discarded. A boolean written as text is read as a boolean; a value outside the
+  vocabulary is refused rather than guessed at, because `bool("false")` is `True`.
+
+- **The OpenAPI state is printed at start-up, with the layer that decided it.** Three
+  layers can answer "is the document published?", and they disagree when a project
+  sets one and an operator sets another. The line names the winner, so the question
+  is answerable from the log rather than by reading the source.
+
 ## v0.96a10
 
 **v0.96a10** is the tenth alpha of the 0.96 line. Configuration moves out of `.env`

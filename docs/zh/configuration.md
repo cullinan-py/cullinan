@@ -45,6 +45,34 @@ Cullinan 现在**没有任何运行时依赖**；JSON 由标准库读取。
 （或 `tomli`），YAML 需要 `pyyaml`。解析器缺失时会明确报出该装哪个包，而不是静默地什么都不加载。
 JSON 什么都不需要，所以它是永远可用的格式。
 
+## 哪些键可以写
+
+可写的键就是 `CullinanConfig` 的字段名，并且由该类**派生**而不是在这里再列一份——
+第二份清单就是第二个真相，某次着急加字段时它必然漂移。一共 28 个，分五组：
+
+| 组 | 键 |
+|---|---|
+| 发现与扫描 | `user_packages`、`project_root`、`exclude_packages`、`auto_scan`、`explicit_modules` |
+| 服务 | `server_engine`、`asgi_server`、`server_host`、`server_port`、`drain_timeout`、`max_request_body_bytes` |
+| 路由 | `route_trailing_slash`、`route_case_sensitive`、`enable_middleware_pipeline` |
+| OpenAPI | `openapi_enabled`、`openapi_title`、`openapi_version`、`openapi_description` |
+| 运行期与装配 | `verbose`、`debug`、`startup_error_policy`、`static_files`、`middlewares`、`builtin_middleware`、`context_features`、`strict_assembly`、`strict_assembly_excludes` |
+
+`root_module` 是第 28 个字段，只为既有装饰器还能导入而保留；在启动时传它是错误，不是设置。
+
+集合之外的键在**加载时就会被报出来**——给出键名、它来自哪个文件，拼写接近时还会给出
+大概想写的那个名字——并且**不会被应用**。键不允许"被收下又不生效"：一个拼写错误和一个
+真正生效的开关，过去在行为被测出来之前长得一模一样，而 `openapi_enabled: false`
+正是处于那种状态的九个键之一。
+
+布尔值可以写成 `true`/`false`（JSON、TOML、YAML），也可以写成带引号的
+`1`/`0`、`yes`/`no`、`on`/`off`。其它写法会带着键名被拒绝——因为 `bool("false")` 是
+`True`，靠猜就会把开关重新变回静默的。
+
+`max_request_body_bytes` 的说明在[部署](deployment.md)页的「请求体大小」一节：上传越过上限时客户端
+看到什么，取决于引擎，**也**取决于服务端拒绝的那一刻客户端是否还在写，而其中一种结果
+**根本没有状态码**。
+
 ## 文件从哪里找
 
 按顺序：
@@ -67,11 +95,16 @@ JSON 什么都不需要，所以它是永远可用的格式。
 |---|---|---|
 | 1 | `run()` 的参数 | `run(main, port=9090)` |
 | 2 | 环境变量 | `SERVER_PORT=9090` |
-| 3 | `configure(...)` | `@configure(server_port=9090)` |
-| 4 | 配置文件 | `{"server_port": 9090}` |
+| 3 | 配置文件 | `{"server_port": 9090}` |
+| 4 | `configure(...)` | `@configure(server_port=9090)` |
 | 5 | 内置默认值 | `4080` |
 
-代码里写的值优先于文件，因为文件先被应用；环境变量优先于两者，因为它在取值时才读取。
+文件排在代码里声明的值之上，是因为它**后**被应用：一个二进制、几套部署，而部署自己
+说了算它的地址。这个顺序正是"改一个文件就能回退"成立的前提；本页早先的版本写的是相反
+的顺序——现在这张表与代码一致。
+
+`run(...)` 对它接受的这两个名字优先于文件；环境变量在取值时才读，所以优先于两者。
+其余每个名字都只有一个决定者：有文件就用文件，没有就用代码里写的值，再没有就用默认值。
 
 ## 别把密钥放进文件
 
