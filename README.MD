@@ -30,7 +30,8 @@ Declare business components with decorators — there is no app object to wire b
 ```python
 from cullinan import application, configure
 from cullinan.core import service
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 
 @service
 class GreetingService:
