@@ -6,6 +6,7 @@ import importlib
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import textwrap
@@ -627,6 +628,54 @@ def test_packaging_demo_example_constructs_via_entry_method():
     )
     assert completed.returncode == 0, completed.stderr[-1000:]
     assert "PACKAGING_DEMO_OK" in completed.stdout
+
+
+def test_the_programmatic_shutdown_example_stops_a_server_and_exits():
+    """``stop_after.py`` is the runnable half of ``request_shutdown()``, so run it.
+
+    An example nobody runs rots: ``examples/config_file/root.py`` carried a
+    3.10-only union in a signature and could not start on 3.9, and that was found by
+    reading the file, not by running it. This starts the example for real, requires
+    it to report that it asked a running server to stop, and requires the process to
+    come back on its own -- the drain is the thing the file demonstrates, so a run
+    that hung would be the defect it is meant to prevent.
+
+    One engine rather than two: the engine-neutral evidence is the pair of live
+    servers in ``test_programmatic_shutdown.py``. This test guards the example.
+    """
+    port = 4082  # pinned by examples/graceful_shutdown/root.py
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind(("127.0.0.1", port))
+        except OSError as error:
+            pytest.skip(
+                f"port {port} is already in use ({error}); the example pins it, so this "
+                "run cannot start"
+            )
+
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = os.pathsep.join(
+        [str(Path.cwd()), environment.get("PYTHONPATH", "")]
+    ).rstrip(os.pathsep)
+    environment["PYTHONUNBUFFERED"] = "1"
+    environment.pop("CULLINAN_ENGINE", None)
+
+    completed = subprocess.run(
+        [sys.executable, "-u", "-m", "examples.graceful_shutdown.stop_after"],
+        capture_output=True,
+        text=True,
+        cwd=str(Path.cwd()),
+        env=environment,
+        timeout=120,
+    )
+
+    output = (completed.stdout or "") + (completed.stderr or "")
+    assert completed.returncode == 0, f"the example did not exit cleanly:\n{output[-2000:]}"
+    assert "request_shutdown() -> True" in (completed.stdout or ""), (
+        "the example never reported asking a running server to stop, so it demonstrated "
+        f"nothing:\n{output[-2000:]}"
+    )
 
 
 def test_static_files_example_serves_assets_and_spa_fallback():
