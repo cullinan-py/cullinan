@@ -9,16 +9,22 @@ stability commitment surface changes::
     python scripts/generate_contracts.py
 
 The companion falsifiable check lives in
-``tests/core/test_contract_artifact.py`` and asserts
-``artifact == live __all__`` (symbol-name level) for the four contract modules
-and that ``cullinan.web.gateway`` is explicitly recorded as outside the
-commitment.
+``tests/core/test_contract_artifact.py`` and asserts ``artifact == live`` for the
+four contract modules -- **by name and by shape** -- and that
+``cullinan.web.gateway`` is explicitly recorded as outside the commitment.
+
+Schema 2 added ``stability_shapes``. Schema 1 recorded names only, and a name is
+not a promise about what it is: ``cullinan.web.controller`` was a decorator and
+became a submodule while keeping its spelling and its place in ``__all__``. Every
+gate stayed green and the break arrived at a consumer's ``import``. The shape is
+the part of the promise a name cannot express, so it is recorded next to it.
 """
 
 from __future__ import annotations
 
 import datetime
 import importlib
+import inspect
 import json
 import sys
 from pathlib import Path
@@ -27,7 +33,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+
+#: The closed vocabulary a shape may take. Closed on purpose: if every symbol
+#: could report ``other``, the check would be satisfied by degrading itself.
+SHAPES = ("function", "class", "module", "other")
 
 # Module order is part of the artifact; keep it stable across regenerations.
 COMMITMENT_MODULES = (
@@ -48,11 +58,38 @@ EXCLUDED_REASON = (
 ARTIFACT_PATH = REPO_ROOT / "cullinan" / "_contracts.json"
 
 
+def shape_of(target: object) -> str:
+    """Classify an exported symbol by what a caller can do with it.
+
+    Four kinds, because those are the four that change how code at a call site
+    behaves: a function is called, a class is instantiated (and called), a module
+    is imported from, and everything else is passed around. A decorator that
+    starts resolving to a module is a "function" that becomes a "module", which
+    is the transition this vocabulary exists to make visible.
+    """
+    if inspect.ismodule(target):
+        return "module"
+    if inspect.isclass(target):
+        return "class"
+    if inspect.isroutine(target):
+        return "function"
+    return "other"
+
+
 def build_contract() -> dict:
     """Build the contract payload from the *live* ``__all__`` lists."""
-    commitment = {
-        module_name: list(importlib.import_module(module_name).__all__)
+    modules = {
+        module_name: importlib.import_module(module_name)
         for module_name in COMMITMENT_MODULES
+    }
+    commitment = {
+        module_name: list(module.__all__) for module_name, module in modules.items()
+    }
+    shapes = {
+        module_name: {
+            name: shape_of(getattr(module, name)) for name in module.__all__
+        }
+        for module_name, module in modules.items()
     }
 
     frozen_union: set[str] = set()
@@ -82,6 +119,7 @@ def build_contract() -> dict:
             .isoformat(),
         },
         "stability_commitment": commitment,
+        "stability_shapes": shapes,
         "not_in_commitment": not_in_commitment,
     }
 

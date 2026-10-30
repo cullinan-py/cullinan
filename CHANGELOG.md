@@ -34,6 +34,17 @@ release-note files (`RELEASE-v<version>.md`) where published.
   switch to turn that off; `git push --no-verify` remains the visible bypass it always
   was.
 
+### Added
+
+- **The stability contract records what each name points at, not just its spelling.**
+  `cullinan/_contracts.json` (now schema 2) gains `stability_shapes`: every symbol in
+  the four committed `__all__` lists is recorded as `function`, `class`, `module` or
+  `other`, and a change to either the set of names or the shape of one fails the
+  check. A count of names cannot see this kind of break — `cullinan.web.controller`
+  was the `@controller` decorator and became a submodule, keeping its spelling, its
+  membership and every count, and the first thing that noticed was a consumer's
+  `import` raising `TypeError: 'module' object is not callable`.
+
 ### Changed
 
 - **The configuration page described an order the code never implemented.** It listed
