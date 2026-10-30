@@ -34,6 +34,16 @@ from cullinan.web import get_api
 PORT = int(os.environ.get("SHUTDOWN_HARNESS_PORT", "4083"))
 SLOW_SECONDS = 1.0
 
+#: A request to loopback must not go through an HTTP proxy.
+#:
+#: ``urllib`` reads ``HTTP_PROXY``/``http_proxy`` from the environment and, unless
+#: ``NO_PROXY`` names the host, routes ``127.0.0.1`` through it like anything else.
+#: That turns a measurement into a measurement of the proxy: when the server closes its
+#: listener during the drain, the proxy cannot reach the upstream and answers **502** --
+#: a status no part of this framework produces. Measured under load, it turned roughly
+#: two runs in ten red for a reason that had nothing to do with the code under test.
+_LOOPBACK_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
 results: dict = {}
 slow_started = threading.Event()
 
@@ -63,7 +73,7 @@ def main(): ...
 def _status(path: str, timeout: float = 10.0):
     """The status code, or ``error:<kind>`` when the connection gave way."""
     try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{PORT}{path}", timeout=timeout) as response:
+        with _LOOPBACK_OPENER.open(f"http://127.0.0.1:{PORT}{path}", timeout=timeout) as response:
             return response.status
     except urllib.error.HTTPError as exc:
         return exc.code
