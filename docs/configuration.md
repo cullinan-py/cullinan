@@ -94,12 +94,13 @@ issue tracker, because sooner or later it ends up in one.
 `application*.example.json` and the `.toml` / `.yaml` / `.yml` equivalents — stays
 trackable: that is the shape meant to be committed, and it holds references instead
 of values. An ignore rule is a default rather than a wall (`git add -f` walks past
-it), so a repository check reads every `application*` file that is **on disk**, and
-reports a plaintext value under a sensitive key — or a value whose shape is a known
-credential form (a PEM private-key header, an AWS access-key id, a GitHub token),
-whatever the key is called. A file that is still in the index but no longer on disk
-is reported as **undecided**: the staged copy is what a push would carry, and this
-check does not read it.
+it), so a repository check reads every `application*` file **twice** — the copy on
+disk and the copy in the index — and reports a plaintext value in either one. They
+are not the same copy and either can carry a value: the index copy is what a push
+would send, and an edit on disk that has not been staged is the next thing that
+will be. It reports a value under a sensitive key, or a value whose shape is a
+known credential form (a PEM private-key header, an AWS access-key id, a GitHub
+token), whatever the key is called.
 
 JSON and TOML are read as documents where the interpreter can parse them — TOML
 needs Python 3.11+. Otherwise the file is read line by line and the fallback is

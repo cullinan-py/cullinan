@@ -95,8 +95,8 @@ What it does not cover, stated so nobody assumes otherwise
   the reason and the length. A checker that echoes its findings into a CI log
   has created a second place for the secret to be.
 
-The scan surface
-----------------
+The scan surface, and the two copies of each file
+-----------------------------------------------
 The set is every file in the working tree whose **name** matches
 ``CONFIG_NAME_GLOBS``, plus every matching path in the git index. It is
 deliberately *not* derived from ``git ls-files --others --exclude-standard``:
@@ -104,6 +104,22 @@ the file most worth checking -- a local override that a ``.gitignore`` rule has
 just started ignoring -- is invisible to that command, so a scan built on it
 would report a clean repository while the value sat on disk. The directories in
 ``PRUNE_DIRS`` are skipped; every other directory is walked.
+
+Each file in that set is read from **both** places it can exist, because they are
+not the same copy and either can carry a value into the repository:
+
+* the staged copy is what a push would send. It survives on its own after
+  someone deletes the file from the working tree without staging the deletion,
+  and it keeps the old value after someone edits the value out without staging
+  the edit;
+* the working-tree copy is what the loader reads at run time, and an edit that
+  has not been staged yet is the next thing to become history.
+
+A finding in either copy is a finding. Reading only one of them leaves a state
+that reports clean while the other one holds the value, and in both directions
+that state is something a person reaches by trying to fix the problem. When the
+two copies cannot be read at all -- binary content, or git refusing to hand over
+the object -- the answer is ``2``, "could not decide", which is not a pass.
 
 Exit codes
 ----------
@@ -245,16 +261,23 @@ BLOCK_SCALAR_INDICATORS = frozenset(("|", ">", "|-", ">-", "|+", ">+"))
 
 #: Suffix to reader kind. Anything else an explicit ``--paths`` names is read
 #: line by line and the fallback is announced.
-_JSON, _TOML, _LINES = "json", "toml", "lines"
+_JSON, _TOML, _YAML, _LINES = "json", "toml", "yaml", "lines"
 
 
 class Finding(NamedTuple):
-    """One reported leaf. ``value_len`` is the only thing kept about the value."""
+    """One reported leaf. ``value_len`` is the only thing kept about the value.
+
+    ``source`` says which copy of the file the value was seen in -- the working
+    tree, the staged copy, or both. Without it, "this hit came from a version of
+    the file that is not the one on disk" has to be worked out by hand, which is
+    exactly the question the two-copy reading exists to answer.
+    """
 
     verdict: str  # 'hit' | 'uncertain'
     key_path: str
     reason: str
     value_len: int
+    source: str = "worktree"
 
 
 class FileReport:
@@ -500,109 +523,223 @@ def scan_lines(text: str) -> List[Finding]:
     return findings
 
 
+def kind_for_suffix(suffix: str) -> str:
+    """Which reader a file name asks for."""
+    suffix = suffix.lower()
+    if suffix == ".json":
+        return _JSON
+    if suffix == ".toml":
+        return _TOML
+    if suffix in (".yaml", ".yml"):
+        return _YAML
+    return _LINES
+
+
+def classify_text(kind: str, text: str) -> Tuple[List[Finding], str, List[str]]:
+    """Scan text that has already been read. ``(findings, problem, warnings)``.
+
+    Split out from the ``scan_*`` entry points so the same rules run over the copy
+    in the working tree and the copy in the index without reading either twice or
+    letting the two drift apart.
+    """
+    warnings: List[str] = []
+
+    if kind == _JSON:
+        try:
+            data = json.loads(text)
+        except ValueError as error:
+            return [], "json-parse-error: {}".format(error), warnings
+        return classify_document(data), "", warnings
+
+    if kind == _TOML:
+        try:
+            import tomllib  # Python 3.11+
+        except ModuleNotFoundError:
+            warnings.append("line-scan only (this interpreter has no TOML parser)")
+            return scan_lines(text), "", warnings
+        try:
+            data = tomllib.loads(text)
+        except ValueError as error:
+            return [], "toml-parse-error: {}".format(error), warnings
+        return classify_document(data), "", warnings
+
+    if kind == _YAML:
+        warnings.append("line-scan only (no YAML parser in the standard library)")
+        return scan_lines(text), "", warnings
+
+    warnings.append("line-scan only (unrecognised suffix)")
+    return scan_lines(text), "", warnings
+
+
 def scan_json(path) -> Tuple[List[Finding], str, List[str]]:
-    path = Path(path)
-    text, problem = _read_text(path)
+    text, problem = _read_text(Path(path))
     if problem:
         return [], problem, []
-    try:
-        data = json.loads(text)
-    except ValueError as error:
-        return [], "json-parse-error: {}".format(error), []
-    return classify_document(data), "", []
+    return classify_text(_JSON, text)
 
 
 def scan_toml(path) -> Tuple[List[Finding], str, List[str]]:
-    path = Path(path)
-    text, problem = _read_text(path)
+    text, problem = _read_text(Path(path))
     if problem:
         return [], problem, []
-    try:
-        import tomllib  # Python 3.11+
-    except ModuleNotFoundError:
-        note = "{}: line-scan only (this interpreter has no TOML parser)".format(path.name)
-        return scan_lines(text), "", [note]
-    try:
-        data = tomllib.loads(text)
-    except ValueError as error:
-        return [], "toml-parse-error: {}".format(error), []
-    return classify_document(data), "", []
+    return classify_text(_TOML, text)
 
 
 def scan_yaml_lines(path) -> Tuple[List[Finding], str, List[str]]:
-    path = Path(path)
-    note = "{}: line-scan only (no YAML parser in the standard library)".format(path.name)
-    text, problem = _read_text(path)
+    text, problem = _read_text(Path(path))
     if problem:
-        return [], problem, [note]
-    return scan_lines(text), "", [note]
+        return [], problem, []
+    return classify_text(_YAML, text)
+
+
+def read_index_text(path, root) -> Tuple[str, str]:
+    """The staged copy of ``path``, as text. ``(text, problem)``.
+
+    The staged copy is what becomes history, so it is read even when the working
+    tree no longer holds the file: deleting a configuration file after committing
+    it by accident leaves this copy behind, and a push sends it.
+
+    Binary or non-UTF-8 content is reported as a problem rather than decoded with
+    replacement characters -- a replacement character can swallow part of a value,
+    and the caller turns a problem into "could not decide", which is not a pass.
+    """
+    try:
+        relative = Path(path).resolve().relative_to(Path(root).resolve()).as_posix()
+    except (ValueError, OSError) as error:
+        return "", "not under the scan root: {}".format(error)
+
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(root), "show", ":" + relative],
+            capture_output=True,
+            timeout=120,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        return "", "git show failed: {}".format(error)
+    if completed.returncode != 0:
+        tail = completed.stderr.decode("utf-8", "replace").strip().splitlines()
+        return "", "git show :{} failed{}".format(
+            relative, ": " + tail[-1] if tail else "")
+    try:
+        return completed.stdout.decode("utf-8"), ""
+    except UnicodeDecodeError:
+        return "", "the staged copy is not UTF-8 text"
+
+
+def read_sources(path, root, in_index, allow_git):
+    """Every readable copy of one file: ``([(origin, text)], [(origin, problem)])``.
+
+    Two copies matter and they are not the same copy. The staged one is what a
+    push would send; the working-tree one is what the loader reads when the
+    application runs, and an edit that has not been staged yet is the next thing
+    to become history. Reading only one of them leaves a shape that reports clean
+    while the other copy carries a value:
+
+    * stage the file, then delete it from disk -- the staged copy is still there;
+    * commit the file, then edit the value out without staging the fix -- the
+      working tree is clean and the staged copy still holds the value.
+    """
+    sources = []
+    problems = []
+
+    if in_index and allow_git and root is not None:
+        text, problem = read_index_text(path, root)
+        if problem:
+            problems.append(("index", problem))
+        else:
+            sources.append(("index", text))
+
+    if Path(path).is_file():
+        text, problem = _read_text(Path(path))
+        if problem:
+            problems.append(("worktree", problem))
+        else:
+            sources.append(("worktree", text))
+    elif not in_index:
+        problems.append(("worktree", "not a readable file"))
+
+    return sources, problems
+
+
+def describe_sources(origins) -> str:
+    """``index`` / ``worktree`` / ``both`` -- where a finding was seen."""
+    if origins == {"index"}:
+        return "index"
+    if origins == {"worktree"}:
+        return "worktree"
+    return "both"
 
 
 def scan_file(path, root=None, allow_git=True, in_index=False) -> FileReport:
-    """Read one file and collect its findings, warnings and read failure.
+    """Read every copy of one file and collect findings, warnings and failures.
 
     ``allow_git`` is off in ``--paths`` mode: a test corpus must behave the same
     way whether or not it happens to sit inside a repository, so a file that
     cannot be parsed there is treated as a file that could enter it.
 
-    ``in_index`` says the name is in the git index. It changes two things, both
-    for the same reason -- a staged file can reach the repository even when there
-    is nothing on disk to read:
-
-    * a missing file is reported as *staged but gone* rather than as a missing
-      path, and it stays a problem, because its blob is exactly what a push
-      would carry;
-    * the "unreadable but ignored, so not counted" exemption is not applied. That
-      exemption is true only for a file that is not in the index: an ignored file
-      cannot be committed, but an ignored file that is *already staged* can.
+    A finding from either copy is a finding. The question the gate asks is whether
+    a plaintext value can reach the repository, and it can arrive from the staged
+    copy or from an edit that is about to be staged. Identical findings are
+    reported once -- two hits for one value would read as two problems -- and the
+    entry says which copy or copies it was seen in.
     """
     path = Path(path)
     display = display_path(path, root)
-    suffix = path.suffix.lower()
+    kind = kind_for_suffix(path.suffix)
 
-    if not path.is_file():
-        if in_index:
-            # The classification needs no extra git call: "in the index and not on
-            # disk" is exactly what `git ls-files --deleted` reports, and `in_index`
-            # already came from `git ls-files`. The message names both ways out,
-            # because a block with no stated exit is a block people route around --
-            # the `git rm` and `git rm --cached` forms are not interchangeable and
-            # saying only one of them sends half the readers the wrong way.
-            reason = (
-                "in the index but not on disk (the staged copy is what a push would "
-                "carry); submit the deletion with 'git rm {0}', or stop tracking it "
-                "and keep the file with 'git rm --cached {0}'".format(display))
-        else:
-            reason = "not a readable file"
-        return FileReport(display, [], reason, [], False)
+    sources, problems = read_sources(path, root, in_index, allow_git)
 
-    if suffix == ".json":
-        findings, problem, warnings = scan_json(path)
-    elif suffix == ".toml":
-        findings, problem, warnings = scan_toml(path)
-    elif suffix in (".yaml", ".yml"):
-        findings, problem, warnings = scan_yaml_lines(path)
-    else:
-        text, problem = _read_text(path)
-        findings = scan_lines(text) if not problem else []
-        warnings = ["{}: line-scan only (unrecognised suffix)".format(path.name)]
+    findings = {}
+    origins = {}
+    warnings = []
+    for origin, text in sources:
+        found, problem, notes = classify_text(kind, text)
+        label = display if origin == "worktree" else "{} [staged copy]".format(display)
+        for note in notes:
+            warnings.append("{}: {}".format(label, note))
+        for finding in found:
+            key = (finding.key_path, finding.reason)
+            findings.setdefault(key, finding)
+            origins.setdefault(key, set()).add(origin)
+        if problem:
+            problems.append((origin, problem))
+
+    ordered = [
+        findings[key]._replace(source=describe_sources(origins[key]))
+        for key in findings
+    ]
+
+    problem = ""
+    if problems:
+        origin, reason = problems[0]
+        problem = reason if origin == "worktree" else "staged copy unreadable: {}".format(reason)
+
+    if in_index and not path.is_file():
+        # The finding (or the clean verdict) is about a copy that is not on disk,
+        # so the reader cannot see what was judged and cannot edit it either. The
+        # two ways out are not interchangeable: one submits the deletion, the
+        # other keeps the file and stops tracking it. Naming both is what makes
+        # the result actionable without a bypass switch.
+        warnings.append(
+            "{}: judged from the staged copy, which is what a push would carry. "
+            "Submit the deletion with 'git rm {}', or stop tracking it and keep the "
+            "file with 'git rm --cached {}'".format(display, display, display))
 
     if problem and not in_index and allow_git and root is not None and is_ignored(path, root):
-        # An ignored file that is *not* staged cannot reach the repository, and it
+        # An ignored file that is not staged cannot reach the repository, and it
         # may be mid-edit.
         #
         # `not in_index` is a second line of defence, not the working one: git's
-        # own `check-ignore` already treats an indexed path as not ignored, so the
-        # `is_ignored` call below returns False for anything staged and this guard
-        # never changes the outcome today. It is here so that the invariant --
-        # "the exemption is only true for a file that cannot be committed" -- is
-        # written down where the code is, rather than resting on that behaviour of
-        # git staying the same.
-        warnings = warnings + ["{}: unreadable but ignored, so not counted as a finding: {}".format(
-            display, problem)]
+        # own `check-ignore` treats an indexed path as not ignored, so the call
+        # below returns False for anything staged and this guard does not change
+        # the outcome today. It is here so the invariant -- "the exemption is only
+        # true for a file that cannot be committed" -- is written where the code
+        # is, rather than resting on that behaviour of git staying the same.
+        warnings.append("{}: unreadable but ignored, so not counted as a finding: {}".format(
+            display, problem))
         problem = ""
 
-    return FileReport(display, findings, problem, warnings, False)
+    return FileReport(display, ordered, problem, warnings, False)
 
 
 def display_path(path, root) -> str:
@@ -658,7 +795,8 @@ def decide(reports, root=None, strict=False, extra_warnings=None):
         "root": str(root) if root is not None else "",
         "scanned": len(reports),
         "hits": [
-            {"path": report.path, "key_path": f.key_path, "reason": f.reason, "value_len": f.value_len}
+            {"path": report.path, "key_path": f.key_path, "reason": f.reason,
+             "value_len": f.value_len, "source": f.source}
             for report in reports
             for f in report.findings
             if f.verdict == "hit"

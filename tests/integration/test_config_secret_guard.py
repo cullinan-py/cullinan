@@ -247,7 +247,7 @@ def test_the_name_match_is_case_insensitive():
     assert not ccs.matches_config_name("my-application.json")
 
 
-def test_a_staged_file_that_is_gone_from_disk_cannot_be_cleared(tmp_path):
+def test_a_staged_file_that_is_gone_from_disk_is_still_judged(tmp_path):
     """The state a repository is left in by the first thing anyone tries.
 
     Someone commits a configuration file by accident, notices, and deletes it --
@@ -255,6 +255,9 @@ def test_a_staged_file_that_is_gone_from_disk_cannot_be_cleared(tmp_path):
     the index is not, so the blob is still what a push would carry. A scan that
     takes its file list from the index and then drops every entry it cannot find
     on disk reports a clean repository at exactly the moment it is needed.
+
+    The staged copy is readable, so the value is judged rather than guessed at:
+    "there is a secret" beats "I could not look".
     """
     run_git(tmp_path, "init", "-q")
     write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
@@ -268,22 +271,22 @@ def test_a_staged_file_that_is_gone_from_disk_cannot_be_cleared(tmp_path):
 
     result = run_checker("--root", str(tmp_path), "--json")
 
-    assert result.returncode == 2, (
+    assert result.returncode == 1, (
         "a staged file that is gone from disk was reported as clean; its blob is "
         "exactly what a push would send"
     )
     payload = payload_of(result)
-    assert payload["hits"] == []
-    assert [item["path"] for item in payload["undecided"]] == ["application.json"]
-    assert "index" in payload["undecided"][0]["reason"]
+    assert [(hit["key_path"], hit["source"]) for hit in payload["hits"]] == [
+        ("token", "index")
+    ]
 
 
-def test_the_undecided_message_says_how_to_clear_it(tmp_path):
+def test_a_staged_copy_that_is_gone_from_disk_says_how_to_clear_it(tmp_path):
     """A blocker with no stated exit is a blocker people route around.
 
-    There is no bypass switch for this check, so the two ways out have to be in the
-    message itself. They are not interchangeable -- one deletes the file and one
-    keeps it -- so both are named, with the path filled in.
+    There is no bypass switch, and the judged copy is not on disk, so the reader
+    cannot open it to see what was found. Both exits are named because they are
+    not interchangeable: one submits the deletion, the other keeps the file.
     """
     run_git(tmp_path, "init", "-q")
     write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
@@ -291,31 +294,30 @@ def test_the_undecided_message_says_how_to_clear_it(tmp_path):
     (tmp_path / "application.json").unlink()
 
     result = run_checker("--root", str(tmp_path), "--json")
-    reason = payload_of(result)["undecided"][0]["reason"]
+    warnings = " ".join(payload_of(result)["warnings"])
 
-    assert "git rm application.json" in reason
-    assert "git rm --cached application.json" in reason
+    assert "git rm application.json" in warnings
+    assert "git rm --cached application.json" in warnings
 
 
-def test_a_file_taken_out_of_the_index_is_still_read_from_disk(tmp_path):
-    """The other half of the same invariant: check surface ⊇ loader surface.
+def test_a_staged_copy_that_cannot_be_decoded_is_undecided(tmp_path):
+    """Two copies, and neither one can be read: that is not a clean bill of health.
 
-    After ``git rm --cached`` the file stops being tracked but stays on disk, and
-    the loader still reads it where it is deployed. A scan driven by the index
-    alone would go quiet here, so the working-tree half has to keep covering it.
+    The staged copy is binary, and the working tree no longer has the file. There
+    is nothing to judge, which is a different answer from "nothing found" -- and
+    decoding with replacement characters would let a value slip through a hole
+    shaped like itself.
     """
     run_git(tmp_path, "init", "-q")
-    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    (tmp_path / ".gitignore").write_text("application*.json\n", encoding="utf-8")
+    (tmp_path / "application.json").write_bytes(b"\xff\xfe\x00{\"token\": \"x\"}\n")
     run_git(tmp_path, "add", "-f", "--", "application.json")
-    run_git(tmp_path, "rm", "--cached", "-q", "--", "application.json")
-
-    assert (tmp_path / "application.json").is_file(), "the file must still be on disk"
-    assert "application.json" not in run_git(tmp_path, "ls-files").stdout
+    (tmp_path / "application.json").unlink()
 
     result = run_checker("--root", str(tmp_path), "--json")
 
-    assert result.returncode == 1, "an untracked but present file stopped being read"
-    assert payload_of(result)["hits"]
+    assert result.returncode == 2, "an unreadable staged copy was reported as clean"
+    assert payload_of(result)["undecided"]
 
 
 def test_a_staged_file_is_not_cleared_by_the_ignored_file_exemption(tmp_path):
@@ -326,16 +328,12 @@ def test_a_staged_file_is_not_cleared_by_the_ignored_file_exemption(tmp_path):
     the staged copy is what a push would send, and nothing here can say what is in
     it.
 
-    Two things produce the right answer today, and this test asserts the answer
-    rather than either mechanism. The second one is worth naming because it is not
-    this checker's own doing: git's ``check-ignore`` treats an indexed path as not
-    ignored, so the exemption does not reach a staged file in the first place. The
-    ``in_index`` condition in the scanner says the same thing in the code, and is
-    what keeps the invariant true if that git behaviour ever changes.
+    The staged copy here is deliberately clean, so the verdict turns on the
+    exemption rather than on a finding -- otherwise a hit would mask it.
     """
     run_git(tmp_path, "init", "-q")
     (tmp_path / ".gitignore").write_text("application*.json\n", encoding="utf-8")
-    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    write(tmp_path, "application.json", '{"token": "${TOKEN}"}')
     run_git(tmp_path, "add", "-f", "--", "application.json")
     # Still on disk, still in the index, and broken by an edit that was never
     # staged -- so it reaches the exemption path rather than the missing-file one.
@@ -348,6 +346,87 @@ def test_a_staged_file_is_not_cleared_by_the_ignored_file_exemption(tmp_path):
         "is what a push would send"
     )
     assert payload_of(result)["undecided"]
+
+
+# --------------------------------------------------------------------------- #
+# 2b. Both copies are read, and a value in either one is a finding
+# --------------------------------------------------------------------------- #
+#
+# Two copies of the same file matter and they are not the same copy: the staged
+# one is what a push would send, the working-tree one is what the loader reads and
+# a pending edit is the next thing to become history. Reading one of them leaves a
+# shape that reports clean while the other carries a value. The pair below proves
+# both directions are covered; each one alone would pass under a single-copy scan
+# that happened to read the side it looks at.
+
+
+def test_a_value_staged_but_edited_out_of_the_working_tree_is_still_reported(tmp_path):
+    """Commit the value, then edit it out without staging the fix.
+
+    The working tree is clean and the pushed commit is not. A scan that reads only
+    the working tree hands back a clean verdict here, which is the user's own
+    "I fixed it" told back to them while the fix sits uncommitted.
+    """
+    run_git(tmp_path, "init", "-q")
+    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    run_git(tmp_path, "add", "-f", "--", "application.json")
+    write(tmp_path, "application.json", '{"token": "${TOKEN}"}')
+
+    result = run_checker("--root", str(tmp_path), "--json")
+
+    assert result.returncode == 1, (
+        "the value is still in the staged copy, which is what a push would send"
+    )
+    assert [hit["source"] for hit in payload_of(result)["hits"]] == ["index"]
+
+
+def test_a_value_in_the_working_tree_but_not_yet_staged_is_reported(tmp_path):
+    """The other direction: an edit that has not been staged yet.
+
+    It is not in the index, and it is the next thing that will be. A scan that
+    reads only the index goes quiet for exactly as long as it takes to run
+    `git add`.
+    """
+    run_git(tmp_path, "init", "-q")
+    write(tmp_path, "application.json", '{"token": "${TOKEN}"}')
+    run_git(tmp_path, "add", "-f", "--", "application.json")
+    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+
+    result = run_checker("--root", str(tmp_path), "--json")
+
+    assert result.returncode == 1, "an unstaged edit carrying a value was not read"
+    assert [hit["source"] for hit in payload_of(result)["hits"]] == ["worktree"]
+
+
+def test_the_same_value_in_both_copies_is_reported_once(tmp_path):
+    """Two hits for one value read from two places would read as two problems."""
+    run_git(tmp_path, "init", "-q")
+    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    run_git(tmp_path, "add", "-f", "--", "application.json")
+
+    result = run_checker("--root", str(tmp_path), "--json")
+
+    hits = payload_of(result)["hits"]
+    assert len(hits) == 1, hits
+    assert hits[0]["source"] == "both"
+
+
+def test_a_file_taken_out_of_the_index_is_still_read_from_disk(tmp_path):
+    """After ``git rm --cached`` the file stops being tracked but stays on disk,
+    where the loader still reads it. A scan driven by the index alone would go
+    quiet here.
+    """
+    run_git(tmp_path, "init", "-q")
+    write(tmp_path, "application.json", '{"token": "' + PLANTED + '"}')
+    run_git(tmp_path, "add", "-f", "--", "application.json")
+    run_git(tmp_path, "rm", "--cached", "-q", "--", "application.json")
+
+    assert (tmp_path / "application.json").is_file(), "the file must still be on disk"
+    assert "application.json" not in run_git(tmp_path, "ls-files").stdout
+
+    result = run_checker("--root", str(tmp_path), "--json")
+
+    assert result.returncode == 1, "an untracked but present file stopped being read"
 
 
 # --------------------------------------------------------------------------- #
