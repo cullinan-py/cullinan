@@ -330,14 +330,12 @@ server's refusal and the client's write cross on the wire. Even the "reads the r
 processed" row is a race: the `400` is delivered, and reading it is what turns it into something you can see.
 
 What survives from the older rule is the part the counts support: **the dividing
-line is not the ratio, it is timing.** The counts are one machine's sample, not a rate.
-A second measurement of the same 4 MiB shape read one of thirteen; and an independent
-measurement on **another machine with another client stack** (`http.client`, 400 KiB in
-one write, 256 KiB ceiling, same release) could not read the refusal at all — 10 times
-out of 10, where this table records 9 readable out of 10 for that shape. Both are true,
-and neither is the better measurement. That is what a race looks like when two people
-measure it: the outcome is not a property of the shape, so a table of counts records
-what happened on one host, not what will happen on yours.
+line is not the ratio, it is timing.** The counts are one machine's sample, not a rate:
+a second measurement of the same 4 MiB shape read one of thirteen. An independent
+measurement by a downstream consumer, on a different machine and client stack, saw the
+400 KiB row resolved the other way — the refusal was not readable there. Both outcomes
+are real; that is what makes this a race rather than a size rule. With the same shape
+recorded in both directions, no ratio on this page should be read as a threshold.
 
 Those shapes run as a test against a live server
 (`tests/integration/test_tornado_client_view_of_an_oversized_body.py`), because
