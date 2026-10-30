@@ -534,6 +534,31 @@ def get_class_config(target: Any) -> Optional[Dict[str, Any]]:
     return dict(config_values)
 
 
+def configure_options() -> Tuple[str, ...]:
+    """The option names ``configure()`` accepts in the installed version.
+
+    Exists so a caller can ask instead of guessing. One deployment often has to run
+    against more than one installed version -- the older one in an environment that
+    cannot be upgraded yet -- and ``configure()`` refuses an unknown keyword by design
+    (a misspelt switch that silently does nothing is worse than a refusal). Without a
+    way to ask, the only portable call is ``inspect.signature``, which is a private
+    detail of this function rather than a promise.
+
+    Usage::
+
+        from cullinan.support.config import configure_options
+        from cullinan import configure
+
+        wanted = {"server_port": 9090, "drain_timeout": 15.0}
+        configure(**{k: v for k, v in wanted.items() if k in configure_options()})
+
+    Returns:
+        tuple: The accepted names, sorted, derived from ``configure``'s own signature --
+        the same source the refusal message reads, so the two cannot disagree.
+    """
+    return tuple(sorted(_configure_option_names()))
+
+
 @contextmanager
 def push_config_overrides(overrides: Optional[Dict[str, Any]]) -> Iterator[CullinanConfig]:
     """Temporarily apply entry-method config overrides to the global config."""

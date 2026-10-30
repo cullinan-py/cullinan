@@ -10,7 +10,7 @@ translation_pair: "docs/configuration.md"
 related_tests: ["tests/core/test_config_file.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/config_file"]
 estimate_pd: null
-last_updated: "2026-10-30"
+last_updated: "2026-10-31"
 
 # 配置
 
@@ -151,7 +151,9 @@ from cullinan import configure
 print(sorted(inspect.signature(configure).parameters))
 ```
 
-错误信息读的就是同一处来源，所以两者不会各说一套。
+错误信息读的就是同一处来源，所以两者不会各说一套。同一个问题还有**受支持的**问法 ——
+而且它能让同一份调用在两个装上的版本上都成立 —— 见[迁移指南](migration_guide_v2.md#10-rolling-back-across-this-line)
+里的 `configure_options()`。
 
 ## 别把密钥放进文件
 

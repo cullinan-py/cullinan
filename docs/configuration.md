@@ -10,7 +10,7 @@ translation_pair: "docs/zh/configuration.md"
 related_tests: ["tests/core/test_config_file.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/config_file"]
 estimate_pd: null
-last_updated: "2026-10-30"
+last_updated: "2026-10-31"
 
 # Configuration
 
@@ -184,7 +184,10 @@ print(sorted(inspect.signature(configure).parameters))
 ```
 
 That is the same source the error message reads, so the message and the list
-cannot drift apart.
+cannot drift apart. The supported way to ask the same question — and the one that
+also makes a single call work against two installed versions — is
+`configure_options()`, shown in the
+[migration guide](migration_guide_v2.md#10-rolling-back-across-this-line).
 
 ## Keep secrets out of the file
 

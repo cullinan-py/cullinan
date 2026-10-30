@@ -10,7 +10,7 @@ translation_pair: "docs/migration_guide_v2.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-30"
+last_updated: "2026-10-31"
 pr_links: []
 
 
@@ -327,6 +327,18 @@ from cullinan import configure
 
 print(sorted(inspect.signature(configure).parameters))
 ```
+
+这能用，但它读的是一个**实现细节**：签名是 `configure()` 怎么写出来的，不是承诺。同一个问题有受支持的问法，而且它还能让**调用本身**在各版本间保持不变：
+
+```python
+from cullinan import configure
+from cullinan.support.config import configure_options
+
+wanted = {"server_port": 9090, "drain_timeout": 15.0}
+configure(**{k: v for k, v in wanted.items() if k in configure_options()})
+```
+
+一次调用、设置只放一处，而**装上的那一版没有的选项会被丢掉**，而不是在导入期炸掉 —— 这才让「只改 pin」成为回退单元。`configure_options()` 读的就是拒绝信息读的那份签名，两者不会各说一套。
 
 把配置按版本集中放一处，只传这份清单里存在的名字，那么换 pin 就是全部改动。反过来做 —— 一个 `@configure(...)` 同时写两个关键字 —— 会把回退变成一次改代码，而"改代码"正是回退要避免的事。
 

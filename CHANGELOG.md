@@ -36,6 +36,16 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Added
 
+- **`configure_options()` reports what the installed version's `configure()` accepts.**
+  It exists for callers that have to run one codebase against two installed versions:
+  `configure()` refuses an unknown keyword on purpose, so a call carrying an option the
+  older version never had fails at import. Asking first — `configure(**{k: v for k, v in
+  wanted.items() if k in configure_options()})` — drops what the running version does
+  not have and makes the pin alone the unit of rollback. The answer is derived from the
+  same signature the refusal message reads, so a name cannot be accepted by one and
+  reported by neither. Imported from `cullinan.support.config`; the top-level export
+  list is unchanged. The migration guide carries the snippet and the suite executes it.
+
 - **TLS can be terminated by the application, on both engines.** Four options —
   `ssl_certfile`, `ssl_keyfile`, `ssl_client_ca` and `ssl_verify_client` — go to
   whichever backend is running, so turning TLS on is not a backend decision. Giving

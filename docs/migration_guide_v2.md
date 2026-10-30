@@ -10,7 +10,7 @@ translation_pair: "docs/zh/migration_guide_v2.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-30"
+last_updated: "2026-10-31"
 pr_links: []
 
 
@@ -401,6 +401,23 @@ from cullinan import configure
 
 print(sorted(inspect.signature(configure).parameters))
 ```
+
+That works, and it reads a private detail: the signature is how `configure()` is
+implemented, not a promise. There is a supported way to ask the same question, and it
+also lets the *call* stay the same across versions:
+
+```python
+from cullinan import configure
+from cullinan.support.config import configure_options
+
+wanted = {"server_port": 9090, "drain_timeout": 15.0}
+configure(**{k: v for k, v in wanted.items() if k in configure_options()})
+```
+
+One call, one place for the settings, and the options the installed version does not
+have are dropped instead of failing at import — which is what makes the pin alone the
+unit of rollback. `configure_options()` reads the same signature the refusal message
+does, so the two cannot disagree.
 
 Keep the settings in one place per version and pass only the names that list
 contains; then a pin change is the whole change. The alternative — a single

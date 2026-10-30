@@ -10,7 +10,7 @@ translation_pair: "docs/deployment.md"
 related_tests: ["tests/integration/test_deployment_guide_symbols.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/graceful_shutdown"]
 estimate_pd: 2.0
-last_updated: "2026-10-30"
+last_updated: "2026-10-31"
 pr_links: []
 
 # 生产部署
