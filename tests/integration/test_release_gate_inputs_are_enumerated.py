@@ -73,11 +73,16 @@ def manifest() -> dict:
     return json.loads(MANIFEST.read_text(encoding="utf-8"))
 
 
-def test_every_required_input_is_enumerated_for_its_script():
-    """The gate itself: a required input missing from the enumeration is red."""
-    enumerated = manifest()["scripts"]
+def unenumerated_inputs(required_by_script: dict, enumerated: dict) -> list:
+    """The decision, as a pure function so it can be replayed against history.
+
+    Kept separate from the test that feeds it the live tree: a check that can only
+    be exercised by editing the tree is a check whose "it would have caught that"
+    claim nobody can test. This one is handed two mappings and answers.
+    """
     problems = []
-    for name, required in gate_scripts().items():
+    for name in sorted(required_by_script):
+        required = set(required_by_script[name])
         if not required:
             continue
         listed = set(enumerated.get(name, ()))
@@ -87,12 +92,67 @@ def test_every_required_input_is_enumerated_for_its_script():
                 f"{name}: requires {missing} but scripts/release_gate_inputs.json "
                 f"enumerates {sorted(listed) or '[]'}"
             )
+    return problems
+
+
+def test_every_required_input_is_enumerated_for_its_script():
+    """The gate itself: a required input missing from the enumeration is red."""
+    problems = unenumerated_inputs(gate_scripts(), manifest()["scripts"])
     assert not problems, (
         "a gate requires an input the release inputs manifest does not enumerate. "
         "Adding a required input changes the release process's input surface: list it "
         "here in this commit, and update the standard in the same round.\n  "
         + "\n  ".join(problems)
     )
+
+
+def test_the_gate_would_have_caught_the_junit_change():
+    """Replay the case this gate exists for, so it is not merely green today.
+
+    `369e585` made `--junit` mandatory on the tag gate. At that moment the script
+    required four inputs and the enumeration still listed three -- the shape below.
+    Nobody's check went red, so the mismatch was found by a person reading both, a
+    day later, and only for that one input.
+
+    A check that passes on the current tree has shown nothing about whether it would
+    have passed then. This feeds the historical shape to the same decision and
+    requires it to name the missing input, so the "would have caught it" claim is
+    itself tested -- and a decision that stops deciding fails here first: with the
+    comparison neutered, this case is the only one that goes red.
+    """
+    as_it_was = {
+        "check_tag_gate.py": {
+            "--sign-off-token",
+            "--review-token",
+            "--sync-token",
+            "--junit",  # made required by 369e585
+        }
+    }
+    enumeration_as_it_was = {
+        "check_tag_gate.py": ["--sign-off-token", "--review-token", "--sync-token"],
+    }
+
+    problems = unenumerated_inputs(as_it_was, enumeration_as_it_was)
+
+    assert problems, (
+        "the decision passed the historical shape, so it would not have caught the "
+        "mismatch it was written for"
+    )
+    assert "'--junit'" in problems[0], (
+        f"it went red, but not on the input that was actually added: {problems[0]}"
+    )
+    assert len(problems) == 1, f"one input was missing; reported {len(problems)}: {problems}"
+
+
+def test_the_current_tree_has_no_difference():
+    """The other half of the replay: today's answer is empty, and that is a fact.
+
+    Stated as an assertion rather than left implicit, because "the diff is empty" is
+    the reading the delivery claim rests on, and a future non-empty diff should break
+    this line before it reaches a release note.
+    """
+    problems = unenumerated_inputs(gate_scripts(), manifest()["scripts"])
+    assert problems == [], f"the current tree already has an unenumerated input: {problems}"
 
 
 def test_the_manifest_describes_scripts_that_exist():
