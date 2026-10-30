@@ -130,6 +130,11 @@ def _exchange(
 #: arriving; ``TimeoutError`` is not -- it means neither an answer nor a close, which
 #: is a *hang*, and accepting it would let a server that never reacts pass as a server
 #: that refused.
+#:
+#: ⚠️ The boundary is guarded by exactly one test, ``test_the_verdict_rejects_a_timeout``
+#: below. **Deleting that test removes this gate**: the tuple would then be free to
+#: drift back to "any exception counts", which is the weaker assertion this file was
+#: corrected from, and nothing else in the suite would notice.
 PEER_WENT_AWAY = (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)
 
 
@@ -249,10 +254,16 @@ def test_a_very_large_single_write_is_a_race(oversized_tornado_server):
     port = oversized_tornado_server
     received, error = _exchange(port, _declared_headers(port, CEILING * 4096), [b"x" * (CEILING * 4096)])
 
-    status_line, _, body = received.partition(b"\r\n\r\n")
     if received:
-        assert b"HTTP/1.1 400" in status_line, (
-            f"a 4 MiB one-write upload produced {status_line!r}; Tornado refuses with a "
+        header_block, separator, body = received.partition(b"\r\n\r\n")
+        assert separator, (
+            f"only a partial response was read ({received[:120]!r}); a status line counts "
+            "as read only when its header block is complete -- a prefix match would pass "
+            "on a truncated 'HTTP/1.1 400 Bad Re'"
+        )
+        first_line = header_block.split(b"\r\n", 1)[0]
+        assert first_line == b"HTTP/1.1 400 Bad Request", (
+            f"a 4 MiB one-write upload produced {first_line!r}; Tornado refuses with a "
             "400 and nothing else, so either the page or the engine changed"
         )
         assert body == b"", f"the 400 carries an empty body, got {body!r}"
