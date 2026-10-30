@@ -323,12 +323,13 @@ Counted on Windows against a 1 KiB ceiling (`n` = attempts, not an estimate):
 | 400 KiB, one write, against a 256 KiB ceiling | 9 | 1 | 10 |
 
 Two ways to lose the status line, and neither is "the body was too far over the
-ceiling": **the write never finished**, or **a single write far exceeds what the
-connection can buffer**. The second is the surprising one — the client is not
-slow, `send` reports success, and the answer is gone anyway, because the server's
-refusal and the client's write cross on the wire. The first row of the table is
-also a race in its own right: the `400` is delivered, and reading it is what
-turns it into something you can see.
+ceiling": **the write failed, so the client never got to read**, or **the reset was
+processed before the client read** — whether it paused after writing, or its own
+writes kept the socket busy until then. The second is the surprising one: the
+client is not slow, `send` reports success, and the answer is gone anyway, because
+the server's refusal and the client's write cross on the wire. Even the "reads the
+response before the reset is processed" row is a race: the `400` is delivered, and
+reading it is what turns it into something you can see.
 
 What survives from the older rule is the part the counts support: **the dividing
 line is not the ratio, it is timing.** The counts are one machine's sample, not a rate:
