@@ -322,10 +322,6 @@ Counted on Windows against a 1 KiB ceiling (`n` = attempts, not an estimate):
 | 4 MiB, one write | 4 | 9 | 13 |
 | 400 KiB, one write, against a 256 KiB ceiling | 9 | 1 | 10 |
 
-**The counts are one machine's sample, not a rate**: a second measurement of the same
-4 MiB shape read one of thirteen. What the table supports is that the loss happens —
-not how often.
-
 Two ways to lose the status line, and neither is "the body was too far over the
 ceiling": **the write never finished**, or **a single write far exceeds what the
 connection can buffer**. The second is the surprising one — the client is not
@@ -335,7 +331,9 @@ also a race in its own right: the `400` is delivered, and reading it is what
 turns it into something you can see.
 
 What survives from the older rule is the part the counts support: **the dividing
-line is not the ratio, it is timing.**
+line is not the ratio, it is timing.** The counts are one machine's sample, not a
+rate: a second measurement of the same 4 MiB shape read one of thirteen. What the
+table supports is that the loss happens — not how often.
 
 Those shapes run as a test against a live server
 (`tests/integration/test_tornado_client_view_of_an_oversized_body.py`), because
