@@ -305,10 +305,14 @@ question, and there are two ways to lose the answer — not one:
 | Client behaviour | What it observes |
 |---|---|
 | Finished writing, **and reads the response before the reset is processed** | `400` with an empty body |
-| Finished writing, but reads late — 20 ms is enough | the connection is reset (`ConnectionResetError`; WSAECONNRESET on Windows) — **no status line** |
-| Still writing when the refusal landed | the connection is reset or aborted (`ConnectionResetError` / `ConnectionAbortedError`) — **no status line** |
-| Streams it in chunks (`Transfer-Encoding: chunked`) | the connection is aborted — **no status line** |
-| Sends a body far larger than the connection can buffer, in one write | a race: either the `400` is readable, or the reset arrives first — **no status line** |
+| Finished writing, but reads late — 20 ms is enough to be on the wrong side of it | either the `400`, or the connection reset (`ConnectionResetError`; WSAECONNRESET on Windows) with no status line |
+| Still writing when the refusal landed | either the `400`, or the connection reset or aborted (`ConnectionResetError` / `ConnectionAbortedError`) with no status line |
+| Streams it in chunks (`Transfer-Encoding: chunked`) | either the `400`, or the connection aborted, with no status line |
+| Sends a body far larger than the connection can buffer, in one write | a race: either the `400` is readable, or the reset arrives first — no status line |
+
+Whether the status line survives is **not** decided by the shape alone. The same
+three rows that lost it on the machine below delivered a complete `400` on a Linux
+runner, so the second column describes two outcomes, not one.
 
 Counted on Windows against a 1 KiB ceiling (`n` = attempts, not an estimate):
 
@@ -321,6 +325,11 @@ Counted on Windows against a 1 KiB ceiling (`n` = attempts, not an estimate):
 | chunked, 1.5× over the ceiling, two chunks | 0 | 13 | 13 |
 | 4 MiB, one write | 4 | 9 | 13 |
 | 400 KiB, one write, against a 256 KiB ceiling | 9 | 1 | 10 |
+
+A second run of the same three shapes on a Linux runner (`ubuntu-latest`) read a
+complete `400` in every one of them — one attempt per shape, so it establishes that
+the outcome is not a property of the shape, not a rate in the other direction. Both
+columns of the table above are one host's sample; neither is the specification.
 
 Two ways to lose the status line, and neither is "the body was too far over the ceiling":
 **the write failed, so the client never got to read**, or **the reset was processed before the client read** —

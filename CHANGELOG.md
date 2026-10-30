@@ -15,6 +15,38 @@ vocabulary, and an older entry is left as written — history is not rewritten.
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## v0.96a12
+
+**v0.96a12** fixes the tests and the deployment page that describe what a client sees
+when Tornado refuses an oversized body. The runtime behaviour is unchanged from
+`v0.96a11`: the package refuses the upload the same way it did, and nothing in
+`cullinan/` behaves differently.
+
+`v0.96a11` was tagged but never reached the package index — its test run failed after
+the tag existed, so no artefact was ever published. This version carries the same
+code plus that fix.
+
+### Fixed
+
+- **The oversized-body tests assert what the framework guarantees, not what one host
+  happened to observe.** Three cases in
+  `tests/integration/test_tornado_client_view_of_an_oversized_body.py` required that
+  *no* status line be readable when the body is refused. Whether the `400` survives
+  the close is a race below the framework: it resolved one way on Windows and the
+  other way on Linux, where the same three shapes read a complete `400` every time.
+  The cases now assert the part that does not move — the upload is refused and never
+  answered successfully, with the documented `400` either whole or cut short by the
+  close, and the connection reset or aborted when nothing is read at all. A verdict
+  of its own pins the shapes that must still fail, including a `200` and a hang.
+
+### Documentation
+
+- **`docs/deployment.md` and `docs/zh/deployment.md` describe both outcomes.** The
+  client-view table stated that these refusals carry no status line. They can carry
+  one, and whether they do depends on the client's socket layer and on when its read
+  lands relative to the reset — not on the shape of the upload. The counts from each
+  host are shown as samples, and neither is presented as the specification.
+
 ## v0.96a11
 
 **v0.96a11** is the eleventh alpha of the 0.96 line. Its subject is the configuration and

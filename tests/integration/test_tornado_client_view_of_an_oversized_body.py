@@ -1,24 +1,34 @@
 # -*- coding: utf-8 -*-
 """What a client actually sees when Tornado refuses an oversized body.
 
-``docs/deployment.md`` makes three client-side claims about the Tornado ceiling,
-and they are the interesting kind: the server's own status code is `400`, but
-whether the client can *read* that `400` depends on whether it was still writing
-when the server closed the connection. Two of the three outcomes carry no status
-line at all. Those claims were measured once by hand and then only restated -- so
-nothing failed when they drifted, which is what makes a "measured" note in prose
-decay into an assumption.
+``docs/deployment.md`` makes client-side claims about the Tornado ceiling, and the
+server's own answer is unambiguous: `400`, empty body, raised by the protocol layer
+before the framework sees the request. What the *client* can read back is a
+different question, and it is decided below this project -- by the socket layer's
+handling of a reset, and by when the client's ``recv`` lands relative to it.
 
-This file is the executor for that note: a live Tornado server, a raw socket, and
-the three send shapes the page describes. Nothing is mocked, so a change to the
-protocol layer or to the ceiling's wiring shows up here.
+**The invariant is not "no status line".** An earlier version of this file asserted
+the absence of a status line in three of the shapes below. That passed on the
+machine it was written on and failed on a Linux runner, where the same three shapes
+delivered a complete ``400`` every time: the assertion had pinned one host's timing
+as a product guarantee. What holds on both is narrower and worth stating plainly --
+**the client never receives a successful answer**. Either the documented refusal
+arrives (whole, or cut short by the close but then only as a prefix of it), or the
+peer goes away and nothing is read at all. A different status line, a body, or a
+hang is a different finding and still fails here.
 
-**Timing decides, and there are two ways to lose the answer.** Writing this file
-corrected the page twice. A 64x body sent in one ``sendall`` is answered with a
-readable ``400`` because the client had finished writing -- unless it reads 20 ms
-later, when the reset has already taken the answer away. And a body far larger than
-the connection can buffer is lost even though nothing about the client is slow. The
-shapes below cover both paths; the counts live on the page, with their ``n``.
+This file is the executor for those claims: a live Tornado server, a raw socket, and
+the send shapes the page describes. Nothing is mocked, so a change to the protocol
+layer or to the ceiling's wiring shows up here.
+
+**Timing decides, and there are two ways to lose the answer.** A 64x body sent in
+one ``sendall`` is answered with a readable ``400`` because the client had finished
+writing -- unless it reads 20 ms later, when the reset has already taken the answer
+away. And a body far larger than the connection can buffer is lost even though
+nothing about the client is slow. The shapes below cover both paths; the counts live
+on the page, with their ``n``, and are labelled as one host's sample rather than a
+rate. Renamed in 0.96a12 from ``..._is_left_without_a_status_line`` and friends,
+because those names asserted the outcome that turned out to be host-dependent.
 """
 
 from __future__ import annotations
@@ -167,6 +177,45 @@ def _complete_400(received: bytes) -> tuple[bool, str | None]:
     return True, None
 
 
+def _refusal_reason(received: bytes, error: BaseException | None) -> str | None:
+    """Why this exchange is *not* a refusal of the oversized body, or ``None``.
+
+    The status line is deliberately not part of the invariant. Whether it survives
+    the close is decided below this project -- by the socket layer's handling of a
+    reset, and by when the client's ``recv`` lands relative to it. Measured on
+    Windows, three of the shapes below destroyed the answer; on a Linux runner the
+    same three delivered a complete ``400`` every time. Asserting "no status line"
+    therefore asserted one host's timing, not the product's behaviour.
+
+    What holds on both, and is what these tests are actually for: **the client never
+    receives a successful answer.** Either the documented refusal arrives -- whole,
+    or cut short by the close but then only as a prefix of it -- or the peer goes
+    away and nothing is read at all. A different status line, a body, a timeout
+    (no answer *and* no close) is a different finding and still fails here.
+    """
+    if received:
+        if not COMPLETE_400.startswith(received):
+            return (
+                f"the bytes read are neither the documented refusal nor a prefix of it "
+                f"({received[:120]!r}); another status line or a body is a different "
+                f"finding, not a variation on this one"
+            )
+        if error is not None and not _peer_went_away(error):
+            return (
+                f"part of the refusal was read, but the exchange ended with "
+                f"{type(error).__name__}, which is neither a clean close nor the peer "
+                f"going away"
+            )
+        return None
+    if _peer_went_away(error):
+        return None
+    return (
+        f"nothing was read and the connection neither reset nor aborted "
+        f"(error={type(error).__name__ if error else None}); a timeout is a hang, "
+        f"not a refusal"
+    )
+
+
 def test_the_400_verdict_rejects_a_truncated_or_absent_response():
     """The verdict, on its own: four shapes a substring test would accept.
 
@@ -190,6 +239,32 @@ def test_the_400_verdict_rejects_a_truncated_or_absent_response():
             assert missing is None, (payload, missing)
         else:
             assert missing is not None and expected_fragment in missing, (payload, missing)
+
+
+def test_the_refusal_verdict_rejects_a_wrong_answer():
+    """The narrowed verdict, on its own: the shapes that must not pass as "refused".
+
+    The three live tests below use this verdict, so it needs its own red side --
+    otherwise widening it (to "any bytes at all", or to "any exception at all") would
+    quietly turn them green against a server that answered ``200`` or hung.
+    """
+    cases = [
+        # received, error, is-a-refusal
+        (COMPLETE_400, None, True),
+        (COMPLETE_400[:13], None, True),  # cut mid-header, but still only a prefix
+        (COMPLETE_400, ConnectionResetError(), True),
+        (b"", ConnectionResetError(), True),
+        (b"", None, False),  # read nothing, nothing failed: the socket just closed
+        (b"", TimeoutError(), False),  # no answer and no close: a hang
+        (COMPLETE_400, TimeoutError(), False),  # an answer, then a hang
+        (b"HTTP/1.1 200 OK\r\n\r\n", None, False),  # the one outcome that matters most
+        (b"HTTP/1.1 413 Content Too Large\r\n\r\n", None, False),
+        (COMPLETE_400 + b"body", None, False),  # the documented 400 carries no body
+    ]
+
+    for payload, error, expected in cases:
+        reason = _refusal_reason(payload, error)
+        assert (reason is None) is expected, (payload, error, reason)
 
 
 @pytest.fixture(scope="module")
@@ -241,36 +316,37 @@ def test_a_client_that_finished_writing_can_read_the_400(oversized_tornado_serve
     assert body == b"", f"the documented 400 carries an empty body, got {body!r}"
 
 
-def test_a_client_still_writing_is_left_without_a_status_line(oversized_tornado_server):
+def test_a_client_still_writing_is_refused_mid_upload(oversized_tornado_server):
     """The same declared oversize, but refused while the client is still sending.
 
-    This is the row that makes "did you get a 400?" an unusable oversize signal:
-    the refusal lands mid-upload, the socket is closed underneath the client, and
-    no status line is ever readable.
+    This is the shape that makes "did you get a 400?" an unusable oversize signal --
+    not because the status line is always absent, which is what this test used to
+    assert and what a Linux runner disproved by delivering a complete ``400`` for
+    exactly this shape, but because whether it survives the close is decided by the
+    socket layer and by the client's read timing rather than by anything this
+    framework controls. What is pinned here is the part that does not move: the
+    upload is refused either way, and never answered successfully.
     """
     port = oversized_tornado_server
     pieces = [b"x" * CEILING for _ in range(64)]
     received, error = _exchange(port, _declared_headers(port, CEILING * 64), pieces, delay=0.01)
 
-    assert b"HTTP/1.1" not in received, (
-        f"a status line was readable while the client was still writing "
-        f"({received[:120]!r}); the page says this case carries none"
-    )
-    assert _peer_went_away(error), (
-        f"expected the connection to be reset or aborted, got "
-        f"{type(error).__name__ if error else None} (received={received[:120]!r}); a "
-        "socket timeout is a hang, not this outcome"
+    reason = _refusal_reason(received, error)
+    assert reason is None, (
+        f"a refusal that landed mid-upload did not look like one: {reason} "
+        f"(received={received[:120]!r}, error={error!r})"
     )
 
 
-def test_a_client_that_reads_late_loses_the_status_line(oversized_tornado_server):
-    """The refusal is written, and then taken away by the reset before it is read.
+def test_a_client_that_reads_late_is_still_refused(oversized_tornado_server):
+    """The refusal is written, and may be taken away by the reset before it is read.
 
-    This is the least intuitive of the shapes: the client has finished writing, the
-    server answered, and the answer is still gone. Measured 13 times out of 13 with a
-    20 ms pause between the last write and the first read, so "I finished sending, so
-    I will see the status" is not a rule -- it is a race the client usually wins by
-    reading immediately.
+    The least intuitive of the shapes, and the one whose name had to change: on the
+    machine this was written on, a 20 ms pause between the last write and the first
+    read lost the answer 13 times out of 13. On a Linux runner the same pause kept
+    it. So "I finished sending, so I will see the status" is not a rule and "pause,
+    so I will not" is not one either -- the pause is a lever on a race, not a switch.
+    What is asserted is the invariant the race cannot move: the upload is refused.
     """
     port = oversized_tornado_server
     received, error = _exchange(
@@ -280,14 +356,10 @@ def test_a_client_that_reads_late_loses_the_status_line(oversized_tornado_server
         read_delay=0.02,
     )
 
-    assert b"HTTP/1.1" not in received, (
-        f"a status line survived a 20 ms delay before reading ({received[:120]!r}); the "
-        "page says this case carries none"
-    )
-    assert _peer_went_away(error), (
-        f"expected the connection to be reset or aborted, got "
-        f"{type(error).__name__ if error else None} (received={received[:120]!r}); a "
-        "socket timeout is a hang, not this outcome"
+    reason = _refusal_reason(received, error)
+    assert reason is None, (
+        f"a refusal read 20 ms late did not look like one: {reason} "
+        f"(received={received[:120]!r}, error={error!r})"
     )
 
 
@@ -304,37 +376,35 @@ def test_a_very_large_single_write_is_a_race(oversized_tornado_server):
     port = oversized_tornado_server
     received, error = _exchange(port, _declared_headers(port, CEILING * 4096), [b"x" * (CEILING * 4096)])
 
-    if received:
-        complete, missing = _complete_400(received)
-        assert complete, (
-            f"a 4 MiB one-write upload produced a response that is not a complete 400: "
-            f"{missing}"
-        )
-        _, _, body = received.partition(b"\r\n\r\n")
-        assert body == b"", f"the 400 carries an empty body, got {body!r}"
-    else:
-        assert _peer_went_away(error), (
-            f"nothing was read and the connection did not reset or abort (error={error!r}); "
-            "the page describes this outcome as a reset"
-        )
+    # The strict "a complete 400 arrives" claim is pinned by
+    # ``test_a_client_that_finished_writing_can_read_the_400``, on the shape where it
+    # holds on every host measured. Here the point is the *shape* of either outcome,
+    # so a truncated read counts as the answer being cut rather than as a wrong answer.
+    reason = _refusal_reason(received, error)
+    assert reason is None, (
+        f"a 4 MiB one-write upload did not look refused: {reason} "
+        f"(received={received[:120]!r}, error={error!r})"
+    )
 
 
-def test_a_chunked_upload_is_aborted_without_a_status_line(oversized_tornado_server):
-    """No declaration to read, so the refusal lands mid-upload."""
+def test_a_chunked_upload_is_refused_mid_stream(oversized_tornado_server):
+    """No declaration to read, so the refusal lands mid-upload.
+
+    The ceiling is crossed while the body is still streaming, which is why this one
+    has no chance to be answered politely -- and on Windows it was not. On Linux the
+    ``400`` still arrived, so the assertion is again the shape of the refusal rather
+    than the presence or absence of a status line.
+    """
     port = oversized_tornado_server
     half = CEILING // 2 + CEILING // 4  # 1.5x over the ceiling, in two chunks
     pieces = [f"{half:x}\r\n".encode("latin-1") + b"x" * half + b"\r\n" for _ in range(2)]
     pieces.append(b"0\r\n\r\n")
     received, error = _exchange(port, _chunked_headers(port), pieces, delay=0.01)
 
-    assert b"HTTP/1.1" not in received, (
-        f"a status line was readable for a chunked upload 1.5x over the ceiling "
-        f"({received[:120]!r}); the page says this case carries none"
-    )
-    assert _peer_went_away(error), (
-        f"expected the connection to be reset or aborted, got "
-        f"{type(error).__name__ if error else None} (received={received[:120]!r}); a "
-        "socket timeout is a hang, not this outcome"
+    reason = _refusal_reason(received, error)
+    assert reason is None, (
+        f"a chunked upload 1.5x over the ceiling did not look refused: {reason} "
+        f"(received={received[:120]!r}, error={error!r})"
     )
 
 def test_the_verdict_rejects_a_timeout():

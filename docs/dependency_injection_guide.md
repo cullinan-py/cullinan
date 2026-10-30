@@ -15,8 +15,8 @@ pr_links: []
 
 # Cullinan Dependency Injection Guide
 
-> **Version**: 0.96a11
-> **Last Updated**: 2026-10-29
+> **Version**: 0.96a12
+> **Last Updated**: 2026-10-31
 > **Status**: Updated
 
 ## Overview
