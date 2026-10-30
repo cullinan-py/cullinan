@@ -252,6 +252,35 @@ def test_the_key_path_reaches_a_nested_value(tmp_path):
     assert [hit["key_path"] for hit in payload_of(result)["hits"]] == ["discord.token"]
 
 
+#: The three ways a plaintext configuration value shows up, and why each has to be
+#: caught by a *different* rule. A checker that only passes the first one is a
+#: checker that recognises a value by what it is called, which is the assumption
+#: behind most leaked credentials.
+PLAINTEXT_SHAPES = (
+    # A sensitive key and a value that looks like a token: the ordinary case.
+    ('{"token": "sk-live-DEADBEEF"}', "token", "plaintext-under-sensitive-key"),
+    # An innocent key and a value that is a credential by its shape. Nothing about
+    # the name gives it away, so this one rests entirely on the value patterns.
+    ('{"note": "AKIAIOSFODNN7EXAMPLE"}', "note", "value-pattern:aws-access-key-id"),
+    # A sensitive key and a value that looks like nothing in particular. This is
+    # the case an entropy score would miss and a value pattern would miss, and it
+    # is why the key-name rule exists at all.
+    ('{"password": "hunter2"}', "password", "plaintext-under-sensitive-key"),
+)
+
+
+@pytest.mark.parametrize("body,key_path,reason", PLAINTEXT_SHAPES)
+def test_each_plaintext_shape_is_caught_by_the_rule_that_can_see_it(tmp_path, body, key_path, reason):
+    target = write(tmp_path, "application.json", body)
+    result = run_checker("--paths", str(target), "--json")
+
+    assert result.returncode == 1, "{} was not reported".format(body)
+    hits = payload_of(result)["hits"]
+    assert [(hit["key_path"], hit["reason"]) for hit in hits] == [(key_path, reason)], (
+        "{} was reported, but not by the rule that can see it".format(body)
+    )
+
+
 def test_a_credential_shape_is_caught_whatever_the_key_is_called(tmp_path):
     """A value pattern is evidence on its own; the key name is only a hint."""
     target = write(tmp_path, "application.json", '{"x": "AKIAIOSFODNN7EXAMPLE"}')
