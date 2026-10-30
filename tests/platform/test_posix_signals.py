@@ -35,6 +35,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PORT = 4082  # examples/graceful_shutdown pins this in its @configure
 ENGINE_TIMEOUT = 30
 
+#: A request to loopback must not go through an HTTP proxy. ``urllib`` reads
+#: ``HTTP_PROXY``/``http_proxy`` from the environment and routes ``127.0.0.1`` through it
+#: unless ``NO_PROXY`` says otherwise, so a readiness probe would be answered by the
+#: proxy -- 502 when it cannot reach the server being probed -- instead of by the server.
+#: The same hole made ``tests/fixtures/programmatic_shutdown_app.py`` red under load.
+_LOOPBACK_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32",
     reason="SIGTERM cannot be delivered to another process on Windows; SIGBREAK covers the same path",
@@ -45,7 +52,7 @@ def _wait_ready(deadline: float) -> bool:
     url = f"http://127.0.0.1:{PORT}/ops/ready"
     while time.monotonic() < deadline:
         try:
-            with urllib.request.urlopen(url, timeout=1) as response:
+            with _LOOPBACK_OPENER.open(url, timeout=1) as response:
                 if response.status == 200 and json.loads(response.read()).get("ready") is True:
                     return True
         except (urllib.error.URLError, OSError, ValueError):

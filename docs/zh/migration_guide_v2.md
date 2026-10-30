@@ -10,7 +10,7 @@ translation_pair: "docs/migration_guide_v2.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-28"
+last_updated: "2026-10-31"
 pr_links: []
 
 
@@ -305,7 +305,7 @@ class ChatHandler:
 
 `cullinan.web.params` 系统（`Path`、`Query`、`Body`、`Header`）不变，在 v0.93 中工作方式完全相同。参数现在由 `Dispatcher` 而非 Tornado handler 解析。
 
-### 10. 跨这条线回退
+### 10. 跨这条线回退 {#10-rolling-back-across-this-line}
 
 **改 pin 不等于完成回退。** 0.96 的 alpha 线内新增了两个 `configure()` 关键字参数，用到它们的应用无法只靠改 pin 回到更早的 alpha：
 
@@ -316,6 +316,8 @@ class ChatHandler:
 
 在 `0.96a5` 及更早，`configure()` 不接受这两个名字，调用会在**导入期**直接失败：`TypeError: configure() got an unexpected keyword argument ...`。也就是说它们是**被拒绝**、不是被静默忽略 —— 不会有东西悄悄消失 —— 但回退单元因此是「**pin 加配置**」，不是「pin」。
 
+这条拒绝现在也说清了大概想写的是哪个选项、清单在哪里：未知关键字会点名该参数、给出**装上的那一版确实接受**的最接近的名字，并指到[代码里的选项](configuration.md#options-in-code)。这在一次回退里值一个"少猜一次"：拼错一个选项会被读成拼写错误，而不是"这一版没有这个功能"。
+
 如果希望回退保持便宜，就别问 pin 是哪个数字，而是问**装上的那一版接受什么**：
 
 ```python
@@ -325,6 +327,18 @@ from cullinan import configure
 
 print(sorted(inspect.signature(configure).parameters))
 ```
+
+这能用，但它读的是一个**实现细节**：签名是 `configure()` 怎么写出来的，不是承诺。同一个问题有受支持的问法，而且它还能让**调用本身**在各版本间保持不变：
+
+```python
+from cullinan import configure
+from cullinan.support.config import configure_options
+
+wanted = {"server_port": 9090, "drain_timeout": 15.0}
+configure(**{k: v for k, v in wanted.items() if k in configure_options()})
+```
+
+一次调用、设置只放一处，而**装上的那一版没有的选项会被丢掉**，而不是在导入期炸掉 —— 这才让「只改 pin」成为回退单元。`configure_options()` 读的就是拒绝信息读的那份签名，两者不会各说一套。
 
 把配置按版本集中放一处，只传这份清单里存在的名字，那么换 pin 就是全部改动。反过来做 —— 一个 `@configure(...)` 同时写两个关键字 —— 会把回退变成一次改代码，而"改代码"正是回退要避免的事。
 

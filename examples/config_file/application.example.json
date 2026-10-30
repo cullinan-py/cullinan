@@ -1,0 +1,9 @@
+{
+  "server_port": 8080,
+  "server_host": "0.0.0.0",
+  "verbose": false,
+  "discord": {
+    "token": "${DISCORD_TOKEN}",
+    "fallback_channel": "${DEFAULT_CHANNEL:general}"
+  }
+}

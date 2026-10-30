@@ -10,7 +10,7 @@ translation_pair: "docs/zh/deployment.md"
 related_tests: ["tests/integration/test_deployment_guide_symbols.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/graceful_shutdown"]
 estimate_pd: 2.0
-last_updated: "2026-10-27"
+last_updated: "2026-10-31"
 pr_links: []
 
 # Deploying to Production
@@ -63,6 +63,10 @@ def main(): ...
 `server_engine` accepts `"auto"`, `"tornado"` or `"asgi"`. The environment
 variable `CULLINAN_ENGINE` does the same thing, which is usually the better
 choice in a container: the same image can run either backend without a rebuild.
+`SERVER_ENGINE` is **not** a variable this framework reads, even though
+`SERVER_HOST` and `SERVER_PORT` are — see
+[configuration](configuration.md#precedence). Set the wrong one and you get the
+engine `auto` picks, silently.
 
 ## The shutdown sequence
 
@@ -129,6 +133,43 @@ Three things worth knowing about the bound:
    synchronous form refuses to block that loop, logs a warning, returns `False`,
    **and still closes the container** — so `False` means "did not wait", not
    "nothing happened".
+
+### Stopping from your own code
+
+A signal is not always something you can send. On Windows `terminate()` is
+`TerminateProcess`: the process disappears without draining, and `SIGBREAK` only
+reaches a process that owns a console. A supervisor, an admin route, or a test
+still needs a way to ask a **running** server to stop — and `run()` blocks, so the
+object to ask is not the one you are holding.
+
+```python
+from cullinan.application import Application
+
+app = Application.current()          # reachable while run() is blocking
+if app is not None:
+    asked = app.request_shutdown()   # True: a server was asked to drain
+```
+
+| Value | Meaning |
+|---|---|
+| `True` | a running server was asked to stop; the sequence above begins |
+| `False` | there was nothing to ask — the server had not started or had already stopped |
+
+`request_shutdown()` runs the **same** drain a signal runs, so there is no second
+shutdown path to keep correct. It is safe from any thread: the request is
+scheduled onto the loop that owns the server (a threaded callback on Tornado,
+`should_exit` on uvicorn), which is also why it works while the loop is idle. It
+never raises to say "nothing to do" — `False` is the answer, because a
+supervisor's exit path must not turn a finished shutdown into a crash.
+
+Asking twice is not an error, and it does not drain twice: the second call still
+answers `True` (the server has been asked to stop, and still will), while the
+announcement and the wait behind it happen once. `False` keeps its single
+meaning — there was nothing to ask.
+
+The runnable version is `python -m examples.graceful_shutdown.stop_after`, which
+waits until the application is serving and then asks it to stop from a thread
+that is not serving requests.
 
 ## Probes: readiness and liveness are different questions
 
@@ -259,26 +300,65 @@ layer refuses, and that differs by engine:
 | Tornado | `400 Bad Request` with an empty body, raised by Tornado's protocol layer (`max_body_size`) before the framework sees the request |
 
 That table is the server's answer. What the **client** sees is a different
-question, and on Tornado it depends on whether the client is still writing when
-the server refuses:
+question, and there are two ways to lose the answer — not one:
 
 | Client behaviour | What it observes |
 |---|---|
-| Sends the whole body in one write, moderately over the ceiling | `400` with an empty body |
-| Sends the whole body in one write, far over the ceiling | the connection is reset (`ConnectionResetError`; WSAECONNRESET on Windows) — **no status line** |
-| Streams it in chunks (`Transfer-Encoding: chunked`) | the connection is aborted — **no status line** |
+| Finished writing, **and reads the response before the reset is processed** | `400` with an empty body |
+| Finished writing, but reads late — 20 ms is enough to be on the wrong side of it | either the `400`, or the connection reset (`ConnectionResetError`; WSAECONNRESET on Windows) with no status line |
+| Still writing when the refusal landed | either the `400`, or the connection reset or aborted (`ConnectionResetError` / `ConnectionAbortedError`) with no status line |
+| Streams it in chunks (`Transfer-Encoding: chunked`) | either the `400`, or the connection aborted, with no status line |
+| Sends a body far larger than the connection can buffer, in one write | a race: either the `400` is readable, or the reset arrives first — no status line |
 
-The dividing line is not the ratio but the race: a client that has finished
-writing can still read the `400`, one that has not gets its socket closed
-underneath it. Measured against a 1 KiB ceiling: one-shot bodies up to about
-16× over still returned `400`; a body 64× over, and a chunked upload only 1.5×
-over, both ended in a reset.
+Whether the status line survives is **not** decided by the shape alone. The same
+three rows that lost it on the machine below delivered a complete `400` on a Linux
+runner, so the second column describes two outcomes, not one.
+
+Counted on Windows against a 1 KiB ceiling (`n` = attempts, not an estimate):
+
+| Shape | `400` readable | No status line | n |
+|---|---|---|---|
+| 2 KiB, one write | 13 | 0 | 13 |
+| 64 KiB, one write, read immediately | 13 | 0 | 13 |
+| 64 KiB, one write, read after 20 ms | 0 | 13 | 13 |
+| 64 KiB, 64 pieces of 1 KiB, 10 ms apart | 0 | 13 | 13 |
+| chunked, 1.5× over the ceiling, two chunks | 0 | 13 | 13 |
+| 4 MiB, one write | 4 | 9 | 13 |
+| 400 KiB, one write, against a 256 KiB ceiling | 9 | 1 | 10 |
+
+A second run of the same three shapes on a Linux runner (`ubuntu-latest`) read a
+complete `400` in every one of them — one attempt per shape, so it establishes that
+the outcome is not a property of the shape, not a rate in the other direction. Both
+columns of the table above are one host's sample; neither is the specification.
+
+Two ways to lose the status line, and neither is "the body was too far over the ceiling":
+**the write failed, so the client never got to read**, or **the reset was processed before the client read** —
+whether it paused after writing, or its own writes kept the socket busy until then. The second is the
+surprising one: the client is not slow, `send` reports success, and the answer is gone anyway, because the
+server's refusal and the client's write cross on the wire. Even the "reads the response before the reset is
+processed" row is a race: the `400` is delivered, and reading it is what turns it into something you can see.
+
+What survives from the older rule is the part the counts support: **the dividing
+line is not the ratio, it is timing.** The counts are one machine's sample, not a rate:
+a second measurement of the same 4 MiB shape read one of thirteen; and an independent
+measurement by a downstream consumer — another machine, another client stack, the same
+release — saw that shape resolve the other way: the refusal was not readable there at
+all. Both are true, and neither is the better measurement. That is what a race looks
+like when two people measure it: the outcome is not a property of the shape, so a table
+of counts records what happened on one host, not what will happen on yours. Which is
+also why no ratio on this page should be read as a threshold.
+
+Those shapes run as a test against a live server
+(`tests/integration/test_tornado_client_view_of_an_oversized_body.py`), because
+"measured" written in a page is a claim, and a claim with no executor is what
+drifts.
 
 Two consequences for callers:
 
-- **Do not use "received a `400`" as the oversize signal.** The reliable signal
-  is that the request did not complete normally; on an upload path, treat a
-  reset or an abort as a possible oversized body.
+- **Do not use "received a `400`" as the oversize signal** — and do not use "no
+  status line" as one either. The reliable signal is that the request did not
+  complete normally; on an upload path, treat a reset or an abort as a possible
+  oversized body.
 - **Measure the payload before sending it** when the size is yours to know. A
   server that has already refused cannot give you a status code it never sends.
 
@@ -289,6 +369,51 @@ production.
 Set it if the deployment accepts uploads from anywhere: without a ceiling, a
 1 MiB body posted to a path that does not exist is read in full before the
 `404`.
+
+## TLS
+
+The application can terminate TLS itself; the four options are the same on both
+engines, so turning it on is not a backend decision:
+
+```python
+@configure(
+    user_packages=["your_app"],
+    ssl_certfile="/etc/tls/server.crt",
+    ssl_keyfile="/etc/tls/server.key",
+    ssl_client_ca="/etc/tls/ca.crt",      # optional: asks for a client certificate
+    ssl_verify_client=True,               # default; see below
+)
+@application
+def main(): ...
+```
+
+| Option | Meaning |
+|---|---|
+| `ssl_certfile` | the server certificate, PEM |
+| `ssl_keyfile` | its private key — **both or neither** |
+| `ssl_client_ca` | a CA bundle; giving it means client certificates are requested |
+| `ssl_verify_client` | whether those certificates are checked (`True` by default) |
+
+**Half a key pair is a start-up error, not a fallback to HTTP.** A listener that was
+asked to be encrypted and quietly served plaintext is worse than one that refuses to
+start: the failure would look like success until someone read the scheme.
+
+**`ssl_verify_client=False` requests a certificate and accepts any.** It exists for a
+migration where the client population cannot all be issued certificates at once. It is
+not recommended, it is not a substitute for `ssl_client_ca`, and it should not survive
+the migration.
+
+Terminating at a proxy instead is a normal choice and needs none of this: the framework
+then sees plain HTTP from a trusted hop, and the forwarded headers section above is the
+part that matters.
+
+TLS in the application is **not available with `asgi_server="hypercorn"`** in this
+version: that branch does not pass the options to the server, so the combination is
+refused at start-up rather than allowed to serve plaintext from a listener configured
+for TLS. Use `asgi_server="uvicorn"`, or terminate at a proxy.
+
+An example that starts with these options, from files or from the environment, is
+`examples/tls_termination/`.
 
 ## Static files
 

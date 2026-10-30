@@ -10,13 +10,13 @@ translation_pair: "docs/architecture.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-29"
+last_updated: "2026-10-31"
 pr_links: []
 
 # Cullinan 框架架构
 
-> **版本**：0.96a10
-> **最后更新**：2026-10-29
+> **版本**：0.96a12
+> **最后更新**：2026-10-31
 > **状态**：已更新
 
 > **这页用于解释框架结构，不是默认启动教程。**  

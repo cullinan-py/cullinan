@@ -28,6 +28,7 @@ from cullinan.application.model import (
 from cullinan.web.gateway.dispatcher import Dispatcher
 from cullinan.web.gateway.web_core import WebRequest, WebResponse
 from .base import WebAdapter, resolve_max_request_body_bytes
+from .tls import resolve_tls_settings, uvicorn_ssl_options
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +227,12 @@ class ASGIAdapter(WebAdapter):
                 if key not in ('server', 'log_level', 'timeout_graceful_shutdown')
             }
             config_kwargs.setdefault('timeout_graceful_shutdown', drain_timeout)
+            # TLS is resolved here, not in ``run()``'s caller: a half-configured key
+            # pair must stop the process before uvicorn starts listening, and the
+            # configuration file can set these without going through ``configure()``.
+            tls_settings = resolve_tls_settings()
+            if tls_settings is not None:
+                config_kwargs.update(uvicorn_ssl_options(tls_settings))
             config = uvicorn.Config(
                 self._asgi_app,
                 host=host,
@@ -233,15 +240,56 @@ class ASGIAdapter(WebAdapter):
                 log_level=kwargs.get('log_level', 'info'),
                 **config_kwargs,
             )
+            server_instance = _CullinanUvicornServer(config)
+
+            def _request_shutdown() -> bool:
+                """Ask uvicorn to stop, the same way a signal does.
+
+                Two steps, in this order and for the same reason as the signal
+                path: announce the drain first, so the readiness predicate has
+                already flipped when the next request arrives, then set
+                ``should_exit``. That attribute is polled by uvicorn's main loop,
+                so setting it from another thread is the supported request to
+                stop -- there is no async entry point an outside caller could
+                await.
+                """
+                if not self._claim_shutdown_request():
+                    # Already announced and already asked: repeating either would
+                    # announce the drain twice and flip ``should_exit`` again for
+                    # no one's benefit. The answer stays True -- the server has
+                    # been asked to stop.
+                    return True
+                _begin_draining_for_active_application()
+                server_instance.should_exit = True
+                return True
+
+            self._register_shutdown_requester(_request_shutdown)
             try:
-                _CullinanUvicornServer(config).run()
+                server_instance.run()
             finally:
+                self._register_shutdown_requester(None)
                 # The drain is over (or was abandoned); make the application say
                 # so. Without this the process exits while ``phase`` still reads
                 # "draining" -- a state nobody can observe afterwards except in a
                 # report, which is exactly how it stayed wrong for a release.
                 _finalize_draining_for_active_application()
         elif server == 'hypercorn':
+            # Refused rather than ignored. The hypercorn branch does not take the TLS
+            # options -- wiring them would be an untested path, and *not* wiring them
+            # would leave an application that configured certificates serving plain
+            # HTTP: the listener would look encrypted to whoever read the config and
+            # be plaintext on the wire. That is the failure mode this release exists
+            # to remove, so the combination stops here.
+            if resolve_tls_settings() is not None:
+                raise ValueError(
+                    "TLS in the application is not supported with asgi_server='hypercorn' "
+                    "yet: this branch does not pass ssl_certfile/ssl_keyfile/ssl_client_ca "
+                    "to hypercorn, and starting anyway would serve plain HTTP from a "
+                    "listener configured for TLS. Two ways forward: set "
+                    "asgi_server='uvicorn' (which does support it), or terminate TLS at a "
+                    "reverse proxy and leave these options unset. This is a known "
+                    "limitation of this version, not a mistake in your configuration."
+                )
             try:
                 from hypercorn.config import Config
                 from hypercorn.asyncio import serve
@@ -284,6 +332,28 @@ async def _send_error_body(
     await send({'type': 'http.response.body', 'body': body})
 
 
+def _declared_content_length(scope: Scope) -> Optional[int]:
+    """The body size the request declares, when it declares one.
+
+    ``Content-Length`` is the client saying how much it is about to send, and it
+    arrives with the headers -- before a single byte of the body. That is the
+    whole reason this exists: a body that has not started arriving yet can still
+    be refused, which is the difference between an answer and a wait. Returns
+    ``None`` for a chunked request (no declaration) and for a value that cannot be
+    read as a number, because neither is evidence of an oversize body.
+    """
+    for name, value in scope.get('headers') or []:
+        raw_name = name.encode('latin-1') if isinstance(name, str) else name
+        if raw_name.lower() != b'content-length':
+            continue
+        raw_value = value.encode('latin-1') if isinstance(value, str) else value
+        try:
+            return int(raw_value.decode('latin-1').strip())
+        except (UnicodeDecodeError, ValueError):
+            return None
+    return None
+
+
 async def _read_body(receive: Receive, limit: Optional[int]) -> tuple[bytes, bool]:
     """Read the request body, stopping once ``limit`` is exceeded.
 
@@ -321,8 +391,26 @@ async def _handle_http(
         if runtime is not None:
             runtime.begin_request()
         binding = bind_runtime_request_context(runtime)
-        # 1. Read full body (bounded, if a bound is configured)
+        # 1. Refuse a declared oversize body before reading it.
+        #
+        # The ceiling exists so a body nobody wants is not paid for. Reading until
+        # the limit is crossed answered a *slow* client only after it had finished
+        # sending -- which for a client that never finishes is no answer at all.
+        # ``Content-Length`` is known up front, so the request can be answered at
+        # once. A chunked request declares nothing; it still takes the bounded
+        # read below, because there is no earlier point at which its size is known.
         limit = resolve_max_request_body_bytes()
+        declared_length = _declared_content_length(scope)
+        if limit is not None and declared_length is not None and declared_length > limit:
+            await _send_error_body(
+                send,
+                413,
+                b'{"error":"Payload Too Large","reason":"request body exceeded max_request_body_bytes"}',
+                extra_headers=[[b'connection', b'close']],
+            )
+            return
+
+        # 2. Read full body (bounded, if a bound is configured)
         body, too_large = await _read_body(receive, limit)
         if too_large:
             await _send_error_body(
@@ -333,15 +421,15 @@ async def _handle_http(
             )
             return
 
-        # 2. Build WebRequest from ASGI scope
+        # 3. Build WebRequest from ASGI scope
         request = await adapter.create_request_adapter().build_request(scope, body)
         if runtime is not None:
             request.attributes['runtime'] = runtime
 
-        # 3. Dispatch
+        # 4. Dispatch
         response = await adapter.dispatcher.dispatch(request)
 
-        # 4. Send response via ASGI
+        # 5. Send response via ASGI
         await adapter.create_response_writer().write_response(response, send)
 
     except Exception as exc:

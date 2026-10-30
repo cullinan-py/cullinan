@@ -9,8 +9,14 @@ The ceiling is opt-in (``@configure(max_request_body_bytes=...)``), because
 changing the default would break every existing upload; what is not optional is
 that once you ask for a ceiling, both engines stop reading at the limit. What the
 client sees differs: the ASGI adapter answers `413`, while Tornado refuses at its
-own protocol layer with `400` before the framework is involved — measured, not
-assumed.
+own protocol layer with `400` before the framework is involved.
+
+This file holds the unit-level wiring (the ceiling reaches the adapter, and it
+reaches Tornado's `HTTPServer`). What a *client* observes on Tornado -- including
+the cases where no status line arrives at all -- is measured against a live server
+in ``tests/integration/test_tornado_client_view_of_an_oversized_body.py``. The
+split is deliberate: "measured" belongs to the file that runs a socket, not to the
+one that asserts a keyword argument.
 """
 
 from __future__ import annotations
@@ -19,7 +25,7 @@ import asyncio
 
 import pytest
 
-from cullinan.transport.adapter.asgi_adapter import ASGIAdapter, _read_body
+from cullinan.transport.adapter.asgi_adapter import ASGIAdapter, _handle_http, _read_body
 from cullinan.web.gateway.dispatcher import Dispatcher
 
 
@@ -113,6 +119,148 @@ def test_the_configured_ceiling_must_be_a_positive_number():
 
     with pytest.raises(ValueError):
         configure(max_request_body_bytes=0)
+
+
+# ---------------------------------------------------------------------------
+# A declared size is refused before the body is read.
+#
+# What a client observes used to depend on how fast it sent: reading until the
+# limit was crossed answered a slow client only once it stopped writing, and a
+# client that never stops writing was never answered at all. `Content-Length`
+# arrives with the headers, so a body that declares itself too large can be
+# refused at the first byte -- the proof below is a `receive` that never returns:
+# if the implementation still reads, the case hangs instead of answering.
+# ---------------------------------------------------------------------------
+
+
+def _scope_with(*headers: tuple[bytes, bytes]) -> dict:
+    scope = _scope()
+    scope["headers"] = list(headers)
+    return scope
+
+
+async def _never_receives(counter: list) -> dict:
+    """A ``receive`` that records the call and then never returns.
+
+    Returning a body would let a reading implementation pass by accident; hanging
+    is the state the ceiling exists to prevent, so that is what it is modelled as.
+    """
+    counter.append(1)
+    await asyncio.Event().wait()
+    return {"body": b"", "more_body": False}
+
+
+def test_a_declared_oversize_body_is_refused_without_reading_it(monkeypatch):
+    from cullinan.support import config as config_module
+
+    previous = config_module.get_config().max_request_body_bytes
+    sent: list[dict] = []
+    receives: list[int] = []
+
+    async def send(message):
+        sent.append(message)
+
+    async def drive():
+        adapter = ASGIAdapter(Dispatcher())
+        await asyncio.wait_for(
+            _handle_http(
+                _scope_with((b"content-length", b"4096")),
+                lambda: _never_receives(receives),
+                send,
+                adapter,
+            ),
+            timeout=2.0,
+        )
+
+    try:
+        config_module.configure(max_request_body_bytes=8)
+        asyncio.run(drive())
+    finally:
+        config_module.get_config().max_request_body_bytes = previous
+
+    assert not receives, (
+        "the body was read even though Content-Length said it was over the ceiling; "
+        "a client that sends slowly would still have been left waiting"
+    )
+    assert sent and sent[0]["status"] == 413, f"expected an immediate 413, got {sent[:1]}"
+    pairs = [(name.decode().lower(), value.decode()) for name, value in sent[0]["headers"]]
+    lengths = [value for name, value in pairs if name == "content-length"]
+    assert lengths == [str(len(sent[1]["body"]))], (
+        f"the early 413 must carry exactly one Content-Length, got {lengths}"
+    )
+
+
+def test_a_declared_size_within_the_ceiling_is_still_read(monkeypatch):
+    from cullinan.support import config as config_module
+
+    previous = config_module.get_config().max_request_body_bytes
+    sent: list[dict] = []
+    receives: list[int] = []
+
+    async def send(message):
+        sent.append(message)
+
+    async def receive():
+        receives.append(1)
+        if len(receives) == 1:
+            return {"body": b"hello", "more_body": False}
+        return {"body": b"", "more_body": False}
+
+    async def drive():
+        adapter = ASGIAdapter(Dispatcher())
+        await _handle_http(_scope_with((b"content-length", b"5")), receive, send, adapter)
+
+    try:
+        config_module.configure(max_request_body_bytes=8)
+        asyncio.run(drive())
+    finally:
+        config_module.get_config().max_request_body_bytes = previous
+
+    assert receives, "a body inside the ceiling must still be read"
+    assert sent[0]["status"] != 413
+
+
+def test_a_chunked_request_is_stopped_when_the_received_size_crosses_the_ceiling(monkeypatch):
+    """No declaration, so the only evidence is the bytes themselves.
+
+    The behaviour here must not change: read until the limit is crossed, then
+    answer. A chunked body that declares nothing cannot be refused earlier without
+    guessing.
+    """
+    from cullinan.support import config as config_module
+
+    previous = config_module.get_config().max_request_body_bytes
+    sent: list[dict] = []
+
+    async def send(message):
+        sent.append(message)
+
+    async def drive():
+        adapter = ASGIAdapter(Dispatcher())
+        await _handle_http(
+            _scope_with((b"transfer-encoding", b"chunked")),
+            _messages(b"x" * 6, b"y" * 6),
+            send,
+            adapter,
+        )
+
+    try:
+        config_module.configure(max_request_body_bytes=8)
+        asyncio.run(drive())
+    finally:
+        config_module.get_config().max_request_body_bytes = previous
+
+    assert sent[0]["status"] == 413
+
+
+def test_a_content_length_that_is_not_a_number_is_not_evidence(monkeypatch):
+    """An unreadable declaration must not be treated as "over the ceiling"."""
+    from cullinan.transport.adapter.asgi_adapter import _declared_content_length
+
+    assert _declared_content_length(_scope_with((b"content-length", b"not-a-number"))) is None
+    assert _declared_content_length(_scope_with((b"content-length", b"12"))) == 12
+    assert _declared_content_length(_scope_with((b"transfer-encoding", b"chunked"))) is None
+    assert _declared_content_length(_scope()) is None
 
 
 def test_tornado_is_told_the_ceiling_so_it_can_stop_reading(monkeypatch):

@@ -50,6 +50,8 @@ explicitly.
 
 Exit code: 0 = PASS (git tag may proceed), 1 = FAIL (blocked).
 """
+from __future__ import annotations
+
 import argparse
 import re
 import subprocess

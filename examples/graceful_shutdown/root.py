@@ -13,11 +13,18 @@ already have somewhere to put it.
 """
 
 import asyncio
+import os
 
 from cullinan import application, configure
 from cullinan.application import Application
 from cullinan import controller
 from cullinan.web import get_api
+
+#: The bind port. 4082 is what the pages quote; ``GRACEFUL_SHUTDOWN_PORT`` lets a
+#: second instance -- or a test -- take a free one instead. A port written into the
+#: example but not overridable makes the example unusable on a machine where that
+#: number is taken, and makes its test unrunnable rather than red.
+PORT = int(os.environ.get("GRACEFUL_SHUTDOWN_PORT", "4082"))
 
 
 @controller(url="/ops")
@@ -51,7 +58,7 @@ class OpsController:
 
 @configure(
     user_packages=["examples.graceful_shutdown"],
-    server_port=4082,
+    server_port=PORT,
     # Deliberately shorter than /ops/slow (5s): the point of the example is to
     # watch the bound *do* something. With the 30s default the slow request
     # finishes inside the drain and the reader sees nothing but a 200.

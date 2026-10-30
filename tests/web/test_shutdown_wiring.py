@@ -135,6 +135,65 @@ def test_tornado_shutdown_uses_the_configured_bound(monkeypatch, stub_app):
     assert stub_app.context.calls == [("ashutdown", 12.5)]
 
 
+def test_the_shared_claim_lets_only_the_first_caller_schedule(stub_app):
+    """Both engines stand on the same guard, so it is asserted once on its own.
+
+    ``request_shutdown()`` is idempotent in what it *reports* and exactly once in
+    what it *does*: a repeat call answers ``True`` (the server has been asked) but
+    must not schedule the drain again.
+    """
+    adapter = TornadoAdapter(Dispatcher())
+
+    assert adapter._claim_shutdown_request() is True
+    assert adapter._claim_shutdown_request() is False, (
+        "the second caller claimed the drain again; it would run twice"
+    )
+
+    adapter._register_shutdown_requester(None)
+    assert adapter._claim_shutdown_request() is True, (
+        "withdrawing the hook must release the claim, or a second run() could never "
+        "ask for a shutdown"
+    )
+
+
+def test_the_asgi_hook_announces_the_drain_once(monkeypatch):
+    """The ASGI side of the same rule, on the side effect that is observable."""
+    import uvicorn
+
+    captured: dict = {}
+    announced: list[int] = []
+    monkeypatch.setattr(
+        asgi_module,
+        "_begin_draining_for_active_application",
+        lambda: announced.append(1),
+    )
+
+    class _FakeConfig:
+        def __init__(self, app, **kwargs):
+            captured["config"] = kwargs
+
+    class _FakeServer:
+        def __init__(self, config):
+            self.should_exit = False
+            captured["server"] = self
+
+        def run(self):
+            captured["requester"] = adapter._shutdown_requester
+
+    monkeypatch.setattr(uvicorn, "Config", _FakeConfig)
+    monkeypatch.setattr(uvicorn, "Server", _FakeServer)
+
+    adapter = ASGIAdapter(Dispatcher())
+    adapter.run(host="127.0.0.1", port=1)
+
+    requester = captured.get("requester")
+    assert requester is not None, "the hook was never published, so nothing could ask"
+    assert requester() is True
+    assert requester() is True, "a repeat call reports the same fact"
+    assert announced == [1], f"the drain was announced {len(announced)} times"
+    assert captured["server"].should_exit is True
+
+
 def test_configure_drain_timeout_reaches_the_runtime_config():
     """The bound must be settable from the same surface as the port and engine."""
     from cullinan.application.model import _clone_runtime_config

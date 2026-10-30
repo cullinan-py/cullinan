@@ -30,7 +30,8 @@ Declare business components with decorators — there is no app object to wire b
 ```python
 from cullinan import application, configure
 from cullinan.core import service
-from cullinan.web import controller, get_api
+from cullinan import controller
+from cullinan.web import get_api
 
 @service
 class GreetingService:
@@ -171,7 +172,7 @@ Then move into the documentation knowledge base:
 
 ## Current series
 
-**v0.96a10** is the current release of the 0.96 line; **v0.95** remains the current stable line, centered on the top-level `cullinan` API.
+**v0.96a12** is the current release of the 0.96 line; **v0.95** remains the current stable line, centered on the top-level `cullinan` API.
 The release history for earlier versions is recorded in [CHANGELOG.md](CHANGELOG.md).
 
 ---

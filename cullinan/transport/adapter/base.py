@@ -7,8 +7,9 @@ Author: plumeink
 """
 
 import logging
+import threading
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from .driver import DriverCapabilities, DriverRequestAdapter, DriverResponseWriter, WebDriver
 from cullinan.web.gateway.dispatcher import Dispatcher
@@ -52,6 +53,70 @@ class WebAdapter(WebDriver, ABC):
     def __init__(self, dispatcher: Dispatcher, runtime: Optional[Any] = None) -> None:
         super().__init__(runtime=runtime)
         self._dispatcher = dispatcher
+        self._shutdown_requester: Optional[Callable[[], bool]] = None
+        self._shutdown_claim_lock = threading.Lock()
+        self._shutdown_claimed = False
+
+    def _claim_shutdown_request(self) -> bool:
+        """Claim the right to schedule the drain; ``True`` only for the first caller.
+
+        A second ``request_shutdown()`` has nothing new to ask for: the drain is
+        already scheduled, or already running. Scheduling it twice would run
+        ``_begin_draining()`` and the drain wait twice, which happens to be
+        survivable today and is not a property anyone checked -- "it did not
+        explode" is not the same answer as "it happened once".
+
+        What the caller is told does **not** change: the second call still answers
+        ``True``, because "this server has been asked to stop" remains true, and
+        ``False`` is reserved for "there is nothing to ask" -- the answer a
+        supervisor acts on after the process is gone.
+        """
+        with self._shutdown_claim_lock:
+            if self._shutdown_claimed:
+                return False
+            self._shutdown_claimed = True
+            return True
+
+    def _register_shutdown_requester(self, requester: Optional[Callable[[], bool]]) -> None:
+        """Publish (or withdraw) this engine's programmatic shutdown hook.
+
+        Called from ``run()``: before the blocking call it publishes the hook,
+        after it returns it withdraws it, so "is a server running?" has one
+        answer that the adapter itself maintains. The hook is also registered on
+        the runtime, which is what ``Application.request_shutdown()`` reaches --
+        a caller asking an application to stop does not hold the adapter.
+
+        Withdrawing also releases the drain claim, so a second ``run()`` on the
+        same adapter can ask for a shutdown of its own.
+        """
+        self._shutdown_requester = requester
+        if requester is None:
+            with self._shutdown_claim_lock:
+                self._shutdown_claimed = False
+        runtime = self.runtime
+        setter = getattr(runtime, "set_shutdown_requester", None)
+        if setter is None:
+            return
+        try:
+            setter(requester)
+        except Exception:  # noqa: BLE001 - publishing must not stop a server
+            logger.debug("Could not publish the shutdown hook on the runtime", exc_info=True)
+
+    def request_shutdown(self) -> bool:
+        """Ask this adapter's running server to stop gracefully.
+
+        ``False`` when this adapter is not serving, so a supervisor can tell
+        "already stopped" from "asked". Safe to call from any thread, and from
+        inside the loop as well -- the concrete hook is what makes it so.
+        """
+        requester = self._shutdown_requester
+        if requester is None:
+            return False
+        try:
+            return bool(requester())
+        except Exception:  # noqa: BLE001 - a shutdown request must not raise
+            logger.exception("Could not ask the %s to shut down", self.get_engine_name())
+            return False
 
     @property
     def dispatcher(self) -> Dispatcher:

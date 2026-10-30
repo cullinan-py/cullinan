@@ -698,6 +698,35 @@ class Application:
         """
         self.context.add_draining_handler(handler)
 
+    def request_shutdown(self) -> bool:
+        """Ask the running server to stop gracefully, from any thread.
+
+        The drain itself has always been correct -- stop accepting, finish what
+        is in flight, then stop the loop -- but only a signal could reach it, and
+        ``run()`` blocks, so a caller that wanted to stop the server had no
+        object to call. This is that entry point: it delegates to the running
+        adapter, which schedules the drain on its own terms (a threaded callback
+        for Tornado, ``should_exit`` for uvicorn).
+
+        Call it from a supervision thread, an admin route, or a test. Calling it
+        from the loop thread is also safe; the drain is scheduled rather than run
+        inline.
+
+        Returns:
+            bool: ``True`` when a running server was asked to stop. ``False``
+            when there is nothing to ask -- no application installed, or the
+            server is not serving (yet, or any more). ``False`` is a fact a
+            supervisor can act on, so this never raises to report it.
+        """
+        runtime = self.runtime
+        if runtime is None:
+            return False
+        try:
+            return bool(runtime.web_runtime.request_shutdown())
+        except Exception:  # noqa: BLE001 - asking must not raise; see the return value
+            _logger.exception("Could not ask the running server to shut down")
+            return False
+
     @classmethod
     def current(cls, default: Optional["Application"] = None) -> Optional["Application"]:
         current = get_current_context()

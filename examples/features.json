@@ -169,6 +169,18 @@
         "profile"
       ],
       "docs": "configuration.md"
+    },
+    {
+      "feature": "Application-level TLS (server and client certificates)",
+      "example": "tls_termination",
+      "kind": "runnable",
+      "evidence": [
+        "ssl_certfile",
+        "ssl_keyfile",
+        "ssl_client_ca",
+        "ssl_verify_client"
+      ],
+      "docs": "deployment.md"
     }
   ]
 }

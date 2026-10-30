@@ -28,6 +28,7 @@ from cullinan.application.model import (
 from cullinan.web.gateway.dispatcher import Dispatcher
 from cullinan.web.gateway.web_core import WebRequest, WebResponse
 from .base import WebAdapter, resolve_max_request_body_bytes
+from .tls import resolve_tls_settings, tornado_ssl_options
 
 logger = logging.getLogger(__name__)
 
@@ -188,15 +189,22 @@ class _CullinanTornadoHandler(tornado.web.RequestHandler):
 
 
 def server_options() -> dict:
-    """Keyword arguments for ``HTTPServer``, given the configured ceiling.
+    """Keyword arguments for ``HTTPServer``, given the configured ceiling and TLS.
 
     ``max_body_size`` is the only thing that makes Tornado stop reading; without
     it the handler-level check can only reject a body that has already been
-    accepted in full. Exposed separately so the wiring is testable without
-    starting a server.
+    accepted in full. ``ssl_options`` is added when the configuration asks for
+    TLS -- see :mod:`cullinan.transport.adapter.tls` for the pairing rule.
+    Exposed separately so the wiring is testable without starting a server.
     """
+    options: dict = {}
     limit = resolve_max_request_body_bytes()
-    return {'max_body_size': limit} if limit is not None else {}
+    if limit is not None:
+        options['max_body_size'] = limit
+    tls_settings = resolve_tls_settings()
+    if tls_settings is not None:
+        options['ssl_options'] = tornado_ssl_options(tls_settings)
+    return options
 
 
 class TornadoAdapter(WebAdapter):
@@ -314,11 +322,33 @@ class TornadoAdapter(WebAdapter):
         # Signal handling
         self._install_signal_handlers()
 
+        loop = tornado.ioloop.IOLoop.current()
+
+        def _request_shutdown() -> bool:
+            """Hand the drain to the loop from whatever thread is asking.
+
+            ``add_callback`` is the thread-safe entry point here: since Tornado 5
+            it dispatches through ``call_soon_threadsafe`` when it is called from
+            another thread, and directly when it is called on the loop. (The
+            separate ``add_callback_threadsafe`` name was removed -- it is not
+            present in 6.5.10, which is what this project runs against.) That is
+            also why the drain itself is not called inline: it awaits, and a
+            caller outside the loop cannot.
+            """
+            if not self._claim_shutdown_request():
+                # Already scheduled: the answer is still True ("this server has
+                # been asked to stop"), but there is nothing new to schedule.
+                return True
+            loop.add_callback(self._shutdown_gracefully)
+            return True
+
+        self._register_shutdown_requester(_request_shutdown)
         try:
-            tornado.ioloop.IOLoop.current().start()
+            loop.start()
         except KeyboardInterrupt:
             logger.info('KeyboardInterrupt received, shutting down...')
         finally:
+            self._register_shutdown_requester(None)
             self._cleanup()
 
     async def shutdown(self) -> None:

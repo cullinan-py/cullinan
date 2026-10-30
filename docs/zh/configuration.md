@@ -10,7 +10,7 @@ translation_pair: "docs/configuration.md"
 related_tests: ["tests/core/test_config_file.py", "tests/integration/test_feature_example_matrix.py"]
 related_examples: ["examples/config_file"]
 estimate_pd: null
-last_updated: "2026-10-29"
+last_updated: "2026-10-31"
 
 # 配置
 
@@ -45,6 +45,39 @@ Cullinan 现在**没有任何运行时依赖**；JSON 由标准库读取。
 （或 `tomli`），YAML 需要 `pyyaml`。解析器缺失时会明确报出该装哪个包，而不是静默地什么都不加载。
 JSON 什么都不需要，所以它是永远可用的格式。
 
+## 哪些键可以写
+
+可写的键就是 `CullinanConfig` 的字段名，并且由该类**派生**而不是在这里再列一份——
+第二份清单就是第二个真相，某次着急加字段时它必然漂移。一共 32 个，分五组：
+
+| 组 | 键 |
+|---|---|
+| 发现与扫描 | `user_packages`、`project_root`、`exclude_packages`、`auto_scan`、`explicit_modules` |
+| 服务 | `server_engine`、`asgi_server`、`server_host`、`server_port`、`drain_timeout`、`max_request_body_bytes`、`ssl_certfile`、`ssl_keyfile`、`ssl_client_ca`、`ssl_verify_client` |
+| 路由 | `route_trailing_slash`、`route_case_sensitive`、`enable_middleware_pipeline` |
+| OpenAPI | `openapi_enabled`、`openapi_title`、`openapi_version`、`openapi_description` |
+| 运行期与装配 | `verbose`、`debug`、`startup_error_policy`、`static_files`、`middlewares`、`builtin_middleware`、`context_features`、`strict_assembly`、`strict_assembly_excludes` |
+
+`root_module` 是第 32 个字段，只为既有装饰器还能导入而保留；在启动时传它是错误，不是设置。
+
+集合之外的键在**加载时就会被报出来**——给出键名、它来自哪个文件，拼写接近时还会给出
+大概想写的那个名字——并且**不会被应用**。键不允许"被收下又不生效"：一个拼写错误和一个
+真正生效的开关，过去在行为被测出来之前长得一模一样，而 `openapi_enabled: false`
+正是处于那种状态的九个键之一。
+
+布尔值可以写成 `true`/`false`（JSON、TOML、YAML），也可以写成带引号的
+`1`/`0`、`yes`/`no`、`on`/`off`。其它写法会带着键名被拒绝——因为 `bool("false")` 是
+`True`，靠猜就会把开关重新变回静默的。
+
+`max_request_body_bytes` 的说明在[部署](deployment.md#request-body-size)页的「请求体大小」一节：上传越过上限时客户端
+看到什么，取决于引擎，**也**取决于服务端拒绝的那一刻客户端是否还在写，而其中一种结果
+**根本没有状态码**。
+
+拒绝本身发生在**收下请求体之前**，两个引擎都是。`Content-Length` 已经超过上限的请求会被
+直接回 `413`、**不读体** —— 发得慢的客户端、甚至永远发不完的客户端，都能立刻拿到回答。
+分块上传（chunked）不声明大小，所以在**已收字节越过上限**时停止。Tornado 在框架看到请求
+之前就由 `max_body_size` 拒绝；客户端能从那次拒绝里读到什么，才是取决于时机的那部分。
+
 ## 文件从哪里找
 
 按顺序：
@@ -59,7 +92,7 @@ JSON 什么都不需要，所以它是永远可用的格式。
 
 显式指定的路径不存在是错误。在有人指名了文件之后回落到默认值，会把一个拼写错误藏到上线。
 
-## 优先级
+## 优先级 {#precedence}
 
 从高到低：
 
@@ -67,15 +100,94 @@ JSON 什么都不需要，所以它是永远可用的格式。
 |---|---|---|
 | 1 | `run()` 的参数 | `run(main, port=9090)` |
 | 2 | 环境变量 | `SERVER_PORT=9090` |
-| 3 | `configure(...)` | `@configure(server_port=9090)` |
-| 4 | 配置文件 | `{"server_port": 9090}` |
+| 3 | 配置文件 | `{"server_port": 9090}` |
+| 4 | `configure(...)` | `@configure(server_port=9090)` |
 | 5 | 内置默认值 | `4080` |
 
-代码里写的值优先于文件，因为文件先被应用；环境变量优先于两者，因为它在取值时才读取。
+文件排在代码里声明的值之上，是因为它**后**被应用：一个二进制、几套部署，而部署自己
+说了算它的地址。这个顺序正是"改一个文件就能回退"成立的前提；本页早先的版本写的是相反
+的顺序——现在这张表与代码一致，并且**有测试钉住它**（`configure(server_port=A)` 加一个写着
+`B` 的文件 ⇒ 必须监听 `B`；没有文件 ⇒ 必须监听 `A`），所以本页无法漂回它从前描述的那个顺序。
+
+`run(...)` 对它接受的这两个名字优先于文件；环境变量在取值时才读，所以优先于两者。
+其余每个名字都只有一个决定者：有文件就用文件，没有就用代码里写的值，再没有就用默认值。
+
+框架读的环境变量是一份短清单 —— `CULLINAN_CONFIG`、`CULLINAN_PROFILE`、
+`CULLINAN_ENGINE`、`SERVER_HOST`、`SERVER_PORT` —— 而引擎并不是读者以为的那个：
+选引擎要用 **`CULLINAN_ENGINE`**。**`SERVER_ENGINE` 不是框架读的变量。**
+`SERVER_HOST` 与 `SERVER_PORT` 是，这正是这个错误如此自然的原因：设了
+`SERVER_ENGINE=tornado` 的部署拿到的是 `auto` 选出来的引擎，而且**完全不报错** ——
+于是两次本意是"对比引擎"的运行可能跑的是同一个引擎，而它们之间观察到的差异就成了想象出来的。
+
+启动时会打印**引擎**和**决定它的那一层**，所以这个问题由日志回答，不用去读源码：
+
+```
+└---Web engine: tornado (decided by: environment (CULLINAN_ENGINE))
+```
+
+另外三种可能的取值是 `run(engine='tornado')`、`configuration file (server_engine)`
+与 `built-in default (auto)`。
+
+## 代码里的选项 {#options-in-code}
+
+`@configure(...)` 有**自己**的一组选项 —— 也就是 `configure()` 的形参 —— 它和配置文件
+可写的键**不是同一份清单**。由此有两点：
+
+- `configure()` 没有的选项会被**拒绝**：`TypeError` 里点名这个参数、给出它**接受**的
+  最接近的名字，并指到本节。我们考虑过"接受并告警"，但否掉了：那样一个拼写错误会变成
+  一个看起来设了、实际什么都不改的开关 —— 而这正是本页反复在说的那类故障。异常类型仍是
+  `TypeError`，已经捕获它的调用方不受影响；
+- 同一个设置在两处都写时，**文件赢** —— 见[优先级](#precedence)。这才让"改一个文件就能回退"成立，
+  也正因为如此，跨越 0.96 线的回退单元是「**pin 加配置**」，不是「pin」
+  （见[迁移指南](migration_guide_v2.md#10-rolling-back-across-this-line)）。
+
+想知道**装上的那一版**到底接受哪些选项，直接问它：
+
+```python
+import inspect
+
+from cullinan import configure
+
+print(sorted(inspect.signature(configure).parameters))
+```
+
+错误信息读的就是同一处来源，所以两者不会各说一套。同一个问题还有**受支持的**问法 ——
+而且它能让同一份调用在两个装上的版本上都成立 —— 见[迁移指南](migration_guide_v2.md#10-rolling-back-across-this-line)
+里的 `configure_options()`。
 
 ## 别把密钥放进文件
 
-一个会被提交、或随二进制一起分发的文件，不是放密钥的地方。为此外提供两个能力，让文件不必承担这件事：
+一个会被提交、或随二进制一起分发的文件，不是放密钥的地方。**不要把一个值写进文件。**
+写在里面的内容应当经得起被贴进 issue——因为迟早会有一次被贴进去。
+
+**该文件默认被忽略。** `application*.json`、`application*.toml`、`application*.yaml`
+与 `application*.yml` 已加入 `.gitignore`，所以一次普通的 `git add .` 不会把带值的文件
+提进仓库。模板形态——`application*.example.json` 以及对应的 `.toml` / `.yaml` / `.yml`
+——仍然可被追踪：那才是用来提交的形态，里面存的是引用而不是值。忽略规则是默认值而不是
+一堵墙（`git add -f` 可以绕过），因此仓库侧的检查会把每一个 `application*` 文件**读两遍**
+——磁盘上的一份、索引里的一份——任一份里有明文值都会报警。这两份不是同一份，而且任一份都
+能把值带进仓库：索引里那份是推送会发出去的内容，磁盘上尚未暂存的修改则是下一份会进历史的内容。
+它会对敏感键名下的明文值报警，也会对**值本身是已知凭据形态**的（PEM 私钥头、AWS access
+key id、GitHub token）报警——后者与键名叫什么无关。
+
+JSON 与 TOML **在解释器能解析时**按文档读取（TOML 需要 Python 3.11+）；否则按行扫描，
+并**报出这次降级**——不会静默。YAML 恒按行读取，写成多行块的值会被记为「无法判定」，
+而不是被静默放过。
+
+有两点需要知道：
+
+- 用 `CULLINAN_CONFIG` 指名的文件不受这里任何一条规则覆盖——它的名字可以是任意字符串。
+  这样的文件请自己保证不进版本库。
+- 已经被提交的文件仍然在历史里。规则挡住的是下一次 `git add .`，它不改写历史。
+  删掉文件也不等于把它移出了版本库：在删除被提交之前（对于已经推送过的值，还要重写历史），
+  那份副本仍然可以被取到。本检查读的是**工作树与索引**，**不读 `HEAD`**——
+  曾经提交、后来从索引移除的值不在本检查范围；把它从历史里去掉是另一件事。
+
+**也不要 `print` 它。** `get_config()` 交回的是已解析的值，所以把整份文档 `print`
+出来或打进调试日志，等于把密钥写进终端、日志文件或 CI 输出——那是第二份副本，却没有
+第一份拥有的任何保护。打你要看的那个设置，不要打整份文档。
+
+替代做法是在本该写值的地方写引用，为此提供两个能力：
 
 ```json
 {

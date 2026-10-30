@@ -10,13 +10,13 @@ translation_pair: "docs/dependency_injection_guide.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-29"
+last_updated: "2026-10-31"
 pr_links: []
 
 # Cullinan 依赖注入指南
 
-> **版本**：0.96a10
-> **最后更新**：2026-10-29
+> **版本**：0.96a12
+> **最后更新**：2026-10-31
 > **状态**：已更新
 
 ## 概述

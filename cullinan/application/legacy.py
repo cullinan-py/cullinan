@@ -779,14 +779,20 @@ def _setup_openapi():
         title = 'Cullinan API'
         version = '1.0.0'
         description = ''
+        # Which layer decided. Printed at start-up because "is the document
+        # published?" is a question an operator has to be able to answer from
+        # the log, and there are three layers that can answer it. Without the
+        # source, a disabled endpoint and a typo'd key look identical.
+        source = 'built-in default'
 
         try:
             from cullinan.support.config import get_config
             cfg = get_config()
-            enabled = getattr(cfg, 'openapi_enabled', True)
+            enabled = bool(getattr(cfg, 'openapi_enabled', True))
             title = getattr(cfg, 'openapi_title', title)
             version = getattr(cfg, 'openapi_version', version)
             description = getattr(cfg, 'openapi_description', description)
+            source = 'configuration (openapi_enabled)'
         except Exception:
             pass
 
@@ -794,8 +800,10 @@ def _setup_openapi():
         env_enabled = os.getenv('CULLINAN_OPENAPI_ENABLED', '').strip().lower()
         if env_enabled in ('0', 'false', 'no', 'off'):
             enabled = False
+            source = 'environment (CULLINAN_OPENAPI_ENABLED)'
         elif env_enabled in ('1', 'true', 'yes', 'on'):
             enabled = True
+            source = 'environment (CULLINAN_OPENAPI_ENABLED)'
 
         env_title = os.getenv('CULLINAN_OPENAPI_TITLE', '').strip()
         if env_title:
@@ -804,8 +812,12 @@ def _setup_openapi():
         if env_version:
             version = env_version
 
+        logger.info(
+            "└---OpenAPI document endpoints: %s (decided by: %s)",
+            'enabled' if enabled else 'disabled',
+            source,
+        )
         if not enabled:
-            logger.debug("OpenAPI auto-generation disabled")
             return
 
         from cullinan.web.gateway.openapi import OpenAPIGenerator

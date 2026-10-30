@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Pre-push mechanical gate: the M0..M9 assertions, executed instead of described.
+"""Pre-push mechanical gate: the M0..M10 assertions, executed instead of described.
 
 The assertions themselves are not defined here. They are defined once, as a
-numbered table of required mechanical gates (M0..M9), and this file
+numbered table of required mechanical gates (M0..M10), and this file
 is the executable side of that table: one function per assertion, same numbering,
 same pass condition. A gate whose only existence is a written specification is a
 gate that never blocks anything, which is the failure mode this script is meant to
@@ -27,6 +27,9 @@ What each gate asserts (runnable form; numbers match the specification):
   M9  the real sdist contains none of the words in the *given* name list in its
       member paths, and (stronger than the specification asks) none in its member
       contents either.
+  M10 no `application*` configuration file on disk or in the index carries a
+      plaintext value -- the check behind the `.gitignore` rules, because an
+      ignore rule is not a gate: `git add -f` walks past it.
 
 M9 keeps its code here and takes its word list as data (`--tokens-file`). The
 words themselves live beside the ledgers, not in this repository: a public file
@@ -43,7 +46,14 @@ because it manufactures a pass nobody earned.
 uncovered gate (CI). The hook does not pass it: a missing word list is a machine
 configuration gap, not a reason to block every push.
 
-M0..M9 is the *mechanical* subset only. The content scans over documented
+M10 is the same shape as M9 in one respect worth naming: its checker is a separate
+file (`scripts/check_config_secrets.py`), invoked as a subprocess and never
+imported. The hook falls back to a snapshot of *this* file in the git common
+directory when a worktree does not carry the gate yet, and that snapshot sits
+alone -- an `import` would raise there and turn M10 into a gate that looks
+installed and never runs.
+
+M0..M10 is the *mechanical* subset only. The content scans over documented
 surfaces are separate assertions with their own owners and are deliberately not
 duplicated here.
 
@@ -53,7 +63,7 @@ Usage
     python scripts/gate_pre_push.py --refs-stdin < refs # pre-push refs from stdin
     python scripts/gate_pre_push.py --refs-file f      # pre-push refs from a file
     python scripts/gate_pre_push.py --rev HEAD         # check a revision
-    python scripts/gate_pre_push.py --only M3,M9       # subset (diagnosis)
+    python scripts/gate_pre_push.py --only M3,M9,M10   # subset (diagnosis)
     python scripts/gate_pre_push.py --tokens-file f    # arm M9 with a word list
     python scripts/gate_pre_push.py --no-sdist         # skip M9 (reported, not hidden)
     python scripts/gate_pre_push.py --scan-archive p   # scan a built sdist, no rebuild
@@ -97,8 +107,13 @@ import sys
 import tarfile
 import tempfile
 
-GATE_VERSION = "1.0"
-MARKER = "M0-M9 GATE"
+GATE_VERSION = "1.1"
+# The marker identifies *who* installed the hook, so it carries no gate count: a
+# marker that spells the numbering out turns every added gate into a foreign hook.
+# Which gates exist is `GATE_VERSION`'s job. `install_pre_push_gate.py` recognises
+# the previous markers as its own so an installed hook can be upgraded rather than
+# orphaned; see `LEGACY_MARKERS` there.
+MARKER = "CULLINAN PRE-PUSH GATE"
 ZERO_SHA = "0" * 40
 
 # Directories that must never be added by a push (M0/M1/M2/M5) and never appear in
@@ -773,6 +788,105 @@ def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None, tokens_fil
 
 
 # --------------------------------------------------------------------------- #
+# M10
+# --------------------------------------------------------------------------- #
+
+#: The plaintext-value checker. It lives in the repository rather than in this
+#: file, and it is run as a subprocess, never imported: the installed hook falls
+#: back to a snapshot of this file alone, where a sibling module does not exist.
+CONFIG_SECRET_CHECKER = os.path.join("scripts", "check_config_secrets.py")
+
+
+#: How the checker's `source` value reads in this gate's rows. The same table
+#: lives in `check_config_secrets.py`; a test holds the two in step, because a
+#: gate that reports a hit the reader cannot locate is a gate they will distrust
+#: rather than act on.
+SOURCE_LABELS = {
+    "index": "staged copy",
+    "worktree": "working tree",
+    "both": "both copies",
+}
+
+
+def gate_m10(root, _refs=None):
+    """No plaintext value in an `application*` configuration file.
+
+    The checker owns every judgement; this function owns only the mapping from
+    its exit code to a gate status, because a gate that reimplements the rule it
+    calls can disagree with it.
+
+    ``2`` is a FAIL: "could not decide" is not a pass. A checker that is absent
+    is NOT COVERED rather than a failure -- the same reading M9 takes for a
+    missing word list, and for the same reason: an absent component is a gap in
+    the machine's configuration, not a finding about the tree. The one thing it
+    must never do is print PASS, which is why the status is SKIP and the detail
+    starts with ``NOT COVERED``.
+    """
+    title = "no plaintext value in an application* config file"
+    script = os.path.join(root, CONFIG_SECRET_CHECKER)
+    if not os.path.isfile(script):
+        return Result("M10", title, "SKIP",
+                      "M10: NOT COVERED ({} not found)".format(
+                          CONFIG_SECRET_CHECKER.replace(os.sep, "/")))
+
+    try:
+        proc = _run([sys.executable, script, "--root", root, "--json"], timeout=300)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return Result("M10", title, "FAIL",
+                      "the scan could not run (the toolchain is present, so this is a FAIL): "
+                      "{}".format(exc))
+
+    stdout = proc.stdout.decode("utf-8", "replace")
+    stderr = proc.stderr.decode("utf-8", "replace")
+    try:
+        payload = json.loads(stdout)
+    except ValueError:
+        payload = None
+
+    if not isinstance(payload, dict):
+        # Exit 0 with no readable verdict is the shape a silently skipped gate
+        # takes. It is reported as a failure, not as a pass with a note.
+        detail = "the scan printed no machine-readable verdict (exit {})".format(proc.returncode)
+        tail = (stderr or stdout).strip().splitlines()[-4:]
+        return Result("M10", title, "FAIL", detail, tail)
+
+    scanned = payload.get("scanned", 0)
+    hits = payload.get("hits") or []
+    uncertain = payload.get("uncertain") or []
+    undecided = payload.get("undecided") or []
+    warnings = ["WARN " + warning for warning in (payload.get("warnings") or [])]
+
+    if proc.returncode == 0:
+        # The count is printed for M3's reason: "0 hits in 0 files" and
+        # "0 hits in 2 files" are different statements, and dropping the number
+        # makes them the same one.
+        detail = "scanned={} file(s), 0 plaintext value(s), {} uncertain".format(
+            scanned, len(uncertain))
+        if not scanned:
+            detail += " (no application*.* config file in the working tree)"
+        return Result("M10", title, "PASS", detail, warnings)
+
+    if proc.returncode == 1:
+        rows = ["{}:{}:{} ({} character(s) not shown; {})".format(
+            hit.get("path"), hit.get("key_path"), hit.get("reason"), hit.get("value_len"),
+            SOURCE_LABELS.get(hit.get("source"), "unknown copy"))
+            for hit in hits]
+        return Result("M10", title, "FAIL",
+                      "{} plaintext value(s) in {} scanned file(s)".format(len(hits), scanned),
+                      rows[:20])
+
+    if proc.returncode == 2:
+        rows = ["{}: {}".format(item.get("path"), item.get("reason")) for item in undecided]
+        return Result("M10", title, "FAIL",
+                      "could not decide: {} file(s) that could enter the repository could not "
+                      "be read or parsed".format(len(undecided)), rows[:20])
+
+    return Result("M10", title, "FAIL",
+                  "the scan exited {} instead of 0/1/2, so its verdict cannot be read".format(
+                      proc.returncode), (stderr or stdout).strip().splitlines()[-4:])
+
+
+# --------------------------------------------------------------------------- #
 # Self-test: prove each scanner can fire
 # --------------------------------------------------------------------------- #
 
@@ -898,6 +1012,23 @@ def selftest(root):
     if not [name for name in synthetic if ".workbuddy/" in name]:
         failures.append("M3 filter cannot see an injected member")
 
+    # 4. M10 calls out to its own checker, so "the gate is wired" and "the checker
+    #    can fire" are two different claims. The second one is the checker's own
+    #    selftest: it feeds the rules synthetic dirty samples and requires a hit
+    #    from a sample that never touches this repository. Running it here means a
+    #    checkout where the checker cannot fire fails before the push, not during
+    #    the first real incident.
+    checker = os.path.join(root, CONFIG_SECRET_CHECKER)
+    if not os.path.isfile(checker):
+        failures.append("M10 checker is missing: {}".format(
+            CONFIG_SECRET_CHECKER.replace(os.sep, "/")))
+        print("  {:32s} missing (expect present)".format("M10 checker selftest"))
+    else:
+        probe = _run([sys.executable, checker, "--selftest"], timeout=300)
+        if probe.returncode != 0:
+            failures.append("M10 checker selftest returned {}".format(probe.returncode))
+        print("  {:32s} exit={} (expect 0)".format("M10 checker selftest", probe.returncode))
+
     if failures:
         print("selftest FAILED: {}".format("; ".join(failures)))
         return 1
@@ -923,14 +1054,14 @@ GATES = [
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Pre-push mechanical gate (M0..M9).")
+    parser = argparse.ArgumentParser(description="Pre-push mechanical gate (M0..M10).")
     parser.add_argument("--rev", default=None,
                         help="check this revision instead of reading pre-push stdin")
     parser.add_argument("--refs-file", default=None,
                         help="read pre-push ref lines from a file instead of stdin")
     parser.add_argument("--refs-stdin", action="store_true",
                         help="read pre-push ref lines from stdin (default: do not read stdin)")
-    parser.add_argument("--only", default=None, help="comma separated gate ids, e.g. M3,M9")
+    parser.add_argument("--only", default=None, help="comma separated gate ids, e.g. M3,M9,M10")
     parser.add_argument("--no-sdist", action="store_true", help="skip M9 and say so")
     parser.add_argument("--python", default=None, help="interpreter used for the sdist build")
     parser.add_argument("--repo", default=None, help="repository root (default: git toplevel)")
@@ -1015,6 +1146,12 @@ def main(argv=None):
         build_rev = args.rev or (None if refs else "HEAD")
         results.append(gate_m9(root, refs, rev=build_rev, allow_sdist=not args.no_sdist,
                                interpreter=args.python, tokens_file=args.tokens_file))
+    if not wanted or "M10" in wanted:
+        # Appended after M9 rather than listed in GATES: GATES is invoked as
+        # (root, refs) in numbering order before M9's special branch, so putting
+        # M10 there would print M8, M10, M9 -- an output order that contradicts
+        # the numbers a reader is following.
+        results.append(gate_m10(root))
 
     failed = [result for result in results if result.status == "FAIL"]
     skipped = [result for result in results if result.status == "SKIP"]
@@ -1037,7 +1174,7 @@ def main(argv=None):
         ))
         return 1 if (failed or (args.strict and skipped)) else 0
 
-    print("M0-M9 gate {} -- {}".format(GATE_VERSION, root))
+    print("M0-M10 gate {} -- {}".format(GATE_VERSION, root))
     for result in results:
         print("[{}] {}".format(result.status, result.gate), "-", result.title)
         print("      " + result.detail)

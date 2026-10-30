@@ -10,14 +10,14 @@ translation_pair: "docs/zh/extension_development_guide.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-29"
+last_updated: "2026-10-31"
 pr_links: []
 
 # Cullinan Extension Development Guide
 
-> **Version**: 0.96a10
+> **Version**: 0.96a12
 > **Author**: plumeink  
-> **Last Updated**: 2026-10-29
+> **Last Updated**: 2026-10-31
 
 > **Advanced topic:** this guide is for framework extension work, not the default
 > application learning path.
@@ -684,6 +684,6 @@ class TestMyMiddleware(ServiceTestCase):
 
 ---
 
-**Version**: 0.96a10
+**Version**: 0.96a12
 **Author**: plumeink  
 **Last Updated**: 2026-09-28

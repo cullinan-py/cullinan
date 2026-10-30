@@ -10,13 +10,13 @@ translation_pair: "docs/zh/dependency_injection_guide.md"
 related_tests: []
 related_examples: []
 estimate_pd: null
-last_updated: "2026-10-29"
+last_updated: "2026-10-31"
 pr_links: []
 
 # Cullinan Dependency Injection Guide
 
-> **Version**: 0.96a10
-> **Last Updated**: 2026-10-29
+> **Version**: 0.96a12
+> **Last Updated**: 2026-10-31
 > **Status**: Updated
 
 ## Overview

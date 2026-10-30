@@ -15,6 +15,211 @@ vocabulary, and an older entry is left as written — history is not rewritten.
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## v0.96a12
+
+**v0.96a12** fixes the tests and the deployment page that describe what a client sees
+when Tornado refuses an oversized body. The runtime behaviour is unchanged from
+`v0.96a11`: the package refuses the upload the same way it did, and nothing in
+`cullinan/` behaves differently.
+
+`v0.96a11` was tagged but never reached the package index — its test run failed after
+the tag existed, so no artefact was ever published. This version carries the same
+code plus that fix.
+
+### Fixed
+
+- **The oversized-body tests assert what the framework guarantees, not what one host
+  happened to observe.** Three cases in
+  `tests/integration/test_tornado_client_view_of_an_oversized_body.py` required that
+  *no* status line be readable when the body is refused. Whether the `400` survives
+  the close is a race below the framework: it resolved one way on Windows and the
+  other way on Linux, where the same three shapes read a complete `400` every time.
+  The cases now assert the part that does not move — the upload is refused and never
+  answered successfully, with the documented `400` either whole or cut short by the
+  close, and the connection reset or aborted when nothing is read at all. A verdict
+  of its own pins the shapes that must still fail, including a `200` and a hang.
+
+### Documentation
+
+- **`docs/deployment.md` and `docs/zh/deployment.md` describe both outcomes.** The
+  client-view table stated that these refusals carry no status line. They can carry
+  one, and whether they do depends on the client's socket layer and on when its read
+  lands relative to the reset — not on the shape of the upload. The counts from each
+  host are shown as samples, and neither is presented as the specification.
+
+## v0.96a11
+
+**v0.96a11** is the eleventh alpha of the 0.96 line. Its subject is the configuration and
+serving surface that used to accept a setting and do nothing with it: an application can
+now terminate TLS itself on either engine, a running server can be asked to stop from
+code rather than only by a signal, and a value that cannot be honoured is reported
+instead of discarded. Start-up names the engine that is actually running and the layer
+that chose it, because the alternative was reading the source to find out which of four
+answers won.
+
+The public surface grows in three places — four new options on `configure()`,
+`Application.request_shutdown()`, and `configure_options()` — and one combination is
+refused at start-up rather than served in a shape nobody asked for.
+
+### Changed
+
+- **A configuration file no longer enters the repository by accident.** The files
+  Cullinan reads — `application.json`, `application-prod.json`, `application.local.json`
+  and their `.toml` / `.yaml` / `.yml` forms — are now ignored by git, so a plain
+  `git add .` leaves them out. Configuration that is *meant* to be committed is named
+  as a template, `application*.example.json` (or the matching `.toml` / `.yaml` /
+  `.yml` suffix), and a template holds `${VAR}` references where a value would go.
+
+  Two consequences are worth knowing before the next commit. A file that is already
+  committed stays committed: the rule stops the next `git add .`, it does not rewrite
+  history. And `git add -f` still works, because an ignore rule is a default rather
+  than a wall — so configuration files are also read from disk and from the index,
+  and a push carrying a plaintext value under a sensitive key is refused. There is no
+  switch to turn that off; `git push --no-verify` remains the visible bypass it always
+  was.
+
+### Added
+
+- **`configure_options()` reports what the installed version's `configure()` accepts.**
+  It exists for callers that have to run one codebase against two installed versions:
+  `configure()` refuses an unknown keyword on purpose, so a call carrying an option the
+  older version never had fails at import. Asking first — `configure(**{k: v for k, v in
+  wanted.items() if k in configure_options()})` — drops what the running version does
+  not have and makes the pin alone the unit of rollback. The answer is derived from the
+  same signature the refusal message reads, so a name cannot be accepted by one and
+  reported by neither. Imported from `cullinan.support.config`; the top-level export
+  list is unchanged. The migration guide carries the snippet and the suite executes it.
+
+- **TLS can be terminated by the application, on both engines.** Four options —
+  `ssl_certfile`, `ssl_keyfile`, `ssl_client_ca` and `ssl_verify_client` — go to
+  whichever backend is running, so turning TLS on is not a backend decision. Giving
+  only one half of the key pair is a start-up error rather than a fallback to plain
+  HTTP: a listener that was asked to be encrypted and quietly served plaintext is
+  worse than one that refuses to start. A client CA turns on client certificates, and
+  they are checked by default; `ssl_verify_client=False` asks for a certificate
+  without checking it, documented as a migration aid rather than a mode to stay in.
+  The tests perform real handshakes on both engines — trust, distrust, a missing
+  client certificate, and the half-configuration refusal — against certificates
+  committed in `tests/fixtures/tls/`, so no `openssl` binary is needed at test time.
+
+- **Start-up prints which engine is running and which layer chose it.** Four layers
+  can name the engine — the `run()` argument, `CULLINAN_ENGINE`, the configuration
+  file's `server_engine`, and `configure(server_engine=...)` — and when two of them
+  disagree there was no way to tell which won without reading the source. The line
+  names both: `└---Web engine: tornado (decided by: environment (CULLINAN_ENGINE))`.
+  It also reports `SERVER_ENGINE` when that variable is set, because it is not one
+  this framework reads: `SERVER_HOST` and `SERVER_PORT` are, so setting the third
+  member of that family is the natural mistake, and it produces the default engine
+  with no error at all.
+
+- **A running server can be asked to stop from code, not only by a signal.**
+  `Application.request_shutdown()` performs the same drain a stop signal performs —
+  stop accepting, answer what still arrives with `503`, wait for in-flight requests
+  up to `drain_timeout`, then stop — and it does so from any thread. On Windows this
+  was the missing half: `terminate()` is `TerminateProcess`, so a process asked to
+  stop that way simply disappears, and there was no other way to reach the drain.
+  `run()` blocks, so the call is made on `Application.current()`, which is reachable
+  while the server runs. It returns `True` when a running server was asked and
+  `False` when there was nothing to ask, rather than raising: a supervisor's exit
+  path must not turn a finished shutdown into a crash. Measured on both engines with
+  a request in flight: that request finishes with `200`, the next one is answered
+  `503`. `examples/graceful_shutdown/stop_after.py` is the runnable version.
+
+- **The stability contract records what each name points at, not just its spelling.**
+  `cullinan/_contracts.json` (now schema 2) gains `stability_shapes`: every symbol in
+  the four committed `__all__` lists is recorded as `function`, `class`, `module` or
+  `other`, and a change to either the set of names or the shape of one fails the
+  check. A count of names cannot see this kind of break — `cullinan.web.controller`
+  was the `@controller` decorator and became a submodule, keeping its spelling, its
+  membership and every count, and the first thing that noticed was a consumer's
+  `import` raising `TypeError: 'module' object is not callable`.
+
+- **The contract records which options `configure()` accepts.** `cullinan/_contracts.json`
+  (now schema 3) gains `pinned_symbols`: the option names this version accepts, alongside
+  the callable's shape. Read it to know exactly what your version supports, without
+  calling the function to find out.
+
+### Changed
+
+- **`asgi_server="hypercorn"` with the TLS options is refused at start-up.** That branch
+  does not pass `ssl_certfile`/`ssl_keyfile`/`ssl_client_ca` to hypercorn, so starting
+  anyway would serve plaintext from a listener configured for TLS — the "looks
+  configured, does nothing" failure this release is about. The message says the branch
+  does not support it, offers the two ways forward (`asgi_server="uvicorn"`, or terminate
+  at a reverse proxy), and states that it is a known limitation rather than a
+  configuration mistake.
+
+- **A misspelt option for `configure()` now says what was probably meant.** The
+  call is still refused — accepting an unknown keyword with a warning would turn a
+  typo into a switch that looks set and changes nothing — but the message now names
+  the option, offers the closest name `configure()` does accept, and points at the
+  section that lists them. The exception type is still `TypeError`, so a caller
+  that already catches it keeps working. The suggestions are read from the
+  function's own signature, so they cannot drift away from the options that exist.
+
+- **The configuration page described an order the code never implemented.** It listed
+  `configure(...)` above the project file. The file is applied *after* the values
+  declared in code, so a key present in both takes the file's value — and still does.
+  The page now states that order and why it is the useful one (one binary, several
+  deployments, and the deployment answers for its own addresses), and it lists the
+  keys a file may contain.
+
+### Fixed
+
+- **Asking for a shutdown twice no longer schedules the drain twice.** The second
+  call still answers `True` — "this server has been asked to stop" remains true, and
+  `False` keeps its one meaning of "nothing to ask" — but the announcement and the
+  wait behind it happen once. The previous behaviour was survivable rather than
+  correct: nothing asserted that the sequence ran once, so a duplicated drain
+  cutting an in-flight request would have been found by a user rather than by a test.
+
+- **An oversized upload is refused before the body is read, on ASGI too.** The
+  ceiling was enforced while reading, so a client that sent slowly was answered
+  only after it had finished sending, and one that never finished was never
+  answered. `Content-Length` arrives with the headers, so a body that declares
+  itself too large is now answered `413` at once, without reading a byte of it. A
+  chunked upload declares nothing and keeps the previous behaviour: it is stopped
+  when the received size crosses the ceiling. The response still carries exactly
+  one `Content-Length` header.
+
+- **A configuration switch that was declared, documented and ignored.** Nine
+  `CullinanConfig` fields had no path from a configuration source into the object:
+  `openapi_enabled` and its three companions, `debug`, `enable_middleware_pipeline`,
+  the two `route_*` flags and `context_features`. A project file that set
+  `"openapi_enabled": false` was read, accepted and dropped, so `/openapi.json` stayed
+  published while the operator believed it was off. All 28 fields now round-trip
+  through `from_dict`/`to_dict`, and a key outside that set is reported with the file
+  it came from — including the name that was probably meant — instead of being
+  discarded. A boolean written as text is read as a boolean; a value outside the
+  vocabulary is refused rather than guessed at, because `bool("false")` is `True`.
+
+- **The OpenAPI state is printed at start-up, with the layer that decided it.** Three
+  layers can answer "is the document published?", and they disagree when a project
+  sets one and an operator sets another. The line names the winner, so the question
+  is answerable from the log rather than by reading the source.
+
+### Documentation
+
+- **The request-body page now states what a client observes, with counts.** There are
+  two ways to lose the answer, not one: the client was still writing when the refusal
+  landed, or a single write far exceeded what the connection could buffer. Measured on
+  Windows against a 1 KiB ceiling — a 4 MiB body sent in one write was refused with no
+  readable status line 9 times out of 13; 64 KiB written in one go was readable 13 out
+  of 13, and the same 64 KiB read 20 ms later was readable 0 out of 13. The page
+  carries the counts and their `n`, keeps the one rule they support (the dividing line
+  is timing, not the ratio), and tells callers to treat neither "got a `400`" nor "got
+  no status line" as the oversize signal. The shapes run as a test against a live
+  Tornado server, so "measured" has an executor rather than being a note that decays.
+
+- **The configuration page now says which variable chooses the engine, and which one
+  only looks like it.** The engine comes from `CULLINAN_ENGINE`; `SERVER_ENGINE` is
+  not read by anything, even though `SERVER_HOST` and `SERVER_PORT` are — so a
+  deployment that sets the wrong one silently gets the engine `auto` picks, and two
+  runs that were meant to compare engines can both be the same engine. The request
+  body section of the deployment page also states, for each of the three ways a
+  client can send an oversized upload, what that client observes; a check keeps that
+  list, and the link from the configuration page to it, from being trimmed.
+
 ## v0.96a10
 
 **v0.96a10** is the tenth alpha of the 0.96 line. Configuration moves out of `.env`

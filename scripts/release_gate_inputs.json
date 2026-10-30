@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "what_this_is": [
+    "The CLI inputs each release gate script requires, as the release-process",
+    "standard enumerates them. The standard is maintained outside this repository,",
+    "so this file is the repository-side copy that the machine check can read.",
+    "",
+    "What the check proves: every required input a script declares is also",
+    "enumerated here. What it does NOT prove: that this file still matches the",
+    "standard. A required input added to a script goes red here until it is listed",
+    "here too; whether the standard was updated in the same breath is a review",
+    "question, and the check cannot answer it -- it has no copy of the standard.",
+    "",
+    "Adding a required input is a change to the release process's input surface.",
+    "Update this file in the same commit, and the standard in the same round."
+  ],
+  "scripts": {
+    "check_tag_gate.py": [
+      "--sign-off-token",
+      "--review-token",
+      "--sync-token",
+      "--junit"
+    ]
+  }
+}

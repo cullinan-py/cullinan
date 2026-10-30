@@ -2,10 +2,14 @@
 """Cullinan framework configuration."""
 
 from contextlib import contextmanager
+import difflib
 import logging
 import os
 import sys
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
+
+
+logger = logging.getLogger(__name__)
 
 
 _CLASS_CONFIG_ATTR = "__cullinan_config__"
@@ -14,6 +18,75 @@ _CLASS_CONFIG_ATTR = "__cullinan_config__"
 # ``verbose=False`` can put it back. One slot is enough: the framework logger is
 # process-global, and the last enable is the one whose level matters.
 _VERBOSE_RESTORE_LEVEL: List[Optional[int]] = [None]
+
+#: Defaults for :attr:`CullinanConfig.context_features`.
+#:
+#: Kept at module level rather than inline in ``__init__`` so that
+#: ``from_dict`` can refill the keys a caller left out. Without that, a file
+#: that names one flag would replace the whole mapping and every reader of
+#: ``features['timing']`` would raise ``KeyError`` -- a failure nobody would
+#: connect to the line they added.
+_DEFAULT_CONTEXT_FEATURES: Dict[str, Any] = {
+    # Whether request IDs are generated automatically.
+    'auto_request_id': True,
+
+    # Whether request timing is enabled.
+    'timing': True,
+
+    # Whether metadata storage is enabled.
+    'metadata': True,
+
+    # Whether cleanup callbacks are enabled.
+    'cleanup_callbacks': True,
+
+    # Whether RequestContext debug logging is enabled.
+    'debug_logging': False,
+
+    # Request ID format: 'uuid' (default), 'sequential', or 'custom'.
+    'request_id_format': 'uuid',
+
+    # Custom request ID generator used when request_id_format='custom'.
+    'custom_request_id_generator': None,
+}
+
+#: Words accepted as a truth value when a configuration value arrives as text.
+#: JSON, TOML and YAML all hand back real booleans; this exists for the hand
+#: edited file where someone writes ``"openapi_enabled": "false"``. Treating
+#: that string as "true" (``bool("false")`` is ``True``) would reproduce the
+#: very failure this module is being fixed for: a switch that is set, accepted
+#: and ignored.
+_TRUE_WORDS = frozenset({'1', 'true', 'yes', 'on'})
+_FALSE_WORDS = frozenset({'0', 'false', 'no', 'off', ''})
+
+#: ``(source, key)`` pairs already reported, so a configuration applied from
+#: several entry points in one start-up logs each unknown key once. A reader who
+#: sees the same warning three times stops reading it.
+_REPORTED_UNKNOWN_KEYS: set = set()
+
+
+def as_flag(key: str, value: Any) -> bool:
+    """Read a configuration boolean, refusing a value it cannot interpret.
+
+    ``bool()`` is not a parser: it maps every non-empty string to ``True``, so
+    ``"false"`` becomes ``True`` and the switch silently does nothing. A value
+    outside the vocabulary raises instead, naming the key, because a typo the
+    framework guesses at is worse than one it reports.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        word = value.strip().lower()
+        if word in _TRUE_WORDS:
+            return True
+        if word in _FALSE_WORDS:
+            return False
+    raise ValueError(
+        f"configuration key '{key}' expects true/false, got {value!r}; "
+        f"accepted: true/false (JSON, TOML, YAML), 1/0, yes/no, on/off"
+    )
+
 
 class CullinanConfig:
     """Global configuration container for Cullinan."""
@@ -61,28 +134,7 @@ class CullinanConfig:
         self.startup_error_policy: str = 'strict'
 
         # RequestContext feature flags (v0.81+).
-        self.context_features = {
-            # Whether request IDs are generated automatically.
-            'auto_request_id': True,
-
-            # Whether request timing is enabled.
-            'timing': True,
-
-            # Whether metadata storage is enabled.
-            'metadata': True,
-
-            # Whether cleanup callbacks are enabled.
-            'cleanup_callbacks': True,
-
-            # Whether RequestContext debug logging is enabled.
-            'debug_logging': False,
-
-            # Request ID format: 'uuid' (default), 'sequential', or 'custom'.
-            'request_id_format': 'uuid',
-
-            # Custom request ID generator used when request_id_format='custom'.
-            'custom_request_id_generator': None,
-        }
+        self.context_features = dict(_DEFAULT_CONTEXT_FEATURES)
 
         # ====================================================================
         # v0.93: Server Engine Configuration
@@ -110,6 +162,18 @@ class CullinanConfig:
         # setting it here puts the knob on the same surface as the port and the
         # engine, instead of requiring the advanced Application entry.
         self.drain_timeout: Optional[float] = None
+
+        # Application-level TLS. ``ssl_certfile`` and ``ssl_keyfile`` are the two
+        # halves of the server's key pair and must be given together: a listener
+        # configured for TLS that quietly served plain HTTP instead would be a
+        # downgrade nobody asked for, so half a pair is refused at start-up rather
+        # than ignored. ``ssl_client_ca`` turns on client certificates (mTLS);
+        # ``ssl_verify_client`` decides whether those certificates are *checked*
+        # while still being *requested*, which is a narrow and rarely wanted case.
+        self.ssl_certfile: Optional[str] = None
+        self.ssl_keyfile: Optional[str] = None
+        self.ssl_client_ca: Optional[str] = None
+        self.ssl_verify_client: bool = True
 
         # Whether to enable the gateway middleware pipeline
         self.enable_middleware_pipeline: bool = True
@@ -214,8 +278,26 @@ class CullinanConfig:
         set_class_config(target, self._to_decorator_dict())
         return target
 
-    def from_dict(self, config: dict):
-        """Load configuration from a dictionary."""
+    def from_dict(self, config: dict, *, source: Optional[str] = None):
+        """Load configuration from a dictionary.
+
+        Every declared field is accepted here -- :meth:`field_names` derives the
+        accepted set from the instance itself, so a field added to ``__init__``
+        is reachable without a second edit and a field that is *not* accepted is
+        reported instead of dropped.
+
+        Args:
+            config: Key/value pairs to apply.
+            source: Where the mapping came from, used in the report for a key
+                this class does not accept (a file name, for example). Without
+                it the report can only name the key, and the reader has to guess
+                which of several sources produced it.
+
+        Returns:
+            CullinanConfig: ``self``, so callers can chain.
+        """
+        self._report_unknown_keys(config, source)
+
         if 'user_packages' in config:
             self.user_packages = config['user_packages']
         if 'project_root' in config:
@@ -248,6 +330,26 @@ class CullinanConfig:
             value = config['drain_timeout']
             self.drain_timeout = float(value) if value is not None else None
 
+        if 'ssl_certfile' in config:
+            self.ssl_certfile = config['ssl_certfile'] or None
+        if 'ssl_keyfile' in config:
+            self.ssl_keyfile = config['ssl_keyfile'] or None
+        if 'ssl_client_ca' in config:
+            self.ssl_client_ca = config['ssl_client_ca'] or None
+        if 'ssl_verify_client' in config:
+            value = config['ssl_verify_client']
+            if isinstance(value, str):
+                lowered = value.strip().lower()
+                if lowered in ('1', 'true', 'yes', 'on'):
+                    value = True
+                elif lowered in ('0', 'false', 'no', 'off'):
+                    value = False
+                else:
+                    raise ValueError(
+                        f"ssl_verify_client: {value!r} is not a boolean; write true/false"
+                    )
+            self.ssl_verify_client = bool(value)
+
         if 'static_files' in config:
             value = config['static_files']
             self.static_files = list(value) if value else []
@@ -267,7 +369,95 @@ class CullinanConfig:
             # whichever shape was supplied so ``to_dict``/``from_dict`` round
             # trips without silently rewriting the value.
             self.strict_assembly_excludes = list(value) if value is not None else None
+
+        # -- The nine fields that had no branch until 0.96a11 ----------------
+        #
+        # They were declared, commented and readable from ``get_config()``, but
+        # no entry point could set them: not ``configure()``, not the file. A
+        # key written for one of them was accepted by the loader and dropped
+        # here, in silence. ``openapi_enabled: false`` in a project file is the
+        # case that was reported, and it is the worst shape of this defect --
+        # the switch looks obeyed.
+        if 'context_features' in config:
+            value = config['context_features']
+            # Merge over the defaults rather than replace: a file that names one
+            # flag must not delete the other six, or every later reader of
+            # ``features['timing']`` raises ``KeyError`` for a reason that points
+            # nowhere near the line that was added.
+            merged_features = dict(_DEFAULT_CONTEXT_FEATURES)
+            if value:
+                merged_features.update(dict(value))
+            self.context_features = merged_features
+        if 'enable_middleware_pipeline' in config:
+            self.enable_middleware_pipeline = as_flag(
+                'enable_middleware_pipeline', config['enable_middleware_pipeline']
+            )
+        if 'route_trailing_slash' in config:
+            self.route_trailing_slash = as_flag(
+                'route_trailing_slash', config['route_trailing_slash']
+            )
+        if 'route_case_sensitive' in config:
+            self.route_case_sensitive = as_flag(
+                'route_case_sensitive', config['route_case_sensitive']
+            )
+        if 'debug' in config:
+            self.debug = as_flag('debug', config['debug'])
+        if 'openapi_enabled' in config:
+            self.openapi_enabled = as_flag('openapi_enabled', config['openapi_enabled'])
+        if 'openapi_title' in config:
+            value = config['openapi_title']
+            self.openapi_title = 'Cullinan API' if value is None else str(value)
+        if 'openapi_version' in config:
+            value = config['openapi_version']
+            self.openapi_version = '1.0.0' if value is None else str(value)
+        if 'openapi_description' in config:
+            value = config['openapi_description']
+            self.openapi_description = '' if value is None else str(value)
         return self
+
+    @classmethod
+    def field_names(cls) -> frozenset:
+        """Every key :meth:`from_dict` accepts, derived from the class itself.
+
+        Derived rather than listed: a second list is a second truth, and the two
+        drift the moment someone adds a field in a hurry. ``__init__`` is the
+        single place a field is declared, so it is the single place this reads.
+        """
+        cached = cls.__dict__.get('_FIELD_NAMES_CACHE')
+        if cached is None:
+            cached = frozenset(
+                name for name in vars(cls()) if not name.startswith('_')
+            )
+            setattr(cls, '_FIELD_NAMES_CACHE', cached)
+        return cached
+
+    def _report_unknown_keys(self, config: dict, source: Optional[str]) -> None:
+        """Name every key that will not be applied, once per (source, key).
+
+        Silence is the defect this replaces: a key that is read and discarded
+        looks exactly like a key that took effect until someone measures the
+        behaviour it was supposed to change.
+        """
+        unknown = sorted(set(config) - self.field_names())
+        if not unknown:
+            return
+        where = source or 'configuration mapping'
+        for key in unknown:
+            marker = (where, key)
+            if marker in _REPORTED_UNKNOWN_KEYS:
+                continue
+            _REPORTED_UNKNOWN_KEYS.add(marker)
+            suggestion = difflib.get_close_matches(key, sorted(self.field_names()), n=1)
+            hint = f" Did you mean '{suggestion[0]}'?" if suggestion else ''
+            logger.warning(
+                "Unknown configuration key '%s' in %s -- it is not applied.%s "
+                "The accepted keys are CullinanConfig's field names "
+                "(`CullinanConfig.field_names()`); 'configure(...)' takes its own, "
+                "smaller set.",
+                key,
+                where,
+                hint,
+            )
 
     def to_dict(self) -> dict:
         """Export the configuration as a dictionary."""
@@ -285,6 +475,10 @@ class CullinanConfig:
             'server_port': self.server_port,
             'drain_timeout': self.drain_timeout,
             'max_request_body_bytes': self.max_request_body_bytes,
+            'ssl_certfile': self.ssl_certfile,
+            'ssl_keyfile': self.ssl_keyfile,
+            'ssl_client_ca': self.ssl_client_ca,
+            'ssl_verify_client': self.ssl_verify_client,
             'explicit_modules': self.explicit_modules,
             'static_files': list(self.static_files),
             'middlewares': list(self.middlewares),
@@ -297,6 +491,20 @@ class CullinanConfig:
                 if self.strict_assembly_excludes is None
                 else list(self.strict_assembly_excludes)
             ),
+            # Exported for the same reason they are accepted: a field that
+            # ``from_dict`` can set but ``to_dict`` cannot report makes
+            # ``push_config_overrides`` restore an incomplete snapshot, so a
+            # value set inside the block survives the exit. ``test_config_
+            # reachability`` compares the two key sets for exactly this.
+            'context_features': dict(self.context_features),
+            'enable_middleware_pipeline': self.enable_middleware_pipeline,
+            'route_trailing_slash': self.route_trailing_slash,
+            'route_case_sensitive': self.route_case_sensitive,
+            'debug': self.debug,
+            'openapi_enabled': self.openapi_enabled,
+            'openapi_title': self.openapi_title,
+            'openapi_version': self.openapi_version,
+            'openapi_description': self.openapi_description,
         }
 
 
@@ -326,6 +534,31 @@ def get_class_config(target: Any) -> Optional[Dict[str, Any]]:
     return dict(config_values)
 
 
+def configure_options() -> Tuple[str, ...]:
+    """The option names ``configure()`` accepts in the installed version.
+
+    Exists so a caller can ask instead of guessing. One deployment often has to run
+    against more than one installed version -- the older one in an environment that
+    cannot be upgraded yet -- and ``configure()`` refuses an unknown keyword by design
+    (a misspelt switch that silently does nothing is worse than a refusal). Without a
+    way to ask, the only portable call is ``inspect.signature``, which is a private
+    detail of this function rather than a promise.
+
+    Usage::
+
+        from cullinan.support.config import configure_options
+        from cullinan import configure
+
+        wanted = {"server_port": 9090, "drain_timeout": 15.0}
+        configure(**{k: v for k, v in wanted.items() if k in configure_options()})
+
+    Returns:
+        tuple: The accepted names, sorted, derived from ``configure``'s own signature --
+        the same source the refusal message reads, so the two cannot disagree.
+    """
+    return tuple(sorted(_configure_option_names()))
+
+
 @contextmanager
 def push_config_overrides(overrides: Optional[Dict[str, Any]]) -> Iterator[CullinanConfig]:
     """Temporarily apply entry-method config overrides to the global config."""
@@ -346,6 +579,56 @@ def push_config_overrides(overrides: Optional[Dict[str, Any]]) -> Iterator[Culli
         _config.from_dict(original)
 
 
+def _configure_option_names() -> Tuple[str, ...]:
+    """The names ``configure()`` accepts, read from its own signature.
+
+    Derived rather than listed: a second list of option names is a second truth,
+    and it drifts the first time an option is added. ``**unknown`` is the refusal
+    catcher, not an option, so it is excluded -- a suggestion must never be
+    "pass something else unknown".
+    """
+    import inspect
+
+    return tuple(
+        name
+        for name, parameter in inspect.signature(configure).parameters.items()
+        if parameter.kind is not inspect.Parameter.VAR_KEYWORD
+    )
+
+
+def _unknown_option_error(unknown: Dict[str, Any]) -> TypeError:
+    """Build the refusal for keyword arguments ``configure()`` does not take.
+
+    The refusal itself is deliberate and stays: accepting an unknown option with
+    a warning would turn a misspelling into a switch that silently does nothing,
+    which is exactly the failure the rest of this module is being fixed for. What
+    was missing is the reading aid -- Python's own message names the keyword but
+    not the one that was meant, so ``drain_timout`` read as "this version does not
+    have it" rather than "this is a typo".
+
+    The type stays ``TypeError``: a caller that already catches the built-in
+    refusal keeps working, and no new exception type is introduced for it.
+    """
+    accepted = _configure_option_names()
+    described = []
+    for name in sorted(unknown):
+        suggestion = difflib.get_close_matches(name, list(accepted), n=1)
+        if suggestion:
+            described.append(f"'{name}' (did you mean '{suggestion[0]}'?)")
+        else:
+            described.append(f"'{name}'")
+    joined = ", ".join(described)
+    return TypeError(
+        f"configure() received an option that is not a known option: {joined}. "
+        f"The options configure() accepts are its own parameters: "
+        f"{', '.join(accepted)}. "
+        "Keys in a configuration file are CullinanConfig's field names instead, and "
+        "the two sets are not the same list. See "
+        "docs/configuration.md#options-in-code for the accepted options and the "
+        "order the layers are applied in."
+    )
+
+
 def configure(
     root_module: Optional[Any] = None,
     user_packages: Optional[List[str]] = None,
@@ -360,6 +643,10 @@ def configure(
     server_port: Optional[int] = None,
     drain_timeout: Optional[float] = None,
     max_request_body_bytes: Optional[int] = None,
+    ssl_certfile: Optional[str] = None,
+    ssl_keyfile: Optional[str] = None,
+    ssl_client_ca: Optional[str] = None,
+    ssl_verify_client: Optional[bool] = None,
     explicit_modules: Optional[List[str]] = None,
     static_files: Optional[List[Any]] = None,
     *,
@@ -367,6 +654,7 @@ def configure(
     builtin_middleware: Optional[List[Any]] = None,
     strict_assembly: bool = False,
     strict_assembly_excludes: Optional[List[str]] = None,
+    **unknown: Any,
 ):
     """Configure the Cullinan framework.
 
@@ -433,6 +721,14 @@ def configure(
             but they no longer make ``strict_assembly`` fail. ``None`` (the
             default) means no intentional exclusions; pass an empty list for the
             same meaning explicitly.
+        **unknown: Anything else is refused with a ``TypeError`` that names the
+            option, the closest name this function does accept, and the
+            documentation section listing them
+            (``docs/configuration.md#options-in-code``). Accepting it with a
+            warning was considered and rejected: a misspelt option would then be
+            a switch that silently does nothing, which is the failure this
+            surface exists to prevent. The exception type stays ``TypeError``, so
+            callers that already catch the built-in refusal keep working.
 
     Example:
         >>> from cullinan import configure
@@ -463,6 +759,11 @@ def configure(
     """
     global _config
 
+    # Refused before anything is assigned: a call with a misspelt option must not
+    # change half the configuration and then stop.
+    if unknown:
+        raise _unknown_option_error(unknown)
+
     if root_module is not None:
         from cullinan.support.diagnostics import legacy_root_module_entry_removed
 
@@ -489,6 +790,29 @@ def configure(
         if drain_timeout <= 0:
             raise ValueError("drain_timeout must be greater than zero")
         _config.drain_timeout = float(drain_timeout)
+
+    # TLS is validated before anything is assigned: half a key pair has to fail
+    # here, where the caller can see which option is missing, rather than fall back
+    # to plain HTTP and leave the operator believing the connection was encrypted.
+    effective_certfile = ssl_certfile if ssl_certfile is not None else _config.ssl_certfile
+    effective_keyfile = ssl_keyfile if ssl_keyfile is not None else _config.ssl_keyfile
+    if bool(effective_certfile) != bool(effective_keyfile):
+        given, missing = (
+            ("ssl_certfile", "ssl_keyfile") if effective_certfile else ("ssl_keyfile", "ssl_certfile")
+        )
+        raise ValueError(
+            f"{given} was given without {missing}: a TLS listener needs both halves of the key "
+            "pair. Serving plain HTTP instead would silently downgrade a connection that was "
+            "asked to be encrypted."
+        )
+    if ssl_certfile is not None:
+        _config.ssl_certfile = ssl_certfile or None
+    if ssl_keyfile is not None:
+        _config.ssl_keyfile = ssl_keyfile or None
+    if ssl_client_ca is not None:
+        _config.ssl_client_ca = ssl_client_ca or None
+    if ssl_verify_client is not None:
+        _config.ssl_verify_client = bool(ssl_verify_client)
 
     if project_root is not None:
         _config.set_project_root(project_root)

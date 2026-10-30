@@ -42,7 +42,12 @@ def _configure_options() -> list[str]:
         node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "configure"
     )
     args = function.args.posonlyargs + function.args.args + function.args.kwonlyargs
-    return [arg.arg for arg in args if arg.arg not in {"cls", "self"}]
+    # A ``**kwargs`` catcher is not an option: it is the refusal path for unknown
+    # names, and it can never be "demonstrated" by an example. It is not in the
+    # three lists above, so this filter only guards against a future rewrite that
+    # starts from ``function.args`` wholesale and would otherwise compare a
+    # nameless ``arg`` node.
+    return [arg.arg for arg in args if arg.arg is not None and arg.arg not in {"cls", "self"}]
 
 
 def _kwargs_from(tree: ast.AST) -> set[str]:

@@ -32,6 +32,13 @@ HEADING = re.compile(r"^(#{1,6})\s+(.*)$", re.M)
 # today's signature would delete the lesson.
 STALE_HEADING_MARKERS = ("deprecated", "will be removed", "弃用", "移除", "v0.9x")
 
+#: Callables whose ``**kwargs`` catcher is a *refusal* path rather than a licence
+#: to take any name: ``configure()`` rejects an unknown keyword and names the
+#: closest one it accepts. Their named parameters stay the list a page may teach,
+#: so the signature check keeps checking them. Add a name here only with that
+#: reason -- otherwise this list is how a gate quietly stops looking.
+REFUSAL_ONLY_KWARGS = frozenset({"configure"})
+
 
 def public_pages():
     for page in sorted(DOCS.rglob("*.md")):
@@ -129,15 +136,31 @@ def documented_call_problems(text: str) -> list[str]:
             except (TypeError, ValueError):
                 continue
             parameters = signature.parameters
-            if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+            # A ``**kwargs`` catcher usually means "this callable really does take
+            # arbitrary keywords" -- decorators such as ``get_api(**options)`` are
+            # that kind, and a page must be free to write them. One callable in
+            # this package is the opposite case: ``configure()`` takes ``**unknown``
+            # only to refuse it with a readable message, so its *named* parameters
+            # remain the list a page may teach. Those are named here, so the gate
+            # keeps checking them instead of stepping over the callable.
+            has_var_keyword = any(
+                parameter.kind is inspect.Parameter.VAR_KEYWORD
+                for parameter in parameters.values()
+            )
+            named = {
+                name: parameter
+                for name, parameter in parameters.items()
+                if parameter.kind is not inspect.Parameter.VAR_KEYWORD
+            }
+            if has_var_keyword and getattr(target, "__name__", "") not in REFUSAL_ONLY_KWARGS:
                 continue
             for keyword in node.keywords:
                 if keyword.arg is None:
                     continue
-                if keyword.arg not in parameters:
+                if keyword.arg not in named:
                     problems.append(
                         f"{_qualname(node.func, bound)}(...): no parameter {keyword.arg!r}; "
-                        f"takes {sorted(parameters)}"
+                        f"takes {sorted(named)}"
                     )
     return problems
 
