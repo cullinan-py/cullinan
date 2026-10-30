@@ -69,7 +69,7 @@ JSON 什么都不需要，所以它是永远可用的格式。
 `1`/`0`、`yes`/`no`、`on`/`off`。其它写法会带着键名被拒绝——因为 `bool("false")` 是
 `True`，靠猜就会把开关重新变回静默的。
 
-`max_request_body_bytes` 的说明在[部署](deployment.md)页的「请求体大小」一节：上传越过上限时客户端
+`max_request_body_bytes` 的说明在[部署](deployment.md#request-body-size)页的「请求体大小」一节：上传越过上限时客户端
 看到什么，取决于引擎，**也**取决于服务端拒绝的那一刻客户端是否还在写，而其中一种结果
 **根本没有状态码**。
 
@@ -110,6 +110,22 @@ JSON 什么都不需要，所以它是永远可用的格式。
 
 `run(...)` 对它接受的这两个名字优先于文件；环境变量在取值时才读，所以优先于两者。
 其余每个名字都只有一个决定者：有文件就用文件，没有就用代码里写的值，再没有就用默认值。
+
+框架读的环境变量是一份短清单 —— `CULLINAN_CONFIG`、`CULLINAN_PROFILE`、
+`CULLINAN_ENGINE`、`SERVER_HOST`、`SERVER_PORT` —— 而引擎并不是读者以为的那个：
+选引擎要用 **`CULLINAN_ENGINE`**。**`SERVER_ENGINE` 不是框架读的变量。**
+`SERVER_HOST` 与 `SERVER_PORT` 是，这正是这个错误如此自然的原因：设了
+`SERVER_ENGINE=tornado` 的部署拿到的是 `auto` 选出来的引擎，而且**完全不报错** ——
+于是两次本意是"对比引擎"的运行可能跑的是同一个引擎，而它们之间观察到的差异就成了想象出来的。
+
+启动时会打印**引擎**和**决定它的那一层**，所以这个问题由日志回答，不用去读源码：
+
+```
+└---Web engine: tornado (decided by: environment (CULLINAN_ENGINE))
+```
+
+另外三种可能的取值是 `run(engine='tornado')`、`configuration file (server_engine)`
+与 `built-in default (auto)`。
 
 ## 代码里的选项 {#options-in-code}
 

@@ -63,6 +63,10 @@ def main(): ...
 `server_engine` accepts `"auto"`, `"tornado"` or `"asgi"`. The environment
 variable `CULLINAN_ENGINE` does the same thing, which is usually the better
 choice in a container: the same image can run either backend without a rebuild.
+`SERVER_ENGINE` is **not** a variable this framework reads, even though
+`SERVER_HOST` and `SERVER_PORT` are — see
+[configuration](configuration.md#precedence). Set the wrong one and you get the
+engine `auto` picks, silently.
 
 ## The shutdown sequence
 

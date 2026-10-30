@@ -36,6 +36,16 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Added
 
+- **Start-up prints which engine is running and which layer chose it.** Four layers
+  can name the engine — the `run()` argument, `CULLINAN_ENGINE`, the configuration
+  file's `server_engine`, and `configure(server_engine=...)` — and when two of them
+  disagree there was no way to tell which won without reading the source. The line
+  names both: `└---Web engine: tornado (decided by: environment (CULLINAN_ENGINE))`.
+  It also reports `SERVER_ENGINE` when that variable is set, because it is not one
+  this framework reads: `SERVER_HOST` and `SERVER_PORT` are, so setting the third
+  member of that family is the natural mistake, and it produces the default engine
+  with no error at all.
+
 - **A running server can be asked to stop from code, not only by a signal.**
   `Application.request_shutdown()` performs the same drain a stop signal performs —
   stop accepting, answer what still arrives with `503`, wait for in-flight requests
@@ -101,6 +111,17 @@ release-note files (`RELEASE-v<version>.md`) where published.
   layers can answer "is the document published?", and they disagree when a project
   sets one and an operator sets another. The line names the winner, so the question
   is answerable from the log rather than by reading the source.
+
+### Documentation
+
+- **The configuration page now says which variable chooses the engine, and which one
+  only looks like it.** The engine comes from `CULLINAN_ENGINE`; `SERVER_ENGINE` is
+  not read by anything, even though `SERVER_HOST` and `SERVER_PORT` are — so a
+  deployment that sets the wrong one silently gets the engine `auto` picks, and two
+  runs that were meant to compare engines can both be the same engine. The request
+  body section of the deployment page also states, for each of the three ways a
+  client can send an oversized upload, what that client observes; a check keeps that
+  list, and the link from the configuration page to it, from being trimmed.
 
 ## v0.96a10
 

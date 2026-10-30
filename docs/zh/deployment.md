@@ -53,6 +53,8 @@ def main(): ...
 
 `server_engine` 接受 `"auto"`、`"tornado"`、`"asgi"`。环境变量 `CULLINAN_ENGINE` 效果相同，
 在容器里通常是更好的选择：同一个镜像不必重建就能跑任一后端。
+**`SERVER_ENGINE` 不是框架读的变量**，尽管 `SERVER_HOST` 与 `SERVER_PORT` 是 —— 见
+[配置](configuration.md#precedence)。设错的那个，你拿到的是 `auto` 选出来的引擎，而且不会报错。
 
 ## 关闭序列
 
@@ -200,7 +202,7 @@ Tornado 没有这一步：它停掉自己持有的循环然后返回，进程以
 **判断有没有排空完成，看日志，不要看退出码。** 要求必须是 `0` 的监督进程，会把一次健康的 uvicorn
 关闭报成崩溃；要求必须是 `143` 的，会把一次健康的 Tornado 关闭报成崩溃。
 
-## 请求体大小
+## 请求体大小 {#request-body-size}
 
 框架在知道"哪个路由会处理它"之前就要把 body 读完，所以上限只能在**入口处**执行：
 

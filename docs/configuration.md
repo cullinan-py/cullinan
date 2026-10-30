@@ -134,6 +134,25 @@ variable is read at use time, so it wins over both. Every other name has one
 decider: the file if it is there, otherwise the value written in code, otherwise
 the default.
 
+The environment variables this framework reads are a short list —
+`CULLINAN_CONFIG`, `CULLINAN_PROFILE`, `CULLINAN_ENGINE`, `SERVER_HOST`,
+`SERVER_PORT` — and the engine is not the one a reader expects: it is chosen with
+**`CULLINAN_ENGINE`**. **`SERVER_ENGINE` is not a variable this framework reads.**
+`SERVER_HOST` and `SERVER_PORT` are, which is what makes the mistake natural: a
+deployment that sets `SERVER_ENGINE=tornado` gets whatever `auto` picks, with no
+error at all — so two runs that were meant to compare engines can both be the same
+engine, and the difference observed between them is then imagined.
+
+Start-up prints the engine and the layer that chose it, so the question is
+answered by the log rather than by reading the source:
+
+```
+└---Web engine: tornado (decided by: environment (CULLINAN_ENGINE))
+```
+
+The other three forms it can take are `run(engine='tornado')`,
+`configuration file (server_engine)` and `built-in default (auto)`.
+
 ## Options in code
 
 `@configure(...)` takes its own set of options — the parameters of `configure()`

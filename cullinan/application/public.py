@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
-import os
 import inspect
+import logging
+import os
 from typing import Any, Callable, Optional
 
 from cullinan._api_boundary import public_api_context
@@ -20,6 +21,8 @@ from cullinan.support.diagnostics import (
 from cullinan.support.config_file import apply_project_config
 from cullinan.transport.adapter.asgi_adapter import ASGIAdapter
 from cullinan.transport.adapter.runtime_selection import resolve_runtime_engine
+
+logger = logging.getLogger(__name__)
 
 
 def _resolve_entry_method(
@@ -41,18 +44,69 @@ def _resolve_entry_method(
     raise RuntimeError(invalid_application_entry(api_name, entry_method))
 
 
-def _resolve_engine_setting(engine: Optional[str]) -> str:
+def _resolve_engine_setting_and_source(
+    engine: Optional[str],
+    file_config: Optional[dict],
+) -> tuple[str, str]:
+    """The engine setting, and the layer that decided it.
+
+    Four layers can name the engine -- the ``run()`` argument, the environment, the
+    configuration file and ``configure(...)`` -- and when two of them disagree the
+    operator needs to know which one won without reading the source. Returning the
+    source alongside the value is what makes that printable, and printing it is
+    what turns "which engine am I running?" into a question the log answers.
+    """
     if engine:
-        return engine.strip().lower()
+        return engine.strip().lower(), f"run(engine={engine!r})"
     env_engine = os.getenv("CULLINAN_ENGINE", "").strip().lower()
     if env_engine:
-        return env_engine
-    return getattr(get_config(), "server_engine", "auto")
+        return env_engine, "environment (CULLINAN_ENGINE)"
+    if isinstance(file_config, dict) and "server_engine" in file_config:
+        return (
+            str(getattr(get_config(), "server_engine", "auto")),
+            "configuration file (server_engine)",
+        )
+    configured = str(getattr(get_config(), "server_engine", "auto") or "auto")
+    if configured.strip().lower() != "auto":
+        return configured, "configure(server_engine=...)"
+    return "auto", "built-in default (auto)"
 
 
-def _resolve_engine(engine: Optional[str]) -> str:
+def _warn_if_engine_variable_is_not_one_we_read() -> None:
+    """Report ``SERVER_ENGINE`` when it is set, because it is not a setting.
+
+    ``SERVER_HOST`` and ``SERVER_PORT`` are read, so ``SERVER_ENGINE`` reads like
+    the third member of the same family. It is not: the engine comes from
+    ``CULLINAN_ENGINE``. A deployment that sets the wrong one gets the default
+    engine and no error, so two runs that were meant to compare engines can both
+    be the same engine -- which is how a measured difference becomes a phantom.
+    """
+    if not os.environ.get("SERVER_ENGINE", "").strip():
+        return
+    if os.getenv("CULLINAN_ENGINE", "").strip():
+        return
+    logger.warning(
+        "SERVER_ENGINE=%r is set but is not a variable this framework reads; the engine is "
+        "chosen by CULLINAN_ENGINE (or run(engine=...), or server_engine in the configuration "
+        "file). Ignoring it.",
+        os.environ.get("SERVER_ENGINE", ""),
+    )
+
+
+def _announce_engine(engine: Optional[str], file_config: Optional[dict]) -> str:
+    """Resolve the engine, print the layer that decided it, and return it.
+
+    The line is printed at start-up rather than on demand: the question "which
+    engine is this process actually running?" is asked when something behaves
+    differently than expected, and by then nobody wants to add logging and
+    redeploy.
+    """
+    _warn_if_engine_variable_is_not_one_we_read()
+    setting, source = _resolve_engine_setting_and_source(engine, file_config)
     asgi_server = getattr(get_config(), "asgi_server", "uvicorn")
-    return resolve_runtime_engine(_resolve_engine_setting(engine), asgi_server=asgi_server)
+    actual_engine = resolve_runtime_engine(setting, asgi_server=asgi_server)
+    logger.info("└---Web engine: %s (decided by: %s)", actual_engine, source)
+    return actual_engine
 
 
 def _resolve_host_port(host: Optional[str], port: Optional[int]) -> tuple[str, int]:
@@ -91,9 +145,10 @@ def run(
         with push_config_overrides(get_class_config(resolved_entry_method)):
             # Configuration file first: the engine and the bind address may be
             # named there, and a value the caller passes explicitly still wins
-            # because it is resolved after this.
-            apply_project_config()
-            actual_engine = _resolve_engine(engine)
+            # because it is resolved after this. The returned mapping is also how
+            # the start-up line can say *which* layer chose the engine.
+            file_config = apply_project_config()
+            actual_engine = _announce_engine(engine, file_config)
             resolved_host, resolved_port = _resolve_host_port(host, port)
             app = Application.run(resolved_entry_method, runtime_config=runtime_config)
             global_headers, transport_settings = _finalize_public_runtime()
