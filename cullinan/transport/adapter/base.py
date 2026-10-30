@@ -7,6 +7,7 @@ Author: plumeink
 """
 
 import logging
+import threading
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 
@@ -53,6 +54,28 @@ class WebAdapter(WebDriver, ABC):
         super().__init__(runtime=runtime)
         self._dispatcher = dispatcher
         self._shutdown_requester: Optional[Callable[[], bool]] = None
+        self._shutdown_claim_lock = threading.Lock()
+        self._shutdown_claimed = False
+
+    def _claim_shutdown_request(self) -> bool:
+        """Claim the right to schedule the drain; ``True`` only for the first caller.
+
+        A second ``request_shutdown()`` has nothing new to ask for: the drain is
+        already scheduled, or already running. Scheduling it twice would run
+        ``_begin_draining()`` and the drain wait twice, which happens to be
+        survivable today and is not a property anyone checked -- "it did not
+        explode" is not the same answer as "it happened once".
+
+        What the caller is told does **not** change: the second call still answers
+        ``True``, because "this server has been asked to stop" remains true, and
+        ``False`` is reserved for "there is nothing to ask" -- the answer a
+        supervisor acts on after the process is gone.
+        """
+        with self._shutdown_claim_lock:
+            if self._shutdown_claimed:
+                return False
+            self._shutdown_claimed = True
+            return True
 
     def _register_shutdown_requester(self, requester: Optional[Callable[[], bool]]) -> None:
         """Publish (or withdraw) this engine's programmatic shutdown hook.
@@ -62,8 +85,14 @@ class WebAdapter(WebDriver, ABC):
         answer that the adapter itself maintains. The hook is also registered on
         the runtime, which is what ``Application.request_shutdown()`` reaches --
         a caller asking an application to stop does not hold the adapter.
+
+        Withdrawing also releases the drain claim, so a second ``run()`` on the
+        same adapter can ask for a shutdown of its own.
         """
         self._shutdown_requester = requester
+        if requester is None:
+            with self._shutdown_claim_lock:
+                self._shutdown_claimed = False
         runtime = self.runtime
         setter = getattr(runtime, "set_shutdown_requester", None)
         if setter is None:

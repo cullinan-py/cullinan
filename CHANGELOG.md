@@ -87,6 +87,13 @@ release-note files (`RELEASE-v<version>.md`) where published.
 
 ### Fixed
 
+- **Asking for a shutdown twice no longer schedules the drain twice.** The second
+  call still answers `True` — "this server has been asked to stop" remains true, and
+  `False` keeps its one meaning of "nothing to ask" — but the announcement and the
+  wait behind it happen once. The previous behaviour was survivable rather than
+  correct: nothing asserted that the sequence ran once, so a duplicated drain
+  cutting an in-flight request would have been found by a user rather than by a test.
+
 - **An oversized upload is refused before the body is read, on ASGI too.** The
   ceiling was enforced while reading, so a client that sent slowly was answered
   only after it had finished sending, and one that never finished was never

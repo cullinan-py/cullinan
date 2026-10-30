@@ -327,6 +327,10 @@ class TornadoAdapter(WebAdapter):
             also why the drain itself is not called inline: it awaits, and a
             caller outside the loop cannot.
             """
+            if not self._claim_shutdown_request():
+                # Already scheduled: the answer is still True ("this server has
+                # been asked to stop"), but there is nothing new to schedule.
+                return True
             loop.add_callback(self._shutdown_gracefully)
             return True
 

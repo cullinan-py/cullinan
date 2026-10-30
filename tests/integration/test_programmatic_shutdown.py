@@ -20,6 +20,7 @@ Two kinds of evidence here, deliberately:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import socket
@@ -126,6 +127,20 @@ def _wait_until_serving(port: int, deadline: float) -> bool:
     return False
 
 
+def _wait_until_ready_to_stop(adapter, deadline: float) -> bool:
+    """Wait for the hook to be published, not merely for the port to accept.
+
+    ``run()`` binds the socket before it publishes the shutdown hook, so a client
+    that connects the instant the port answers can still be a moment early. The
+    readiness probe cannot see that difference; this can.
+    """
+    while time.monotonic() < deadline:
+        if adapter._shutdown_requester is not None:
+            return True
+        time.sleep(0.01)
+    return False
+
+
 def test_the_loop_is_woken_by_a_request_from_another_thread():
     """Cross-thread safety, isolated: an idle loop must still hear the request.
 
@@ -150,6 +165,8 @@ def test_the_loop_is_woken_by_a_request_from_another_thread():
 
     if not _wait_until_serving(port, time.monotonic() + 30.0):
         pytest.fail("the Tornado server never started listening, so nothing was measured")
+    if not _wait_until_ready_to_stop(adapter, time.monotonic() + 10.0):
+        pytest.fail("the shutdown hook was never published")
 
     # Let the loop settle back into an idle selector wait: a readiness probe that
     # just connected is itself an event, and the point is a loop with nobody
@@ -197,6 +214,58 @@ def test_an_assembled_application_with_no_transport_says_no():
     application.runtime.web_runtime = WebRuntime()
 
     assert application.request_shutdown() is False
+
+
+def test_asking_twice_schedules_the_drain_once():
+    """A repeat request must report the same fact and do nothing again.
+
+    The drain announces, waits and closes. Running that twice is not something
+    anyone has a reason to ask for, and "the process still exited cleanly" is not
+    evidence that it did not happen -- it is evidence that it survived. The count
+    below is the evidence: the drain ran once, and the second call still answered
+    ``True``, because "this server has been asked to stop" is still true.
+    """
+    from cullinan.transport.adapter.tornado_adapter import TornadoAdapter
+    from cullinan.web.gateway.dispatcher import Dispatcher
+
+    adapter = TornadoAdapter(Dispatcher())
+    port = _free_port()
+    calls: list[int] = []
+    real_drain = adapter._shutdown_gracefully
+
+    async def counting_drain():
+        calls.append(1)
+        # Hold the claim open long enough for the second call to arrive while the
+        # hook is still published; without this the case would measure the race
+        # between two threads rather than the guard.
+        await asyncio.sleep(0.2)
+        await real_drain()
+
+    adapter._shutdown_gracefully = counting_drain
+    thread = threading.Thread(
+        target=adapter.run,
+        kwargs={"host": "127.0.0.1", "port": port},
+        daemon=True,
+        name="tornado-double-request",
+    )
+    thread.start()
+
+    if not _wait_until_serving(port, time.monotonic() + 30.0):
+        pytest.fail("the Tornado server never started listening, so nothing was measured")
+    if not _wait_until_ready_to_stop(adapter, time.monotonic() + 10.0):
+        thread.join(timeout=5.0)
+        pytest.fail("the shutdown hook was never published, so nothing could ask for a stop")
+
+    try:
+        assert adapter.request_shutdown() is True
+        assert adapter.request_shutdown() is True, (
+            "a repeat call reports the same fact: the server has been asked to stop"
+        )
+    finally:
+        thread.join(timeout=20.0)
+
+    assert not thread.is_alive(), "the server did not stop after the request"
+    assert calls == [1], f"the drain was scheduled {len(calls)} times, expected once"
 
 
 @pytest.mark.parametrize("adapter_name", ["tornado", "asgi"])

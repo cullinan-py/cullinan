@@ -162,6 +162,11 @@ scheduled onto the loop that owns the server (a threaded callback on Tornado,
 never raises to say "nothing to do" — `False` is the answer, because a
 supervisor's exit path must not turn a finished shutdown into a crash.
 
+Asking twice is not an error, and it does not drain twice: the second call still
+answers `True` (the server has been asked to stop, and still will), while the
+announcement and the wait behind it happen once. `False` keeps its single
+meaning — there was nothing to ask.
+
 The runnable version is `python -m examples.graceful_shutdown.stop_after`, which
 waits until the application is serving and then asks it to stop from a thread
 that is not serving requests.

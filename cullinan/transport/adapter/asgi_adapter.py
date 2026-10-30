@@ -246,6 +246,12 @@ class ASGIAdapter(WebAdapter):
                 stop -- there is no async entry point an outside caller could
                 await.
                 """
+                if not self._claim_shutdown_request():
+                    # Already announced and already asked: repeating either would
+                    # announce the drain twice and flip ``should_exit`` again for
+                    # no one's benefit. The answer stays True -- the server has
+                    # been asked to stop.
+                    return True
                 _begin_draining_for_active_application()
                 server_instance.should_exit = True
                 return True
