@@ -103,13 +103,27 @@ def test_an_in_flight_request_finishes_and_the_next_one_is_refused(engine):
     calls ``shutdown()`` on every open connection, so there is **no window in which
     you can reach it on purpose**". A request that lands during the drain is then
     answered `503` only if it was already on its way; otherwise uvicorn aborts the
-    connection (a reset, or ``RemoteDisconnected`` on the client side -- the same
-    fact reported by a different errno). Asserting `503` there would make this file
-    assert a property the documentation denies, and it is what made the ASGI case
-    fail roughly one run in ten under load while the clean-machine run passed 7/7.
+    connection and the client sees ``RemoteDisconnected``.
 
-    Tornado keeps the strict expectation: it leaves the listener open and answers
-    `503`, measured over fifteen runs of the audit without a single miss.
+    Both outcomes are accepted for ASGI because both were *observed*, not inferred.
+    Measured on this host with six CPU-bound processes running, ten runs of the ASGI
+    harness with the client bypassing the HTTP proxy: `503` five times,
+    ``error:RemoteDisconnected`` five times, nothing else (see the log in the
+    implementation record). An earlier version of the assertion accepted
+    ``ConnectionResetError`` as well -- that spelling was never observed here, so it
+    is not accepted now; if a POSIX run reports it for the same event, the failure
+    message says which value arrived and the set needs that entry *with its own
+    observation*.
+
+    That measurement is why the first repair of this case had to be redone: the
+    original 1-in-10 failure was not uvicorn at all. The harness reached loopback
+    through ``HTTP_PROXY`` and the proxy answered `502` when the drained server
+    stopped listening -- a status no part of this framework produces. The fixture now
+    bypasses the proxy, and `502` is deliberately absent from the accepted values:
+    accepting it would have hidden the defect that produced it.
+
+    Tornado keeps the strict `503` expectation: it leaves the listener open and
+    answered through it in every measured run.
 
     What is *not* relaxed on either engine is ``inflight == 200`` -- an in-flight
     request finishing is the whole point of REQ-003, and a drain that cuts it is the
@@ -132,11 +146,13 @@ def test_an_in_flight_request_finishes_and_the_next_one_is_refused(engine):
             "and answers through it"
         )
     else:
-        assert results["during_drain"] in (503, "error:RemoteDisconnected", "error:ConnectionResetError"), (
+        assert results["during_drain"] in (503, "error:RemoteDisconnected"), (
             "asgi: a request that arrived during the drain got "
-            f"{results['during_drain']!r}. uvicorn closes the listener first, so either "
-            "it was already on its way (503) or the connection went away under it -- "
-            "both are the documented outcome, and neither is a 2xx"
+            f"{results['during_drain']!r}. Observed values on this host (n = 10, six "
+            "cores busy): 503 five times, error:RemoteDisconnected five times. uvicorn "
+            "closes the listener first, so either the request was already on its way "
+            "(503) or the connection went away under it -- and a 502 comes from a "
+            "proxy, not from this framework"
         )
     assert results["elapsed"] < 60, (
         f"{engine}: the process took {results['elapsed']:.1f}s to leave; the drain "
