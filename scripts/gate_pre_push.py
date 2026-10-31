@@ -739,7 +739,9 @@ def gate_m9(root, refs, rev=None, allow_sdist=True, interpreter=None, tokens_fil
     if usable is None:
         return Result(
             "M9", title, "SKIP",
-            "M9: NOT COVERED (no interpreter with build+setuptools among {})".format(
+            "M9: NOT COVERED (no interpreter with build+setuptools among {}); "
+            "install the build toolchain (`pip install setuptools build`) or scan an "
+            "sdist that was already built with --scan-archive <path>".format(
                 ", ".join(interpreters)))
 
     rows = []
