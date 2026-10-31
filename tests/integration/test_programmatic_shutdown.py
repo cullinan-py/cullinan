@@ -54,10 +54,19 @@ RUN_TIMEOUT = 90.0
 # connection, it is an HTTP proxy answering on the server's behalf when it cannot reach
 # it. That is how the earlier version of this case went red 2 times in 10 under load
 # while nothing was wrong -- see the fixture's `_LOOPBACK_OPENER`.
+#
+# `error:ConnectionRefusedError` joined for the same reason as the reset family: it is
+# what uvicorn's listener-first shutdown looks like from a client that arrives after
+# the listener has closed. It arrived late to the tuple only because macOS wraps the
+# refusal in ``URLError`` and the harness used to record the wrapper's name -- the
+# fixture now unwraps ``reason``, so the event is named the same way on every platform
+# and the wrapper name stays out (accepting it would also admit DNS failures and
+# timeouts, which are not the peer ending anything).
 DRAIN_ENDED_BY_PEER = (
     503,
     "error:RemoteDisconnected",
     "error:ConnectionResetError",
+    "error:ConnectionRefusedError",
     "error:ConnectionAbortedError",
     "error:BrokenPipeError",
 )
@@ -133,7 +142,13 @@ def test_an_in_flight_request_finishes_and_the_next_one_is_refused(engine):
     hand here. Measured on this host with six CPU-bound processes running, ten runs of
     the ASGI harness with the client bypassing the HTTP proxy: `503` five times,
     ``error:RemoteDisconnected`` five times, nothing else (see the log in the
-    implementation record).
+    implementation record). The macOS run of the release matrix added a third name for
+    the same family: there the refusal arrives wrapped in ``URLError`` and the harness
+    unwraps ``reason`` so the inner name is what gets recorded -- which is why
+    ``error:ConnectionRefusedError`` is in the tuple while ``error:URLError`` is not:
+    the wrapper name would also admit DNS failures and timeouts, which are not the
+    listener being closed, just as a 502 is a proxy speaking rather than the peer
+    going away.
 
     That measurement is why the first repair of this case had to be redone: the
     original 1-in-10 failure was not uvicorn at all. The harness reached loopback

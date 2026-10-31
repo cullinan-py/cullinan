@@ -75,13 +75,32 @@ def main(): ...
 
 
 def _status(path: str, timeout: float = 10.0):
-    """The status code, or ``error:<kind>`` when the connection gave way."""
+    """The status code, or ``error:<kind>`` when the connection gave way.
+
+    The name recorded is the name of the *event*, not of urllib's packaging. On macOS
+    urllib raises ``URLError(reason=ConnectionRefusedError())`` where Linux and Windows
+    deliver the ``ConnectionRefusedError`` unwrapped, so recording the wrapper's name
+    would make the same refusal read as three different outcomes across platforms. The
+    wrapper itself carries no information about what happened -- its ``reason`` does --
+    and a wrapper name accepted anywhere would also swallow unrelated failures (DNS,
+    timeouts) that happen to travel the same way.
+    """
     try:
         with _LOOPBACK_OPENER.open(f"http://127.0.0.1:{PORT}{path}", timeout=timeout) as response:
             return response.status
     except urllib.error.HTTPError as exc:
         return exc.code
-    except (urllib.error.URLError, OSError) as exc:
+    # URLError first: it subclasses OSError, so a combined clause would record the
+    # wrapper's name on macOS while the same event arrives bare elsewhere. Only an
+    # exception as ``reason`` is unwrapped -- that is the macOS wrap shape. A string
+    # reason (``URLError("name or service not known")``, a DNS failure) keeps the
+    # wrapper name, which is deliberately absent from every accepted set: an event
+    # that is not the peer ending the connection should stay loud.
+    except urllib.error.URLError as exc:
+        reason = getattr(exc, "reason", None)
+        inner = type(reason).__name__ if isinstance(reason, BaseException) else type(exc).__name__
+        return f"error:{inner}"
+    except OSError as exc:
         return f"error:{type(exc).__name__}"
 
 
