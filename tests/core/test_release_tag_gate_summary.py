@@ -220,6 +220,57 @@ def test_the_tag_wins_over_head_once_it_exists():
     assert "tag v" in fails.stdout
 
 
+def test_a_token_with_two_bindings_is_checked_at_every_one():
+    """Reading the first binding and stopping is how a stale approval rides along.
+
+    A token can carry a second reviewer, or an approval re-issued next to the one it
+    replaces. Comparing only the first ``#tree=`` meant a token whose *other* binding
+    named a different tree passed: the gate read the half that agreed and never looked
+    at the half that did not.
+    """
+    tree = _reference_tree()
+    other = "0" * 40
+
+    passes = _run_gate(f"r1#tree={tree} r2#tree={tree}", f"sync#tree={tree}")
+    assert "PASS (f)" in passes.stdout, passes.stdout[-400:]
+
+    fails = _run_gate(f"r1#tree={tree} r2#tree={other}", f"sync#tree={tree}")
+    assert "FAIL (f)" in fails.stdout, fails.stdout[-400:]
+    assert "different tree" in fails.stdout
+
+
+def test_a_third_reviewer_needs_no_change_here():
+    """The count is not pinned: a longer token of agreeing bindings still passes."""
+    tree = _reference_tree()
+    result = _run_gate(f"r1#tree={tree} r2#tree={tree} r3#tree={tree}", f"sync#tree={tree}")
+    assert "PASS (f)" in result.stdout, result.stdout[-400:]
+
+
+def test_a_fragment_without_a_binding_is_not_a_credential():
+    """Only fragments that carry a binding are candidates; the rest are the token.
+
+    A real credential is six fragments and one tree::
+
+        cln-qa 0.96a13-qa-release #tree=<t> #doc=<h> #ts=<z> #signer=cln-qa
+
+    Requiring one binding per fragment would refuse every credential ever issued, so
+    the rule counts *carrying* fragments only. This test pins that shape so the rule
+    cannot be "tightened" back into refusing real tokens.
+    """
+    tree = _reference_tree()
+    token = f"cln-qa 0.96a13-qa-release #tree={tree} #doc={'a' * 64} #ts=2026-10-31T12:00:00Z #signer=cln-qa"
+    result = _run_gate(token, f"sync#tree={tree}")
+    assert "PASS (f)" in result.stdout, result.stdout[-400:]
+
+
+def test_two_bindings_packed_into_one_fragment_are_refused():
+    """No separator to split on: the token says two trees and approves neither."""
+    tree = _reference_tree()
+    result = _run_gate(f"r1#tree={tree}r2#tree={'0' * 40}", f"sync#tree={tree}")
+    assert "FAIL (f)" in result.stdout, result.stdout[-400:]
+    assert "#tree= bindings" in result.stdout
+
+
 def test_the_scope_limit_is_stated_where_a_reader_will_see_it():
     """The gate must not let its PASS be read as an authenticity check."""
     assert "(f) credential scope" in _summary_labels() or "f" in _summary_labels()

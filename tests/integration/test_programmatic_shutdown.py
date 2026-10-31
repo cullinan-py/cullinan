@@ -32,6 +32,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.integration.test_tornado_client_view_of_an_oversized_body import PEER_WENT_AWAY
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HARNESS = REPO_ROOT / "tests" / "fixtures" / "programmatic_shutdown_app.py"
 
@@ -41,14 +43,13 @@ HARNESS = REPO_ROOT / "tests" / "fixtures" / "programmatic_shutdown_app.py"
 RUN_TIMEOUT = 90.0
 
 # The drain ends the connection, and how the client's stack names that is a platform
-# vocabulary, not a framework property. These are the *string* forms of the same
-# category defined once at
-# `tests/integration/test_tornado_client_view_of_an_oversized_body.py:138`
-# (`PEER_WENT_AWAY = (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)`):
-# one definition, three spellings plus the `503` a request still in flight receives.
-# `RemoteDisconnected` is listed because it is what `http.client` raises here, and it
-# subclasses `ConnectionResetError` -- which a comparison over *names* cannot see. Copy
-# the names one by one and a Linux run can be red for naming, not for behaviour.
+# vocabulary, not a framework property. The category is defined once, as
+# ``PEER_WENT_AWAY`` in `tests/integration/test_tornado_client_view_of_an_oversized_body.py`
+# -- imported below rather than copied, because a copy in a comment drifts on its own
+# and nothing would report the day it stopped matching. What is added here is the
+# *string* form each class takes in a result, the `503` a request still in flight
+# receives, and ``RemoteDisconnected``, which is what ``http.client`` raises and which
+# a comparison over names cannot see as the ``ConnectionResetError`` subclass it is.
 #
 # `502` is never in this tuple, and must not be added: it is not the peer ending the
 # connection, it is an HTTP proxy answering on the server's behalf when it cannot reach
@@ -65,10 +66,8 @@ RUN_TIMEOUT = 90.0
 DRAIN_ENDED_BY_PEER = (
     503,
     "error:RemoteDisconnected",
-    "error:ConnectionResetError",
     "error:ConnectionRefusedError",
-    "error:ConnectionAbortedError",
-    "error:BrokenPipeError",
+    *(f"error:{exception.__name__}" for exception in PEER_WENT_AWAY),
 )
 
 
