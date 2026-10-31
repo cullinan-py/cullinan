@@ -15,6 +15,27 @@ vocabulary, and an older entry is left as written — history is not rewritten.
 The complete release notes for each version are archived in the repository's
 release-note files (`RELEASE-v<version>.md`) where published.
 
+## v0.96a13
+
+**v0.96a13** turns `openapi_enabled` from a switch that was read and ignored into
+one that changes the route table, and records what that means for the
+registered route set.
+
+### Changed
+
+- **`openapi_enabled` now shrinks the registered route set when it is off.** The
+  framework used to register the OpenAPI endpoints regardless of the switch, so
+  turning it off changed nothing a caller could observe. With this version the
+  endpoints are registered only when OpenAPI is enabled, so a deployment with
+  `openapi_enabled=False` no longer serves `/openapi.json` or `/openapi.yaml`.
+  That is the configuration finally taking effect, not routes going missing: the
+  two endpoints exist because the feature exists. Applications that diff the
+  registered route set across versions will see it change — a downstream
+  application measured its snapshot going from 11 unique / 19 total routes to
+  9 unique / 17 total after upgrading. Update the `current` side of such a
+  baseline to match; `previous` records what the older version did and stays as
+  it is.
+
 ## v0.96a12
 
 **v0.96a12** fixes the tests and the deployment page that describe what a client sees
