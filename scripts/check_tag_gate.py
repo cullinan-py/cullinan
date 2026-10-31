@@ -127,6 +127,40 @@ EXPECTED_BANNER_PAGES = {
 TREE_BINDING = re.compile(r"#tree=([0-9a-f]{40})")
 
 
+def tree_bindings(token: str):
+    """Every ``#tree=`` in a credential, and why the set cannot be checked.
+
+    A token may carry more than one credential: a review and a second reviewer, an
+    approval re-issued alongside the one it replaces. Reading only the first match
+    meant a token whose *second* binding named a different tree passed -- the gate
+    compared the half that agreed with the tree and never looked at the half that did
+    not.
+
+    The unit is the *fragment that carries a binding*, not every fragment. A real
+    credential is several space-separated fragments and only one of them holds the
+    tree -- ``cln-qa 0.96a13-qa-release #tree=<t> #doc=<h> #ts=<z> #signer=cln-qa``
+    is six fragments and one binding. Requiring one binding per fragment would refuse
+    every credential ever issued, so fragments without a binding are simply not
+    candidates. What is refused is a fragment carrying *two* bindings
+    (``a#tree=<A>#tree=<B>``, no separator to split on), because the token then names
+    two trees and approves neither.
+
+    Returns ``(trees, problem)``: the trees found, and a description of what makes the
+    set unusable -- ``None`` when it is usable. An empty tree list with no problem means
+    "no binding anywhere", which the caller reports as unbound.
+    """
+    carrying: list[str] = []
+    for fragment in token.split():
+        found = TREE_BINDING.findall(fragment)
+        if len(found) > 1:
+            return carrying, (
+                f"one credential carries {len(found)} #tree= bindings ({fragment!r}), so "
+                f"there is no way to tell which tree it approves"
+            )
+        carrying.extend(found)
+    return carrying, None
+
+
 def read_ssot_version():
     text = (ROOT / "cullinan" / "_version.py").read_text(encoding="utf-8")
     match = re.search(r'__version__\s*=\s*"([^"]+)"', text)
@@ -311,13 +345,20 @@ def main():
     reference_tree, reference_label = choose_reference_tree(tag_tree, head_tree, expected)
     unbound = []
     mismatched = []
+    malformed = []
     for slot, token in (("(b) review", args.review_token), ("sync", args.sync_token)):
-        match = TREE_BINDING.search(token)
-        if match is None:
+        trees, problem = tree_bindings(token)
+        if problem is not None:
+            malformed.append(f"{slot}: {problem}")
+        elif not trees:
             unbound.append(slot)
-        elif match.group(1) != reference_tree:
-            mismatched.append(f"{slot} bound to {match.group(1)}")
-    if unbound:
+        else:
+            wrong = sorted({tree for tree in trees if tree != reference_tree})
+            if wrong:
+                mismatched.append(f"{slot} bound to {', '.join(wrong)}")
+    if malformed:
+        detail = "; ".join(malformed)
+    elif unbound:
         detail = (
             f"no #tree=<40-hex> on: {', '.join(unbound)} -- reissue the token in the "
             f"bound form ('...#tree={reference_tree}')"
@@ -328,10 +369,10 @@ def main():
             + "; ".join(mismatched)
         )
     else:
-        detail = f"both bound to {reference_label} ({reference_tree})"
+        detail = f"all bindings point at {reference_label} ({reference_tree})"
     check(
         "(f) review and sync credentials bound to the tagged tree",
-        not unbound and not mismatched,
+        not malformed and not unbound and not mismatched,
         detail,
     )
 
