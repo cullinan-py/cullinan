@@ -24,9 +24,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "scripts" / "check_api_audit.py"
 
 GOOD = (
-    "2026-10-31T12:49:00Z auth=A-78 granted_by=user remote=https://example op=update "
+    "2026-10-31T12:49:00Z auth=demo-grant granted_by=user remote=https://example op=update "
     "ref=refs/heads/preview to=abc was=def head=abc\n"
-    "2026-10-31T12:49:00Z kind=api action=pr_merge id=#52 actor=ORCH auth=A-78 "
+    "2026-10-31T12:49:00Z kind=api action=pr_merge id=#52 actor=ORCH auth=demo-grant "
     "url=https://example/pull/52\n"
 )
 
@@ -58,7 +58,7 @@ def test_a_reconcilable_log_is_green(tmp_path):
 
 
 def test_an_api_line_without_an_authorization_is_red(tmp_path):
-    """A write nobody can attribute is the failure G-1 names."""
+    """A write nobody can attribute is the gap this gate exists for."""
     path = tmp_path / "push-audit.log"
     path.write_text(
         "2026-10-31T12:49:00Z kind=api action=pr_merge id=#52 actor=ORCH\n",

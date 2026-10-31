@@ -15,7 +15,7 @@ Two questions, and both have shipped wrong:
   against the server, so it is not evidence.
 * **Does every closed authorization have one?** An authorization that ends without
   a matching API line is either an authorization that was never used -- fine -- or
-  a write nobody recorded, which is the failure `G-1` names. The two are told apart
+  a write nobody recorded, which is the gap this file exists for. The two are told apart
   by asking the server: the gate cannot do that offline, so it reports the pair and
   leaves the reconciliation to the reader, naming what to check.
 
@@ -37,7 +37,13 @@ import sys
 from pathlib import Path
 
 #: Actions that write to the remote through the API rather than through `git push`.
-ACTIONS = ("pr_merge", "release_create", "tag_delete")
+#:
+#: ``tag_delete`` is deliberately absent. Deleting a tag is normally
+#: ``git push --delete``, which the pre-push guard already records as an ``op=``
+#: line; listing it here invited recording the same deletion twice, once by the
+#: guard and once by hand, which is what happened on 2026-10-31. Only the two
+#: actions that never pass through a local hook belong in this set.
+ACTIONS = ("pr_create", "pr_merge", "release_create")
 
 #: The fields every line must carry. ``retro`` and ``reason`` are extra, and
 #: ``reason`` is required when ``retro`` is present. The timestamp is checked
@@ -52,7 +58,7 @@ _STAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 def parse_line(line: str) -> dict[str, str]:
     """The key/value pairs on one log line, first occurrence wins.
 
-    The leading ISO-8601 stamp is exposed as ``ts``: it is the one field that is not
+    The leading ISO 8601 stamp is exposed as ``ts``: it is the one field that is not
     written as ``key=value``, and it is the field that places the line relative to a
     tag.
     """
@@ -99,7 +105,7 @@ def check(text: str) -> list[str]:
             )
         if not _STAMP.match(fields.get("ts", "")):
             problems.append(
-                f"line {number}: ts={fields.get('ts', '')!r} is not an ISO-8601 UTC stamp; "
+                f"line {number}: ts={fields.get('ts', '')!r} is not an ISO 8601 UTC stamp; "
                 f"a line that cannot be placed in time cannot be reconciled against the tag"
             )
     return problems
@@ -127,25 +133,30 @@ def authorizations_without_api_line(text: str) -> list[str]:
 
 def self_test() -> int:
     good = (
-        "2026-10-31T12:49:00Z kind=api action=pr_merge id=#52 actor=ORCH auth=A-78 "
+        "2026-10-31T12:49:00Z kind=api action=pr_merge id=#52 actor=ORCH auth=demo-grant "
         "url=https://example/52\n"
-        "2026-10-31T12:54:55Z kind=api action=tag_delete id=v0.96a11 actor=ORCH auth=A-78\n"
-        "2026-10-31T12:00:00Z auth=A-70 op=create ref=refs/tags/v0.96a11\n"
+        "2026-10-31T12:54:55Z kind=api action=release_create id=v0.96a13 actor=ORCH auth=demo-grant\n"
+        "2026-10-31T12:00:00Z auth=push-only-grant op=create ref=refs/tags/v0.96a11\n"
     )
     cases = [
         ("well-formed lines", good, []),
         ("unknown action",
-         "2026-10-31T12:00:00Z kind=api action=push_branch id=x1 actor=ORCH auth=A-1\n",
+         "2026-10-31T12:00:00Z kind=api action=push_branch id=x1 actor=ORCH auth=demo-grant\n",
+         ["is not one of"]),
+        # Tag deletion is a push, and the guard already records it. Accepting it
+        # here is what produced a double entry on 2026-10-31.
+        ("tag_delete is not an API action",
+         "2026-10-31T12:00:00Z kind=api action=tag_delete id=v1.0 actor=ORCH auth=demo-grant\n",
          ["is not one of"]),
         ("missing auth",
          "2026-10-31T12:00:00Z kind=api action=pr_merge id=#1 actor=ORCH\n",
          ["missing auth"]),
         ("retro without reason",
-         "2026-10-31T12:00:00Z kind=api action=pr_merge id=#1 actor=ORCH auth=A-1 retro=1\n",
+         "2026-10-31T12:00:00Z kind=api action=pr_merge id=#1 actor=ORCH auth=demo-grant retro=1\n",
          ["retro=1 without reason"]),
         ("no timestamp",
-         "kind=api action=pr_merge id=#1 actor=ORCH auth=A-1\n",
-         ["is not an ISO-8601 UTC stamp"]),
+         "kind=api action=pr_merge id=#1 actor=ORCH auth=demo-grant\n",
+         ["is not an ISO 8601 UTC stamp"]),
     ]
     failures = []
     for label, text, expected_fragments in cases:
@@ -160,7 +171,7 @@ def self_test() -> int:
 
     # The reconciliation listing must find the authorization that only pushed.
     listed = authorizations_without_api_line(good)
-    ok = listed == ["A-70"]
+    ok = listed == ["push-only-grant"]
     if not ok:
         failures.append("reconciliation listing")
     print(f"  {'reconciliation listing':28s} {'ok' if ok else 'MISMATCH'}  {listed}")
