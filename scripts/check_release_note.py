@@ -48,6 +48,41 @@ _SECTION = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
 _CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 _NOTE_VERSION = re.compile(r"RELEASE-v(.+)\.md$")
 
+#: The two engines answer an oversized body differently (`413` on one, `400` on the
+#: other), so a sentence that names the status without naming the engine tells the
+#: reader half of what they need. The phrases below are the ones that identify a
+#: sentence as being *about* the body-size refusal; ``413`` alone is not enough,
+#: because a published note may list the status among shapes ("`200`, `413`, a `400`
+#: followed by a body") or discuss the header it carries, and neither of those is a
+#: claim about which engine answers what.
+_OVERSIZE_PHRASES = (
+    "over the ceiling",
+    "too large",
+    "oversized",
+    "max_request_body_bytes",
+)
+_ENGINE_NAMES = ("asgi", "tornado")
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+
+
+def _engineless_413(text: str, name: str) -> list[str]:
+    """A body-size refusal described without the engine that produces it."""
+    findings = []
+    for sentence in _SENTENCE_END.split(text):
+        lowered = sentence.lower()
+        if "413" not in lowered:
+            continue
+        if not any(phrase in lowered for phrase in _OVERSIZE_PHRASES):
+            continue
+        if any(engine in lowered for engine in _ENGINE_NAMES):
+            continue
+        findings.append(
+            f"{name}: a sentence about the oversized-body refusal names `413` but not the "
+            f"engine; the engines answer differently (`413` on one, `400` on the other), so "
+            f"the reader cannot tell which one this is about: {sentence.strip()[:90]!r}"
+        )
+    return findings
+
 
 def check_text(text: str, name: str = "<note>") -> list[str]:
     """Return one line per problem. Empty list means the note is usable."""
@@ -85,6 +120,8 @@ def check_text(text: str, name: str = "<note>") -> list[str]:
             f"{name}: contains non-English text; the note is published in English only, and "
             f"a mixed-language note is a merged draft rather than a finished one"
         )
+
+    problems.extend(_engineless_413(text, name))
 
     return problems
 
@@ -180,6 +217,30 @@ A small release.
 - No public name is removed or renamed.
 """
 
+# The oversized-body rule has its own pair, because it is a rule about one
+# sentence rather than about a note. The failing sample is the sentence as it
+# shipped in the 0.96a12 note (the engine it meant was ASGI, and the sentence
+# never said so); the passing pair is the two sentences most like it that must
+# NOT be reported: a status listed among pinned shapes, and the `413` discussed
+# for the header it carries. A third, farther neighbour -- a test summary line
+# such as "3 failed, 1495 passed, 2 skipped" -- has no `413` in it at all and
+# must stay clean, so the rule keeps its scope to the refusal itself.
+_SAMPLE_ENGINELESS_413 = "A request that declares itself over the ceiling is answered `413` immediately."
+
+_SAMPLE_413_WITH_ENGINE = "A request that declares itself over the ceiling is answered `413` on ASGI."
+
+_SAMPLE_413_SHAPE_LIST = (
+    "A verdict of its own pins the shapes that must fail: `200`, `413`, a `400` followed by "
+    "a body, a hang, and a clean close with nothing read."
+)
+
+_SAMPLE_413_HEADER_DISCUSSION = (
+    "And the early `413` still carries exactly one `Content-Length`: an extra one makes an "
+    "intermediary wait for a body that never comes."
+)
+
+_SAMPLE_TEST_SUMMARY = "3 failed, 1495 passed, 2 skipped, 25 warnings"
+
 
 def _self_test() -> int:
     failures = 0
@@ -199,6 +260,29 @@ def _self_test() -> int:
     print("self-test: each defect is reported")
     expect("describes the machinery", _SAMPLE_MAINTENANCE, False)
     expect("a required section is missing", _SAMPLE_MISSING_SECTION, False)
+
+    print("self-test: a body-size refusal names its engine")
+    # These four go straight to the sentence-level rule rather than through
+    # ``check_text``: they are sentences, not notes, and running them as notes
+    # would only re-test the section template with the wrong input.
+    engineless = _engineless_413(_SAMPLE_ENGINELESS_413, "engineless-413")
+    if engineless:
+        print("  ok   413 without an engine is reported")
+    else:
+        failures += 1
+        print("  FAIL 413 without an engine is reported: the rule found nothing")
+    for label, sample in (
+        ("413 with an engine passes", _SAMPLE_413_WITH_ENGINE),
+        ("413 among pinned shapes passes", _SAMPLE_413_SHAPE_LIST),
+        ("413 discussed for its header passes", _SAMPLE_413_HEADER_DISCUSSION),
+        ("a test summary line passes", _SAMPLE_TEST_SUMMARY),
+    ):
+        stray = _engineless_413(sample, label)
+        if stray:
+            failures += 1
+            print(f"  FAIL {label}: {stray}")
+        else:
+            print(f"  ok   {label}")
 
     print("self-test: the note read is the one for the newest version")
     with tempfile.TemporaryDirectory() as directory:

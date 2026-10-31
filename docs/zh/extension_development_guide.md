@@ -15,7 +15,7 @@ pr_links: []
 
 # Cullinan 扩展开发指南
 
-> **版本**：0.96a12
+> **版本**：0.96a13
 > **作者**：plumeink  
 > **最后更新**：2026-10-31
 
@@ -678,6 +678,6 @@ class TestMyMiddleware(ServiceTestCase):
 
 ---
 
-**版本**：0.96a12
+**版本**：0.96a13
 **作者**：plumeink  
 **最后更新**：2026-09-28

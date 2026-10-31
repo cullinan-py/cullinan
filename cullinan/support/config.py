@@ -546,11 +546,20 @@ def configure_options() -> Tuple[str, ...]:
 
     Usage::
 
-        from cullinan.support.config import configure_options
         from cullinan import configure
+        from cullinan.support.config import configure_options
 
         wanted = {"server_port": 9090, "drain_timeout": 15.0}
-        configure(**{k: v for k, v in wanted.items() if k in configure_options()})
+        unknown = set(wanted) - set(configure_options())
+        if unknown:
+            raise SystemExit(f"unsupported options: {sorted(unknown)}")
+        configure(**wanted)
+
+    The check is explicit rather than filtered for the same reason ``configure()``
+    refuses in the first place: dropping the names this version does not know would
+    turn a misspelt switch into a silent no-op, which is the outcome the refusal
+    exists to prevent. Asking first is for choosing *between* two installed versions;
+    once one is chosen, an unknown name is a finding, not a casualty of the filter.
 
     Returns:
         tuple: The accepted names, sorted, derived from ``configure``'s own signature --
