@@ -73,7 +73,7 @@ EVIDENCE = """\
 {
   "producer": "gh_api" | "junit",
   "candidate_commit": "<40-hex sha the evidence was produced for>",
-  "measured_at": "<ISO-8601 UTC, e.g. 2026-10-31T11:58:00Z>",
+  "measured_at": "<ISO 8601 UTC, e.g. 2026-10-31T11:58:00Z>",
   "baseline_source": "prev_tag" | "registered" | "floor",
   "baseline_value": <int>,
   "baseline_note": "<where the number came from; required for floor/registered>",
@@ -228,7 +228,7 @@ def evaluate(
             try:
                 stamp = datetime.datetime.fromisoformat(measured_at.replace("Z", "+00:00"))
             except ValueError:
-                problems.append(f"measured_at {measured_at!r} is not ISO-8601")
+                problems.append(f"measured_at {measured_at!r} is not ISO 8601")
             else:
                 if stamp > tag_created_at:
                     problems.append(
